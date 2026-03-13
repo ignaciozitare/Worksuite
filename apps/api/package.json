@@ -1,0 +1,29 @@
+{
+  "name": "@worksuite/api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/server.js",
+  "scripts": {
+    "dev":        "tsx watch src/server.ts",
+    "build":      "tsc",
+    "start":      "node dist/server.js",
+    "test":       "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.43.0",
+    "@worksuite/shared-types": "*",
+    "fastify": "^4.27.0",
+    "@fastify/cors": "^9.0.1",
+    "@fastify/jwt": "^8.0.1",
+    "zod": "^3.23.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "@vitest/coverage-v8": "^1.5.0",
+    "tsx": "^4.8.2",
+    "vitest": "^1.5.0"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "buildCommand": "cd packages/shared-types && npm run build && cd ../../apps/web && npm run build",
+  "outputDirectory": "apps/web/dist",
+  "installCommand": "npm install",
+  "framework": null
+}
