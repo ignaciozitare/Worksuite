@@ -339,7 +339,6 @@ const SEATS = [
   {id:"C4",x:255,y:282},{id:"C5",x:315,y:282},{id:"C6",x:375,y:282},
 ];
 
-const TODAY = new Date().toISOString().slice(0,10); // real today
 const TODAY = new Date().toISOString().slice(0,10);
 const MOCK_TODAY = TODAY;
 
@@ -896,7 +895,7 @@ function MiniCalendar({ year, month, selectedDates, onToggleDate, occupiedDates=
 // JIRA TRACKER — Log Worklog Modal
 // ══════════════════════════════════════════════════════════════════
 
-function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave }) {
+function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave, currentUser }) {
   const { t } = useApp();
   const [ik,     setIk]    = useState(initialIssueKey||"");
   const [query,  setQuery] = useState(initialIssueKey||"");
@@ -948,8 +947,8 @@ function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave }) {
     setOk(true);
     setTimeout(() => {
       onSave(dt, { id:`wl-${Date.now()}`, issue:ik, summary:iss?.summary||ik, type:iss?.type||"Task",
-        epic:iss?.epic||"—", epicName:iss?.epicName||"—", author:CURRENT_USER.name,
-        authorId:CURRENT_USER.id, time:tp, seconds:ps, started:st,
+        epic:iss?.epic||"—", epicName:iss?.epicName||"—", author:currentUser.name,
+        authorId:currentUser.id, time:tp, seconds:ps, started:st,
         project:iss?.project||"—", description:dc, isNew:true });
       onClose();
     }, 750);
@@ -1216,7 +1215,7 @@ function TasksView({ filters, onOpenLog }) {
 // HOTDESK — Office SVG (redesigned with theme vars)
 // ══════════════════════════════════════════════════════════════════
 
-function OfficeSVG({ hd, onSeat, highlightSeat }) {
+function OfficeSVG({ hd, onSeat, highlightSeat, currentUser }) {
   const { theme } = useApp();
   // Theme-aware hex colors — SVG doesn't support CSS vars in fill with opacity suffix
   const COLORS = theme === "light"
@@ -1252,27 +1251,27 @@ function OfficeSVG({ hd, onSeat, highlightSeat }) {
         const st = ReservationService.statusOf(seat.id, MOCK_TODAY, hd.fixed, hd.reservations);
         const res = ReservationService.resOf(seat.id, MOCK_TODAY, hd.reservations);
         const col = colOf(st);
-        const isMine = res?.userId===CURRENT_USER.id;
+        const isMine = res?.userId===currentUser.id;
         const strokeCol = isMine ? COLORS.amber : col;
         const lbl = hd.fixed[seat.id] ? hd.fixed[seat.id].split(" ")[0].slice(0,8) : res ? res.userName.split(" ")[0].slice(0,8) : "";
         return (
           <g key={seat.id} className={onSeat?"hd-seat":""} onClick={()=>onSeat&&onSeat(seat.id)}>
-            {/* Desk surface */}
-            <rect x={seat.x-22} y={seat.y-22} width={44} height={44} rx={7}
-              fill={col} fillOpacity={0.08}
-              stroke={strokeCol} strokeWidth={isMine?2.5:1.5}/>
-            {/* Monitor/desk surface */}
-            <rect x={seat.x-13} y={seat.y-3} width={26} height={12} rx={3}
-              fill={col} fillOpacity={0.14}
-              stroke={col} strokeOpacity={0.3} strokeWidth={1}/>
+            {/* Seat card */}
+            <rect x={seat.x-16} y={seat.y-18} width={32} height={36} rx={6}
+              fill={col} fillOpacity={0.12}
+              stroke={strokeCol} strokeWidth={isMine?2.2:1.5}/>
+            {/* Monitor */}
+            <rect x={seat.x-10} y={seat.y-6} width={20} height={9} rx={2.5}
+              fill={col} fillOpacity={0.16}
+              stroke={col} strokeOpacity={0.35} strokeWidth={1}/>
             {/* Chair */}
-            <circle cx={seat.x} cy={seat.y-12} r={4}
-              fill={col} fillOpacity={0.18}
-              stroke={col} strokeOpacity={0.4} strokeWidth={1}/>
+            <circle cx={seat.x} cy={seat.y-12} r={3.4}
+              fill={col} fillOpacity={0.2}
+              stroke={col} strokeOpacity={0.45} strokeWidth={1}/>
             {/* Seat label */}
-            <text x={seat.x} y={seat.y+19} textAnchor="middle" fill={col} fontSize={9} fontWeight={700}>{seat.id}</text>
-            {lbl&&<text x={seat.x} y={seat.y+8} textAnchor="middle" fill={col} fillOpacity={0.8} fontSize={8}>{lbl}</text>}
-            {isMine&&<circle cx={seat.x+18} cy={seat.y-18} r={4} fill={COLORS.amber} stroke={COLORS.bd} strokeWidth={1}/>}
+            <text x={seat.x} y={seat.y+14} textAnchor="middle" fill={col} fontSize={8.5} fontWeight={700}>{seat.id}</text>
+            {lbl&&<text x={seat.x} y={seat.y+3} textAnchor="middle" fill={col} fillOpacity={0.85} fontSize={6.5}>{lbl}</text>}
+            {isMine&&<circle cx={seat.x+13} cy={seat.y-14} r={3.2} fill={COLORS.amber} stroke={COLORS.bd} strokeWidth={1}/>}
           </g>
         );
       })}
@@ -1284,7 +1283,7 @@ function OfficeSVG({ hd, onSeat, highlightSeat }) {
 // HOTDESK — Seat Tooltip (shows mini office map on column hover)
 // ══════════════════════════════════════════════════════════════════
 
-function SeatTooltip({ seatId, anchorX, anchorY, hd }) {
+function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser }) {
   const { theme } = useApp();
   const ref = useRef(null);
   const [pos, setPos] = useState({ left: anchorX - 140, top: anchorY + 8 });
@@ -1304,7 +1303,7 @@ function SeatTooltip({ seatId, anchorX, anchorY, hd }) {
   return (
     <div ref={ref} className="hd-tooltip" data-theme={theme} style={{ left: pos.left, top: pos.top }}>
       <div className="hd-tooltip-title">Seat <span style={{ color:"var(--ac2)",fontFamily:"var(--mono)" }}>{seatId}</span> · today</div>
-      <OfficeSVG hd={hd} onSeat={null} highlightSeat={seatId} />
+      <OfficeSVG hd={hd} onSeat={null} highlightSeat={seatId} currentUser={currentUser} />
     </div>
   );
 }
@@ -1313,7 +1312,7 @@ function SeatTooltip({ seatId, anchorX, anchorY, hd }) {
 // HOTDESK — Map View
 // ══════════════════════════════════════════════════════════════════
 
-function HDMapView({ hd, onSeat }) {
+function HDMapView({ hd, onSeat, currentUser }) {
   const { t } = useApp();
   const freeCount = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations) === SeatStatus.FREE).length;
   const occCount  = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations) === SeatStatus.OCCUPIED).length;
@@ -1337,7 +1336,7 @@ function HDMapView({ hd, onSeat }) {
       </div>
       {/* Office plan */}
       <div className="hd-card">
-        <OfficeSVG hd={hd} onSeat={onSeat}/>
+        <OfficeSVG hd={hd} onSeat={onSeat} currentUser={currentUser}/>
       </div>
       <div className="hd-sub">Click on a seat to reserve · <span style={{color:"var(--amber)"}}>● your reservation</span></div>
     </div>
@@ -1348,7 +1347,7 @@ function HDMapView({ hd, onSeat }) {
 // HOTDESK — Monthly Table View
 // ══════════════════════════════════════════════════════════════════
 
-function HDTableView({ hd, onCell }) {
+function HDTableView({ hd, onCell, currentUser }) {
   const { t, lang } = useApp();
   const [yr, sYr] = useState(2026);
   const [mo, sMo] = useState(2);
@@ -1420,7 +1419,7 @@ function HDTableView({ hd, onCell }) {
                   {SEATS.map(seat => {
                     const st     = ReservationService.statusOf(seat.id, iso, hd.fixed, hd.reservations);
                     const res    = ReservationService.resOf(seat.id, iso, hd.reservations);
-                    const isMine = res?.userId===CURRENT_USER.id;
+                    const isMine = res?.userId===currentUser.id;
                     // Use CSS class names (no invalid CSS-var-with-hex-suffix)
                     const cls    = isMine ? "mine" : st===SeatStatus.FIXED ? "fx" : st===SeatStatus.OCCUPIED ? "occ" : "free";
                     return (
@@ -1445,7 +1444,7 @@ function HDTableView({ hd, onCell }) {
       </div>
 
       {/* Seat tooltip — mini office map */}
-      {tooltip && <SeatTooltip seatId={tooltip.seatId} anchorX={tooltip.ax} anchorY={tooltip.ay} hd={hd}/>}
+      {tooltip && <SeatTooltip seatId={tooltip.seatId} anchorX={tooltip.ax} anchorY={tooltip.ay} hd={hd} currentUser={currentUser}/>}
     </div>
   );
 }
@@ -1454,7 +1453,7 @@ function HDTableView({ hd, onCell }) {
 // HOTDESK — Reserve Modal
 // ══════════════════════════════════════════════════════════════════
 
-function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose }) {
+function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, currentUser }) {
   const { t, lang } = useApp();
   const [yr, sYr] = useState(2026);
   const [mo, sMo] = useState(2);
@@ -1462,7 +1461,7 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose })
 
   const st  = ReservationService.statusOf(seatId, initDate||MOCK_TODAY, hd.fixed, hd.reservations);
   const res = ReservationService.resOf(seatId, initDate||MOCK_TODAY, hd.reservations);
-  const isMine = res?.userId === CURRENT_USER.id;
+  const isMine = res?.userId === currentUser.id;
   const isFixed = st === SeatStatus.FIXED;
 
   const occupiedDates = hd.reservations.filter(r=>r.seatId===seatId).map(r=>r.date);
@@ -1773,7 +1772,7 @@ function CsvImportModal({ existingUsers, onClose, onImport }) {
 // ADMIN — Unified Users Module (used by both JT and HD)
 // ══════════════════════════════════════════════════════════════════
 
-function AdminUsers({ users, setUsers }) {
+function AdminUsers({ users, setUsers, currentUser }) {
   const { t } = useApp();
   const [modal, setModal] = useState(null);
 
@@ -1807,7 +1806,7 @@ function AdminUsers({ users, setUsers }) {
                 <td><div style={{display:"flex",alignItems:"center",gap:8}}>
                   <div className="avatar" style={{width:26,height:26,fontSize:9,flexShrink:0}}>{u.avatar}</div>
                   <span style={{fontWeight:500}}>{u.name}</span>
-                  {u.id===CURRENT_USER.id&&<span style={{fontSize:9,color:"var(--tx3)"}}>{t("you")}</span>}
+                  {u.id===currentUser.id&&<span style={{fontSize:9,color:"var(--tx3)"}}>{t("you")}</span>}
                 </div></td>
                 <td style={{fontFamily:"var(--mono)",fontSize:11,color:"var(--tx3)"}}>{u.email}</td>
                 <td><span className={`r-tag ${u.role==="admin"?"r-admin":"r-user"}`}>{u.role==="admin"?t("roleAdmin"):t("roleUser")}</span></td>
@@ -1826,7 +1825,7 @@ function AdminUsers({ users, setUsers }) {
                 <td>
                   <button className="act act-adm" onClick={()=>toggleRole(u.id)}>{u.role==="admin"?t("removeAdmin"):t("makeAdmin")}</button>
                   <button className="act act-pwd" onClick={()=>setModal({type:"pwd",user:u})}>{t("changePwdBtn")}</button>
-                  {u.id!==CURRENT_USER.id&&<button className={`act ${u.active?"act-d":"act-a"}`} onClick={()=>toggleAccess(u.id)}>{u.active?t("blockUser"):t("unblockUser")}</button>}
+                  {u.id!==currentUser.id&&<button className={`act ${u.active?"act-d":"act-a"}`} onClick={()=>toggleAccess(u.id)}>{u.active?t("blockUser"):t("unblockUser")}</button>}
                 </td>
               </tr>
             ))}
@@ -1964,7 +1963,7 @@ function AdminHotDesk({ hd, setHd, users }) {
 // ADMIN SHELL — Unified sidebar + module router
 // ══════════════════════════════════════════════════════════════════
 
-function AdminShell({ users, setUsers, hd, setHd }) {
+function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   const { t } = useApp();
   const [mod, setMod] = useState("settings");
 
@@ -1988,7 +1987,7 @@ function AdminShell({ users, setUsers, hd, setHd }) {
       </nav>
       <div className="admin-content">
         {mod==="settings" && <AdminSettings/>}
-        {mod==="users"    && <AdminUsers users={users} setUsers={setUsers}/>}
+        {mod==="users"    && <AdminUsers users={users} setUsers={setUsers} currentUser={currentUser}/>}
         {mod==="hotdesk"  && <AdminHotDesk hd={hd} setHd={setHd} users={users}/>}
       </div>
     </div>
@@ -2324,16 +2323,16 @@ export default function WorkSuiteApp() {
           )}
           {mod==="hd" && view==="map" && (
             <main className="content">
-              <HDMapView hd={hd} onSeat={sid=>handleHdSeatClick(sid,TODAY)}/>
+              <HDMapView hd={hd} onSeat={sid=>handleHdSeatClick(sid,TODAY)} currentUser={CURRENT_USER}/>
             </main>
           )}
           {mod==="hd" && view==="table" && (
             <main className="content">
-              <HDTableView hd={hd} onCell={(sid,date)=>handleHdSeatClick(sid,date)}/>
+              <HDTableView hd={hd} onCell={(sid,date)=>handleHdSeatClick(sid,date)} currentUser={CURRENT_USER}/>
             </main>
           )}
           {view==="admin" && (
-            <AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd}/>
+            <AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER}/>
           )}
         </div>
       </div>
@@ -2341,12 +2340,12 @@ export default function WorkSuiteApp() {
 
       {logModal && (
         <div>
-          <LogWorklogModal initialDate={logModal.date} initialIssueKey={logModal.issueKey} onClose={()=>setLogModal(null)} onSave={handleSaveWorklog}/>
+          <LogWorklogModal initialDate={logModal.date} initialIssueKey={logModal.issueKey} onClose={()=>setLogModal(null)} onSave={handleSaveWorklog} currentUser={CURRENT_USER}/>
         </div>
       )}
       {hdModal && (
         <div>
-          <HDReserveModal seatId={hdModal.seatId} initDate={hdModal.date} hd={hd} onConfirm={handleHdConfirm} onRelease={handleHdRelease} onClose={()=>setHdModal(null)}/>
+          <HDReserveModal seatId={hdModal.seatId} initDate={hdModal.date} hd={hd} onConfirm={handleHdConfirm} onRelease={handleHdRelease} onClose={()=>setHdModal(null)} currentUser={CURRENT_USER}/>
         </div>
       )}
       {toast && (
