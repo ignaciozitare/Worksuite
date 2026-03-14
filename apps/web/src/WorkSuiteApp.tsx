@@ -1216,7 +1216,7 @@ function TasksView({ filters, onOpenLog }) {
 // HOTDESK — Office SVG (redesigned with theme vars)
 // ══════════════════════════════════════════════════════════════════
 
-function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true, locationOnly=false }) {
+function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true }) {
   const { theme } = useApp();
   // Theme-aware hex colors — SVG doesn't support CSS vars in fill with opacity suffix
   const COLORS = theme === "light"
@@ -1251,20 +1251,16 @@ function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true,
       {SEATS.map(seat => {
         const st = ReservationService.statusOf(seat.id, MOCK_TODAY, hd.fixed, hd.reservations);
         const res = ReservationService.resOf(seat.id, MOCK_TODAY, hd.reservations);
-        const statusCol = colOf(st);
-        const isHighlightedSeat = seat.id===highlightSeat;
-        const col = locationOnly ? (isHighlightedSeat ? COLORS.amber : COLORS.tx3) : statusCol;
+        const col = colOf(st);
         const isMine = res?.userId===currentUser.id;
-        const strokeCol = locationOnly
-          ? (isHighlightedSeat ? COLORS.amber : COLORS.bd)
-          : ((showOccupants && isMine) ? COLORS.amber : col);
+        const strokeCol = (showOccupants && isMine) ? COLORS.amber : col;
         const lbl = hd.fixed[seat.id] ? hd.fixed[seat.id].split(" ")[0].slice(0,8) : res ? res.userName.split(" ")[0].slice(0,8) : "";
         return (
           <g key={seat.id} className={onSeat?"hd-seat":""} onClick={()=>onSeat&&onSeat(seat.id)}>
             {/* Desk surface */}
             <rect x={seat.x-22} y={seat.y-22} width={44} height={44} rx={7}
-              fill={col} fillOpacity={locationOnly ? (isHighlightedSeat ? 0.16 : 0.05) : 0.08}
-              stroke={strokeCol} strokeWidth={locationOnly ? (isHighlightedSeat ? 2.3 : 1.1) : (isMine?2.5:1.5)}/>
+              fill={col} fillOpacity={0.08}
+              stroke={strokeCol} strokeWidth={isMine?2.5:1.5}/>
             {/* Monitor/desk surface */}
             <rect x={seat.x-13} y={seat.y-3} width={26} height={12} rx={3}
               fill={col} fillOpacity={0.14}
@@ -1280,6 +1276,46 @@ function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true,
           </g>
         );
       })}
+    </svg>
+  );
+}
+
+// Compact map used by monthly tooltip: focuses on seat position in the plan.
+function MiniOfficeMap({ hd, seatId }) {
+  const { theme } = useApp();
+  const COLORS = theme === "light"
+    ? { free:"#0f9060", occ:"#4f6ef7", fixed:"#c02828", amber:"#b86800", bd:"#dcdce8", sf:"#ffffff", sf2:"#f5f5fb", sf3:"#eaeaf2", tx3:"#9494b8" }
+    : { free:"#3ecf8e", occ:"#4f6ef7", fixed:"#e05252", amber:"#f5a623", bd:"#2a2a38", sf:"#141418", sf2:"#1b1b22", sf3:"#21212c", tx3:"#50506a" };
+
+  const colOf = st => st===SeatStatus.FIXED ? COLORS.fixed : st===SeatStatus.OCCUPIED ? COLORS.occ : COLORS.free;
+
+  return (
+    <svg viewBox="0 0 220 130" style={{width:"100%",display:"block"}}>
+      <rect x={1} y={1} width={218} height={128} rx={10} fill={COLORS.sf2} stroke={COLORS.bd}/>
+      <rect x={8} y={20} width={132} height={56} rx={6} fill={COLORS.sf} stroke={COLORS.bd}/>
+      <rect x={8} y={82} width={132} height={20} rx={6} fill={COLORS.sf} stroke={COLORS.bd}/>
+      <rect x={142} y={20} width={70} height={52} rx={6} fill={COLORS.sf3} stroke={COLORS.bd}/>
+      <rect x={142} y={74} width={70} height={28} rx={6} fill={COLORS.sf3} stroke={COLORS.bd}/>
+      <text x={74} y={17} textAnchor="middle" fill={COLORS.tx3} fontSize={5} letterSpacing={1.5}>ZONE A · ZONE B</text>
+      <text x={74} y={80} textAnchor="middle" fill={COLORS.tx3} fontSize={5} letterSpacing={1.5}>ZONE C</text>
+      <text x={177} y={48} textAnchor="middle" fill={COLORS.tx3} fontSize={5}>SALA</text>
+      <text x={177} y={87} textAnchor="middle" fill={COLORS.tx3} fontSize={5}>COCINA</text>
+
+      {SEATS.map(seat => {
+        const st = ReservationService.statusOf(seat.id, MOCK_TODAY, hd.fixed, hd.reservations);
+        const col = colOf(st);
+        const x = 14 + (seat.x - 75) * 0.34;
+        const y = seat.y < 200 ? (24 + (seat.y - 80) * 0.28) : 86;
+        const isTarget = seat.id === seatId;
+        return (
+          <g key={seat.id}>
+            {isTarget && <rect x={x-2} y={y-2} width={16} height={12} rx={3} fill="none" stroke={COLORS.amber} strokeWidth={1.6} />}
+            <rect x={x} y={y} width={12} height={8} rx={2} fill={col} fillOpacity={0.24} stroke={col} strokeWidth={isTarget?1.2:.8}/>
+            <text x={x+6} y={y+7.2} textAnchor="middle" fill={col} fontSize={4.4} fontWeight={700}>{seat.id}</text>
+          </g>
+        );
+      })}
+      <text x={110} y={126} textAnchor="middle" fill={COLORS.tx3} fontSize={4.5}>▲ ENTRADA</text>
     </svg>
   );
 }
@@ -1308,7 +1344,7 @@ function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser }) {
   return (
     <div ref={ref} className="hd-tooltip" data-theme={theme} style={{ left: pos.left, top: pos.top }}>
       <div className="hd-tooltip-title">Seat <span style={{ color:"var(--ac2)",fontFamily:"var(--mono)" }}>{seatId}</span> · today</div>
-      <OfficeSVG hd={hd} onSeat={null} highlightSeat={seatId} currentUser={currentUser} showOccupants={false} locationOnly={true} />
+      <MiniOfficeMap hd={hd} seatId={seatId} />
     </div>
   );
 }
