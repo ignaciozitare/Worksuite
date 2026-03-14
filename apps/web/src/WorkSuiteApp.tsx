@@ -1429,7 +1429,7 @@ function HDTableView({ hd, onCell, currentUser }) {
                         ) : (
                           <div className={`hd-cell ${cls}`}
                             onClick={() => onCell(seat.id, iso)}
-                            title={st===SeatStatus.FREE?"Free":st===SeatStatus.FIXED?`Fixed: ${hd.fixed[seat.id]}`:`${res?.userName||""}`}>
+                          title={st===SeatStatus.FREE?"Free":st===SeatStatus.FIXED?`Fixed: ${hd.fixed[seat.id]}`:`${res?.userName||""}`}>
                             <div className={`hd-cell-dot ${cls}`}/>
                           </div>
                         )}
@@ -1444,7 +1444,7 @@ function HDTableView({ hd, onCell, currentUser }) {
       </div>
 
       {/* Seat tooltip — mini office map */}
-      {tooltip && <SeatTooltip seatId={tooltip.seatId} anchorX={tooltip.ax} anchorY={tooltip.ay} hd={hd} currentUser={currentUser}/>} 
+      {tooltip && <SeatTooltip seatId={tooltip.seatId} anchorX={tooltip.ax} anchorY={tooltip.ay} hd={hd} currentUser={currentUser}/>}
     </div>
   );
 }
@@ -1857,7 +1857,8 @@ function AdminHotDesk({ hd, setHd, users }) {
   const confirmAssign = () => {
     if (!selSeat || !selUser) return;
     if (asFixed) {
-      setHd(h=>({ ...h, fixed:{ ...h.fixed, [selSeat]:selUser }, reservations:h.reservations.filter(r=>r.seatId!==selSeat) }));
+      const usr = users.find(u=>u.id===selUser);
+      setHd(h=>({ ...h, fixed:{ ...h.fixed, [selSeat]:usr?.name||selUser }, reservations:h.reservations.filter(r=>r.seatId!==selSeat) }));
     } else {
       if (!selDates.length) return;
       const usr = users.find(u=>u.id===selUser);
@@ -1987,7 +1988,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
       </nav>
       <div className="admin-content">
         {mod==="settings" && <AdminSettings/>}
-        {mod==="users"    && <AdminUsers users={users} setUsers={setUsers} currentUser={currentUser}/>} 
+        {mod==="users"    && <AdminUsers users={users} setUsers={setUsers} currentUser={currentUser}/>}
         {mod==="hotdesk"  && <AdminHotDesk hd={hd} setHd={setHd} users={users}/>}
       </div>
     </div>
@@ -2069,7 +2070,11 @@ export default function WorkSuiteApp() {
 
         // Build HD state
         const fixed = {};
-        (fixedRes.data ?? []).forEach(fa => { fixed[fa.seat_id] = fa.user_name; });
+        (fixedRes.data ?? []).forEach(fa => {
+          const source = fa.user_name || fa.user_id || "";
+          const resolved = usersRes.data?.find(u => u.id===source)?.name || source;
+          fixed[fa.seat_id] = resolved;
+        });
         const reservations = (resRes.data ?? []).map(r => ({
           seatId: r.seat_id, date: r.date.slice(0,10),
           userId: r.user_id, userName: r.user_name,
