@@ -1429,7 +1429,7 @@ function HDTableView({ hd, onCell, currentUser }) {
                         ) : (
                           <div className={`hd-cell ${cls}`}
                             onClick={() => onCell(seat.id, iso)}
-                            title={st===SeatStatus.FREE?"Free":st===SeatStatus.FIXED?`Fixed: ${hd.fixed[seat.id]}`:`${res?.userName||""}`}>
+                          title={st===SeatStatus.FREE?"Free":st===SeatStatus.FIXED?`Fixed: ${hd.fixed[seat.id]}`:`${res?.userName||""}`}>
                             <div className={`hd-cell-dot ${cls}`}/>
                           </div>
                         )}
