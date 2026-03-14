@@ -1217,6 +1217,7 @@ function TasksView({ filters, onOpenLog }) {
 // ══════════════════════════════════════════════════════════════════
 
 function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true }) {
+function OfficeSVG({ hd, onSeat, highlightSeat, currentUser }) {
   const { theme } = useApp();
   // Theme-aware hex colors — SVG doesn't support CSS vars in fill with opacity suffix
   const COLORS = theme === "light"
@@ -1304,7 +1305,8 @@ function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser }) {
   return (
     <div ref={ref} className="hd-tooltip" data-theme={theme} style={{ left: pos.left, top: pos.top }}>
       <div className="hd-tooltip-title">Seat <span style={{ color:"var(--ac2)",fontFamily:"var(--mono)" }}>{seatId}</span> · today</div>
-      <OfficeSVG hd={hd} onSeat={null} highlightSeat={seatId} currentUser={currentUser} showOccupants={false} />
+    <OfficeSVG hd={hd} onSeat={null} highlightSeat={seatId} currentUser={currentUser} showOccupants={false} />
+      <OfficeSVG hd={hd} onSeat={null} highlightSeat={seatId} currentUser={currentUser} />
     </div>
   );
 }
