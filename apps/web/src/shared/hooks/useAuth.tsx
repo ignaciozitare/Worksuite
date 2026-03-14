@@ -1,9 +1,6 @@
-import {
-  createContext, useContext, useState, useCallback,
-  type ReactNode,
-} from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { supabase } from '../lib/api';
 import type { User } from '@worksuite/shared-types';
-import { api } from '../lib/api';
 
 interface AuthState {
   user: User | null;
@@ -19,25 +16,37 @@ interface AuthContextValue extends AuthState {
 const AuthCtx = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
-  const [state, setState] = useState<AuthState>(() => {
-    const token = localStorage.getItem('ws_token');
-    return { user: null, token, isLoading: !!token };
-  });
+  const [state, setState] = useState<AuthState>({ user: null, token: null, isLoading: true });
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        void loadUser(data.session.access_token);
+      } else {
+        setState({ user: null, token: null, isLoading: false });
+      }
+    });
+  }, []);
+
+  const loadUser = async (token: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single();
+    setState({ user: profile as User, token, isLoading: false });
+  };
 
   const login = useCallback(async (email: string, password: string) => {
-    setState((s) => ({ ...s, isLoading: true }));
-    try {
-      const { token, user } = await api.login(email, password) as { token: string; user: User };
-      localStorage.setItem('ws_token', token);
-      setState({ user, token, isLoading: false });
-    } catch (err) {
-      setState((s) => ({ ...s, isLoading: false }));
-      throw err;
+    setState(s => ({ ...s, isLoading: true }));
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setState(s => ({ ...s, isLoading: false }));
+      throw new Error(error.message);
     }
+    await loadUser(data.session.access_token);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('ws_token');
+    void supabase.auth.signOut();
     setState({ user: null, token: null, isLoading: false });
   }, []);
 
