@@ -837,12 +837,6 @@ function firstMonday(y,m) { return (new Date(y,m,1).getDay()+6)%7; }
 function isoFromYMD(y,m,d) { return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
 function fmtMonthYear(y,m,lang) { return lang==="es" ? `${MONTHS_ES[m]} ${y}` : `${MONTHS_EN[m]} ${y}`; }
 
-function resolveUserName(value, users=[]) {
-  if (!value) return "";
-  const byId = users.find(u => u.id===value);
-  return byId?.name || value;
-}
-
 // ══════════════════════════════════════════════════════════════════
 // SHARED PRESENTATIONAL COMPONENTS
 // ══════════════════════════════════════════════════════════════════
@@ -1354,7 +1348,7 @@ function HDMapView({ hd, onSeat, currentUser }) {
 // HOTDESK — Monthly Table View
 // ══════════════════════════════════════════════════════════════════
 
-function HDTableView({ hd, onCell, currentUser, users }) {
+function HDTableView({ hd, onCell, currentUser }) {
   const { t, lang } = useApp();
   const [yr, sYr] = useState(2026);
   const [mo, sMo] = useState(2);
@@ -1428,8 +1422,8 @@ function HDTableView({ hd, onCell, currentUser, users }) {
                     const res    = ReservationService.resOf(seat.id, iso, hd.reservations);
                     const isMine = res?.userId===currentUser.id;
                     const ownerName = st===SeatStatus.FIXED
-                      ? resolveUserName(hd.fixed[seat.id], users)
-                      : resolveUserName(res?.userName, users);
+                      ? (hd.fixed[seat.id] || "")
+                      : (res?.userName || "");
                     // Use CSS class names (no invalid CSS-var-with-hex-suffix)
                     const cls    = isMine ? "mine" : st===SeatStatus.FIXED ? "fx" : st===SeatStatus.OCCUPIED ? "occ" : "free";
                     return (
@@ -2346,7 +2340,7 @@ export default function WorkSuiteApp() {
           )}
           {mod==="hd" && view==="table" && (
             <main className="content">
-              <HDTableView hd={hd} onCell={(sid,date)=>handleHdSeatClick(sid,date)} currentUser={CURRENT_USER} users={users}/>
+              <HDTableView hd={hd} onCell={(sid,date)=>handleHdSeatClick(sid,date)} currentUser={CURRENT_USER}/>
             </main>
           )}
           {view==="admin" && (
