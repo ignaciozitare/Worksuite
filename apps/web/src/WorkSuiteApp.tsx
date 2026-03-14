@@ -1256,22 +1256,22 @@ function OfficeSVG({ hd, onSeat, highlightSeat, currentUser }) {
         const lbl = hd.fixed[seat.id] ? hd.fixed[seat.id].split(" ")[0].slice(0,8) : res ? res.userName.split(" ")[0].slice(0,8) : "";
         return (
           <g key={seat.id} className={onSeat?"hd-seat":""} onClick={()=>onSeat&&onSeat(seat.id)}>
-            {/* Seat card */}
-            <rect x={seat.x-16} y={seat.y-18} width={32} height={36} rx={6}
-              fill={col} fillOpacity={0.12}
-              stroke={strokeCol} strokeWidth={isMine?2.2:1.5}/>
-            {/* Monitor */}
-            <rect x={seat.x-10} y={seat.y-6} width={20} height={9} rx={2.5}
-              fill={col} fillOpacity={0.16}
-              stroke={col} strokeOpacity={0.35} strokeWidth={1}/>
+            {/* Desk surface */}
+            <rect x={seat.x-22} y={seat.y-22} width={44} height={44} rx={7}
+              fill={col} fillOpacity={0.08}
+              stroke={strokeCol} strokeWidth={isMine?2.5:1.5}/>
+            {/* Monitor/desk surface */}
+            <rect x={seat.x-13} y={seat.y-3} width={26} height={12} rx={3}
+              fill={col} fillOpacity={0.14}
+              stroke={col} strokeOpacity={0.3} strokeWidth={1}/>
             {/* Chair */}
-            <circle cx={seat.x} cy={seat.y-12} r={3.4}
-              fill={col} fillOpacity={0.2}
-              stroke={col} strokeOpacity={0.45} strokeWidth={1}/>
+            <circle cx={seat.x} cy={seat.y-12} r={4}
+              fill={col} fillOpacity={0.18}
+              stroke={col} strokeOpacity={0.4} strokeWidth={1}/>
             {/* Seat label */}
-            <text x={seat.x} y={seat.y+14} textAnchor="middle" fill={col} fontSize={8.5} fontWeight={700}>{seat.id}</text>
-            {lbl&&<text x={seat.x} y={seat.y+3} textAnchor="middle" fill={col} fillOpacity={0.85} fontSize={6.5}>{lbl}</text>}
-            {isMine&&<circle cx={seat.x+13} cy={seat.y-14} r={3.2} fill={COLORS.amber} stroke={COLORS.bd} strokeWidth={1}/>}
+            <text x={seat.x} y={seat.y+19} textAnchor="middle" fill={col} fontSize={9} fontWeight={700}>{seat.id}</text>
+            {lbl&&<text x={seat.x} y={seat.y+8} textAnchor="middle" fill={col} fillOpacity={0.8} fontSize={8}>{lbl}</text>}
+            {isMine&&<circle cx={seat.x+18} cy={seat.y-18} r={4} fill={COLORS.amber} stroke={COLORS.bd} strokeWidth={1}/>}
           </g>
         );
       })}
@@ -1444,7 +1444,7 @@ function HDTableView({ hd, onCell, currentUser }) {
       </div>
 
       {/* Seat tooltip — mini office map */}
-      {tooltip && <SeatTooltip seatId={tooltip.seatId} anchorX={tooltip.ax} anchorY={tooltip.ay} hd={hd} currentUser={currentUser}/>}
+      {tooltip && <SeatTooltip seatId={tooltip.seatId} anchorX={tooltip.ax} anchorY={tooltip.ay} hd={hd} currentUser={currentUser}/>} 
     </div>
   );
 }
@@ -1987,7 +1987,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
       </nav>
       <div className="admin-content">
         {mod==="settings" && <AdminSettings/>}
-        {mod==="users"    && <AdminUsers users={users} setUsers={setUsers} currentUser={currentUser}/>}
+        {mod==="users"    && <AdminUsers users={users} setUsers={setUsers} currentUser={currentUser}/>} 
         {mod==="hotdesk"  && <AdminHotDesk hd={hd} setHd={setHd} users={users}/>}
       </div>
     </div>
