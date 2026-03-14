@@ -700,6 +700,7 @@ tr.hd-row-today > td.hd-td.date-cell{background:rgba(79,110,247,.07) !important;
 .hd-cell-dot.occ{background:var(--seat-occ);}
 .hd-cell-dot.fx{background:var(--seat-fixed);}
 .hd-cell-dot.mine{background:var(--amber);}
+.hd-cell-name{margin-left:6px;font-size:9px;line-height:1;color:var(--tx2);max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .hd-tooltip{position:fixed;z-index:9900;background:var(--sf);border:1px solid var(--bd2);border-radius:var(--r2);padding:12px;box-shadow:var(--shadow);width:280px;pointer-events:none;animation:mbIn .15s ease;}
 .hd-tooltip-title{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px;}
 
@@ -1420,6 +1421,8 @@ function HDTableView({ hd, onCell, currentUser }) {
                     const st     = ReservationService.statusOf(seat.id, iso, hd.fixed, hd.reservations);
                     const res    = ReservationService.resOf(seat.id, iso, hd.reservations);
                     const isMine = res?.userId===currentUser.id;
+                    const ownerName = st===SeatStatus.FIXED ? hd.fixed[seat.id] : res?.userName;
+                    const ownerLabel = ownerName ? ownerName.split(" ")[0] : "";
                     // Use CSS class names (no invalid CSS-var-with-hex-suffix)
                     const cls    = isMine ? "mine" : st===SeatStatus.FIXED ? "fx" : st===SeatStatus.OCCUPIED ? "occ" : "free";
                     return (
@@ -1429,8 +1432,9 @@ function HDTableView({ hd, onCell, currentUser }) {
                         ) : (
                           <div className={`hd-cell ${cls}`}
                             onClick={() => onCell(seat.id, iso)}
-                          title={st===SeatStatus.FREE?"Free":st===SeatStatus.FIXED?`Fixed: ${hd.fixed[seat.id]}`:`${res?.userName||""}`}>
+                            title={st===SeatStatus.FREE?"Free":st===SeatStatus.FIXED?`Fixed: ${ownerName||""}`:`${ownerName||""}`}>
                             <div className={`hd-cell-dot ${cls}`}/>
+                            {(st!==SeatStatus.FREE && ownerLabel) && <span className="hd-cell-name">{ownerLabel}</span>}
                           </div>
                         )}
                       </td>
