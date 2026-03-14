@@ -1216,6 +1216,7 @@ function TasksView({ filters, onOpenLog }) {
 // HOTDESK — Office SVG (redesigned with theme vars)
 // ══════════════════════════════════════════════════════════════════
 
+function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true }) {
 function OfficeSVG({ hd, onSeat, highlightSeat, currentUser }) {
   const { theme } = useApp();
   // Theme-aware hex colors — SVG doesn't support CSS vars in fill with opacity suffix
@@ -1253,7 +1254,7 @@ function OfficeSVG({ hd, onSeat, highlightSeat, currentUser }) {
         const res = ReservationService.resOf(seat.id, MOCK_TODAY, hd.reservations);
         const col = colOf(st);
         const isMine = res?.userId===currentUser.id;
-        const strokeCol = isMine ? COLORS.amber : col;
+        const strokeCol = (showOccupants && isMine) ? COLORS.amber : col;
         const lbl = hd.fixed[seat.id] ? hd.fixed[seat.id].split(" ")[0].slice(0,8) : res ? res.userName.split(" ")[0].slice(0,8) : "";
         return (
           <g key={seat.id} className={onSeat?"hd-seat":""} onClick={()=>onSeat&&onSeat(seat.id)}>
@@ -1271,8 +1272,8 @@ function OfficeSVG({ hd, onSeat, highlightSeat, currentUser }) {
               stroke={col} strokeOpacity={0.4} strokeWidth={1}/>
             {/* Seat label */}
             <text x={seat.x} y={seat.y+19} textAnchor="middle" fill={col} fontSize={9} fontWeight={700}>{seat.id}</text>
-            {lbl&&<text x={seat.x} y={seat.y+8} textAnchor="middle" fill={col} fillOpacity={0.8} fontSize={8}>{lbl}</text>}
-            {isMine&&<circle cx={seat.x+18} cy={seat.y-18} r={4} fill={COLORS.amber} stroke={COLORS.bd} strokeWidth={1}/>}
+            {showOccupants && lbl&&<text x={seat.x} y={seat.y+8} textAnchor="middle" fill={col} fillOpacity={0.8} fontSize={8}>{lbl}</text>}
+            {showOccupants && isMine&&<circle cx={seat.x+18} cy={seat.y-18} r={4} fill={COLORS.amber} stroke={COLORS.bd} strokeWidth={1}/>}
           </g>
         );
       })}
@@ -1304,6 +1305,7 @@ function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser }) {
   return (
     <div ref={ref} className="hd-tooltip" data-theme={theme} style={{ left: pos.left, top: pos.top }}>
       <div className="hd-tooltip-title">Seat <span style={{ color:"var(--ac2)",fontFamily:"var(--mono)" }}>{seatId}</span> · today</div>
+    <OfficeSVG hd={hd} onSeat={null} highlightSeat={seatId} currentUser={currentUser} showOccupants={false} />
       <OfficeSVG hd={hd} onSeat={null} highlightSeat={seatId} currentUser={currentUser} />
     </div>
   );
