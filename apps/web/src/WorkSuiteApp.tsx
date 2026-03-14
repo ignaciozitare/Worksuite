@@ -1457,7 +1457,7 @@ function HDTableView({ hd, onCell, currentUser, users }) {
       </div>
 
       {/* Seat tooltip — mini office map */}
-      {tooltip && <SeatTooltip seatId={tooltip.seatId} anchorX={tooltip.ax} anchorY={tooltip.ay} hd={hd} currentUser={currentUser}/>} 
+      {tooltip && <SeatTooltip seatId={tooltip.seatId} anchorX={tooltip.ax} anchorY={tooltip.ay} hd={hd} currentUser={currentUser}/>}
     </div>
   );
 }
@@ -2001,7 +2001,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
       </nav>
       <div className="admin-content">
         {mod==="settings" && <AdminSettings/>}
-        {mod==="users"    && <AdminUsers users={users} setUsers={setUsers} currentUser={currentUser}/>} 
+        {mod==="users"    && <AdminUsers users={users} setUsers={setUsers} currentUser={currentUser}/>}
         {mod==="hotdesk"  && <AdminHotDesk hd={hd} setHd={setHd} users={users}/>}
       </div>
     </div>
