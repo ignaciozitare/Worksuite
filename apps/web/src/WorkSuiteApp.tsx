@@ -339,7 +339,6 @@ const SEATS = [
   {id:"C4",x:255,y:282},{id:"C5",x:315,y:282},{id:"C6",x:375,y:282},
 ];
 
-const TODAY = new Date().toISOString().slice(0,10); // real today
 const TODAY = new Date().toISOString().slice(0,10);
 const MOCK_TODAY = TODAY;
 
