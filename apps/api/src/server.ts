@@ -13,6 +13,7 @@ import { hotdeskRoutes } from './infrastructure/http/hotdeskRoutes.js';
 import { MockJiraAdapter } from './infrastructure/jira/MockJiraAdapter.js';
 import { SupabaseWorklogRepo } from './infrastructure/supabase/SupabaseWorklogRepo.js';
 import { SupabaseHotDeskRepo } from './infrastructure/supabase/SupabaseHotDeskRepo.js';
+import type { IJiraApi } from './domain/worklog/IJiraApi.js';
 
 // ── Env validation ────────────────────────────────────────────────────────────
 const {
@@ -32,14 +33,17 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !JWT_SECRET) {
 // ── Infrastructure setup ──────────────────────────────────────────────────────
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// Swap MockJiraAdapter → JiraCloudAdapter when token is ready
-const jiraApi = (JIRA_BASE_URL && JIRA_EMAIL && JIRA_API_TOKEN)
-  ? (() => {
-      // Dynamic import to avoid loading JiraCloudAdapter in mock mode
-      const { JiraCloudAdapter } = await import('./infrastructure/jira/JiraCloudAdapter.js');
-      return new JiraCloudAdapter(JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN);
-    })()
-  : new MockJiraAdapter();
+// FIX: IIFE ahora es async para poder usar await en el import dinámico.
+// La función es top-level async, por lo que await en el cuerpo del módulo es válido.
+async function buildJiraApi(): Promise<IJiraApi> {
+  if (JIRA_BASE_URL && JIRA_EMAIL && JIRA_API_TOKEN) {
+    const { JiraCloudAdapter } = await import('./infrastructure/jira/JiraCloudAdapter.js');
+    return new JiraCloudAdapter(JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN);
+  }
+  return new MockJiraAdapter();
+}
+
+const jiraApi = await buildJiraApi();
 
 const worklogRepo = new SupabaseWorklogRepo(supabase);
 const hotdeskRepo = new SupabaseHotDeskRepo(supabase);
@@ -59,14 +63,17 @@ app.decorate('authenticate', async function (request: any, reply: any) {
   try {
     await request.jwtVerify();
   } catch {
-    reply.status(401).send({ ok: false, error: { code: 'UNAUTHORIZED', message: 'Invalid or missing token' } });
+    reply.status(401).send({
+      ok: false,
+      error: { code: 'UNAUTHORIZED', message: 'Invalid or missing token' },
+    });
   }
 });
 
 // ── Routes ────────────────────────────────────────────────────────────────────
-await app.register(authRoutes, { prefix: '/auth', supabase });
+await app.register(authRoutes,    { prefix: '/auth',     supabase });
 await app.register(worklogRoutes, { prefix: '/worklogs', worklogRepo, jiraApi });
-await app.register(hotdeskRoutes, { prefix: '/hotdesk', hotdeskRepo });
+await app.register(hotdeskRoutes, { prefix: '/hotdesk',  hotdeskRepo });
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', async () => ({ ok: true, ts: new Date().toISOString() }));
