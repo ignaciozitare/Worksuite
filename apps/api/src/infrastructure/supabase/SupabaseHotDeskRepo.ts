@@ -46,12 +46,16 @@ export class SupabaseHotDeskRepo implements IHotDeskRepository {
     if (error) throw new Error(`Failed to save reservation: ${error.message}`);
   }
 
-  async deleteReservation(seatId: string, date: string, _userId: string): Promise<void> {
+  // FIX: userId ya no es ignorado — se filtra en la query para cumplir
+  // el contrato del puerto y evitar borrados no autorizados si alguna
+  // llamada futura usa service_role_key (que bypasea RLS).
+  async deleteReservation(seatId: string, date: string, userId: string): Promise<void> {
     const { error } = await this.db
       .from('seat_reservations')
       .delete()
       .eq('seat_id', seatId)
-      .eq('date', date);
+      .eq('date', date)
+      .eq('user_id', userId);
     if (error) throw new Error(`Failed to delete reservation: ${error.message}`);
   }
 
