@@ -116,25 +116,37 @@ returns boolean language sql security definer stable as $$
   );
 $$;
 
--- Users: see all profiles, edit only own
-create policy "users_read_all"   on public.users for select using (true);
-create policy "users_edit_own"   on public.users for update using (id = auth.uid());
-create policy "admins_edit_all"  on public.users for update using (public.is_admin());
+-- ── Users ─────────────────────────────────────────────────────
+create policy "users_read_all"  on public.users for select using (true);
+create policy "users_edit_own"  on public.users for update using (id = auth.uid());
+create policy "admins_edit_all" on public.users for update using (public.is_admin());
 
--- Worklogs: own worklogs + admins see all
-create policy "worklogs_own"         on public.worklogs for select using (author_id = auth.uid() or public.is_admin());
-create policy "worklogs_insert_own"  on public.worklogs for insert with check (author_id = auth.uid());
-create policy "worklogs_delete_own"  on public.worklogs for delete using (author_id = auth.uid() or public.is_admin());
+-- ── Worklogs ──────────────────────────────────────────────────
+-- FIX: eliminada la policy "admins_all_worklogs" que era un duplicado.
+-- "worklogs_own" ya cubre admins con el or public.is_admin().
+-- Tener dos policies para el mismo rol+acción no añade seguridad,
+-- solo confunde las auditorías y puede generar conflictos futuros.
+create policy "worklogs_own"
+  on public.worklogs for select
+  using (author_id = auth.uid() or public.is_admin());
 
--- Seats: everyone reads, only admin writes
-create policy "seats_read_all"   on public.seats for select using (true);
-create policy "seats_admin_write" on public.seats for all using (public.is_admin());
+create policy "worklogs_insert_own"
+  on public.worklogs for insert
+  with check (author_id = auth.uid());
 
--- Reservations: everyone reads, own insert/delete + admin all
-create policy "res_read_all"     on public.seat_reservations for select using (true);
-create policy "res_insert_own"   on public.seat_reservations for insert with check (user_id = auth.uid());
-create policy "res_delete_own"   on public.seat_reservations for delete using (user_id = auth.uid() or public.is_admin());
+create policy "worklogs_delete_own"
+  on public.worklogs for delete
+  using (author_id = auth.uid() or public.is_admin());
 
--- Fixed assignments: everyone reads, admin writes
-create policy "fixed_read_all"   on public.fixed_assignments for select using (true);
-create policy "fixed_admin_write" on public.fixed_assignments for all using (public.is_admin());
+-- ── Seats ─────────────────────────────────────────────────────
+create policy "seats_read_all"    on public.seats for select using (true);
+create policy "seats_admin_write" on public.seats for all    using (public.is_admin());
+
+-- ── Reservations ──────────────────────────────────────────────
+create policy "res_read_all"   on public.seat_reservations for select using (true);
+create policy "res_insert_own" on public.seat_reservations for insert with check (user_id = auth.uid());
+create policy "res_delete_own" on public.seat_reservations for delete using (user_id = auth.uid() or public.is_admin());
+
+-- ── Fixed assignments ─────────────────────────────────────────
+create policy "fixed_read_all"    on public.fixed_assignments for select using (true);
+create policy "fixed_admin_write" on public.fixed_assignments for all    using (public.is_admin());
