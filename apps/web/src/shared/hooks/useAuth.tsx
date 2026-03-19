@@ -1,4 +1,7 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import {
+  createContext, useContext, useState, useCallback,
+  useEffect, useRef, type ReactNode,
+} from 'react';
 import { supabase } from '../lib/api';
 import type { User } from '@worksuite/shared-types';
 
@@ -16,24 +19,50 @@ interface AuthContextValue extends AuthState {
 const AuthCtx = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
-  const [state, setState] = useState<AuthState>({ user: null, token: null, isLoading: true });
+  const [state, setState] = useState<AuthState>({
+    user: null, token: null, isLoading: true,
+  });
+
+  // FIX: loadUser como useCallback con deps estables para evitar stale closure.
+  // Antes estaba definida como función suelta dentro del componente — cada render
+  // creaba una nueva referencia, y login() capturaba la del primer render.
+  const loadUser = useCallback(async (token: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setState({ user: null, token: null, isLoading: false });
+        return;
+      }
+      const { data: profile, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error || !profile) {
+        setState({ user: null, token: null, isLoading: false });
+        return;
+      }
+
+      setState({ user: profile as User, token, isLoading: false });
+    } catch {
+      setState({ user: null, token: null, isLoading: false });
+    }
+  }, []); // sin deps — solo usa supabase (referencia estable) y setState (estable)
+
+  // Referencia estable a loadUser para el useEffect de inicialización
+  const loadUserRef = useRef(loadUser);
+  useEffect(() => { loadUserRef.current = loadUser; }, [loadUser]);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
-        void loadUser(data.session.access_token);
+        void loadUserRef.current(data.session.access_token);
       } else {
         setState({ user: null, token: null, isLoading: false });
       }
     });
-  }, []);
-
-  const loadUser = async (token: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single();
-    setState({ user: profile as User, token, isLoading: false });
-  };
+  }, []); // solo se ejecuta al montar
 
   const login = useCallback(async (email: string, password: string) => {
     setState(s => ({ ...s, isLoading: true }));
@@ -42,8 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
       setState(s => ({ ...s, isLoading: false }));
       throw new Error(error.message);
     }
+    // Ahora usa la referencia actualizada, no la del primer render
     await loadUser(data.session.access_token);
-  }, []);
+  }, [loadUser]); // dep correcta
 
   const logout = useCallback(() => {
     void supabase.auth.signOut();
