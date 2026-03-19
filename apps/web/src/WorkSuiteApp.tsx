@@ -146,32 +146,25 @@ const CsvService = {
 
 const TRANSLATIONS = {
   en: {
-    // Shell
     appName:"WorkSuite", protoTag:"UI Prototype",
     moduleSwitchJira:"Jira Tracker", moduleSwitchHD:"HotDesk",
     darkMode:"Dark", lightMode:"Light",
-    // Nav
     navCalendar:"Calendar", navDay:"Day View", navTasks:"Tasks", navAdmin:"Admin",
     navMap:"Office Map", navTable:"Monthly View",
-    // Filter sidebar
     dateRange:"Date range", filterByUser:"Filter by user", allUsers:"All users",
     spaces:"Projects", taskType:"Task type", extraJql:"Additional JQL",
     applyFilters:"Apply filters", exportCsv:"↓ Export CSV",
     exportHint:"Only hours within the selected range", clearSelection:"Clear",
-    // Calendar
     today:"Today", totalLabel:"Total", activeDays:"Active days",
     avgLabel:"Avg", perDay:"h/d", more:"more", logHours:"+ Log hours",
-    // Day view
     worklogs:"worklogs", tasks:"tasks",
     noWorklogs:"No worklogs on this day", noWorklogsSub:"Try another day or user filter",
     logThisDay:"+ Log hours for this day", summaryByTask:"Summary by task",
-    // Tasks
     searchPlaceholder:"Search key, summary, user…", jqlGenerated:"JQL",
     noResults:"No results", clearFilter:"Clear",
     colKey:"Key", colSummary:"Summary", colType:"Type", colStatus:"Status",
     colPriority:"Priority", colProject:"Project", colAssignee:"Assignee",
     colEpic:"Epic", colTime:"Time", colAction:"Action", btnHours:"+ Hours",
-    // Worklog modal
     logWorklog:"Log worklog", taskField:"Task *", selectTask:"Select task…",
     dateField:"Date *", startTime:"Start time", timeLogged:"Time *",
     timePlaceholder:"2h, 1h 30m, 45m, 1.5", timeFormats:"Formats:",
@@ -179,7 +172,6 @@ const TRANSLATIONS = {
     descPlaceholder:"What did you work on?", cancel:"Cancel",
     saveWorklog:"Save worklog", timeInvalid:"Invalid format", timeExceeds:"Max 24h",
     taskRequired:"Select a task", dateRequired:"Date required", savedFlash:"Worklog saved",
-    // Admin
     adminSidebar:"Administration", adminSettings:"Settings", adminUsers:"Users", adminHotDesk:"HotDesk",
     settingsTitle:"Settings", jiraConnection:"Jira Cloud Connection",
     jiraUrl:"Jira URL", jiraEmail:"Account email", apiToken:"API Token",
@@ -187,7 +179,6 @@ const TRANSLATIONS = {
     saveConfig:"Save configuration", savedOk:"Saved", connStatus:"Status",
     connInstance:"Instance", connProjects:"Projects", connLastSync:"Last sync",
     connected:"Connected", minsAgo:"3 minutes ago", hideToken:"Hide", showToken:"Show",
-    // Admin — Users
     usersTitle:"User management", usersSynced:"users", addUserBtn:"+ Add user",
     importCsvBtn:"↑ Import CSV", fieldName:"Full name *", fieldEmail:"Email *",
     fieldRole:"App role", fieldDeskType:"Desk type", fieldPassword:"Password *",
@@ -204,13 +195,11 @@ const TRANSLATIONS = {
     errEmailExists:"Email already registered", errPasswordShort:"Min 8 characters",
     errPasswordMatch:"Passwords don't match", userAdded:"User added",
     passwordChanged:"Password updated",
-    // CSV
     csvImportTitle:"Bulk import users", csvDropzone:"Drop CSV here or click to browse",
     csvFormat:"Expected format:", csvFormatHint:"name, email, role (admin/user)",
     csvPreview:"Preview", csvRows:"rows detected", csvErrors:"rows with errors",
     csvImport:"Import users", csvImportDone:"users imported",
     csvDownloadTemplate:"Download template", csvCancel:"Cancel",
-    // Admin — HotDesk
     hotdeskTitle:"HotDesk Configuration", hotdeskSeats:"Seat Management",
     hotdeskLegend:"Seat status today", assignSeat:"Assign seat",
     selectSeat:"Select a seat to configure",
@@ -218,7 +207,6 @@ const TRANSLATIONS = {
     asFixedHint:"Seat will be locked for this person permanently",
     confirmAssign:"Assign", releaseBtn:"Release", fixedSeats:"Fixed seats",
     noFixed:"No fixed assignments", unlockSeat:"Unlock",
-    // HotDesk views
     officeMap:"Office Map", monthlyView:"Monthly View",
     freeSeats:"free today", seatsTotal:"seats",
     legendFree:"Free", legendOcc:"Occupied", legendFixed:"Fixed",
@@ -305,19 +293,11 @@ const TRANSLATIONS = {
   }
 };
 
-// ══════════════════════════════════════════════════════════════════
-// INFRASTRUCTURE — Storage Adapter (in-memory; no localStorage in artifacts)
-// ══════════════════════════════════════════════════════════════════
-
 const _memStore = {};
 const StorageAdapter = {
   load()        { return _memStore["state"] ?? null; },
   save(state)   { _memStore["state"] = state; },
 };
-
-// ══════════════════════════════════════════════════════════════════
-// MOCK DATA — Initial state (would come from API in production)
-// ══════════════════════════════════════════════════════════════════
 
 const MOCK_USERS = [
   { id:"u1", name:"Elena Martínez", email:"elena@co.com",   avatar:"EM", role:"admin", deskType:DeskType.FIXED,    active:true  },
@@ -327,9 +307,6 @@ const MOCK_USERS = [
   { id:"u5", name:"Sofía Chen",     email:"sofia@co.com",   avatar:"SC", role:"user",  deskType:DeskType.HOTDESK,  active:false },
 ];
 
-// CURRENT_USER is now injected from auth in WorkSuiteApp
-
-// HotDesk seats layout
 const SEATS = [
   {id:"A1",x:75,y:80},{id:"A2",x:135,y:80},{id:"A3",x:195,y:80},
   {id:"A4",x:75,y:140},{id:"A5",x:135,y:140},{id:"A6",x:195,y:140},
@@ -370,7 +347,6 @@ const MOCK_WORKLOGS = {
   "2026-03-25":[{id:"wl30",issue:"PLAT-143",summary:"Add rate limiting",type:"Task",epic:"PLAT-100",epicName:"Security Q1",author:"Elena Martínez",authorId:"u1",time:"4h",seconds:14400,started:"09:00",project:"PLAT",description:""}],
 };
 
-// Initial HotDesk state
 const INITIAL_HD_STATE = {
   fixed: { "A1":"Elena Martínez", "B3":"Marco Silva" },
   reservations: [
@@ -383,12 +359,9 @@ const INITIAL_HD_STATE = {
 // INFRASTRUCTURE — Theme Adapter
 // ══════════════════════════════════════════════════════════════════
 
-// Full CSS with dual-theme variables
 const buildCSS = () => `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-
-/* ── Default dark vars on :root so html/body bg works before .shell renders ── */
 :root{
   --body:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
   --r:5px;--r2:8px;--ease:all .15s ease;
@@ -401,8 +374,6 @@ const buildCSS = () => `
   --seat-free:#3ecf8e;--seat-occ:#4f6ef7;--seat-fixed:#e05252;
   color-scheme:dark;
 }
-
-/* ── Dark theme — applied via data-theme on .shell ── */
 [data-theme="dark"]{
   --bg:#0d0d10;--sf:#141418;--sf2:#1b1b22;--sf3:#21212c;
   --bd:#2a2a38;--bd2:#383850;
@@ -413,7 +384,6 @@ const buildCSS = () => `
   --seat-free:#3ecf8e;--seat-occ:#4f6ef7;--seat-fixed:#e05252;
   color-scheme:dark;
 }
-/* ── Light theme ── */
 [data-theme="light"]{
   --bg:#f0f0f6;--sf:#ffffff;--sf2:#f5f5fb;--sf3:#eaeaf2;
   --bd:#dcdce8;--bd2:#c4c4d8;
@@ -424,17 +394,11 @@ const buildCSS = () => `
   --seat-free:#0f9060;--seat-occ:#4f6ef7;--seat-fixed:#c02828;
   color-scheme:light;
 }
-
-/* ── Base — html/body dark by default ── */
 html,body,#root{background:#0d0d10;color:#e4e4ef;margin:0;padding:0;}
 body{font-family:'Inter',system-ui,sans-serif;font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;}
-
-/* ── Scrollbars ── */
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px;}
-
-/* ── Shell — root of all themed content ── */
 .shell{display:flex;flex-direction:column;height:100vh;overflow:hidden;background:var(--bg);color:var(--tx);}
 .topbar{display:flex;align-items:center;gap:10px;padding:0 18px;height:48px;background:var(--sf);border-bottom:1px solid var(--bd);flex-shrink:0;}
 .logo{font-size:14px;font-weight:700;letter-spacing:-.3px;display:flex;align-items:center;gap:7px;}
@@ -447,21 +411,15 @@ body{font-family:'Inter',system-ui,sans-serif;font-size:13px;line-height:1.5;-we
 .avatar{width:28px;height:28px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;border:1px solid var(--bd2);flex-shrink:0;}
 .u-name{font-size:12px;font-weight:500;color:var(--tx2);}
 .o-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);}
-
-/* ── Switcher pills ── */
 .sw-group{display:flex;border:1px solid var(--bd2);border-radius:var(--r);overflow:hidden;}
 .sw-btn{font-size:10px;font-weight:700;padding:4px 10px;background:transparent;border:none;color:var(--tx3);cursor:pointer;transition:var(--ease);letter-spacing:.03em;white-space:nowrap;}
 .sw-btn:hover{color:var(--tx2);background:var(--sf3);}
 .sw-btn.active{background:var(--ac);color:#fff;}
 .sw-btn.active-green{background:var(--green);color:#fff;}
 .sw-btn.active-theme{background:var(--sf3);color:var(--tx);}
-
-/* ── Role tag ── */
 .r-tag{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:3px;}
 .r-admin{background:rgba(245,166,35,.12);color:var(--amber);border:1px solid rgba(245,166,35,.3);}
 .r-user{background:var(--sf3);color:var(--tx3);border:1px solid var(--bd);}
-
-/* ── Nav bar ── */
 .nav-bar{display:flex;align-items:center;gap:2px;padding:0 18px;height:38px;background:var(--sf);border-bottom:1px solid var(--bd);flex-shrink:0;}
 .n-btn{font-size:11px;font-weight:600;letter-spacing:.02em;padding:5px 12px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;background:transparent;color:var(--tx3);transition:var(--ease);}
 .n-btn:hover{color:var(--tx2);background:var(--sf3);}
@@ -470,8 +428,6 @@ body{font-family:'Inter',system-ui,sans-serif;font-size:13px;line-height:1.5;-we
 .n-sep{width:1px;height:16px;background:var(--bd);margin:0 4px;}
 .body{display:flex;flex:1;overflow:hidden;background:var(--bg);}
 .content{flex:1;overflow-y:auto;padding:20px;background:var(--bg);}
-
-/* ── Filter sidebar ── */
 .sb{width:248px;min-width:248px;background:var(--sf);border-right:1px solid var(--bd);overflow-y:auto;padding:14px 12px;display:flex;flex-direction:column;gap:14px;}
 .sb-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);padding-bottom:5px;border-bottom:1px solid var(--bd);}
 .sb-cnt{color:var(--ac2);margin-left:4px;}
@@ -497,8 +453,6 @@ textarea.fi{resize:vertical;min-height:52px;font-family:var(--mono);font-size:11
 .btn-log{font-size:11px;font-weight:600;padding:6px 12px;border-radius:var(--r);border:1px solid rgba(79,110,247,.3);background:var(--glow);color:var(--ac2);cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:var(--ease);}
 .btn-log:hover{background:rgba(79,110,247,.18);border-color:var(--ac);}
 .btn-log-sm{font-size:10px;padding:4px 9px;}
-
-/* ── Calendar ── */
 .cal-h{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
 .cal-t{font-size:20px;font-weight:700;letter-spacing:-.3px;color:var(--tx);}
 .n-arr{width:28px;height:28px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--tx2);transition:var(--ease);}
@@ -526,8 +480,6 @@ textarea.fi{resize:vertical;min-height:52px;font-family:var(--mono);font-size:11
 .cdots{display:flex;flex-direction:column;gap:1px;margin-top:auto;}
 .cdot{font-family:var(--mono);font-size:9px;color:var(--tx3);display:flex;align-items:center;gap:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .cdot::before{content:'';width:3px;height:3px;border-radius:50%;background:var(--ac);flex-shrink:0;}
-
-/* ── Day view ── */
 .dh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;}
 .dd{font-size:21px;font-weight:700;letter-spacing:-.4px;color:var(--tx);}
 .dsub{font-size:12px;color:var(--tx2);margin-top:4px;}
@@ -551,8 +503,6 @@ textarea.fi{resize:vertical;min-height:52px;font-family:var(--mono);font-size:11
 .del-wl{background:none;border:none;cursor:pointer;color:var(--tx3);font-size:12px;padding:2px 4px;border-radius:3px;opacity:0;transition:var(--ease);}
 .wlc:hover .del-wl{opacity:1;}
 .del-wl:hover{color:var(--red);}
-
-/* ── Tasks table ── */
 .tk-h{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
 .tk-t{font-size:20px;font-weight:700;letter-spacing:-.3px;color:var(--tx);}
 .c-bdg{background:var(--sf2);border:1px solid var(--bd);border-radius:20px;padding:2px 10px;font-size:10px;font-weight:500;color:var(--tx2);font-family:var(--mono);}
@@ -578,8 +528,6 @@ tr:hover td{background:var(--sf2);}
 .tag{display:inline-block;padding:1px 5px;border-radius:3px;background:var(--sf3);border:1px solid var(--bd);font-family:var(--mono);font-size:9px;color:var(--tx3);margin:1px;}
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:8px;color:var(--tx3);font-size:12px;}
 .empty-i{font-size:28px;margin-bottom:4px;}
-
-/* ── Modals — inherit theme from parent .shell ── */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;backdrop-filter:blur(4px);animation:ovIn .15s ease;}
 @keyframes ovIn{from{opacity:0}to{opacity:1}}
 .mb{background:var(--sf);border:1px solid var(--bd2);border-radius:var(--r2);width:100%;box-shadow:var(--shadow);animation:mbIn .18s ease;max-height:90vh;overflow-y:auto;}
@@ -609,15 +557,11 @@ option{background:var(--sf2);color:var(--tx);}
 .b-sub:disabled{opacity:.4;cursor:not-allowed;}
 .b-danger{font-size:12px;font-weight:600;padding:8px 18px;border-radius:var(--r);border:none;background:var(--red);color:#fff;cursor:pointer;transition:var(--ease);}
 .ok-fl{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(62,207,142,.08);border:1px solid rgba(62,207,142,.22);border-radius:var(--r);font-size:12px;color:var(--green);}
-
-/* ── Password strength ── */
 .pwd-meter{display:flex;gap:3px;margin-top:4px;}
 .pwd-seg{height:3px;flex:1;border-radius:2px;background:var(--bd2);}
 .pwd-seg.weak{background:var(--red);}
 .pwd-seg.fair{background:var(--amber);}
 .pwd-seg.strong{background:var(--green);}
-
-/* ── CSV dropzone ── */
 .dropzone{border:2px dashed var(--bd2);border-radius:var(--r2);padding:28px 20px;text-align:center;cursor:pointer;transition:var(--ease);background:var(--sf2);}
 .dropzone:hover,.dropzone.over{border-color:var(--ac);background:var(--glow);}
 .csv-preview{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;max-height:200px;overflow-y:auto;}
@@ -627,8 +571,6 @@ option{background:var(--sf2);color:var(--tx);}
 .csv-row.err-row{background:rgba(224,82,82,.04);}
 .csv-cell{padding:7px 10px;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .csv-err-tag{font-size:9px;color:var(--red);padding:7px 10px;}
-
-/* ── Admin layout ── */
 .admin-wrap{display:flex;flex:1;overflow:hidden;background:var(--bg);}
 .admin-nav{width:196px;min-width:196px;background:var(--sf);border-right:1px solid var(--bd);padding:16px 10px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
 .admin-nav-t{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);padding:0 8px 10px;border-bottom:1px solid var(--bd);margin-bottom:6px;}
@@ -664,8 +606,6 @@ option{background:var(--sf2);color:var(--tx);}
 .act-a{color:var(--green);border-color:rgba(62,207,142,.2);}.act-a:hover{background:rgba(62,207,142,.06);}
 .act-adm{color:var(--amber);border-color:rgba(245,166,35,.2);}.act-adm:hover{background:rgba(245,166,35,.06);}
 .act-pwd{color:var(--ac2);border-color:rgba(79,110,247,.2);}.act-pwd:hover{background:var(--glow);}
-
-/* ── HotDesk map ── */
 .hd-map-wrap{display:flex;flex-direction:column;gap:12px;}
 .hd-map-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
 .hd-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r2);padding:16px;}
@@ -675,8 +615,6 @@ option{background:var(--sf2);color:var(--tx);}
 .hd-seat{cursor:pointer;transition:filter .12s;}
 .hd-seat:hover{filter:brightness(1.25) drop-shadow(0 0 5px rgba(100,200,255,.3));}
 .hd-sub{font-size:10px;color:var(--tx3);text-align:center;margin-top:8px;}
-
-/* ── HotDesk monthly table ── */
 .hd-table-wrap{overflow-x:auto;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r2);}
 .hd-tbl{border-collapse:collapse;font-size:11px;width:100%;}
 .hd-th{padding:9px 4px;text-align:center;border-bottom:2px solid var(--bd);background:var(--sf);color:var(--tx3);font-size:9px;font-weight:700;text-transform:uppercase;min-width:44px;white-space:nowrap;position:sticky;top:0;z-index:6;}
@@ -703,16 +641,12 @@ tr.hd-row-today > td.hd-td.date-cell{background:rgba(79,110,247,.07) !important;
 .hd-cell-name{margin-left:6px;font-size:9px;line-height:1;color:var(--tx2);max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .hd-tooltip{position:fixed;z-index:9900;background:var(--sf);border:1px solid var(--bd2);border-radius:var(--r2);padding:12px;box-shadow:var(--shadow);width:280px;pointer-events:none;animation:mbIn .15s ease;}
 .hd-tooltip-title{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px;}
-
-/* ── HotDesk admin ── */
 .seat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;}
 .seat-btn{background:var(--sf2);border:2px solid var(--bd);border-radius:var(--r2);padding:10px 4px;cursor:pointer;color:var(--tx2);font-size:12px;font-weight:500;text-align:center;line-height:1.4;transition:var(--ease);}
 .seat-btn:hover{border-color:var(--bd2);color:var(--tx);}
 .seat-btn.sel{border-color:var(--ac);color:var(--ac2);background:var(--glow);}
 .seat-btn.is-fixed{border-color:rgba(224,82,82,.4);color:var(--red);}
 .seat-btn.is-occ{border-color:rgba(79,110,247,.3);color:var(--ac2);}
-
-/* ── Mini calendar ── */
 .mini-cal{user-select:none;}
 .mini-day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
 .mini-dh{text-align:center;font-size:9px;font-weight:700;color:var(--tx3);padding:2px 0;}
@@ -721,10 +655,7 @@ tr.hd-row-today > td.hd-td.date-cell{background:rgba(79,110,247,.07) !important;
 .mini-day.sel{background:rgba(62,207,142,.15);border-color:var(--green);color:var(--green);font-weight:700;}
 .mini-day.occ{background:rgba(79,110,247,.1);border-color:rgba(79,110,247,.3);color:var(--ac2);}
 .mini-day.avail:hover{background:var(--sf3);border-color:var(--bd2);}
-
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-
-/* ── Combobox (task search) ── */
 .cb-drop{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--sf);border:1px solid var(--bd2);border-radius:var(--r2);box-shadow:var(--shadow);z-index:200;max-height:220px;overflow-y:auto;}
 .cb-opt{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;transition:background .1s;border-bottom:1px solid var(--bd);}
 .cb-opt:last-child{border-bottom:none;}
@@ -732,28 +663,16 @@ tr.hd-row-today > td.hd-td.date-cell{background:rgba(79,110,247,.07) !important;
 .cb-key{font-family:var(--mono);font-size:11px;color:var(--ac2);font-weight:600;min-width:72px;flex-shrink:0;}
 .cb-sum{font-size:12px;color:var(--tx);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .cb-prj{font-family:var(--mono);font-size:9px;color:var(--tx3);flex-shrink:0;}
-
-/* ── Mobile sidebar drawer ── */
 .sb-toggle{display:none;}
 .sb-backdrop{display:none;}
 @media(max-width:700px){
   .sb-toggle{display:flex;}
-  .sb{
-    position:fixed;left:-260px;top:0;bottom:0;width:260px;z-index:300;
-    transition:left .25s cubic-bezier(.4,0,.2,1);
-    box-shadow:none;
-    padding-top:56px; /* clear topbar */
-  }
+  .sb{position:fixed;left:-260px;top:0;bottom:0;width:260px;z-index:300;transition:left .25s cubic-bezier(.4,0,.2,1);box-shadow:none;padding-top:56px;}
   .sb.sb-open{left:0;box-shadow:4px 0 24px rgba(0,0,0,.5);}
-  .sb-backdrop{
-    display:block;position:fixed;inset:0;z-index:299;
-    background:rgba(0,0,0,.45);backdrop-filter:blur(2px);
-    animation:ovIn .2s ease;
-  }
-} */
+  .sb-backdrop{display:block;position:fixed;inset:0;z-index:299;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);animation:ovIn .2s ease;}
+}
 @media(max-width:900px){
   .sb{width:200px;min-width:200px;}
-  .cgrid{grid-template-columns:repeat(7,1fr);}
   .proto-tag,.u-name,.r-tag,.o-dot{display:none;}
 }
 @media(max-width:700px){
@@ -762,7 +681,6 @@ tr.hd-row-today > td.hd-td.date-cell{background:rgba(79,110,247,.07) !important;
   .nav-bar{padding:0 10px;gap:1px;height:36px;overflow-x:auto;}
   .n-btn{padding:4px 8px;font-size:10px;}
   .content{padding:12px;}
-  .cgrid{grid-template-columns:repeat(7,1fr);}
   .cc{min-height:52px;padding:4px;}
   .chrs{font-size:13px;}
   .cdots{display:none;}
@@ -774,13 +692,11 @@ tr.hd-row-today > td.hd-td.date-cell{background:rgba(79,110,247,.07) !important;
   .mb{max-width:100% !important;margin:0;border-radius:var(--r2) var(--r2) 0 0;position:fixed;bottom:0;left:0;right:0;max-height:92vh;}
   .ov{align-items:flex-end;padding:0;}
   .admin-nav{width:160px;min-width:160px;}
-  .hd-table-wrap{font-size:10px;}
   .sw-btn{padding:4px 7px;font-size:9px;}
 }
 @media(max-width:480px){
   .topbar{height:40px;}
   .cal-stats{display:none;}
-  .cgrid{grid-template-columns:repeat(7,1fr);}
   .cc{min-height:40px;padding:3px;}
   .cday{font-size:10px;}
   .chrs{font-size:11px;}
@@ -793,7 +709,7 @@ tr.hd-row-today > td.hd-td.date-cell{background:rgba(79,110,247,.07) !important;
 `;
 
 // ══════════════════════════════════════════════════════════════════
-// CONTEXT — App-wide state (dependency injection)
+// CONTEXT
 // ══════════════════════════════════════════════════════════════════
 
 const AppCtx = createContext(null);
@@ -838,7 +754,7 @@ function isoFromYMD(y,m,d) { return `${y}-${String(m+1).padStart(2,"0")}-${Strin
 function fmtMonthYear(y,m,lang) { return lang==="es" ? `${MONTHS_ES[m]} ${y}` : `${MONTHS_EN[m]} ${y}`; }
 
 // ══════════════════════════════════════════════════════════════════
-// SHARED PRESENTATIONAL COMPONENTS
+// SHARED COMPONENTS (sin cambios)
 // ══════════════════════════════════════════════════════════════════
 
 function PasswordStrength({ password }) {
@@ -893,7 +809,7 @@ function MiniCalendar({ year, month, selectedDates, onToggleDate, occupiedDates=
 }
 
 // ══════════════════════════════════════════════════════════════════
-// JIRA TRACKER — Log Worklog Modal
+// JIRA TRACKER COMPONENTS (sin cambios)
 // ══════════════════════════════════════════════════════════════════
 
 function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave, currentUser }) {
@@ -909,7 +825,6 @@ function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave, curren
   const [ok,     setOk]    = useState(false);
   const cbRef = useRef(null);
 
-  // Close dropdown on outside click
   useEffect(() => {
     if (!open) return;
     const handler = e => { if (cbRef.current && !cbRef.current.contains(e.target)) setOpen(false); };
@@ -966,15 +881,9 @@ function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave, curren
               <div className="fr">
                 <label className="fl">{t("taskField")}</label>
                 <div ref={cbRef} style={{position:"relative"}}>
-                  <input
-                    className={`mi ${er.ik?"err":""}`}
-                    placeholder={t("selectTask")}
-                    value={query}
-                    autoComplete="off"
+                  <input className={`mi ${er.ik?"err":""}`} placeholder={t("selectTask")} value={query} autoComplete="off"
                     onChange={e => { setQuery(e.target.value); setIk(""); setOpen(true); setEr(v=>({...v,ik:null})); }}
-                    onFocus={() => setOpen(true)}
-                    style={{fontFamily:"var(--mono)",fontSize:12}}
-                  />
+                    onFocus={() => setOpen(true)} style={{fontFamily:"var(--mono)",fontSize:12}}/>
                   {open && filtered.length > 0 && (
                     <div className="cb-drop">
                       {filtered.map(i => (
@@ -1027,10 +936,6 @@ function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave, curren
   );
 }
 
-// ══════════════════════════════════════════════════════════════════
-// JIRA TRACKER — Filter Sidebar
-// ══════════════════════════════════════════════════════════════════
-
 function JTFilterSidebar({ filters, onApply, onExport, mobileOpen, onMobileClose }) {
   const { t } = useApp();
   const [l, sL] = useState(filters);
@@ -1069,14 +974,10 @@ function JTFilterSidebar({ filters, onApply, onExport, mobileOpen, onMobileClose
   );
 }
 
-// ══════════════════════════════════════════════════════════════════
-// JIRA TRACKER — Calendar View
-// ══════════════════════════════════════════════════════════════════
-
 function CalendarView({ filters, worklogs, onDayClick, onOpenLog }) {
   const { t, lang } = useApp();
-  const [yr, sYr] = useState(2026);
-  const [mo, sMo] = useState(2);
+  const [yr, sYr] = useState(new Date().getFullYear());
+  const [mo, sMo] = useState(new Date().getMonth());
   const [sel, sSel] = useState(MOCK_TODAY);
 
   const mFrom = `${yr}-${String(mo+1).padStart(2,"0")}-01`;
@@ -1098,7 +999,7 @@ function CalendarView({ filters, worklogs, onDayClick, onOpenLog }) {
         <button className="n-arr" onClick={prev}>‹</button>
         <div className="cal-t">{MONTHS[mo]} {yr}</div>
         <button className="n-arr" onClick={next}>›</button>
-        <button className="btn-g" onClick={()=>{sYr(2026);sMo(2);}}>{t("today")}</button>
+        <button className="btn-g" onClick={()=>{sYr(new Date().getFullYear());sMo(new Date().getMonth());}}>{t("today")}</button>
         <button className="btn-log" onClick={()=>onOpenLog({})}>{t("logHours")}</button>
         <div className="cal-stats">
           <div className="chip">{t("totalLabel")}: <strong>{totalH.toFixed(1)}h</strong></div>
@@ -1127,10 +1028,6 @@ function CalendarView({ filters, worklogs, onDayClick, onOpenLog }) {
     </div>
   );
 }
-
-// ══════════════════════════════════════════════════════════════════
-// JIRA TRACKER — Day View
-// ══════════════════════════════════════════════════════════════════
 
 function DayView({ date, filters, worklogs, onDateChange, onOpenLog, onDeleteWorklog }) {
   const { t, lang } = useApp();
@@ -1167,10 +1064,6 @@ function DayView({ date, filters, worklogs, onDateChange, onOpenLog, onDeleteWor
     </div>
   );
 }
-
-// ══════════════════════════════════════════════════════════════════
-// JIRA TRACKER — Tasks View
-// ══════════════════════════════════════════════════════════════════
 
 function TasksView({ filters, onOpenLog }) {
   const { t } = useApp();
@@ -1212,13 +1105,8 @@ function TasksView({ filters, onOpenLog }) {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════
-// HOTDESK — Office SVG (redesigned with theme vars)
-// ══════════════════════════════════════════════════════════════════
-
 function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true }) {
   const { theme } = useApp();
-  // Theme-aware hex colors — SVG doesn't support CSS vars in fill with opacity suffix
   const COLORS = theme === "light"
     ? { free:"#0f9060", occ:"#4f6ef7", fixed:"#c02828", amber:"#b86800", bd:"#dcdce8", sf:"#ffffff", sf2:"#f5f5fb", sf3:"#eaeaf2", tx3:"#9494b8" }
     : { free:"#3ecf8e", occ:"#4f6ef7", fixed:"#e05252", amber:"#f5a623", bd:"#2a2a38", sf:"#141418", sf2:"#1b1b22", sf3:"#21212c", tx3:"#50506a" };
@@ -1257,19 +1145,9 @@ function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true 
         const lbl = hd.fixed[seat.id] ? hd.fixed[seat.id].split(" ")[0].slice(0,8) : res ? res.userName.split(" ")[0].slice(0,8) : "";
         return (
           <g key={seat.id} className={onSeat?"hd-seat":""} onClick={()=>onSeat&&onSeat(seat.id)}>
-            {/* Desk surface */}
-            <rect x={seat.x-22} y={seat.y-22} width={44} height={44} rx={7}
-              fill={col} fillOpacity={0.08}
-              stroke={strokeCol} strokeWidth={isMine?2.5:1.5}/>
-            {/* Monitor/desk surface */}
-            <rect x={seat.x-13} y={seat.y-3} width={26} height={12} rx={3}
-              fill={col} fillOpacity={0.14}
-              stroke={col} strokeOpacity={0.3} strokeWidth={1}/>
-            {/* Chair */}
-            <circle cx={seat.x} cy={seat.y-12} r={4}
-              fill={col} fillOpacity={0.18}
-              stroke={col} strokeOpacity={0.4} strokeWidth={1}/>
-            {/* Seat label */}
+            <rect x={seat.x-22} y={seat.y-22} width={44} height={44} rx={7} fill={col} fillOpacity={0.08} stroke={strokeCol} strokeWidth={isMine?2.5:1.5}/>
+            <rect x={seat.x-13} y={seat.y-3} width={26} height={12} rx={3} fill={col} fillOpacity={0.14} stroke={col} strokeOpacity={0.3} strokeWidth={1}/>
+            <circle cx={seat.x} cy={seat.y-12} r={4} fill={col} fillOpacity={0.18} stroke={col} strokeOpacity={0.4} strokeWidth={1}/>
             <text x={seat.x} y={seat.y+19} textAnchor="middle" fill={col} fontSize={9} fontWeight={700}>{seat.id}</text>
             {showOccupants && lbl&&<text x={seat.x} y={seat.y+8} textAnchor="middle" fill={col} fillOpacity={0.8} fontSize={8}>{lbl}</text>}
             {showOccupants && isMine&&<circle cx={seat.x+18} cy={seat.y-18} r={4} fill={COLORS.amber} stroke={COLORS.bd} strokeWidth={1}/>}
@@ -1280,7 +1158,6 @@ function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true 
   );
 }
 
-// Compact map used by monthly tooltip: focuses on seat position in the plan.
 function MiniOfficeMap({ hd, seatId }) {
   const { theme } = useApp();
   const COLORS = theme === "light"
@@ -1300,7 +1177,6 @@ function MiniOfficeMap({ hd, seatId }) {
       <text x={74} y={80} textAnchor="middle" fill={COLORS.tx3} fontSize={5} letterSpacing={1.5}>ZONE C</text>
       <text x={177} y={48} textAnchor="middle" fill={COLORS.tx3} fontSize={5}>SALA</text>
       <text x={177} y={87} textAnchor="middle" fill={COLORS.tx3} fontSize={5}>COCINA</text>
-
       {SEATS.map(seat => {
         const st = ReservationService.statusOf(seat.id, MOCK_TODAY, hd.fixed, hd.reservations);
         const col = colOf(st);
@@ -1319,10 +1195,6 @@ function MiniOfficeMap({ hd, seatId }) {
     </svg>
   );
 }
-
-// ══════════════════════════════════════════════════════════════════
-// HOTDESK — Seat Tooltip (shows mini office map on column hover)
-// ══════════════════════════════════════════════════════════════════
 
 function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser }) {
   const { theme } = useApp();
@@ -1349,10 +1221,6 @@ function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser }) {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════
-// HOTDESK — Map View
-// ══════════════════════════════════════════════════════════════════
-
 function HDMapView({ hd, onSeat, currentUser }) {
   const { t } = useApp();
   const freeCount = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations) === SeatStatus.FREE).length;
@@ -1361,7 +1229,6 @@ function HDMapView({ hd, onSeat, currentUser }) {
 
   return (
     <div className="hd-map-wrap">
-      {/* Stats bar — matches JT chip style */}
       <div className="hd-map-header">
         <div className="cal-stats" style={{marginLeft:0}}>
           <div className="chip">{t("legendFree")}: <strong style={{color:"var(--green)"}}>{freeCount}</strong></div>
@@ -1375,7 +1242,6 @@ function HDMapView({ hd, onSeat, currentUser }) {
           ))}
         </div>
       </div>
-      {/* Office plan */}
       <div className="hd-card">
         <OfficeSVG hd={hd} onSeat={onSeat} currentUser={currentUser}/>
       </div>
@@ -1384,15 +1250,11 @@ function HDMapView({ hd, onSeat, currentUser }) {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════
-// HOTDESK — Monthly Table View
-// ══════════════════════════════════════════════════════════════════
-
 function HDTableView({ hd, onCell, currentUser }) {
   const { t, lang } = useApp();
-  const [yr, sYr] = useState(2026);
-  const [mo, sMo] = useState(2);
-  const [tooltip, setTooltip] = useState(null); // { seatId, ax, ay }
+  const [yr, sYr] = useState(new Date().getFullYear());
+  const [mo, sMo] = useState(new Date().getMonth());
+  const [tooltip, setTooltip] = useState(null);
 
   const days = daysInMonth(yr, mo);
   function isoD(d) { return `${yr}-${String(mo+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
@@ -1404,7 +1266,6 @@ function HDTableView({ hd, onCell, currentUser }) {
 
   return (
     <div>
-      {/* Nav header */}
       <div className="cal-h" style={{marginBottom:14}}>
         <button className="n-arr" onClick={prev}>‹</button>
         <div className="cal-t">{fmtMonthYear(yr, mo, lang)}</div>
@@ -1415,8 +1276,6 @@ function HDTableView({ hd, onCell, currentUser }) {
           ))}
         </div>
       </div>
-
-      {/* Scrollable table */}
       <div className="hd-table-wrap">
         <table className="hd-tbl">
           <thead>
@@ -1449,21 +1308,18 @@ function HDTableView({ hd, onCell, currentUser }) {
               const rowCls = isWe ? "hd-row-we" : isTod ? "hd-row-today" : "";
               return (
                 <tr key={d} className={rowCls}>
-                  {/* Date cell */}
                   <td className={`hd-td date-cell ${isWe?"is-we":""} ${isTod?"is-today":""}`}
                     style={{color: isWe?"var(--tx3)": isTod?"var(--ac2)":"var(--tx2)", fontWeight:isTod?600:400}}>
                     {isTod && <span style={{color:"var(--ac2)",marginRight:4,fontSize:9}}>▶</span>}
                     <span style={{fontFamily:"var(--mono)",fontSize:11}}>{DOW[dow]}</span>
                     {" "}<span style={{fontFamily:"var(--mono)",fontSize:11}}>{String(d).padStart(2,"0")}</span>
                   </td>
-                  {/* Seat cells */}
                   {SEATS.map(seat => {
                     const st     = ReservationService.statusOf(seat.id, iso, hd.fixed, hd.reservations);
                     const res    = ReservationService.resOf(seat.id, iso, hd.reservations);
                     const isMine = res?.userId===currentUser.id;
                     const ownerName = st===SeatStatus.FIXED ? hd.fixed[seat.id] : res?.userName;
                     const ownerLabel = ownerName ? ownerName.split(" ")[0] : "";
-                    // Use CSS class names (no invalid CSS-var-with-hex-suffix)
                     const cls    = isMine ? "mine" : st===SeatStatus.FIXED ? "fx" : st===SeatStatus.OCCUPIED ? "occ" : "free";
                     return (
                       <td key={seat.id} className="hd-td">
@@ -1486,21 +1342,15 @@ function HDTableView({ hd, onCell, currentUser }) {
           </tbody>
         </table>
       </div>
-
-      {/* Seat tooltip — mini office map */}
       {tooltip && <SeatTooltip seatId={tooltip.seatId} anchorX={tooltip.ax} anchorY={tooltip.ay} hd={hd} currentUser={currentUser}/>}
     </div>
   );
 }
 
-// ══════════════════════════════════════════════════════════════════
-// HOTDESK — Reserve Modal
-// ══════════════════════════════════════════════════════════════════
-
 function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, currentUser }) {
   const { t, lang } = useApp();
-  const [yr, sYr] = useState(2026);
-  const [mo, sMo] = useState(2);
+  const [yr, sYr] = useState(new Date().getFullYear());
+  const [mo, sMo] = useState(new Date().getMonth());
   const [sel, sSel] = useState(initDate ? [initDate] : []);
 
   const st  = ReservationService.statusOf(seatId, initDate||MOCK_TODAY, hd.fixed, hd.reservations);
@@ -1530,14 +1380,12 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
               {!isFixed&&!res&&<div style={{color:"var(--green)"}}>{t("legendFree")}</div>}
             </div>
           </div>
-
           {isMine && (
             <div>
               <div style={{fontSize:12,color:"var(--tx2)",marginBottom:8}}>{t("hdReleaseQ")}</div>
               <button className="b-danger" style={{width:"100%"}} onClick={()=>onRelease(seatId,initDate||MOCK_TODAY)}>{t("hdReleaseBtn")}</button>
             </div>
           )}
-
           {!isFixed && !isMine && (
             <>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -1561,10 +1409,6 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
     </div>
   );
 }
-
-// ══════════════════════════════════════════════════════════════════
-// ADMIN — Settings Module
-// ══════════════════════════════════════════════════════════════════
 
 function AdminSettings() {
   const { t } = useApp();
@@ -1607,10 +1451,6 @@ function AdminSettings() {
     </div>
   );
 }
-
-// ══════════════════════════════════════════════════════════════════
-// ADMIN — Add User Modal
-// ══════════════════════════════════════════════════════════════════
 
 function AddUserModal({ existingUsers, onClose, onSave }) {
   const { t } = useApp();
@@ -1681,10 +1521,6 @@ function AddUserModal({ existingUsers, onClose, onSave }) {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════
-// ADMIN — Change Password Modal
-// ══════════════════════════════════════════════════════════════════
-
 function ChangePasswordModal({ user, onClose }) {
   const { t } = useApp();
   const [pwd,  setPwd]  = useState("");
@@ -1727,10 +1563,6 @@ function ChangePasswordModal({ user, onClose }) {
     </div>
   );
 }
-
-// ══════════════════════════════════════════════════════════════════
-// ADMIN — CSV Import Modal
-// ══════════════════════════════════════════════════════════════════
 
 function CsvImportModal({ existingUsers, onClose, onImport }) {
   const { t } = useApp();
@@ -1812,10 +1644,6 @@ function CsvImportModal({ existingUsers, onClose, onImport }) {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════
-// ADMIN — Unified Users Module (used by both JT and HD)
-// ══════════════════════════════════════════════════════════════════
-
 function AdminUsers({ users, setUsers, currentUser }) {
   const { t } = useApp();
   const [modal, setModal] = useState(null);
@@ -1855,7 +1683,6 @@ function AdminUsers({ users, setUsers, currentUser }) {
                 <td style={{fontFamily:"var(--mono)",fontSize:11,color:"var(--tx3)"}}>{u.email}</td>
                 <td><span className={`r-tag ${u.role==="admin"?"r-admin":"r-user"}`}>{u.role==="admin"?t("roleAdmin"):t("roleUser")}</span></td>
                 <td>
-                  {/* Desk type inline selector */}
                   <div style={{display:"flex",gap:3}}>
                     {[DeskType.NONE, DeskType.HOTDESK, DeskType.FIXED].map(dt=>(
                       <button key={dt} onClick={()=>changeDeskType(u.id,dt)}
@@ -1883,17 +1710,13 @@ function AdminUsers({ users, setUsers, currentUser }) {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════
-// ADMIN — HotDesk Configuration Module
-// ══════════════════════════════════════════════════════════════════
-
 function AdminHotDesk({ hd, setHd, users }) {
   const { t } = useApp();
   const [selSeat, setSelSeat] = useState(null);
   const [selUser, setSelUser] = useState("");
   const [asFixed, setAsFixed] = useState(false);
-  const [yr, sYr] = useState(2026);
-  const [mo, sMo] = useState(2);
+  const [yr, sYr] = useState(new Date().getFullYear());
+  const [mo, sMo] = useState(new Date().getMonth());
   const [selDates, setSelDates] = useState([]);
 
   const hotdeskUsers = users.filter(u => u.deskType===DeskType.HOTDESK || u.deskType===DeskType.FIXED);
@@ -1919,9 +1742,7 @@ function AdminHotDesk({ hd, setHd, users }) {
     <div>
       <div className="sec-t">{t("hotdeskTitle")}</div>
       <div className="sec-sub">Manage seat assignments and fixed allocations for your team.</div>
-
       <div style={{display:"grid",gridTemplateColumns:"minmax(200px,280px) 1fr",gap:20,alignItems:"start"}}>
-        {/* Left: seat selector */}
         <div>
           <div style={{fontSize:9,fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"var(--tx3)",marginBottom:10}}>SELECT SEAT</div>
           <div className="seat-grid">
@@ -1936,7 +1757,6 @@ function AdminHotDesk({ hd, setHd, users }) {
               );
             })}
           </div>
-          {/* Fixed seats list */}
           {Object.keys(hd.fixed).length>0&&(
             <div>
               <div style={{fontSize:9,fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"var(--tx3)",marginBottom:8}}>{t("fixedSeats")}</div>
@@ -1950,8 +1770,6 @@ function AdminHotDesk({ hd, setHd, users }) {
             </div>
           )}
         </div>
-
-        {/* Right: configure selected seat */}
         {selSeat ? (
           <div className="a-card" style={{marginBottom:0}}>
             <div className="a-ct">🪑 {t("assignSeat")} — <span style={{color:"var(--ac2)",fontFamily:"var(--mono)"}}>{selSeat}</span></div>
@@ -1963,7 +1781,6 @@ function AdminHotDesk({ hd, setHd, users }) {
                   {hotdeskUsers.map(u=><option key={u.id} value={u.id}>{u.name} ({u.deskType})</option>)}
                 </select>
               </div>
-              {/* Fixed toggle */}
               <div onClick={()=>setAsFixed(f=>!f)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"var(--sf2)",borderRadius:"var(--r)",border:`1px solid ${asFixed?"rgba(224,82,82,.3)":"var(--bd)"}`,cursor:"pointer"}}>
                 <div style={{width:16,height:16,borderRadius:3,background:asFixed?"var(--red)":"transparent",border:`2px solid ${asFixed?"var(--red)":"var(--bd2)"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   {asFixed&&<span style={{color:"#fff",fontSize:10,fontWeight:700}}>✓</span>}
@@ -1973,7 +1790,6 @@ function AdminHotDesk({ hd, setHd, users }) {
                   <div style={{fontSize:10,color:"var(--tx3)",marginTop:1}}>{t("asFixedHint")}</div>
                 </div>
               </div>
-              {/* Mini calendar for date selection */}
               {!asFixed&&(
                 <div>
                   <div className="a-lbl" style={{marginBottom:8}}>{t("hdSelectDates")}</div>
@@ -2003,10 +1819,6 @@ function AdminHotDesk({ hd, setHd, users }) {
     </div>
   );
 }
-
-// ══════════════════════════════════════════════════════════════════
-// ADMIN SHELL — Unified sidebar + module router
-// ══════════════════════════════════════════════════════════════════
 
 function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   const { t } = useApp();
@@ -2040,23 +1852,16 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-
-// ══════════════════════════════════════════════════════════════════
-// ROOT COMPONENT — Connected to Supabase
+// ROOT COMPONENT
 // ══════════════════════════════════════════════════════════════════
 
 function WorkSuiteApp() {
   const { user: authUser, logout } = useAuth();
 
-  // ── Infrastructure state ──────────────────────────────────────
   const [lang,  setLang]  = useState("en");
   const [theme, setTheme] = useState("dark");
   const [mod,   setMod]   = useState("jt");
-
-  // ── Data loading state ────────────────────────────────────────
   const [loadingData, setLoadingData] = useState(true);
-
-  // ── Jira Tracker state ────────────────────────────────────────
   const [activeDay, setActiveDay] = useState(TODAY);
   const [filters,   setFilters]   = useState({
     from: TODAY.slice(0, 7) + '-01',
@@ -2065,18 +1870,13 @@ function WorkSuiteApp() {
   });
   const [worklogs,  setWorklogs]  = useState({});
   const [logModal,  setLogModal]  = useState(null);
-
-  // ── HotDesk state ─────────────────────────────────────────────
   const [hd,        setHd]        = useState({ fixed: {}, reservations: [] });
   const [hdModal,   setHdModal]   = useState(null);
   const [toast,     setToast]     = useState(null);
-
-  // ── Shared state ──────────────────────────────────────────────
   const [users,  setUsers]   = useState([]);
   const [view,   setView]    = useState("calendar");
   const [sbOpen, setSbOpen]  = useState(false);
 
-  // ── Build CURRENT_USER from auth ──────────────────────────────
   const CURRENT_USER = authUser ? {
     id:       authUser.id,
     name:     authUser.name,
@@ -2087,7 +1887,6 @@ function WorkSuiteApp() {
     active:   authUser.active !== false,
   } : { id: '', name: 'Loading...', email: '', avatar: '..', role: 'user', deskType: 'hotdesk', active: true };
 
-  // ── Load initial data from Supabase ──────────────────────────
   useEffect(() => {
     if (!authUser) return;
     let cancelled = false;
@@ -2112,7 +1911,6 @@ function WorkSuiteApp() {
           role: u.role, deskType: u.desk_type, active: u.active,
         })));
 
-        // Build HD state
         const fixed = {};
         (fixedRes.data ?? []).forEach(fa => {
           const source = fa.user_name || fa.user_id || "";
@@ -2125,7 +1923,6 @@ function WorkSuiteApp() {
         }));
         setHd({ fixed, reservations });
 
-        // Update SEATS if DB returns different coords
         if (seatsRes.data?.length) {
           seatsRes.data.forEach(s => {
             const seat = SEATS.find(ss => ss.id === s.id);
@@ -2143,10 +1940,8 @@ function WorkSuiteApp() {
     return () => { cancelled = true; };
   }, [authUser?.id]);
 
-  // ── Translation function ──────────────────────────────────────
   const t = useCallback(k => TRANSLATIONS[lang]?.[k] ?? TRANSLATIONS.en[k] ?? k, [lang]);
 
-  // ── JiraTracker use cases ─────────────────────────────────────
   const activeDayRef = useRef(activeDay);
   useEffect(() => { activeDayRef.current = activeDay; }, [activeDay]);
 
@@ -2154,10 +1949,9 @@ function WorkSuiteApp() {
     setLogModal({ date: date || activeDayRef.current, issueKey: issueKey || '' });
   }, []);
 
+  // ── FIX: handleSaveWorklog con rollback ───────────────────────────────────
   const handleSaveWorklog = useCallback(async (date, wl) => {
-    // Optimistic update
     setWorklogs(p => ({ ...p, [date]: [...(p[date] || []), wl] }));
-    // Persist to Supabase
     try {
       const { error } = await supabase.from('worklogs').insert({
         id:            wl.id,
@@ -2174,32 +1968,39 @@ function WorkSuiteApp() {
         seconds:       wl.seconds,
         description:   wl.description || '',
       });
-      if (error) console.error('Save worklog error:', error.message);
+      if (error) throw new Error(error.message);
     } catch (err) {
       console.error('Save worklog failed:', err);
+      setWorklogs(prev => {
+        const updated = (prev[date] || []).filter(w => w.id !== wl.id);
+        if (!updated.length) { const { [date]: _, ...rest } = prev; return rest; }
+        return { ...prev, [date]: updated };
+      });
+      setToast('❌ Error al guardar el worklog. Inténtalo de nuevo.');
     }
   }, [CURRENT_USER.id, CURRENT_USER.name]);
 
+  // ── FIX: handleDeleteWorklog con rollback ─────────────────────────────────
   const handleDeleteWorklog = useCallback(async (date, id) => {
-    // Optimistic update
+    const snapshot = worklogs[date] ? [...worklogs[date]] : [];
     setWorklogs(p => {
-      const u = (p[date] || []).filter(w => w.id !== id);
-      if (!u.length) { const { [date]: _, ...r } = p; return r; }
-      return { ...p, [date]: u };
+      const updated = (p[date] || []).filter(w => w.id !== id);
+      if (!updated.length) { const { [date]: _, ...r } = p; return r; }
+      return { ...p, [date]: updated };
     });
-    // Delete from Supabase
     try {
       const { error } = await supabase.from('worklogs').delete().eq('id', id);
-      if (error) console.error('Delete worklog error:', error.message);
+      if (error) throw new Error(error.message);
     } catch (err) {
       console.error('Delete worklog failed:', err);
+      setWorklogs(prev => ({ ...prev, [date]: snapshot }));
+      setToast('❌ Error al eliminar el worklog. Inténtalo de nuevo.');
     }
-  }, []);
+  }, [worklogs]);
 
   const handleExport = f => CsvService.exportWorklogs(worklogs, f.from, f.to, f.authorId || null, f.spaceKeys);
   const handleDayClick = d => { setActiveDay(d); setView('day'); };
 
-  // ── HotDesk use cases ─────────────────────────────────────────
   const notify = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
   const handleHdSeatClick = (seatId, date = TODAY) => {
@@ -2210,9 +2011,10 @@ function WorkSuiteApp() {
     setHdModal({ seatId, date });
   };
 
+  // ── FIX: handleHdConfirm con rollback y onConflict corregido ─────────────
   const handleHdConfirm = async (seatId, dates) => {
     if (!dates.length) return;
-    // Optimistic update
+    const snapshot = { ...hd, reservations: [...hd.reservations] };
     setHd(h => ({
       ...h,
       reservations: [
@@ -2222,7 +2024,6 @@ function WorkSuiteApp() {
     }));
     setHdModal(null);
     notify(`✓ ${t('hdReservedOk')} — ${seatId}`);
-    // Persist to Supabase
     try {
       const rows = dates.map(d => ({
         id:        `res-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,
@@ -2231,28 +2032,39 @@ function WorkSuiteApp() {
         user_name: CURRENT_USER.name,
         date:      d,
       }));
-      // Upsert to handle re-reservations
-      const { error } = await supabase.from('seat_reservations').upsert(rows, { onConflict: 'seat_id,date' });
-      if (error) console.error('Reserve error:', error.message);
+      // FIX: onConflict como array (Supabase JS v2)
+      const { error } = await supabase
+        .from('seat_reservations')
+        .upsert(rows, { onConflict: ['seat_id', 'date'] });
+      if (error) throw new Error(error.message);
     } catch (err) {
       console.error('Reserve failed:', err);
+      setHd(snapshot);
+      notify('❌ Error al reservar el puesto. Inténtalo de nuevo.');
     }
   };
 
+  // ── FIX: handleHdRelease con rollback ─────────────────────────────────────
   const handleHdRelease = async (seatId, date) => {
+    const snapshot = { ...hd, reservations: [...hd.reservations] };
     setHd(h => ({ ...h, reservations: h.reservations.filter(r => !(r.seatId === seatId && r.date === date)) }));
     setHdModal(null);
     notify(t('hdReleasedOk'));
     try {
-      const { error } = await supabase.from('seat_reservations')
-        .delete().eq('seat_id', seatId).eq('date', date).eq('user_id', CURRENT_USER.id);
-      if (error) console.error('Release error:', error.message);
+      const { error } = await supabase
+        .from('seat_reservations')
+        .delete()
+        .eq('seat_id', seatId)
+        .eq('date', date)
+        .eq('user_id', CURRENT_USER.id);
+      if (error) throw new Error(error.message);
     } catch (err) {
       console.error('Release failed:', err);
+      setHd(snapshot);
+      notify('❌ Error al liberar la reserva. Inténtalo de nuevo.');
     }
   };
 
-  // ── Nav ───────────────────────────────────────────────────────
   const isAdmin = CURRENT_USER.role === 'admin';
   const jtNavItems = [
     { id: 'calendar', label: t('navCalendar') },
@@ -2265,7 +2077,6 @@ function WorkSuiteApp() {
   ];
   const currentNavItems = mod === 'jt' ? jtNavItems : hdNavItems;
 
-  // ── Loading screen ────────────────────────────────────────────
   if (loadingData) {
     return (
       <div style={{ minHeight: '100vh', background: '#0d0d10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -2280,27 +2091,18 @@ function WorkSuiteApp() {
   return (
     <AppCtx.Provider value={{ lang, t, theme }}>
       <style>{buildCSS()}</style>
-
       <div data-theme={theme} style={{height:"100vh",overflow:"hidden",background:"var(--bg)",color:"var(--tx)"}}>
       <div className="shell">
-
-        {/* ── Top Bar ── */}
         <header className="topbar">
           <div className="logo">
             <div className="logo-dot"/>
             <span className="logo-jt">Work</span><span style={{color:"var(--tx2)",fontWeight:300}}>Suite</span>
           </div>
           <span className="proto-tag">{t("protoTag")}</span>
-
           <div className="sw-group">
-            <button className={`sw-btn ${mod==="jt"?"active":""}`} onClick={()=>{ setMod("jt"); setView("calendar"); }}>
-              {t("moduleSwitchJira")}
-            </button>
-            <button className={`sw-btn ${mod==="hd"?"active-green":""}`} onClick={()=>{ setMod("hd"); setView("map"); }}>
-              {t("moduleSwitchHD")}
-            </button>
+            <button className={`sw-btn ${mod==="jt"?"active":""}`} onClick={()=>{ setMod("jt"); setView("calendar"); }}>{t("moduleSwitchJira")}</button>
+            <button className={`sw-btn ${mod==="hd"?"active-green":""}`} onClick={()=>{ setMod("hd"); setView("map"); }}>{t("moduleSwitchHD")}</button>
           </div>
-
           <div className="top-right">
             <div className="sw-group">
               <button className={`sw-btn ${theme==="dark"?"active-theme":""}`} onClick={()=>setTheme("dark")}>🌙</button>
@@ -2321,81 +2123,36 @@ function WorkSuiteApp() {
             </button>
           </div>
         </header>
-
-        {/* ── Navigation Bar ── */}
         <nav className="nav-bar">
           {mod==="jt" && view!=="admin" && (
-            <button className={`n-btn sb-toggle ${sbOpen?"active":""}`} onClick={()=>setSbOpen(o=>!o)}>
-              ⚙ Filters
-            </button>
+            <button className={`n-btn sb-toggle ${sbOpen?"active":""}`} onClick={()=>setSbOpen(o=>!o)}>⚙ Filters</button>
           )}
           {currentNavItems.map(item=>(
-            <button key={item.id}
-              className={`n-btn ${view===item.id?(mod==="hd"?"active-hd":"active"):""}`}
-              onClick={()=>setView(item.id)}>
-              {item.label}
-            </button>
+            <button key={item.id} className={`n-btn ${view===item.id?(mod==="hd"?"active-hd":"active"):""}`} onClick={()=>setView(item.id)}>{item.label}</button>
           ))}
           {isAdmin&&(
-            <>
-              <div className="n-sep"/>
-              <button className={`n-btn ${view==="admin"?"active":""}`} onClick={()=>setView("admin")}>
-                ⚙ {t("navAdmin")}
-              </button>
-            </>
+            <><div className="n-sep"/><button className={`n-btn ${view==="admin"?"active":""}`} onClick={()=>setView("admin")}>⚙ {t("navAdmin")}</button></>
           )}
         </nav>
-
-        {/* ── Body ── */}
         <div className="body">
-          {sbOpen && mod==="jt" && view!=="admin" && (
-            <div className="sb-backdrop" onClick={()=>setSbOpen(false)}/>
-          )}
+          {sbOpen && mod==="jt" && view!=="admin" && (<div className="sb-backdrop" onClick={()=>setSbOpen(false)}/>)}
           {mod==="jt" && view!=="admin" && (
             <JTFilterSidebar filters={filters} onApply={f=>{setFilters(f);setSbOpen(false);}} onExport={handleExport} mobileOpen={sbOpen} onMobileClose={()=>setSbOpen(false)}/>
           )}
-
-          {mod==="jt" && view==="calendar" && (
-            <main className="content">
-              <CalendarView filters={filters} worklogs={worklogs} onDayClick={handleDayClick} onOpenLog={openLogModal}/>
-            </main>
-          )}
-          {mod==="jt" && view==="day" && (
-            <main className="content">
-              <DayView date={activeDay} filters={filters} worklogs={worklogs} onDateChange={setActiveDay} onOpenLog={openLogModal} onDeleteWorklog={handleDeleteWorklog}/>
-            </main>
-          )}
-          {mod==="jt" && view==="tasks" && (
-            <main className="content">
-              <TasksView filters={filters} onOpenLog={openLogModal}/>
-            </main>
-          )}
-          {mod==="hd" && view==="map" && (
-            <main className="content">
-              <HDMapView hd={hd} onSeat={sid=>handleHdSeatClick(sid,TODAY)} currentUser={CURRENT_USER}/>
-            </main>
-          )}
-          {mod==="hd" && view==="table" && (
-            <main className="content">
-              <HDTableView hd={hd} onCell={(sid,date)=>handleHdSeatClick(sid,date)} currentUser={CURRENT_USER}/>
-            </main>
-          )}
-          {view==="admin" && (
-            <AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER}/>
-          )}
+          {mod==="jt" && view==="calendar" && (<main className="content"><CalendarView filters={filters} worklogs={worklogs} onDayClick={handleDayClick} onOpenLog={openLogModal}/></main>)}
+          {mod==="jt" && view==="day"      && (<main className="content"><DayView date={activeDay} filters={filters} worklogs={worklogs} onDateChange={setActiveDay} onOpenLog={openLogModal} onDeleteWorklog={handleDeleteWorklog}/></main>)}
+          {mod==="jt" && view==="tasks"    && (<main className="content"><TasksView filters={filters} onOpenLog={openLogModal}/></main>)}
+          {mod==="hd" && view==="map"      && (<main className="content"><HDMapView hd={hd} onSeat={sid=>handleHdSeatClick(sid,TODAY)} currentUser={CURRENT_USER}/></main>)}
+          {mod==="hd" && view==="table"    && (<main className="content"><HDTableView hd={hd} onCell={(sid,date)=>handleHdSeatClick(sid,date)} currentUser={CURRENT_USER}/></main>)}
+          {view==="admin" && (<AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER}/>)}
         </div>
       </div>
       </div>
-
       {logModal && (
-        <div>
-          <LogWorklogModal initialDate={logModal.date} initialIssueKey={logModal.issueKey} onClose={()=>setLogModal(null)} onSave={handleSaveWorklog} currentUser={CURRENT_USER}/>
-        </div>
+        <div><LogWorklogModal initialDate={logModal.date} initialIssueKey={logModal.issueKey} onClose={()=>setLogModal(null)} onSave={handleSaveWorklog} currentUser={CURRENT_USER}/></div>
       )}
       {hdModal && (
-        <div>
-          <HDReserveModal seatId={hdModal.seatId} initDate={hdModal.date} hd={hd} onConfirm={handleHdConfirm} onRelease={handleHdRelease} onClose={()=>setHdModal(null)} currentUser={CURRENT_USER}/>
-        </div>
+        <div><HDReserveModal seatId={hdModal.seatId} initDate={hdModal.date} hd={hd} onConfirm={handleHdConfirm} onRelease={handleHdRelease} onClose={()=>setHdModal(null)} currentUser={CURRENT_USER}/></div>
       )}
       {toast && (
         <div style={{position:"fixed",bottom:20,right:20,zIndex:9999,padding:"11px 18px",borderRadius:"var(--r2)",fontSize:13,fontWeight:500,background:"var(--sf)",border:"1px solid var(--bd2)",color:"var(--tx)",boxShadow:"var(--shadow)",animation:"fadeIn .2s ease"}}>
