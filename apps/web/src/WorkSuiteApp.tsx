@@ -197,6 +197,33 @@ const TR: Record<string, Record<string, string>> = {
     hdReleaseTitle:"Release reservation",hdReleaseQ:"Release your reservation?",hdReleaseBtn:"Release",
     hdReserveTitle:"New reservation",hdSelectDates:"Select dates",hdConfirm:"Confirm",
     hdReleasedOk:"Reservation released",hdReservedOk:"Reserved",hdAdminManage:"Manage seat",
+    syncToJira:"Sync to Jira",syncedToJira:"synced to Jira",syncing:"Syncing…",
+    errorSaving:"Error saving",errorDeleting:"Error deleting",errorReserving:"Error reserving",
+    errorReleasing:"Error releasing",errorSyncing:"Sync error",exported:"Exported",
+    saved:"Saved",deleted:"Deleted",updated:"Updated",reservationConfirmed:"Reservation confirmed",
+    reservationReleased:"Reservation released",userAdded2:"User added",imported:"Imported",
+    assigned:"Assigned",unassigned:"Unassigned",
+    jiraNotConnected:"Not connected",jiraAllFieldsRequired:"All fields are required",
+    jiraTesting:"Testing connection…",jiraConnected:"Connected successfully",
+    generateToken:"Generate token",pasteToken:"Paste your token here",
+    disconnect:"Disconnect",saveConfig:"Save & connect",dark:"Dark",light:"Light",
+    account:"Account",settings:"Settings",hotdesk:"HotDesk",tracker:"Tracker",
+    admin:"Admin",mapView:"Map",tableView:"Table",addWorklog:"Add worklog",
+    filters:"Filters",total:"Total",calendar:"Calendar",day:"Day",tasks:"Tasks",
+    free:"Free",occupied:"Occupied",fixed:"Fixed",yourSeat:"Your seat",
+    yourReservation:"Your reservation",available:"Available",reserve:"Reserve",
+    release:"Release",reserveSeat:"Reserve seat",date:"Date",confirm:"Confirm",
+    cancel:"Cancel",edit:"Edit",delete:"Delete",seat:"Seat",status:"Status",
+    user:"User",users:"Users",hotdeskAdmin:"HotDesk admin",selectSeat:"Select seat",
+    selectUser:"Select user",assign:"Assign",unassign:"Unassign",
+    name:"Name",email:"Email",role:"Role",deskType:"Desk type",active:"Active",
+    inactive:"Inactive",activate:"Activate",deactivate:"Deactivate",
+    pwd:"Password",addUser:"Add user",importCsv:"Import CSV",
+    changePassword:"Change password",newPassword:"New password",
+    confirmPassword:"Confirm password",pwdTooShort:"Min 6 characters",pwdMismatch:"Passwords don't match",
+    parse:"Parse",valid:"Valid",errors:"Errors",import:"Import",
+    nameRequired:"Name required",invalidEmail:"Invalid email",
+    userAdded:"User added",deleted2:"Deleted",
   },
   es: {
     appName:"WorkSuite",protoTag:"Prototipo UI",moduleSwitchJira:"Jira Tracker",moduleSwitchHD:"HotDesk",
@@ -248,6 +275,33 @@ const TR: Record<string, Record<string, string>> = {
     hdReleaseTitle:"Liberar reserva",hdReleaseQ:"¿Deseas liberar tu reserva?",hdReleaseBtn:"Liberar",
     hdReserveTitle:"Nueva reserva",hdSelectDates:"Selecciona fechas",hdConfirm:"Confirmar",
     hdReleasedOk:"Reserva liberada",hdReservedOk:"Reserva confirmada",hdAdminManage:"Gestionar puesto",
+    syncToJira:"Sincronizar a Jira",syncedToJira:"sincronizado a Jira",syncing:"Sincronizando…",
+    errorSaving:"Error al guardar",errorDeleting:"Error al eliminar",errorReserving:"Error al reservar",
+    errorReleasing:"Error al liberar",errorSyncing:"Error de sincronización",exported:"Exportado",
+    saved:"Guardado",deleted:"Eliminado",updated:"Actualizado",reservationConfirmed:"Reserva confirmada",
+    reservationReleased:"Reserva liberada",userAdded2:"Usuario añadido",imported:"Importados",
+    assigned:"Asignado",unassigned:"Desasignado",
+    jiraNotConnected:"No conectado",jiraAllFieldsRequired:"Todos los campos son obligatorios",
+    jiraTesting:"Probando conexión…",jiraConnected:"Conectado correctamente",
+    generateToken:"Generar token",pasteToken:"Pega tu token aquí",
+    disconnect:"Desconectar",saveConfig:"Guardar y conectar",dark:"Oscuro",light:"Claro",
+    account:"Cuenta",settings:"Configuración",hotdesk:"HotDesk",tracker:"Tracker",
+    admin:"Admin",mapView:"Mapa",tableView:"Tabla",addWorklog:"Añadir worklog",
+    filters:"Filtros",total:"Total",calendar:"Calendario",day:"Día",tasks:"Tareas",
+    free:"Libre",occupied:"Ocupado",fixed:"Fijo",yourSeat:"Tu puesto",
+    yourReservation:"Tu reserva",available:"Disponible",reserve:"Reservar",
+    release:"Liberar",reserveSeat:"Reservar puesto",date:"Fecha",confirm:"Confirmar",
+    cancel:"Cancelar",edit:"Editar",delete:"Eliminar",seat:"Puesto",status:"Estado",
+    user:"Usuario",users:"Usuarios",hotdeskAdmin:"Admin HotDesk",selectSeat:"Seleccionar puesto",
+    selectUser:"Seleccionar usuario",assign:"Asignar",unassign:"Desasignar",
+    name:"Nombre",email:"Email",role:"Rol",deskType:"Tipo de puesto",active:"Activo",
+    inactive:"Inactivo",activate:"Activar",deactivate:"Desactivar",
+    pwd:"Contraseña",addUser:"Añadir usuario",importCsv:"Importar CSV",
+    changePassword:"Cambiar contraseña",newPassword:"Nueva contraseña",
+    confirmPassword:"Confirmar contraseña",pwdTooShort:"Mín 6 caracteres",pwdMismatch:"Las contraseñas no coinciden",
+    parse:"Analizar",valid:"Válidos",errors:"Errores",import:"Importar",
+    nameRequired:"Nombre obligatorio",invalidEmail:"Email inválido",
+    userAdded:"Usuario añadido",deleted2:"Eliminado",
   },
 };
 
@@ -284,6 +338,9 @@ const MOCK_PROJECTS = [
   {key:"DATA",name:"Data & Analytics"},{key:"OPS",name:"DevOps & Infra"},
 ];
 const TODAY = new Date().toISOString().slice(0, 10);
+const API_BASE = (import.meta as Record<string, unknown>).env
+  ? ((import.meta as { env: Record<string, string> }).env.VITE_API_URL ?? "http://localhost:3001")
+  : "http://localhost:3001";
 
 // ── CSS ───────────────────────────────────────────────────────────
 const buildCSS = (): string => `
@@ -339,6 +396,23 @@ textarea.fi{resize:vertical;min-height:52px;font-family:var(--mono);font-size:11
 .btn-g:hover{color:var(--tx);background:var(--sf3);border-color:var(--bd2);}
 .btn-exp{font-size:11px;font-weight:600;width:100%;padding:7px;border-radius:var(--r);border:1px solid var(--bd2);background:var(--sf2);color:var(--green);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:var(--ease);}
 .btn-exp:hover{background:rgba(62,207,142,.07);border-color:var(--green);}
+.btn-jira{font-size:11px;font-weight:600;padding:4px 8px;border-radius:var(--r);border:1px solid #0052cc;background:#0052cc18;color:#4c9aff;cursor:pointer;transition:var(--ease);}
+.btn-jira:hover{background:#0052cc30;border-color:#4c9aff;}
+.badge-synced{font-size:10px;font-weight:600;padding:3px 7px;border-radius:var(--r);background:rgba(62,207,142,.12);color:var(--green);border:1px solid rgba(62,207,142,.25);white-space:nowrap;}
+.set-divider{height:1px;background:var(--bd1);margin:20px 0;}
+.jira-settings{display:flex;flex-direction:column;gap:10px;padding:16px;background:var(--sf2);border-radius:var(--r);border:1px solid var(--bd1);}
+.jira-hdr{display:flex;align-items:center;gap:12px;margin-bottom:4px;}
+.jira-logo{font-size:22px;}
+.jira-title{font-weight:600;font-size:14px;color:var(--tx1);}
+.jira-sub{font-size:11px;color:var(--tx3);margin-top:1px;}
+.jira-link{font-size:10px;color:var(--blue);text-decoration:none;margin-left:6px;}
+.jira-link:hover{text-decoration:underline;}
+.btn-show{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--tx3);cursor:pointer;font-size:11px;padding:2px 4px;}
+.jira-msg{font-size:12px;padding:7px 10px;border-radius:var(--r);margin-top:2px;}
+.jira-msg-ok{background:rgba(62,207,142,.1);color:var(--green);border:1px solid rgba(62,207,142,.2);}
+.jira-msg-err{background:rgba(255,85,85,.1);color:#ff6b6b;border:1px solid rgba(255,85,85,.2);}
+.jira-msg-loading{background:rgba(100,160,255,.1);color:#4c9aff;border:1px solid rgba(100,160,255,.2);}
+.jira-footer{display:flex;justify-content:flex-end;margin-top:4px;}
 .btn-log{font-size:11px;font-weight:600;padding:6px 12px;border-radius:var(--r);border:1px solid rgba(79,110,247,.3);background:var(--glow);color:var(--ac2);cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:var(--ease);}
 .btn-log:hover{background:rgba(79,110,247,.18);border-color:var(--ac);}.btn-log-sm{font-size:10px;padding:4px 9px;}
 .cal-h{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
@@ -609,8 +683,8 @@ function MiniCal({year,month,selectedDates,onToggle,occupied=[]}: MiniCalProps):
 }
 
 // ── LOG WORKLOG MODAL ─────────────────────────────────────────────
-interface LWProps { initDate:string; initKey:string; onClose:()=>void; onSave:(d:string,w:WorklogUI)=>void; cu:CurrentUser; }
-function LogWorklogModal({initDate,initKey,onClose,onSave,cu}: LWProps): JSX.Element {
+interface LWProps { initDate:string; initKey?:string; issues:MockIssue[]; onClose:()=>void; onSave:(d:string,w:WorklogUI)=>void; cu:CurrentUser; }
+function LogWorklogModal({initDate,initKey,issues,onClose,onSave,cu}: LWProps): JSX.Element {
   const {t} = useApp();
   const [ik,setIk] = useState(initKey||""); const [qry,setQry] = useState(initKey||"");
   const [open,setOpen] = useState(false); const [dt,setDt] = useState(initDate||TODAY);
@@ -622,7 +696,7 @@ function LogWorklogModal({initDate,initKey,onClose,onSave,cu}: LWProps): JSX.Ele
     const h = (e: MouseEvent) => { if (cbRef.current && !cbRef.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h);
   }, [open]);
-  const filtered = qry.trim() ? MOCK_ISSUES.filter(i => i.key.toLowerCase().includes(qry.toLowerCase()) || i.summary.toLowerCase().includes(qry.toLowerCase())) : MOCK_ISSUES;
+  const filtered = qry.trim() ? issues.filter(i => i.key.toLowerCase().includes(qry.toLowerCase()) || i.summary.toLowerCase().includes(qry.toLowerCase())) : issues;
   const sel = (i: MockIssue) => { setIk(i.key); setQry(i.key); setOpen(false); setEr(v => ({...v, ik: null})); };
   const ps = TimeParser.parse(tr), tp = ps > 0 ? TimeParser.fmt(ps) : null;
   const validate = (): Record<string,string> => {
@@ -633,7 +707,7 @@ function LogWorklogModal({initDate,initKey,onClose,onSave,cu}: LWProps): JSX.Ele
   };
   const submit = () => {
     const errs = validate(); if (Object.keys(errs).length) { setEr(errs); return; }
-    const iss = MOCK_ISSUES.find(i => i.key === ik);
+    const iss = issues.find(i => i.key === ik);
     setOk(true);
     setTimeout(() => {
       onSave(dt, { id: `wl-${Date.now()}`, issue: ik, summary: iss?.summary??ik, type: iss?.type??"Task",
@@ -643,7 +717,7 @@ function LogWorklogModal({initDate,initKey,onClose,onSave,cu}: LWProps): JSX.Ele
       onClose();
     }, 750);
   };
-  const si = MOCK_ISSUES.find(i => i.key === ik);
+  const si = issues.find(i => i.key === ik);
   return (
     <div className="ov" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="mb" style={{maxWidth:480}}>
@@ -694,8 +768,8 @@ function LogWorklogModal({initDate,initKey,onClose,onSave,cu}: LWProps): JSX.Ele
 }
 
 // ── JT FILTER SIDEBAR ─────────────────────────────────────────────
-interface JTSBProps { filters:Filters; onApply:(f:Filters)=>void; onExport:(f:Filters)=>void; mobileOpen:boolean; onMobileClose:()=>void; }
-function JTFilterSidebar({filters,onApply,onExport,mobileOpen}: JTSBProps): JSX.Element {
+interface JTSBProps { filters:Filters; users:MockUserUI[]; projects:{key:string;name:string}[]; onApply:(f:Filters)=>void; onExport:(f:Filters)=>void; mobileOpen:boolean; onMobileClose:()=>void; }
+function JTFilterSidebar({filters,users,projects,onApply,onExport,mobileOpen}: JTSBProps): JSX.Element {
   const {t} = useApp();
   const [l,sL] = useState<Filters>(filters);
   const ts = (k: string) => sL(f => ({...f, spaceKeys: f.spaceKeys.includes(k) ? f.spaceKeys.filter(x => x!==k) : [...f.spaceKeys, k]}));
@@ -708,13 +782,13 @@ function JTFilterSidebar({filters,onApply,onExport,mobileOpen}: JTSBProps): JSX.
       <div className="sb-s"><div className="sb-lbl">{t("filterByUser")}</div>
         <select className="fi" value={l.authorId} onChange={e => sL({...l, authorId: e.target.value})}>
           <option value="">{t("allUsers")}</option>
-          {MOCK_USERS.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+          {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
         </select>
       </div>
       <div className="sb-s">
         <div className="sb-lbl">{t("spaces")}{l.spaceKeys.length > 0 && <span className="sb-cnt">({l.spaceKeys.length})</span>}</div>
         <div className="pick-l">
-          {MOCK_PROJECTS.map(p => { const on = l.spaceKeys.includes(p.key); return (
+          {projects.map(p => { const on = l.spaceKeys.includes(p.key); return (
             <div key={p.key} className={`pick-i ${on?"on":""}`} onClick={() => ts(p.key)}>
               <div className="cb">{on && "✓"}</div><span className="kb">{p.key}</span><span>{p.name}</span>
             </div>
@@ -774,7 +848,8 @@ function CalendarView({ wls, cu, onAdd, onEdit, onDelete }: CVProps): JSX.Elemen
 }
 
 interface DVProps { date: string; wls: WorklogUI[]; cu: CurrentUser; onAdd: () => void; onEdit: (w: WorklogUI) => void; onDelete: (w: WorklogUI) => void; }
-function DayView({ date, wls, cu, onAdd, onEdit, onDelete }: DVProps): JSX.Element {
+interface DVProps { date: string; wls: WorklogUI[]; cu: CurrentUser; onAdd: () => void; onEdit: (w: WorklogUI) => void; onDelete: (w: WorklogUI) => void; onSync: (w: WorklogUI) => void; }
+function DayView({ date, wls, cu, onAdd, onEdit, onDelete, onSync }: DVProps): JSX.Element {
   const { t } = useApp();
   const total = TimeParser.fmt(wls.reduce((a, w) => a + w.seconds, 0));
   return (
@@ -795,6 +870,8 @@ function DayView({ date, wls, cu, onAdd, onEdit, onDelete }: DVProps): JSX.Eleme
             <div className="dv-acts">
               <button className="btn-g" onClick={() => onEdit(w)}>{t("edit")}</button>
               <button className="btn-danger" onClick={() => onDelete(w)}>{t("delete")}</button>
+              {!w.syncedToJira && <button className="btn-jira" onClick={() => onSync(w)} title={t("syncToJira")}>⬆ Jira</button>}
+              {w.syncedToJira && <span className="badge-synced">✓ Jira</span>}
             </div>
           )}
         </div>
@@ -803,8 +880,8 @@ function DayView({ date, wls, cu, onAdd, onEdit, onDelete }: DVProps): JSX.Eleme
   );
 }
 
-interface TVProps { wls: WorklogsMap; cu: CurrentUser; filters: Filters; onEdit: (w: WorklogUI) => void; onDelete: (w: WorklogUI) => void; }
-function TasksView({ wls, cu, filters, onEdit, onDelete }: TVProps): JSX.Element {
+interface TVProps { wls: WorklogsMap; cu: CurrentUser; filters: Filters; onEdit: (w: WorklogUI) => void; onDelete: (w: WorklogUI) => void; onSync: (w: WorklogUI) => void; }
+function TasksView({ wls, cu, filters, onEdit, onDelete, onSync }: TVProps): JSX.Element {
   const { t } = useApp();
   const filtered = WlSvc.filter(wls, filters.from, filters.to, filters.authorId || null);
   const allWls = Object.values(filtered).flat();
@@ -826,6 +903,8 @@ function TasksView({ wls, cu, filters, onEdit, onDelete }: TVProps): JSX.Element
                 <div className="tv-acts">
                   <button className="btn-g" onClick={() => onEdit(w)}>{t("edit")}</button>
                   <button className="btn-danger" onClick={() => onDelete(w)}>{t("delete")}</button>
+                  {!w.syncedToJira && <button className="btn-jira" onClick={() => onSync(w)} title={t("syncToJira")}>⬆ Jira</button>}
+                  {w.syncedToJira && <span className="badge-synced">✓ Jira</span>}
                 </div>
               )}
             </div>
@@ -956,6 +1035,103 @@ function HDReserveModal({ seatId, date, onConfirm, onClose }: HDRMProps): JSX.El
 }
 
 // ── ADMIN COMPONENTS ─────────────────────────────────────────────
+// ── JiraSettings — conexión Jira por usuario ──────────────────────────────────
+type JiraConnStatus = "idle" | "loading" | "ok" | "err";
+interface JiraConn { baseUrl: string; email: string; connectedAt: string | null; }
+
+function JiraSettings({ cu }: { cu: CurrentUser }): JSX.Element {
+  const { t } = useApp();
+  const [conn, setConn] = useState<JiraConn | null>(null);
+  const [url,  setUrl]  = useState("");
+  const [mail, setMail] = useState(cu.email);
+  const [tok,  setTok]  = useState("");
+  const [show, setShow] = useState(false);
+  const [status, setStatus] = useState<JiraConnStatus>("idle");
+  const [msg, setMsg] = useState("");
+
+  // Cargar conexión existente al montar
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/jira/connection`, {
+          headers: { Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token ?? ""}` },
+        });
+        if (res.ok) {
+          const { data } = await res.json() as { data: { base_url: string; email: string; connected_at: string } | null };
+          if (data) {
+            setConn({ baseUrl: data.base_url, email: data.email, connectedAt: data.connected_at });
+            setUrl(data.base_url);
+            setMail(data.email);
+          }
+        }
+      } catch { /* sin conexión previa */ }
+    })();
+  }, []);
+
+  const getToken = async (): Promise<string> =>
+    (await supabase.auth.getSession()).data.session?.access_token ?? "";
+
+  const handleSave = async (): Promise<void> => {
+    if (!url || !mail || !tok) { setMsg(t("jiraAllFieldsRequired")); setStatus("err"); return; }
+    setStatus("loading"); setMsg(t("jiraTesting"));
+    try {
+      const res = await fetch(`${API_BASE}/jira/connection`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getToken()}` },
+        body: JSON.stringify({ baseUrl: url, email: mail, apiToken: tok }),
+      });
+      const body = await res.json() as { ok: boolean; error?: { message: string } };
+      if (!res.ok) throw new Error(body.error?.message ?? "Error desconocido");
+      setConn({ baseUrl: url, email: mail, connectedAt: new Date().toISOString() });
+      setTok(""); setStatus("ok"); setMsg(t("jiraConnected"));
+    } catch (e) { setStatus("err"); setMsg(String(e)); }
+  };
+
+  const handleDisconnect = async (): Promise<void> => {
+    await fetch(`${API_BASE}/jira/connection`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${await getToken()}` },
+    });
+    setConn(null); setUrl(""); setTok(""); setStatus("idle"); setMsg("");
+  };
+
+  return (
+    <div className="jira-settings">
+      <div className="jira-hdr">
+        <span className="jira-logo">🔵</span>
+        <div>
+          <div className="jira-title">Jira Cloud</div>
+          <div className="jira-sub">{conn ? `${conn.baseUrl}` : t("jiraNotConnected")}</div>
+        </div>
+        {conn && <span className="badge-synced">✓ {t("connected")}</span>}
+      </div>
+
+      <label className="lbl">URL de Jira</label>
+      <input className="fi" placeholder="https://tuempresa.atlassian.net" value={url} onChange={e => setUrl(e.target.value)} disabled={!!conn}/>
+
+      <label className="lbl">{t("jiraEmail")}</label>
+      <input className="fi" type="email" value={mail} onChange={e => setMail(e.target.value)} disabled={!!conn}/>
+
+      <label className="lbl">{t("apiToken")}
+        <a className="jira-link" href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank" rel="noreferrer"> ↗ {t("generateToken")}</a>
+      </label>
+      <div style={{position:"relative"}}>
+        <input className="fi" type={show?"text":"password"} placeholder={conn ? "••••••••••••" : t("pasteToken")} value={tok} onChange={e => setTok(e.target.value)}/>
+        <button className="btn-show" onClick={() => setShow(s => !s)}>{show ? t("hideToken") : t("showToken")}</button>
+      </div>
+
+      {msg && <div className={`jira-msg jira-msg-${status}`}>{msg}</div>}
+
+      <div className="jira-footer">
+        {!conn
+          ? <button className="btn-p" onClick={() => void handleSave()} disabled={status==="loading"}>{status==="loading" ? t("syncing") : t("saveConfig")}</button>
+          : <button className="btn-danger" onClick={() => void handleDisconnect()}>{t("disconnect")}</button>
+        }
+      </div>
+    </div>
+  );
+}
+
 interface ASProps { cu: CurrentUser; onLogout: () => void; lang: string; setLang: (l: string) => void; theme: string; setTheme: (t: string) => void; }
 function AdminSettings({ cu, onLogout, lang, setLang, theme, setTheme }: ASProps): JSX.Element {
   const { t } = useApp();
@@ -976,6 +1152,8 @@ function AdminSettings({ cu, onLogout, lang, setLang, theme, setTheme }: ASProps
         <div><div className="lbl">{t("account")}</div><div className="set-email">{cu.email}</div></div>
         <button className="btn-danger" onClick={onLogout}>{t("logout")}</button>
       </div>
+      <div className="set-divider"/>
+      <JiraSettings cu={cu}/>
     </div>
   );
 }
@@ -1198,6 +1376,10 @@ function WorkSuiteApp(): JSX.Element {
   // ── data — users ──
   const [users, setUsers] = useState<MockUserUI[]>(MOCK_USERS);
 
+  // ── data — Jira ──
+  const [jiraIssues,   setJiraIssues]   = useState<MockIssue[]>(MOCK_ISSUES);
+  const [jiraProjects, setJiraProjects] = useState<{key:string;name:string}[]>(MOCK_PROJECTS);
+
   // ── modals ──
   const [lwModal, setLwModal] = useState<{ date: string; key?: string } | null>(null);
   const [editWl, setEditWl] = useState<WorklogUI | null>(null);
@@ -1212,7 +1394,7 @@ function WorkSuiteApp(): JSX.Element {
     setToast({ msg, type }); setTimeout(() => setToast(null), 3000);
   }, []);
 
-  // ── loadAll from Supabase ──
+  // ── loadAll from Supabase + Jira ──
   const loadAll = useCallback(async (): Promise<void> => {
     try {
       const [wlRes, resRes, fixRes] = await Promise.all([
@@ -1231,6 +1413,23 @@ function WorkSuiteApp(): JSX.Element {
         setHd({ fixed: fix, reservations: res });
       }
     } catch (e) { console.error("loadAll error", e); }
+
+    // Cargar proyectos e issues desde la API (JiraCloudAdapter si hay credenciales, Mock si no)
+    try {
+      const projRes = await fetch(`${API_BASE}/jira/projects`);
+      if (projRes.ok) {
+        const { data: projs } = await projRes.json() as { data: {key:string;name:string}[] };
+        setJiraProjects(projs);
+        const firstKey = projs.find(p => p.key === "ANDURIL")?.key ?? projs[0]?.key;
+        if (firstKey) {
+          const issRes = await fetch(`${API_BASE}/jira/issues?project=${firstKey}`);
+          if (issRes.ok) {
+            const { data: issues } = await issRes.json() as { data: MockIssue[] };
+            setJiraIssues(issues);
+          }
+        }
+      }
+    } catch (e) { console.warn("Jira load (usando datos mock):", e); }
   }, []);
 
   useEffect(() => { void loadAll(); }, [loadAll]);
@@ -1238,7 +1437,7 @@ function WorkSuiteApp(): JSX.Element {
   // ── worklog handlers ──
   const handleSaveWorklog = useCallback(async (date: string, key: string, secs: number, started: string, desc: string): Promise<void> => {
     const snapshot = { ...wls };
-    const issue = MOCK_ISSUES.find(i => i.key === key);
+    const issue = jiraIssues.find(i => i.key === key);
     const newEntry: WorklogUI = {
       id: crypto.randomUUID(), issue: key, summary: issue?.summary ?? key,
       type: issue?.type ?? "Task", epic: issue?.epic ?? "—", epicName: issue?.epicName ?? "—",
@@ -1267,6 +1466,25 @@ function WorkSuiteApp(): JSX.Element {
       showToast(t("deleted"));
     } catch (e) { setWls(snapshot); showToast(t("errorDeleting"), "err"); console.error(e); }
   }, [wls, t, showToast]);
+
+  // ── sync worklog → Jira ──
+  const handleSyncWorklog = useCallback(async (w: WorklogUI, date: string): Promise<void> => {
+    try {
+      const res = await fetch(`${API_BASE}/jira/worklogs/${w.issue}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ worklogId: w.id, seconds: w.seconds, startedAt: `${date}T${w.started}:00.000+0000`, description: w.description }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      // Actualiza flag en estado local
+      setWls(prev => {
+        const next = { ...prev };
+        if (next[date]) next[date] = next[date]!.map(x => x.id === w.id ? { ...x, syncedToJira: true } : x);
+        return next;
+      });
+      showToast(`✓ ${w.issue} ${t("syncedToJira")}`);
+    } catch (e) { showToast(t("errorSyncing"), "err"); console.error(e); }
+  }, [t, showToast]);
 
   // ── hotdesk handlers ──
   const handleHdConfirm = useCallback(async (seatId: string, date: string): Promise<void> => {
@@ -1357,10 +1575,10 @@ function WorkSuiteApp(): JSX.Element {
             </div>
             <div className="tracker-body">
               {tView === "calendar" && <CalendarView wls={wls} cu={cu} onAdd={d => { setSelDate(d); setLwModal({ date: d }); }} onEdit={w => setEditWl(w)} onDelete={w => void handleDeleteWorklog(w, w.started?.slice(0,10) ?? selDate)}/>}
-              {tView === "day" && <DayView date={selDate} wls={wls[selDate] ?? []} cu={cu} onAdd={() => setLwModal({ date: selDate })} onEdit={w => setEditWl(w)} onDelete={w => void handleDeleteWorklog(w, selDate)}/>}
-              {tView === "tasks" && <TasksView wls={wls} cu={cu} filters={filters} onEdit={w => setEditWl(w)} onDelete={w => void handleDeleteWorklog(w, w.started?.slice(0,10) ?? TODAY)}/>}
+              {tView === "day" && <DayView date={selDate} wls={wls[selDate] ?? []} cu={cu} onAdd={() => setLwModal({ date: selDate })} onEdit={w => setEditWl(w)} onDelete={w => void handleDeleteWorklog(w, selDate)} onSync={w => void handleSyncWorklog(w, selDate)}/>}
+              {tView === "tasks" && <TasksView wls={wls} cu={cu} filters={filters} onEdit={w => setEditWl(w)} onDelete={w => void handleDeleteWorklog(w, w.started?.slice(0,10) ?? TODAY)} onSync={w => void handleSyncWorklog(w, w.started?.slice(0,10) ?? TODAY)}/>}
               {(tView === "day" || tView === "tasks") && sbOpen && (
-                <JTFilterSidebar filters={filters} onApply={f => { setFilters(f); setSbOpen(false); }} onExport={f => { const r = WlSvc.filter(wls, f.from, f.to, f.authorId || null); console.info("Export", r); showToast(t("exported")); }} mobileOpen={sbOpen}/>
+                <JTFilterSidebar filters={filters} users={users} projects={jiraProjects} onApply={f => { setFilters(f); setSbOpen(false); }} onExport={f => { const r = WlSvc.filter(wls, f.from, f.to, f.authorId || null); console.info("Export", r); showToast(t("exported")); }} mobileOpen={sbOpen} onMobileClose={() => setSbOpen(false)}/>
               )}
             </div>
           </div>
@@ -1393,6 +1611,7 @@ function WorkSuiteApp(): JSX.Element {
           <LogWorklogModal
             initDate={editWl ? (editWl.started?.slice(0,10) ?? selDate) : lwModal?.date ?? selDate}
             initKey={editWl?.issue ?? lwModal?.key}
+            issues={jiraIssues}
             cu={cu}
             onClose={() => { setLwModal(null); setEditWl(null); }}
             onSave={(date, key, secs, started, desc) => void handleSaveWorklog(date, key, secs, started, desc)}
