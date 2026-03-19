@@ -1,90 +1,132 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// ADAPTER — JiraCloudAdapter
-// Implements IJiraApi against Jira REST API v3.
-// Configure via env: JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN
-// ─────────────────────────────────────────────────────────────────────────────
+import type { IJiraApi, JiraProject, JiraIssue, JiraWorklogResult } from '../../domain/worklog/IJiraApi.js';
 
-import type { IJiraApi, JiraWorklogPayload } from '../../domain/worklog/IJiraApi.js';
-import type { JiraIssue } from '@worksuite/shared-types';
+// ── Tipos internos de la respuesta Jira ───────────────────────────────────────
+interface JiraProjectRaw {
+  key:  string;
+  name: string;
+  id:   string;
+}
 
+interface JiraIssueRaw {
+  key:    string;
+  fields: {
+    summary:    string;
+    issuetype:  { name: string };
+    status:     { name: string };
+    priority:   { name: string } | null;
+    project:    { key: string };
+    assignee:   { displayName: string } | null;
+    labels:     string[];
+    // epics en Jira Cloud v3: parent o customfield_10014
+    parent?:    { key: string; fields?: { summary?: string; issuetype?: { name: string } } };
+    customfield_10014?: string | null;   // epic link (legacy)
+    customfield_10008?: { key: string; fields?: { summary?: string } } | null; // epic name (legacy)
+  };
+}
+
+// ── Adapter ───────────────────────────────────────────────────────────────────
 export class JiraCloudAdapter implements IJiraApi {
-  private readonly baseUrl: string;
   private readonly authHeader: string;
+  private readonly base: string;
 
   constructor(baseUrl: string, email: string, apiToken: string) {
-    this.baseUrl = baseUrl.replace(/\/$/, '');
-    this.authHeader = `Basic ${Buffer.from(`${email}:${apiToken}`).toString('base64')}`;
+    this.base = baseUrl.replace(/\/$/, ''); // sin trailing slash
+    this.authHeader = 'Basic ' + Buffer.from(`${email}:${apiToken}`).toString('base64');
   }
 
-  private async fetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-    const res = await fetch(`${this.baseUrl}/rest/api/3${path}`, {
-      ...options,
+  // ── helpers ─────────────────────────────────────────────────────────────────
+  private async fetch<T>(path: string, opts: RequestInit = {}): Promise<T> {
+    const url = `${this.base}/rest/api/3${path}`;
+    const res = await fetch(url, {
+      ...opts,
       headers: {
         'Authorization': this.authHeader,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...options.headers,
+        'Accept':        'application/json',
+        'Content-Type':  'application/json',
+        ...(opts.headers ?? {}),
       },
     });
+
     if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`Jira API ${res.status}: ${body}`);
+      const body = await res.text().catch(() => '');
+      throw new Error(`Jira ${res.status} ${res.statusText} — ${path}\n${body}`);
     }
+
     return res.json() as Promise<T>;
   }
 
-  async getIssue(key: string): Promise<JiraIssue | null> {
-    try {
-      const data = await this.fetch<Record<string, unknown>>(`/issue/${key}?fields=summary,issuetype,status,priority,assignee,labels,customfield_10014`);
-      return this.mapIssue(data);
-    } catch {
-      return null;
+  // ── IJiraApi ─────────────────────────────────────────────────────────────────
+  async getProjects(): Promise<JiraProject[]> {
+    const data = await this.fetch<{ values: JiraProjectRaw[] }>(
+      '/project/search?maxResults=50&orderBy=name&typeKey=software',
+    );
+    return data.values.map(p => ({ key: p.key, name: p.name, id: p.id }));
+  }
+
+  async getIssues(projectKey: string): Promise<JiraIssue[]> {
+    const jql   = encodeURIComponent(`project = ${projectKey} AND statusCategory != Done ORDER BY updated DESC`);
+    const fields = 'summary,issuetype,status,priority,project,assignee,labels,parent,customfield_10014,customfield_10008';
+    const data  = await this.fetch<{ issues: JiraIssueRaw[] }>(
+      `/search?jql=${jql}&maxResults=100&fields=${fields}`,
+    );
+
+    return data.issues.map(i => {
+      const f = i.fields;
+
+      // Resolución de epic — Jira Cloud usa `parent` cuando la issue es Story/Task
+      let epicKey  = '—';
+      let epicName = '—';
+
+      if (f.parent && f.parent.fields?.issuetype?.name === 'Epic') {
+        epicKey  = f.parent.key;
+        epicName = f.parent.fields.summary ?? f.parent.key;
+      } else if (f.customfield_10014) {
+        epicKey  = f.customfield_10014;
+        epicName = (f.customfield_10008 as { fields?: { summary?: string } } | null)?.fields?.summary ?? epicKey;
+      }
+
+      return {
+        key:      i.key,
+        summary:  f.summary,
+        type:     f.issuetype.name,
+        status:   f.status.name,
+        priority: f.priority?.name ?? 'Medium',
+        project:  f.project.key,
+        epic:     epicKey,
+        epicName,
+        assignee: f.assignee?.displayName ?? '',
+        labels:   f.labels ?? [],
+      };
+    });
+  }
+
+  async addWorklog(
+    issueKey:  string,
+    seconds:   number,
+    startedAt: string,
+    comment?:  string,
+  ): Promise<JiraWorklogResult> {
+    // Jira requiere el campo "started" en formato: 2025-03-19T09:00:00.000+0000
+    const started = startedAt.includes('T')
+      ? startedAt
+      : `${startedAt}T09:00:00.000+0000`;
+
+    const body: Record<string, unknown> = { timeSpentSeconds: seconds, started };
+
+    if (comment) {
+      // Jira Cloud v3 usa Atlassian Document Format para el comentario
+      body['comment'] = {
+        type:    'doc',
+        version: 1,
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: comment }] }],
+      };
     }
-  }
 
-  async searchIssues(jql: string): Promise<JiraIssue[]> {
-    const data = await this.fetch<{ issues: Record<string, unknown>[] }>(
-      `/search?jql=${encodeURIComponent(jql)}&fields=summary,issuetype,status,priority,assignee,labels&maxResults=50`,
+    const data = await this.fetch<{ id: string; timeSpent: string }>(
+      `/issue/${issueKey}/worklog`,
+      { method: 'POST', body: JSON.stringify(body) },
     );
-    return data.issues.map((i) => this.mapIssue(i));
-  }
 
-  async logWork(payload: JiraWorklogPayload): Promise<{ jiraWorklogId: string }> {
-    const data = await this.fetch<{ id: string }>(
-      `/issue/${payload.issueKey}/worklog`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          timeSpentSeconds: payload.timeSpentSeconds,
-          started: payload.started,
-          comment: payload.comment
-            ? { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [{ type: 'text', text: payload.comment }] }] }
-            : undefined,
-        }),
-      },
-    );
-    return { jiraWorklogId: data.id };
-  }
-
-  async deleteWorklog(issueKey: string, jiraWorklogId: string): Promise<void> {
-    await this.fetch(`/issue/${issueKey}/worklog/${jiraWorklogId}`, { method: 'DELETE' });
-  }
-
-  // TODO: map full Jira response shape to our domain type
-  private mapIssue(raw: Record<string, unknown>): JiraIssue {
-    const fields = raw['fields'] as Record<string, unknown>;
-    return {
-      key: raw['key'] as string,
-      summary: (fields['summary'] as string) ?? '',
-      type: ((fields['issuetype'] as Record<string,unknown>)?.['name'] as string) ?? 'Task',
-      status: ((fields['status'] as Record<string,unknown>)?.['name'] as string) ?? '',
-      priority: ((fields['priority'] as Record<string,unknown>)?.['name'] as string) ?? 'Medium',
-      epicKey: (fields['customfield_10014'] as string) ?? '—',
-      epicName: '—', // requires separate fetch or custom field
-      projectKey: (raw['key'] as string).split('-')[0]!,
-      assignee: ((fields['assignee'] as Record<string,unknown>)?.['displayName'] as string) ?? 'Unassigned',
-      labels: (fields['labels'] as string[]) ?? [],
-      estimatedHours: 0,
-    };
+    return { id: data.id, issueKey, timeSpent: data.timeSpent };
   }
 }
