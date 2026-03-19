@@ -7,13 +7,12 @@ import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import { createClient } from '@supabase/supabase-js';
 
-import { authRoutes } from './infrastructure/http/authRoutes.js';
+import { authRoutes }    from './infrastructure/http/authRoutes.js';
 import { worklogRoutes } from './infrastructure/http/worklogRoutes.js';
 import { hotdeskRoutes } from './infrastructure/http/hotdeskRoutes.js';
-import { MockJiraAdapter } from './infrastructure/jira/MockJiraAdapter.js';
+import { jiraRoutes }    from './infrastructure/http/jiraRoutes.js';
 import { SupabaseWorklogRepo } from './infrastructure/supabase/SupabaseWorklogRepo.js';
 import { SupabaseHotDeskRepo } from './infrastructure/supabase/SupabaseHotDeskRepo.js';
-import type { IJiraApi } from './domain/worklog/IJiraApi.js';
 
 // ── Env validation ────────────────────────────────────────────────────────────
 const {
@@ -21,34 +20,18 @@ const {
   SUPABASE_SERVICE_ROLE_KEY,
   JWT_SECRET,
   PORT = '3001',
-  JIRA_BASE_URL,
-  JIRA_EMAIL,
-  JIRA_API_TOKEN,
 } = process.env;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !JWT_SECRET) {
   throw new Error('Missing required env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET');
 }
 
-// ── Infrastructure setup ──────────────────────────────────────────────────────
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-// FIX: IIFE ahora es async para poder usar await en el import dinámico.
-// La función es top-level async, por lo que await en el cuerpo del módulo es válido.
-async function buildJiraApi(): Promise<IJiraApi> {
-  if (JIRA_BASE_URL && JIRA_EMAIL && JIRA_API_TOKEN) {
-    const { JiraCloudAdapter } = await import('./infrastructure/jira/JiraCloudAdapter.js');
-    return new JiraCloudAdapter(JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN);
-  }
-  return new MockJiraAdapter();
-}
-
-const jiraApi = await buildJiraApi();
-
+// ── Infrastructure ────────────────────────────────────────────────────────────
+const supabase    = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 const worklogRepo = new SupabaseWorklogRepo(supabase);
 const hotdeskRepo = new SupabaseHotDeskRepo(supabase);
 
-// ── Fastify instance ──────────────────────────────────────────────────────────
+// ── Fastify ───────────────────────────────────────────────────────────────────
 const app = Fastify({ logger: { level: 'info' } });
 
 await app.register(cors, {
@@ -72,8 +55,9 @@ app.decorate('authenticate', async function (request: any, reply: any) {
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 await app.register(authRoutes,    { prefix: '/auth',     supabase });
-await app.register(worklogRoutes, { prefix: '/worklogs', worklogRepo, jiraApi });
+await app.register(worklogRoutes, { prefix: '/worklogs', worklogRepo });
 await app.register(hotdeskRoutes, { prefix: '/hotdesk',  hotdeskRepo });
+await app.register(jiraRoutes,    { prefix: '/jira',     supabase });   // ← solo supabase, sin credenciales hardcodeadas
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', async () => ({ ok: true, ts: new Date().toISOString() }));
