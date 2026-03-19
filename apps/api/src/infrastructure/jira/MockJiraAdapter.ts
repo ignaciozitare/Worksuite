@@ -1,51 +1,32 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// ADAPTER — MockJiraAdapter
-// Used in dev/test. Swap for JiraCloudAdapter when token is available.
-// ─────────────────────────────────────────────────────────────────────────────
+import type { IJiraApi, JiraProject, JiraIssue, JiraWorklogResult } from '../../domain/worklog/IJiraApi.js';
 
-import type { IJiraApi, JiraWorklogPayload } from '../../domain/worklog/IJiraApi.js';
-import type { JiraIssue } from '@worksuite/shared-types';
+const MOCK_PROJECTS: JiraProject[] = [
+  { key: 'ANDURIL', name: 'Anduril', id: '10000' },
+  { key: 'INFRA',   name: 'Infraestructura', id: '10001' },
+];
 
 const MOCK_ISSUES: JiraIssue[] = [
-  { key: 'PLAT-142', summary: 'Refactor auth service with JWT RS256', type: 'Story',
-    status: 'In Progress', priority: 'High', epicKey: 'PLAT-100', epicName: 'Security Q1',
-    projectKey: 'PLAT', assignee: 'Elena Martínez', labels: ['backend', 'security'], estimatedHours: 12.5 },
-  { key: 'PLAT-143', summary: 'Add rate limiting to API Gateway', type: 'Task',
-    status: 'In Progress', priority: 'High', epicKey: 'PLAT-100', epicName: 'Security Q1',
-    projectKey: 'PLAT', assignee: 'Elena Martínez', labels: ['backend', 'infra'], estimatedHours: 6.0 },
-  { key: 'MOB-87', summary: 'Crash on iOS 17 opening notifications', type: 'Bug',
-    status: 'Done', priority: 'Critical', epicKey: 'MOB-50', epicName: 'Stability',
-    projectKey: 'MOB', assignee: 'Carlos Ruiz', labels: ['ios', 'hotfix'], estimatedHours: 3.5 },
-  { key: 'MOB-91', summary: 'Migrate to React Native 0.73', type: 'Task',
-    status: 'In Progress', priority: 'Medium', epicKey: 'MOB-80', epicName: 'Tech Debt',
-    projectKey: 'MOB', assignee: 'Elena Martínez', labels: ['rn', 'upgrade'], estimatedHours: 8.0 },
-  { key: 'DATA-34', summary: 'ETL pipeline for product metrics', type: 'Story',
-    status: 'To Do', priority: 'Medium', epicKey: 'DATA-20', epicName: 'Analytics v2',
-    projectKey: 'DATA', assignee: 'Ana López', labels: ['etl', 'bigquery'], estimatedHours: 0 },
-  { key: 'OPS-19', summary: 'Migrate clusters to EKS 1.29', type: 'Spike',
-    status: 'In Progress', priority: 'High', epicKey: 'OPS-10', epicName: 'K8s Upgrade',
-    projectKey: 'OPS', assignee: 'Marco Silva', labels: ['k8s', 'aws'], estimatedHours: 14.0 },
+  { key: 'ANDURIL-1', summary: 'Setup CI/CD pipeline',            type: 'Task',  status: 'In Progress', priority: 'High',   project: 'ANDURIL', epic: 'ANDURIL-EP1', epicName: 'DevOps',  assignee: 'Demo User', labels: [] },
+  { key: 'ANDURIL-2', summary: 'Diseñar esquema de base de datos', type: 'Story', status: 'Done',        priority: 'High',   project: 'ANDURIL', epic: 'ANDURIL-EP1', epicName: 'DevOps',  assignee: 'Demo User', labels: [] },
+  { key: 'ANDURIL-3', summary: 'Implementar autenticación JWT',    type: 'Task',  status: 'To Do',       priority: 'Medium', project: 'ANDURIL', epic: 'ANDURIL-EP2', epicName: 'Auth',    assignee: '',          labels: [] },
+  { key: 'ANDURIL-4', summary: 'Review code quality',              type: 'Task',  status: 'In Progress', priority: 'Low',    project: 'ANDURIL', epic: '—',           epicName: '—',       assignee: 'Demo User', labels: ['review'] },
+  { key: 'INFRA-1',   summary: 'Configurar Vercel environments',   type: 'Task',  status: 'Done',        priority: 'High',   project: 'INFRA',   epic: '—',           epicName: '—',       assignee: 'Demo User', labels: [] },
 ];
 
 export class MockJiraAdapter implements IJiraApi {
-  private worklogCounter = 1000;
-
-  async getIssue(key: string): Promise<JiraIssue | null> {
-    return MOCK_ISSUES.find((i) => i.key === key) ?? null;
+  async getProjects(): Promise<JiraProject[]> {
+    return MOCK_PROJECTS;
   }
 
-  async searchIssues(jql: string): Promise<JiraIssue[]> {
-    console.log(`[MockJira] searchIssues jql="${jql}"`);
-    return MOCK_ISSUES;
+  async getIssues(projectKey: string): Promise<JiraIssue[]> {
+    return MOCK_ISSUES.filter(i => i.project === projectKey);
   }
 
-  async logWork(payload: JiraWorklogPayload): Promise<{ jiraWorklogId: string }> {
-    const id = `mock-jira-wl-${++this.worklogCounter}`;
-    console.log(`[MockJira] logWork → ${payload.issueKey} ${payload.timeSpentSeconds}s → id=${id}`);
-    return { jiraWorklogId: id };
-  }
-
-  async deleteWorklog(issueKey: string, jiraWorklogId: string): Promise<void> {
-    console.log(`[MockJira] deleteWorklog → ${issueKey} / ${jiraWorklogId}`);
+  async addWorklog(issueKey: string, seconds: number, _startedAt: string, comment?: string): Promise<JiraWorklogResult> {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const timeSpent = h && m ? `${h}h ${m}m` : h ? `${h}h` : `${m}m`;
+    console.log(`[MockJira] addWorklog ${issueKey} ${timeSpent} comment="${comment ?? ''}"`);
+    return { id: `mock-${Date.now()}`, issueKey, timeSpent };
   }
 }
