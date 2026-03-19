@@ -847,7 +847,6 @@ function CalendarView({ wls, cu, onAdd, onEdit, onDelete }: CVProps): JSX.Elemen
   );
 }
 
-interface DVProps { date: string; wls: WorklogUI[]; cu: CurrentUser; onAdd: () => void; onEdit: (w: WorklogUI) => void; onDelete: (w: WorklogUI) => void; }
 interface DVProps { date: string; wls: WorklogUI[]; cu: CurrentUser; onAdd: () => void; onEdit: (w: WorklogUI) => void; onDelete: (w: WorklogUI) => void; onSync: (w: WorklogUI) => void; }
 function DayView({ date, wls, cu, onAdd, onEdit, onDelete, onSync }: DVProps): JSX.Element {
   const { t } = useApp();
