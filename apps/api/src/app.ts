@@ -1,6 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // WorkSuite API — Fastify app factory
-// Separado de server.ts para poder importarlo desde el handler de Vercel
 // ─────────────────────────────────────────────────────────────────────────────
 
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -37,34 +36,58 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   const app = Fastify({ logger: { level: 'info' } });
 
+  // ── CORS ──────────────────────────────────────────────────────────────────
   await app.register(cors, {
     credentials: true,
     allowedHeaders: ['Authorization', 'Content-Type'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     origin: (origin, cb) => {
-      // Acepta: sin origen (server-to-server / curl), localhost, y cualquier
-      // subdominio *.vercel.app del proyecto worksuite (incluyendo URLs de preview).
       const allowed =
         !origin ||
         /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
         /^https:\/\/worksuite(-[a-z0-9]+)*(-ignaciozitare-9429s-projects)?\.vercel\.app$/.test(origin) ||
         origin === ALLOWED_ORIGIN;
-
       cb(allowed ? null : new Error(`CORS: origin not allowed — ${origin}`), allowed);
     },
   });
 
+  // ── JWT (registrado para poder emitir tokens en /auth/login) ─────────────
   await app.register(jwt, { secret: JWT_SECRET });
 
+  // ── authenticate: verifica el Supabase access_token del frontend ──────────
+  // El frontend usa supabase.auth.signInWithPassword() y obtiene un
+  // access_token de Supabase. Lo verificamos con supabase.auth.getUser().
   app.decorate('authenticate', async function (request: any, reply: any) {
-    try {
-      await request.jwtVerify();
-    } catch {
-      reply.status(401).send({
+    const authHeader = request.headers['authorization'] as string | undefined;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return reply.status(401).send({
         ok: false,
         error: { code: 'UNAUTHORIZED', message: 'Invalid or missing token' },
       });
     }
+
+    const token = authHeader.slice(7);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      return reply.status(401).send({
+        ok: false,
+        error: { code: 'UNAUTHORIZED', message: 'Invalid or missing token' },
+      });
+    }
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role, name')
+      .eq('id', user.id)
+      .single();
+
+    request.user = {
+      sub:   user.id,
+      email: user.email ?? '',
+      role:  profile?.role  ?? 'user',
+      name:  profile?.name  ?? '',
+    };
   });
 
   await app.register(authRoutes,    { prefix: '/auth',     supabase });
