@@ -2352,9 +2352,12 @@ function WorkSuiteApp() {
               {CURRENT_USER.role==="admin"?t("roleAdmin"):t("roleUser")}
             </span>
             {isAdmin && (
-              <button onClick={()=>setView("admin")} title="Administration"
-                style={{background:view==="admin"?"var(--glow)":"transparent",border:`1px solid ${view==="admin"?"rgba(79,110,247,.3)":"var(--bd)"}`,borderRadius:"var(--r)",color:view==="admin"?"var(--ac2)":"var(--tx3)",fontSize:13,padding:"3px 7px",cursor:"pointer",transition:"var(--ease)",lineHeight:1}}>
-                ⚙
+              <button onClick={()=>setView("admin")}
+                style={{background:view==="admin"?"rgba(79,110,247,.1)":"transparent",border:`1px solid ${view==="admin"?"rgba(79,110,247,.35)":"var(--bd)"}`,borderRadius:"var(--r)",color:view==="admin"?"var(--ac2)":"var(--tx2)",fontSize:11,fontWeight:600,padding:"4px 10px",cursor:"pointer",transition:"var(--ease)",display:"flex",alignItems:"center",gap:5,letterSpacing:".02em"}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                Admin
               </button>
             )}
             <button onClick={logout} style={{background:"transparent",border:"1px solid var(--bd)",borderRadius:"var(--r)",color:"var(--tx3)",fontSize:10,padding:"3px 8px",cursor:"pointer",fontWeight:600}}>
