@@ -1574,40 +1574,136 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
 
 function AdminSettings() {
   const { t } = useApp();
-  const [jiraUrl,  setJiraUrl]  = useState("https://my-company.atlassian.net");
-  const [email,    setEmail]    = useState("admin@company.com");
-  const [token,    setToken]    = useState("ATatt3xFfGF04P8R...");
-  const [saved,    setSaved]    = useState(false);
-  const [showTok,  setShowTok]  = useState(false);
-  const handleSave = () => { setSaved(true); setTimeout(()=>setSaved(false),2500); };
+  const [jiraUrl,   setJiraUrl]   = useState("");
+  const [email,     setEmail]     = useState("");
+  const [token,     setToken]     = useState("");
+  const [showTok,   setShowTok]   = useState(false);
+  const [loading,   setLoading]   = useState(true);
+  const [saving,    setSaving]    = useState(false);
+  const [conn,      setConn]      = useState(null);   // saved connection data
+  const [errMsg,    setErrMsg]    = useState("");
+  const [okMsg,     setOkMsg]     = useState("");
+
+  // Load existing connection on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/jira/connection`, { headers: getAuthHeader() });
+        const json = await res.json();
+        if (json.ok && json.data) {
+          setConn(json.data);
+          setJiraUrl(json.data.base_url || "");
+          setEmail(json.data.email || "");
+          // token is never returned from API for security — leave blank
+        }
+      } catch {
+        // network error — leave form empty
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleSave = async () => {
+    setErrMsg(""); setOkMsg("");
+    if (!jiraUrl.trim() || !email.trim()) {
+      setErrMsg("Completa URL y email"); return;
+    }
+    // Si ya hay conexión guardada y no se escribe un token nuevo, no enviamos token
+    if (!conn && !token.trim()) {
+      setErrMsg("Introduce el API Token"); return;
+    }
+    setSaving(true);
+    try {
+      const body: any = { baseUrl: jiraUrl.trim(), email: email.trim() };
+      if (token.trim()) body.apiToken = token.trim();
+      // Si no hay token nuevo pero ya hay conexión, usamos un placeholder para
+      // que el backend sepa que debe mantener el token existente
+      if (!token.trim() && conn) body.apiToken = "__keep__";
+      const res  = await fetch(`${API_BASE}/jira/connection`, {
+        method: "POST",
+        headers: { ...getAuthHeader(), "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!json.ok) { setErrMsg(json.error?.message || "Error al guardar"); return; }
+      setConn({ base_url: jiraUrl.trim(), email: email.trim() });
+      setToken("");
+      setOkMsg("✓ Configuración guardada");
+      setTimeout(() => setOkMsg(""), 3000);
+    } catch {
+      setErrMsg("Error de red");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    await fetch(`${API_BASE}/jira/connection`, { method: "DELETE", headers: getAuthHeader() });
+    setConn(null); setJiraUrl(""); setEmail(""); setToken("");
+    setOkMsg("Desconectado"); setTimeout(() => setOkMsg(""), 3000);
+  };
+
+  if (loading) return <div style={{padding:20,color:"var(--tx3)",fontSize:13}}>Cargando...</div>;
+
   return (
     <div>
       <div className="sec-t">{t("settingsTitle")}</div>
       <div className="sec-sub">Configure the connection to your Jira Cloud instance and global preferences.</div>
+
+      {/* ── Form ── */}
       <div className="a-card">
         <div className="a-ct">🔗 {t("jiraConnection")}</div>
         <div className="a-form">
-          <div><div className="a-lbl">{t("jiraUrl")}</div><input className="a-inp" value={jiraUrl} onChange={e=>setJiraUrl(e.target.value)}/></div>
-          <div><div className="a-lbl">{t("jiraEmail")}</div><input className="a-inp" type="email" value={email} onChange={e=>setEmail(e.target.value)}/></div>
+          <div>
+            <div className="a-lbl">{t("jiraUrl")}</div>
+            <input className="a-inp" placeholder="https://yourcompany.atlassian.net" value={jiraUrl} onChange={e=>setJiraUrl(e.target.value)}/>
+          </div>
+          <div>
+            <div className="a-lbl">{t("jiraEmail")}</div>
+            <input className="a-inp" type="email" placeholder="you@company.com" value={email} onChange={e=>setEmail(e.target.value)}/>
+          </div>
           <div>
             <div className="a-lbl">{t("apiToken")}</div>
             <div style={{display:"flex",gap:6}}>
-              <input className="a-inp" type={showTok?"text":"password"} value={token} onChange={e=>setToken(e.target.value)} style={{flex:1}}/>
-              <button className="btn-g" onClick={()=>setShowTok(s=>!s)} style={{padding:"0 10px",flexShrink:0}}>{showTok?t("hideToken"):t("showToken")}</button>
+              <input className="a-inp" type={showTok?"text":"password"}
+                placeholder={conn ? "••••••••• (dejar vacío para mantener)" : "ATatt3x..."}
+                value={token} onChange={e=>setToken(e.target.value)} style={{flex:1}}/>
+              <button className="btn-g" onClick={()=>setShowTok(s=>!s)} style={{padding:"0 10px",flexShrink:0}}>
+                {showTok?t("hideToken"):t("showToken")}
+              </button>
             </div>
             <div className="a-hint">{t("tokenHint")}</div>
           </div>
-          <button className="btn-p" onClick={handleSave}>{t("saveConfig")}</button>
-          {saved&&<div className="saved-ok"><span className="dot-ok"/>✓ {t("savedOk")}</div>}
+          <button className="btn-p" onClick={handleSave} disabled={saving}>
+            {saving ? "Guardando..." : t("saveConfig")}
+          </button>
+          {conn && <button className="btn-g" onClick={handleDisconnect} style={{marginTop:4,color:"var(--red)",borderColor:"var(--red)"}}>Desconectar</button>}
+          {errMsg && <div style={{marginTop:8,padding:"8px 12px",background:"rgba(229,62,62,.08)",border:"1px solid rgba(229,62,62,.25)",borderRadius:"var(--r)",color:"var(--red)",fontSize:12}}>{errMsg}</div>}
+          {okMsg  && <div className="saved-ok"><span className="dot-ok"/>  {okMsg}</div>}
         </div>
       </div>
+
+      {/* ── Connection status ── */}
       <div className="a-card">
         <div className="a-ct">📡 Connection status</div>
         <div style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:"var(--r)",padding:"10px 14px"}}>
-          <div className="info-r"><span className="ik2">{t("connStatus")}</span><div style={{display:"flex",alignItems:"center",gap:5}}><div className="dot-ok"/><span className="iv" style={{color:"var(--green)"}}>{t("connected")}</span></div></div>
-          <div className="info-r"><span className="ik2">{t("connInstance")}</span><span className="iv">my-company.atlassian.net</span></div>
-          <div className="info-r"><span className="ik2">{t("connProjects")}</span><span className="iv">4</span></div>
-          <div className="info-r" style={{border:"none"}}><span className="ik2">{t("connLastSync")}</span><span className="iv">{t("minsAgo")}</span></div>
+          {conn ? (<>
+            <div className="info-r">
+              <span className="ik2">{t("connStatus")}</span>
+              <div style={{display:"flex",alignItems:"center",gap:5}}>
+                <div className="dot-ok"/>
+                <span className="iv" style={{color:"var(--green)"}}>{t("connected")}</span>
+              </div>
+            </div>
+            <div className="info-r"><span className="ik2">{t("connInstance")}</span><span className="iv">{conn.base_url?.replace("https://","")}</span></div>
+            <div className="info-r" style={{border:"none"}}><span className="ik2">Email</span><span className="iv">{conn.email}</span></div>
+          </>) : (
+            <div className="info-r" style={{border:"none"}}>
+              <span className="ik2">{t("connStatus")}</span>
+              <span className="iv" style={{color:"var(--tx3)"}}>No conectado</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
