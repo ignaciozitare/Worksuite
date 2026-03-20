@@ -2,7 +2,7 @@
 // WorkSuite API — Fastify app factory
 // ─────────────────────────────────────────────────────────────────────────────
 
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import { createClient } from '@supabase/supabase-js';
@@ -31,6 +31,13 @@ const hotdeskRepo = new SupabaseHotDeskRepo(supabase);
 
 let _app: FastifyInstance | null = null;
 
+// ── Augment Fastify types ────────────────────────────────────────────────────
+declare module 'fastify' {
+  interface FastifyInstance {
+    authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void>;
+  }
+}
+
 export async function buildApp(): Promise<FastifyInstance> {
   if (_app) return _app;
 
@@ -51,40 +58,53 @@ export async function buildApp(): Promise<FastifyInstance> {
     },
   });
 
-  // ── JWT (registrado para poder emitir tokens en /auth/login) ─────────────
   await app.register(jwt, { secret: JWT_SECRET });
 
-  // ── authenticate: verifica el Supabase access_token del frontend ──────────
-  // El frontend usa supabase.auth.signInWithPassword() y obtiene un
-  // access_token de Supabase. Lo verificamos con supabase.auth.getUser().
-  app.decorate('authenticate', async function (request: any, reply: any) {
-    const authHeader = request.headers['authorization'] as string | undefined;
-    if (!authHeader?.startsWith('Bearer ')) {
-      return reply.status(401).send({
-        ok: false,
-        error: { code: 'UNAUTHORIZED', message: 'Invalid or missing token' },
-      });
+  // ── authenticate: decodifica el Supabase access_token del frontend ────────
+  // El frontend usa supabase.auth.signInWithPassword() directamente y envía
+  // el access_token de Supabase. Lo decodificamos (base64) para extraer el sub
+  // y verificamos que no esté expirado — luego buscamos el perfil en Supabase.
+  app.decorate('authenticate', async function (request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    const authHeader = request.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      reply.status(401).send({ ok: false, error: { code: 'UNAUTHORIZED', message: 'Invalid or missing token' } });
+      return;
     }
 
     const token = authHeader.slice(7);
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const parts = token.split('.');
 
-    if (error || !user) {
-      return reply.status(401).send({
-        ok: false,
-        error: { code: 'UNAUTHORIZED', message: 'Invalid or missing token' },
-      });
+    if (parts.length !== 3) {
+      reply.status(401).send({ ok: false, error: { code: 'UNAUTHORIZED', message: 'Invalid or missing token' } });
+      return;
     }
 
+    let payload: { sub?: string; email?: string; exp?: number };
+    try {
+      // Decode JWT payload (middle part) — base64url
+      const raw = parts[1]!.replace(/-/g, '+').replace(/_/g, '/');
+      payload = JSON.parse(Buffer.from(raw, 'base64').toString('utf-8')) as { sub?: string; email?: string; exp?: number };
+    } catch {
+      reply.status(401).send({ ok: false, error: { code: 'UNAUTHORIZED', message: 'Invalid or missing token' } });
+      return;
+    }
+
+    // Verificar expiración
+    if (!payload.sub || (payload.exp !== undefined && payload.exp * 1000 < Date.now())) {
+      reply.status(401).send({ ok: false, error: { code: 'UNAUTHORIZED', message: 'Token expired or invalid' } });
+      return;
+    }
+
+    // Obtener perfil (rol y nombre) con service_role — bypasea RLS
     const { data: profile } = await supabase
       .from('users')
       .select('role, name')
-      .eq('id', user.id)
+      .eq('id', payload.sub)
       .single();
 
-    request.user = {
-      sub:   user.id,
-      email: user.email ?? '',
+    (request as any).user = {
+      sub:   payload.sub,
+      email: payload.email ?? '',
       role:  profile?.role  ?? 'user',
       name:  profile?.name  ?? '',
     };
