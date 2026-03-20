@@ -10,6 +10,16 @@ import {
 import { supabase } from './shared/lib/api';
 import { useAuth } from './shared/hooks/useAuth';
 
+// ── API helpers ────────────────────────────────────────────────────────────
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+
+async function getAuthHeader() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token
+    ? { Authorization: `Bearer ${session.access_token}` }
+    : {};
+}
+
 // ── Helpers to convert DB rows to UI format ────────────────────────────────
 
 function dbWorklogToUI(row) {
@@ -1588,7 +1598,7 @@ function AdminSettings() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/jira/connection`, { headers: getAuthHeader() });
+        const res = await fetch(`${API_BASE}/jira/connection`, { headers: await getAuthHeader() });
         const json = await res.json();
         if (json.ok && json.data) {
           setConn(json.data);
@@ -1622,7 +1632,7 @@ function AdminSettings() {
       if (!token.trim() && conn) body.apiToken = "__keep__";
       const res  = await fetch(`${API_BASE}/jira/connection`, {
         method: "POST",
-        headers: { ...getAuthHeader(), "Content-Type": "application/json" },
+        headers: { ...await getAuthHeader(), "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       const json = await res.json();
@@ -1639,7 +1649,7 @@ function AdminSettings() {
   };
 
   const handleDisconnect = async () => {
-    await fetch(`${API_BASE}/jira/connection`, { method: "DELETE", headers: getAuthHeader() });
+    await fetch(`${API_BASE}/jira/connection`, { method: "DELETE", headers: await getAuthHeader() });
     setConn(null); setJiraUrl(""); setEmail(""); setToken("");
     setOkMsg("Desconectado"); setTimeout(() => setOkMsg(""), 3000);
   };
