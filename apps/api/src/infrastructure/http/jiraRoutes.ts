@@ -7,9 +7,9 @@ interface JiraRoutesOptions extends FastifyPluginOptions {
 }
 
 interface JiraConnection {
-  user_id:  string;
-  base_url: string;
-  email:    string;
+  user_id:   string;
+  base_url:  string;
+  email:     string;
   api_token: string;
 }
 
@@ -54,6 +54,7 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
 
   app.addHook('preHandler', app.authenticate);
 
+  // ── GET /jira/connection ──────────────────────────────────────────────────
   app.get('/connection', async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = (req.user as { sub: string }).sub;
     const { data, error } = await supabase
@@ -66,6 +67,9 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
     return reply.send({ ok: true, data: data ?? null });
   });
 
+  // ── POST /jira/connection ─────────────────────────────────────────────────
+  // Guarda las credenciales directamente sin validar contra Jira.
+  // La validación real ocurre cuando el usuario carga proyectos/issues.
   app.post<{ Body: { baseUrl: string; email: string; apiToken: string } }>(
     '/connection',
     { schema: { body: saveConnectionSchema } },
@@ -73,35 +77,31 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
       const userId = (req.user as { sub: string }).sub;
       const { baseUrl, email, apiToken } = req.body;
 
-      try {
-        const adapter = new JiraCloudAdapter(baseUrl, email, apiToken);
-        await adapter.getProjects();
-      } catch {
-        return reply.status(400).send({
-          ok: false,
-          error: { code: 'JIRA_AUTH_FAILED', message: 'No se puede conectar con Jira. Verifica la URL, el email y el token.' },
-        });
-      }
+      const normalizedUrl = baseUrl.trim().replace(/\/$/, '');
 
-      // FIX: onConflict debe ser string, no array en esta versión del cliente
       const { error } = await supabase
         .from('jira_connections')
         .upsert(
-          { user_id: userId, base_url: baseUrl, email, api_token: apiToken },
-          { onConflict: 'user_id' }
+          { user_id: userId, base_url: normalizedUrl, email: email.trim(), api_token: apiToken.trim() },
+          { onConflict: 'user_id' },
         );
 
-      if (error) return reply.status(500).send({ ok: false, error: { code: 'DB_ERROR', message: error.message } });
+      if (error) {
+        return reply.status(500).send({ ok: false, error: { code: 'DB_ERROR', message: error.message } });
+      }
+
       return reply.send({ ok: true });
     },
   );
 
+  // ── DELETE /jira/connection ───────────────────────────────────────────────
   app.delete('/connection', async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = (req.user as { sub: string }).sub;
     await supabase.from('jira_connections').delete().eq('user_id', userId);
     return reply.send({ ok: true });
   });
 
+  // ── GET /jira/projects ────────────────────────────────────────────────────
   app.get('/projects', async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = (req.user as { sub: string }).sub;
     try {
@@ -114,6 +114,7 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
     }
   });
 
+  // ── GET /jira/issues?project=X ────────────────────────────────────────────
   app.get<{ Querystring: { project: string } }>(
     '/issues',
     { schema: { querystring: { type: 'object', required: ['project'], properties: { project: { type: 'string' } } } } },
@@ -130,6 +131,7 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
     },
   );
 
+  // ── POST /jira/worklogs/:issueKey/sync ────────────────────────────────────
   app.post<{
     Params: { issueKey: string };
     Body:   { worklogId: string; seconds: number; startedAt: string; description?: string };
@@ -137,7 +139,7 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
     '/worklogs/:issueKey/sync',
     { schema: { body: syncBodySchema } },
     async (req, reply) => {
-      const userId   = (req.user as { sub: string }).sub;
+      const userId = (req.user as { sub: string }).sub;
       const { issueKey } = req.params;
       const { worklogId, seconds, startedAt, description } = req.body;
 
