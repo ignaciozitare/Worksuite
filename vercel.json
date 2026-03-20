@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build -w packages/shared-types && npm run build -w apps/web",
+  "buildCommand": "npm install --prefix apps/web && npm run build --prefix apps/web",
   "outputDirectory": "apps/web/dist",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
