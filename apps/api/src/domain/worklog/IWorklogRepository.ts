@@ -1,8 +1,3 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// PORT — IWorklogRepository
-// The domain defines what it needs. Infrastructure implements it.
-// ─────────────────────────────────────────────────────────────────────────────
-
 import type { Worklog } from './Worklog.js';
 
 export interface WorklogFilters {

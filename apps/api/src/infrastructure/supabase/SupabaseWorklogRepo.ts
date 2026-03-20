@@ -33,16 +33,9 @@ export class SupabaseWorklogRepo implements IWorklogRepository {
   }
 
   async findByFilters(filters: WorklogFilters): Promise<Worklog[]> {
-    let query = this.db
-      .from('worklogs')
-      .select('*')
-      .gte('date', filters.from)
-      .lte('date', filters.to)
-      .order('date', { ascending: false });
-
+    let query = this.db.from('worklogs').select('*').gte('date', filters.from).lte('date', filters.to).order('date', { ascending: false });
     if (filters.authorId) query = query.eq('author_id', filters.authorId);
     if (filters.projectKeys?.length) query = query.in('project_key', filters.projectKeys);
-
     const { data, error } = await query;
     if (error) throw new Error(`Failed to fetch worklogs: ${error.message}`);
     return (data ?? []).map((row) => this.toEntity(row));

@@ -1,8 +1,3 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// DOMAIN — Worklog
-// Pure business logic. No framework, no DB, no HTTP.
-// ─────────────────────────────────────────────────────────────────────────────
-
 export class WorklogId {
   private constructor(readonly value: string) {}
   static generate(): WorklogId {
@@ -27,9 +22,7 @@ export class TimeSpent {
     const s = raw.trim().toLowerCase();
     const hm = s.match(/^(\d+(?:\.\d+)?)\s*h\s*(?:(\d+)\s*m)?$/);
     if (hm) {
-      const secs = Math.round(
-        (parseFloat(hm[1]!) + (hm[2] ? parseInt(hm[2]) / 60 : 0)) * 3600,
-      );
+      const secs = Math.round((parseFloat(hm[1]!) + (hm[2] ? parseInt(hm[2]) / 60 : 0)) * 3600);
       return TimeSpent.fromSeconds(secs);
     }
     const onlyM = s.match(/^(\d+)\s*m$/);
@@ -60,8 +53,8 @@ export interface WorklogProps {
   projectKey: string;
   authorId: string;
   authorName: string;
-  date: string;       // YYYY-MM-DD
-  startedAt: string;  // HH:mm
+  date: string;
+  startedAt: string;
   timeSpent: TimeSpent;
   description: string;
   syncedToJira: boolean;
