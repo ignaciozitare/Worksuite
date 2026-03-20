@@ -13,15 +13,15 @@ import type { IWorklogRepository } from '../../domain/worklog/IWorklogRepository
 
 const LogSchema = z.object({
   issueKey:     z.string().min(1),
-  issueSummary: z.string().default(''),
-  issueType:    z.string().default('Task'),
-  epicKey:      z.string().default('—'),
-  epicName:     z.string().default('—'),
-  projectKey:   z.string().default('—'),
+  issueSummary: z.string().min(0).default(''),
+  issueType:    z.string().min(0).default('Task'),
+  epicKey:      z.string().min(0).default('—'),
+  epicName:     z.string().min(0).default('—'),
+  projectKey:   z.string().min(0).default('—'),
   date:         z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   startedAt:    z.string().regex(/^\d{2}:\d{2}$/).default('09:00'),
   timeRaw:      z.string().min(1),
-  description:  z.string().default(''),
+  description:  z.string().min(0).default(''),
 });
 
 interface WorklogPluginOptions extends FastifyPluginOptions {
@@ -49,9 +49,18 @@ export async function worklogRoutes(
     try {
       const useCase = new LogWorklog(worklogRepo);
       const output = await useCase.execute({
-        ...result.data,
-        authorId:   user.sub,
-        authorName: user.name,
+        issueKey:     result.data.issueKey,
+        issueSummary: result.data.issueSummary,
+        issueType:    result.data.issueType,
+        epicKey:      result.data.epicKey,
+        epicName:     result.data.epicName,
+        projectKey:   result.data.projectKey,
+        date:         result.data.date,
+        startedAt:    result.data.startedAt,
+        timeRaw:      result.data.timeRaw,
+        description:  result.data.description,
+        authorId:     user.sub,
+        authorName:   user.name,
       });
       return reply.status(201).send({ ok: true, data: output });
     } catch (err) {
