@@ -3,10 +3,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { JiraCloudAdapter } from '../jira/JiraCloudAdapter.js';
 
 interface JiraRoutesOptions extends FastifyPluginOptions {
-  supabase: SupabaseClient;  // service_role — puede leer jira_connections de cualquier usuario
+  supabase: SupabaseClient;
 }
 
-// ── Tipos de jira_connections ─────────────────────────────────────────────────
 interface JiraConnection {
   user_id:  string;
   base_url: string;
@@ -14,11 +13,7 @@ interface JiraConnection {
   api_token: string;
 }
 
-// ── Helper: obtener adapter para el usuario autenticado ───────────────────────
-async function adapterForUser(
-  supabase: SupabaseClient,
-  userId: string,
-): Promise<JiraCloudAdapter> {
+async function adapterForUser(supabase: SupabaseClient, userId: string): Promise<JiraCloudAdapter> {
   const { data, error } = await supabase
     .from('jira_connections')
     .select('base_url, email, api_token')
@@ -33,13 +28,12 @@ async function adapterForUser(
   return new JiraCloudAdapter(conn.base_url, conn.email, conn.api_token);
 }
 
-// ── Schemas ───────────────────────────────────────────────────────────────────
 const saveConnectionSchema = {
   type: 'object',
   required: ['baseUrl', 'email', 'apiToken'],
   properties: {
-    baseUrl:  { type: 'string', format: 'uri' },
-    email:    { type: 'string', format: 'email' },
+    baseUrl:  { type: 'string' },
+    email:    { type: 'string' },
     apiToken: { type: 'string', minLength: 10 },
   },
 } as const;
@@ -55,17 +49,11 @@ const syncBodySchema = {
   },
 } as const;
 
-// ── Plugin ────────────────────────────────────────────────────────────────────
-export async function jiraRoutes(
-  app:  FastifyInstance,
-  opts: JiraRoutesOptions,
-): Promise<void> {
+export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions): Promise<void> {
   const { supabase } = opts;
 
-  // Todas las rutas requieren JWT válido
   app.addHook('preHandler', app.authenticate);
 
-  // ── GET /jira/connection — estado de la conexión del usuario ────────────────
   app.get('/connection', async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = (req.user as { sub: string }).sub;
     const { data, error } = await supabase
@@ -78,7 +66,6 @@ export async function jiraRoutes(
     return reply.send({ ok: true, data: data ?? null });
   });
 
-  // ── POST /jira/connection — guardar / actualizar credenciales ───────────────
   app.post<{ Body: { baseUrl: string; email: string; apiToken: string } }>(
     '/connection',
     { schema: { body: saveConnectionSchema } },
@@ -86,10 +73,9 @@ export async function jiraRoutes(
       const userId = (req.user as { sub: string }).sub;
       const { baseUrl, email, apiToken } = req.body;
 
-      // Verificar que las credenciales funcionan antes de guardar
       try {
         const adapter = new JiraCloudAdapter(baseUrl, email, apiToken);
-        await adapter.getProjects(); // test call
+        await adapter.getProjects();
       } catch {
         return reply.status(400).send({
           ok: false,
@@ -97,23 +83,25 @@ export async function jiraRoutes(
         });
       }
 
+      // FIX: onConflict debe ser string, no array en esta versión del cliente
       const { error } = await supabase
         .from('jira_connections')
-        .upsert({ user_id: userId, base_url: baseUrl, email, api_token: apiToken }, { onConflict: ['user_id'] });
+        .upsert(
+          { user_id: userId, base_url: baseUrl, email, api_token: apiToken },
+          { onConflict: 'user_id' }
+        );
 
       if (error) return reply.status(500).send({ ok: false, error: { code: 'DB_ERROR', message: error.message } });
       return reply.send({ ok: true });
     },
   );
 
-  // ── DELETE /jira/connection — eliminar credenciales ─────────────────────────
   app.delete('/connection', async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = (req.user as { sub: string }).sub;
     await supabase.from('jira_connections').delete().eq('user_id', userId);
     return reply.send({ ok: true });
   });
 
-  // ── GET /jira/projects ──────────────────────────────────────────────────────
   app.get('/projects', async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = (req.user as { sub: string }).sub;
     try {
@@ -126,7 +114,6 @@ export async function jiraRoutes(
     }
   });
 
-  // ── GET /jira/issues?project=ANDURIL ────────────────────────────────────────
   app.get<{ Querystring: { project: string } }>(
     '/issues',
     { schema: { querystring: { type: 'object', required: ['project'], properties: { project: { type: 'string' } } } } },
@@ -143,7 +130,6 @@ export async function jiraRoutes(
     },
   );
 
-  // ── POST /jira/worklogs/:issueKey/sync ───────────────────────────────────────
   app.post<{
     Params: { issueKey: string };
     Body:   { worklogId: string; seconds: number; startedAt: string; description?: string };
@@ -159,7 +145,6 @@ export async function jiraRoutes(
         const adapter = await adapterForUser(supabase, userId);
         const result  = await adapter.addWorklog(issueKey, seconds, startedAt, description);
 
-        // Marcar como sincronizado en Supabase
         const { error: dbErr } = await supabase
           .from('worklogs')
           .update({ synced_to_jira: true, jira_worklog_id: result.id })
