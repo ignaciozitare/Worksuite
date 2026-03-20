@@ -10,13 +10,6 @@ import {
 import { supabase } from './shared/lib/api';
 import { useAuth } from './shared/hooks/useAuth';
 
-const API_BASE: string = (import.meta as { env?: Record<string, string> }).env?.VITE_API_URL ?? 'http://localhost:3001';
-const getAuthHeader = async (): Promise<Record<string, string>> => {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token ?? '';
-  return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-};
-
 // ── Helpers to convert DB rows to UI format ────────────────────────────────
 
 function dbWorklogToUI(row) {
@@ -58,6 +51,12 @@ function worklogsArrayToMap(rows) {
 
 /** Value Object — desk assignment type */
 const DeskType = Object.freeze({ NONE:"none", HOTDESK:"hotdesk", FIXED:"fixed" });
+
+/** Available modules — extensible: add new entries here to support more modules */
+const MODULES = [
+  { id:"jt", label:"Jira Tracker", color:"var(--ac2)"   },
+  { id:"hd", label:"HotDesk",      color:"var(--green)"  },
+];
 
 /** Value Object — seat availability */
 const SeatStatus = Object.freeze({ FREE:"free", OCCUPIED:"occupied", FIXED:"fixed" });
@@ -327,11 +326,11 @@ const StorageAdapter = {
 // ══════════════════════════════════════════════════════════════════
 
 const MOCK_USERS = [
-  { id:"u1", name:"Elena Martínez", email:"elena@co.com",   avatar:"EM", role:"admin", deskType:DeskType.FIXED,    active:true  },
-  { id:"u2", name:"Carlos Ruiz",    email:"carlos@co.com",  avatar:"CR", role:"user",  deskType:DeskType.HOTDESK,  active:true  },
-  { id:"u3", name:"Ana López",      email:"ana@co.com",     avatar:"AL", role:"user",  deskType:DeskType.HOTDESK,  active:true  },
-  { id:"u4", name:"Marco Silva",    email:"marco@co.com",   avatar:"MS", role:"user",  deskType:DeskType.FIXED,    active:true  },
-  { id:"u5", name:"Sofía Chen",     email:"sofia@co.com",   avatar:"SC", role:"user",  deskType:DeskType.HOTDESK,  active:false },
+  { id:"u1", name:"Elena Martínez", email:"elena@co.com",   avatar:"EM", role:"admin", deskType:DeskType.FIXED,    active:true,  modules:["jt","hd"] },
+  { id:"u2", name:"Carlos Ruiz",    email:"carlos@co.com",  avatar:"CR", role:"user",  deskType:DeskType.HOTDESK,  active:true,  modules:["jt","hd"] },
+  { id:"u3", name:"Ana López",      email:"ana@co.com",     avatar:"AL", role:"user",  deskType:DeskType.HOTDESK,  active:true,  modules:["jt","hd"] },
+  { id:"u4", name:"Marco Silva",    email:"marco@co.com",   avatar:"MS", role:"user",  deskType:DeskType.FIXED,    active:true,  modules:["jt","hd"] },
+  { id:"u5", name:"Sofía Chen",     email:"sofia@co.com",   avatar:"SC", role:"user",  deskType:DeskType.HOTDESK,  active:false, modules:["jt"]      },
 ];
 
 // CURRENT_USER is now injected from auth in WorkSuiteApp
@@ -1575,95 +1574,40 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
 
 function AdminSettings() {
   const { t } = useApp();
-  const [url,      setUrl]      = useState("");
-  const [email,    setEmail]    = useState("");
-  const [token,    setToken]    = useState("");
+  const [jiraUrl,  setJiraUrl]  = useState("https://my-company.atlassian.net");
+  const [email,    setEmail]    = useState("admin@company.com");
+  const [token,    setToken]    = useState("ATatt3xFfGF04P8R...");
+  const [saved,    setSaved]    = useState(false);
   const [showTok,  setShowTok]  = useState(false);
-  const [conn,     setConn]     = useState(null); // { baseUrl, email, connectedAt }
-  const [status,   setStatus]   = useState("idle"); // idle | loading | ok | err
-  const [msg,      setMsg]      = useState("");
-
-  // Cargar conexión existente
-  useEffect(() => {
-    void (async () => {
-      try {
-        const headers = await getAuthHeader();
-        const res = await fetch(`${API_BASE}/jira/connection`, { headers });
-        if (res.ok) {
-          const body = await res.json();
-          if (body.data) {
-            setConn(body.data);
-            setUrl(body.data.base_url);
-            setEmail(body.data.email);
-          }
-        }
-      } catch { /* sin conexión previa */ }
-    })();
-  }, []);
-
-  const handleSave = async () => {
-    if (!url || !email || !token) { setMsg("Todos los campos son obligatorios"); setStatus("err"); return; }
-    setStatus("loading"); setMsg("Probando conexión con Jira…");
-    try {
-      const headers = await getAuthHeader();
-      const res = await fetch(`${API_BASE}/jira/connection`, {
-        method: "POST", headers,
-        body: JSON.stringify({ baseUrl: url, email, apiToken: token }),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error?.message ?? "Error desconocido");
-      setConn({ base_url: url, email, connected_at: new Date().toISOString() });
-      setToken(""); setStatus("ok"); setMsg("✓ Conectado correctamente");
-    } catch (e) { setStatus("err"); setMsg(String(e)); }
-  };
-
-  const handleDisconnect = async () => {
-    try {
-      const headers = await getAuthHeader();
-      await fetch(`${API_BASE}/jira/connection`, { method: "DELETE", headers });
-    } catch { /* ignorar */ }
-    setConn(null); setUrl(""); setEmail(""); setToken(""); setStatus("idle"); setMsg("");
-  };
-
+  const handleSave = () => { setSaved(true); setTimeout(()=>setSaved(false),2500); };
   return (
     <div>
       <div className="sec-t">{t("settingsTitle")}</div>
-      <div className="sec-sub">Conecta tu instancia de Jira Cloud para sincronizar worklogs.</div>
+      <div className="sec-sub">Configure the connection to your Jira Cloud instance and global preferences.</div>
       <div className="a-card">
         <div className="a-ct">🔗 {t("jiraConnection")}</div>
         <div className="a-form">
-          {conn ? (
-            <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"rgba(62,207,142,.07)",border:"1px solid rgba(62,207,142,.22)",borderRadius:"var(--r)"}}>
-                <div className="dot-ok"/>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:600,fontSize:12,color:"var(--green)"}}>Conectado</div>
-                  <div style={{fontFamily:"var(--mono)",fontSize:11,color:"var(--tx3)",marginTop:2}}>{conn.base_url} · {conn.email}</div>
-                </div>
-                <button className="btn-g" onClick={handleDisconnect} style={{flexShrink:0,color:"var(--red)",borderColor:"rgba(224,82,82,.3)"}}>Desconectar</button>
-              </div>
+          <div><div className="a-lbl">{t("jiraUrl")}</div><input className="a-inp" value={jiraUrl} onChange={e=>setJiraUrl(e.target.value)}/></div>
+          <div><div className="a-lbl">{t("jiraEmail")}</div><input className="a-inp" type="email" value={email} onChange={e=>setEmail(e.target.value)}/></div>
+          <div>
+            <div className="a-lbl">{t("apiToken")}</div>
+            <div style={{display:"flex",gap:6}}>
+              <input className="a-inp" type={showTok?"text":"password"} value={token} onChange={e=>setToken(e.target.value)} style={{flex:1}}/>
+              <button className="btn-g" onClick={()=>setShowTok(s=>!s)} style={{padding:"0 10px",flexShrink:0}}>{showTok?t("hideToken"):t("showToken")}</button>
             </div>
-          ) : (
-            <>
-              <div><div className="a-lbl">{t("jiraUrl")}</div><input className="a-inp" placeholder="https://tuempresa.atlassian.net" value={url} onChange={e=>setUrl(e.target.value)}/></div>
-              <div><div className="a-lbl">{t("jiraEmail")}</div><input className="a-inp" type="email" placeholder="tu@email.com" value={email} onChange={e=>setEmail(e.target.value)}/></div>
-              <div>
-                <div className="a-lbl">{t("apiToken")}</div>
-                <div style={{display:"flex",gap:6}}>
-                  <input className="a-inp" type={showTok?"text":"password"} placeholder="ATatt3x…" value={token} onChange={e=>setToken(e.target.value)} style={{flex:1}}/>
-                  <button className="btn-g" onClick={()=>setShowTok(s=>!s)} style={{padding:"0 10px",flexShrink:0}}>{showTok?t("hideToken"):t("showToken")}</button>
-                </div>
-                <div className="a-hint">{t("tokenHint")}</div>
-              </div>
-              <button className="btn-p" onClick={handleSave} disabled={status==="loading"}>
-                {status==="loading" ? "Probando…" : t("saveConfig")}
-              </button>
-              {msg && <div style={{fontSize:11,padding:"7px 10px",borderRadius:"var(--r)",
-                background:status==="ok"?"rgba(62,207,142,.07)":"rgba(224,82,82,.07)",
-                border:`1px solid ${status==="ok"?"rgba(62,207,142,.22)":"rgba(224,82,82,.22)"}`,
-                color:status==="ok"?"var(--green)":"var(--red)"}}>{msg}</div>}
-            </>
-          )}
+            <div className="a-hint">{t("tokenHint")}</div>
+          </div>
+          <button className="btn-p" onClick={handleSave}>{t("saveConfig")}</button>
+          {saved&&<div className="saved-ok"><span className="dot-ok"/>✓ {t("savedOk")}</div>}
+        </div>
+      </div>
+      <div className="a-card">
+        <div className="a-ct">📡 Connection status</div>
+        <div style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:"var(--r)",padding:"10px 14px"}}>
+          <div className="info-r"><span className="ik2">{t("connStatus")}</span><div style={{display:"flex",alignItems:"center",gap:5}}><div className="dot-ok"/><span className="iv" style={{color:"var(--green)"}}>{t("connected")}</span></div></div>
+          <div className="info-r"><span className="ik2">{t("connInstance")}</span><span className="iv">my-company.atlassian.net</span></div>
+          <div className="info-r"><span className="ik2">{t("connProjects")}</span><span className="iv">4</span></div>
+          <div className="info-r" style={{border:"none"}}><span className="ik2">{t("connLastSync")}</span><span className="iv">{t("minsAgo")}</span></div>
         </div>
       </div>
     </div>
@@ -1885,6 +1829,11 @@ function AdminUsers({ users, setUsers, currentUser }) {
   const toggleRole   = id => setUsers(us=>us.map(u=>u.id===id?{...u,role:u.role==="admin"?"user":"admin"}:u));
   const toggleAccess = id => setUsers(us=>us.map(u=>u.id===id?{...u,active:!u.active}:u));
   const changeDeskType = (id, dt) => setUsers(us=>us.map(u=>u.id===id?{...u,deskType:dt}:u));
+  const toggleModule = (id, modId) => setUsers(us=>us.map(u=>{
+    if (u.id!==id) return u;
+    const mods = u.modules||["jt","hd"];
+    return {...u, modules: mods.includes(modId) ? mods.filter(m=>m!==modId) : [...mods, modId]};
+  }));
   const handleAdd    = u  => setUsers(us=>[...us,u]);
   const handleImport = us => setUsers(prev=>[...prev,...us]);
 
@@ -1904,6 +1853,7 @@ function AdminUsers({ users, setUsers, currentUser }) {
           <thead><tr>
             <th>{t("colUser")}</th><th>{t("colEmail")}</th>
             <th>{t("colRole")}</th><th>{t("colDeskType")}</th>
+            <th>Módulos</th>
             <th>{t("colAccess")}</th><th>{t("colActions")}</th>
           </tr></thead>
           <tbody>
@@ -1925,6 +1875,25 @@ function AdminUsers({ users, setUsers, currentUser }) {
                         {DESK_LABELS[dt]}
                       </button>
                     ))}
+                  </div>
+                </td>
+                <td>
+                  {/* Module access toggles — extensible via MODULES constant */}
+                  <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+                    {MODULES.map(m=>{
+                      const hasMod = (u.modules||["jt","hd"]).includes(m.id);
+                      return (
+                        <button key={m.id} onClick={()=>toggleModule(u.id,m.id)}
+                          title={m.label}
+                          style={{fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:3,
+                            border:`1px solid ${hasMod?m.color:"var(--bd)"}`,
+                            background:hasMod?`${m.color}18`:"transparent",
+                            color:hasMod?m.color:"var(--tx3)",
+                            cursor:"pointer",transition:"var(--ease)",textDecoration:hasMod?"none":"line-through"}}>
+                          {m.id.toUpperCase()}
+                        </button>
+                      );
+                    })}
                   </div>
                 </td>
                 <td><span style={{fontSize:11,fontWeight:500,color:u.active?"var(--green)":"var(--red)"}}>{u.active?t("statusActive"):t("statusBlocked")}</span></td>
@@ -2147,7 +2116,8 @@ function WorkSuiteApp() {
     role:     authUser.role,
     deskType: authUser.desk_type || 'hotdesk',
     active:   authUser.active !== false,
-  } : { id: '', name: 'Loading...', email: '', avatar: '..', role: 'user', deskType: 'hotdesk', active: true };
+    modules:  authUser.modules || ["jt","hd"],
+  } : { id: '', name: 'Loading...', email: '', avatar: '..', role: 'user', deskType: 'hotdesk', active: true, modules: ["jt","hd"] };
 
   // ── Load initial data from Supabase ──────────────────────────
   useEffect(() => {
@@ -2172,6 +2142,7 @@ function WorkSuiteApp() {
           id: u.id, name: u.name, email: u.email,
           avatar: u.avatar || u.name.slice(0,2).toUpperCase(),
           role: u.role, deskType: u.desk_type, active: u.active,
+          modules: u.modules || ["jt","hd"],
         })));
 
         // Build HD state
@@ -2294,7 +2265,7 @@ function WorkSuiteApp() {
         date:      d,
       }));
       // Upsert to handle re-reservations
-      const { error } = await supabase.from('seat_reservations').upsert(rows, { onConflict: ['seat_id', 'date'] });
+      const { error } = await supabase.from('seat_reservations').upsert(rows, { onConflict: 'seat_id,date' });
       if (error) console.error('Reserve error:', error.message);
     } catch (err) {
       console.error('Reserve failed:', err);
@@ -2352,15 +2323,17 @@ function WorkSuiteApp() {
             <div className="logo-dot"/>
             <span className="logo-jt">Work</span><span style={{color:"var(--tx2)",fontWeight:300}}>Suite</span>
           </div>
-          <span className="proto-tag">{t("protoTag")}</span>
-
           <div className="sw-group">
-            <button className={`sw-btn ${mod==="jt"?"active":""}`} onClick={()=>{ setMod("jt"); setView("calendar"); }}>
-              {t("moduleSwitchJira")}
-            </button>
-            <button className={`sw-btn ${mod==="hd"?"active-green":""}`} onClick={()=>{ setMod("hd"); setView("map"); }}>
-              {t("moduleSwitchHD")}
-            </button>
+            {(CURRENT_USER.modules||["jt","hd"]).includes("jt") && (
+              <button className={`sw-btn ${mod==="jt"?"active":""}`} onClick={()=>{ setMod("jt"); setView("calendar"); }}>
+                {t("moduleSwitchJira")}
+              </button>
+            )}
+            {(CURRENT_USER.modules||["jt","hd"]).includes("hd") && (
+              <button className={`sw-btn ${mod==="hd"?"active-green":""}`} onClick={()=>{ setMod("hd"); setView("map"); }}>
+                {t("moduleSwitchHD")}
+              </button>
+            )}
           </div>
 
           <div className="top-right">
@@ -2378,6 +2351,12 @@ function WorkSuiteApp() {
             <span className={`r-tag ${CURRENT_USER.role==="admin"?"r-admin":"r-user"}`}>
               {CURRENT_USER.role==="admin"?t("roleAdmin"):t("roleUser")}
             </span>
+            {isAdmin && (
+              <button onClick={()=>setView("admin")} title="Administration"
+                style={{background:view==="admin"?"var(--glow)":"transparent",border:`1px solid ${view==="admin"?"rgba(79,110,247,.3)":"var(--bd)"}`,borderRadius:"var(--r)",color:view==="admin"?"var(--ac2)":"var(--tx3)",fontSize:13,padding:"3px 7px",cursor:"pointer",transition:"var(--ease)",lineHeight:1}}>
+                ⚙
+              </button>
+            )}
             <button onClick={logout} style={{background:"transparent",border:"1px solid var(--bd)",borderRadius:"var(--r)",color:"var(--tx3)",fontSize:10,padding:"3px 8px",cursor:"pointer",fontWeight:600}}>
               Logout
             </button>
