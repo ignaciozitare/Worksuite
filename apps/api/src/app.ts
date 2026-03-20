@@ -38,8 +38,20 @@ export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({ logger: { level: 'info' } });
 
   await app.register(cors, {
-    origin: ALLOWED_ORIGIN,
     credentials: true,
+    allowedHeaders: ['Authorization', 'Content-Type'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    origin: (origin, cb) => {
+      // Acepta: sin origen (server-to-server / curl), localhost, y cualquier
+      // subdominio *.vercel.app del proyecto worksuite (incluyendo URLs de preview).
+      const allowed =
+        !origin ||
+        /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
+        /^https:\/\/worksuite(-[a-z0-9]+)*(-ignaciozitare-9429s-projects)?\.vercel\.app$/.test(origin) ||
+        origin === ALLOWED_ORIGIN;
+
+      cb(allowed ? null : new Error(`CORS: origin not allowed — ${origin}`), allowed);
+    },
   });
 
   await app.register(jwt, { secret: JWT_SECRET });
