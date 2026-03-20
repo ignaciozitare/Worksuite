@@ -68,16 +68,23 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
   });
 
   // ── POST /jira/connection ─────────────────────────────────────────────────
-  // Guarda las credenciales directamente sin validar contra Jira.
-  // La validación real ocurre cuando el usuario carga proyectos/issues.
   app.post<{ Body: { baseUrl: string; email: string; apiToken: string } }>(
     '/connection',
     { schema: { body: saveConnectionSchema } },
     async (req, reply) => {
       const userId = (req.user as { sub: string }).sub;
       const { baseUrl, email, apiToken } = req.body;
-
       const normalizedUrl = baseUrl.trim().replace(/\/$/, '');
+
+      if (apiToken.trim() === '__keep__') {
+        // Solo actualizar URL y email, mantener token existente
+        const { error } = await supabase
+          .from('jira_connections')
+          .update({ base_url: normalizedUrl, email: email.trim(), updated_at: new Date().toISOString() })
+          .eq('user_id', userId);
+        if (error) return reply.status(500).send({ ok: false, error: { code: 'DB_ERROR', message: error.message } });
+        return reply.send({ ok: true });
+      }
 
       const { error } = await supabase
         .from('jira_connections')
