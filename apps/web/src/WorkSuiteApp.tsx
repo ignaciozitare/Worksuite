@@ -158,7 +158,7 @@ const TRANSLATIONS = {
     navCalendar:"Calendar", navDay:"Day View", navTasks:"Tasks", navAdmin:"Admin",
     navMap:"Office Map", navTable:"Monthly View",
     dateRange:"Date range", filterByUser:"Filter by user", allUsers:"All users",
-    spaces:"Projects", taskType:"Task type", extraJql:"Additional JQL",
+    spaces:"Spaces", taskType:"Task type", mySpaces:"Search spaces…",
     applyFilters:"Apply filters", exportCsv:"↓ Export CSV",
     exportHint:"Only hours within the selected range", clearSelection:"Clear",
     today:"Today", totalLabel:"Total", activeDays:"Active days",
@@ -176,7 +176,7 @@ const TRANSLATIONS = {
     timePlaceholder:"2h, 1h 30m, 45m, 1.5", timeFormats:"Formats:",
     decimalHours:"(decimal h)", descField:"Description", descOptional:"(optional)",
     descPlaceholder:"What did you work on?", cancel:"Cancel",
-    saveWorklog:"Save worklog", timeInvalid:"Invalid format", timeExceeds:"Max 24h",
+    saveWorklog:"Save worklog", timeInvalid:"Invalid format", timeExceeds:"Max 160h", timeWarn:"That's a lot! Are you sure you want to log {h}h?",
     taskRequired:"Select a task", dateRequired:"Date required", savedFlash:"Worklog saved",
     adminSidebar:"Administration", adminSettings:"Settings", adminUsers:"Users", adminHotDesk:"HotDesk",
     settingsTitle:"Settings", jiraConnection:"Jira Cloud Connection",
@@ -215,7 +215,7 @@ const TRANSLATIONS = {
     noFixed:"No fixed assignments", unlockSeat:"Unlock",
     officeMap:"Office Map", monthlyView:"Monthly View",
     freeSeats:"free today", seatsTotal:"seats",
-    legendFree:"Free", legendOcc:"Occupied", legendFixed:"Fixed",
+    legendFree:"Free", legendOcc:"Occupied", legendFixed:"Fixed", legendMine:"My seat",
     hdNoReserve:"This seat has a fixed assignment.",
     hdAlreadyOcc:"Seat already taken.", hdAlreadyRes:"You already have a reservation for this date.",
     hdReleaseTitle:"Release reservation", hdReleaseQ:"Release your reservation?",
@@ -231,7 +231,7 @@ const TRANSLATIONS = {
     navCalendar:"Calendario", navDay:"Vista día", navTasks:"Tareas", navAdmin:"Admin",
     navMap:"Mapa oficina", navTable:"Vista mensual",
     dateRange:"Rango de fechas", filterByUser:"Filtrar por usuario", allUsers:"Todos",
-    spaces:"Proyectos", taskType:"Tipo de tarea", extraJql:"JQL adicional",
+    spaces:"Espacios", taskType:"Tipo de tarea", mySpaces:"Buscar espacios…",
     applyFilters:"Aplicar filtros", exportCsv:"↓ Exportar CSV",
     exportHint:"Solo horas en el rango seleccionado", clearSelection:"Limpiar",
     today:"Hoy", totalLabel:"Total", activeDays:"Días activos",
@@ -249,7 +249,7 @@ const TRANSLATIONS = {
     timePlaceholder:"2h, 1h 30m, 45m, 1.5", timeFormats:"Formatos:",
     decimalHours:"(horas decimales)", descField:"Descripción", descOptional:"(opcional)",
     descPlaceholder:"¿En qué trabajaste?", cancel:"Cancelar",
-    saveWorklog:"Guardar worklog", timeInvalid:"Formato inválido", timeExceeds:"Máx 24h",
+    saveWorklog:"Guardar worklog", timeInvalid:"Formato inválido", timeExceeds:"Máx 160h", timeWarn:"¡Eso es mucho! ¿Seguro que quieres registrar {h}h?",
     taskRequired:"Selecciona una tarea", dateRequired:"Fecha requerida", savedFlash:"Worklog guardado",
     adminSidebar:"Administración", adminSettings:"Configuración", adminUsers:"Usuarios", adminHotDesk:"HotDesk",
     settingsTitle:"Configuración", jiraConnection:"Conexión Jira Cloud",
@@ -288,7 +288,7 @@ const TRANSLATIONS = {
     noFixed:"Sin asignaciones fijas", unlockSeat:"Desbloquear",
     officeMap:"Mapa de oficina", monthlyView:"Vista mensual",
     freeSeats:"libres hoy", seatsTotal:"puestos",
-    legendFree:"Libre", legendOcc:"Ocupado", legendFixed:"Fijo",
+    legendFree:"Libre", legendOcc:"Ocupado", legendFixed:"Fijo", legendMine:"Mi puesto",
     hdNoReserve:"Este puesto tiene asignación fija.",
     hdAlreadyOcc:"Puesto ya ocupado.", hdAlreadyRes:"Ya tienes reserva para esta fecha.",
     hdReleaseTitle:"Liberar reserva", hdReleaseQ:"¿Deseas liberar tu reserva?",
@@ -484,18 +484,28 @@ function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave, curren
 
   const ps = TimeParser.parse(tr), tp = ps > 0 ? TimeParser.format(ps) : null;
 
+  const MAX_H = 160 * 3600; // 160h
+  const WARN_H = 160 * 3600;
+  const [warnConfirmed, setWarnConfirmed] = useState(false);
+  const [showWarn, setShowWarn] = useState(false);
+
   const validate = () => {
     const e = {};
     if (!ik)   e.ik = t("taskRequired");
     if (!dt)   e.dt = t("dateRequired");
     if (ps<=0) e.tr = t("timeInvalid");
-    if (ps>86400) e.tr = t("timeExceeds");
+    if (ps>MAX_H) e.tr = t("timeExceeds");
     return e;
   };
 
   const submit = () => {
     const errs = validate();
     if (Object.keys(errs).length) { setEr(errs); return; }
+    // Warn if > 16h and not yet confirmed
+    if (ps > 16 * 3600 && !warnConfirmed) {
+      setShowWarn(true);
+      return;
+    }
     const iss = issues.find(i => i.key===ik);
     setOk(true);
     setTimeout(() => {
@@ -512,7 +522,25 @@ function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave, curren
     <div className="ov" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="mb" style={{maxWidth:480}}>
         <div className="mh"><div className="mt">⏱ {t("logWorklog")}</div><button className="mc" onClick={onClose}>×</button></div>
-        {ok ? <div className="mbody"><div className="ok-fl">✓ {t("savedFlash")} — {tp} · {ik} · {dt}</div></div> : (
+        {ok ? <div className="mbody"><div className="ok-fl">✓ {t("savedFlash")} — {tp} · {ik} · {dt}</div></div> : showWarn ? (
+          <div className="mbody">
+            <div style={{textAlign:"center",padding:"20px 0"}}>
+              <div style={{fontSize:28,marginBottom:12}}>⚠️</div>
+              <div style={{fontWeight:700,fontSize:14,color:"var(--amber)",marginBottom:8}}>
+                {t("timeWarn").replace("{h}", (ps/3600).toFixed(1))}
+              </div>
+              <div style={{fontSize:12,color:"var(--tx3)",marginBottom:20}}>
+                {TimeParser.format(ps)} · {ik}
+              </div>
+              <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+                <button className="b-cancel" onClick={()=>setShowWarn(false)}>Cancelar</button>
+                <button className="b-sub" style={{background:"var(--amber)"}} onClick={()=>{setWarnConfirmed(true);setShowWarn(false);setTimeout(()=>submit(),50);}}>
+                  Sí, registrar {TimeParser.format(ps)}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
           <>
             <div className="mbody">
               <div className="fr">
@@ -587,6 +615,10 @@ function JTFilterSidebar({ filters, onApply, onExport, mobileOpen, onMobileClose
   const { t, jiraProjects } = useApp();
   const projects = jiraProjects || MOCK_PROJECTS_FALLBACK;
   const [l, sL] = useState(filters);
+  const [spaceQ, setSpaceQ] = useState("");
+  const filteredProjects = spaceQ.trim()
+    ? projects.filter(p => p.key.toLowerCase().includes(spaceQ.toLowerCase()) || p.name.toLowerCase().includes(spaceQ.toLowerCase()))
+    : projects;
 
   const ts = k => {
     const isAdding = !l.spaceKeys.includes(k);
@@ -610,17 +642,16 @@ function JTFilterSidebar({ filters, onApply, onExport, mobileOpen, onMobileClose
       </div>
       <div className="sb-s">
         <div className="sb-lbl">{t("spaces")}{l.spaceKeys.length>0&&<span className="sb-cnt">({l.spaceKeys.length})</span>}</div>
-        <div className="pick-l">
-          {projects.map(p=>{const on=l.spaceKeys.includes(p.key);return(
+        <input className="fi" placeholder={t("mySpaces")} value={spaceQ} onChange={e=>setSpaceQ(e.target.value)} style={{fontSize:11}}/>
+        <div className="pick-l" style={{maxHeight:200,overflowY:"auto"}}>
+          {filteredProjects.map(p=>{const on=l.spaceKeys.includes(p.key);return(
             <div key={p.key} className={`pick-i ${on?"on":""}`} onClick={()=>ts(p.key)}>
-              <div className="cb">{on&&"✓"}</div><span className="kb">{p.key}</span><span>{p.name}</span>
+              <div className="cb">{on&&"✓"}</div><span className="kb">{p.key}</span><span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</span>
             </div>
           );})}
+          {filteredProjects.length===0&&<div style={{fontSize:11,color:"var(--tx3)",padding:"6px 8px"}}>Sin resultados</div>}
         </div>
         {l.spaceKeys.length>0&&<button className="btn-g" onClick={()=>sL({...l,spaceKeys:[]})}>{t("clearSelection")}</button>}
-      </div>
-      <div className="sb-s"><div className="sb-lbl">{t("extraJql")}</div>
-        <textarea className="fi" placeholder='priority = High' value={l.jql} onChange={e=>sL({...l,jql:e.target.value})}/>
       </div>
       <button className="btn-p" onClick={()=>onApply(l)}>{t("applyFilters")}</button>
       <button className="btn-exp" onClick={()=>onExport(l)}>{t("exportCsv")}</button>
@@ -732,22 +763,27 @@ function DayView({ date, filters, worklogs, onDateChange, onOpenLog, onDeleteWor
 // JIRA TRACKER — Tasks View
 // ══════════════════════════════════════════════════════════════════
 
-function TasksView({ filters, onOpenLog }) {
+function TasksView({ filters, onOpenLog, worklogs }) {
   const { t, jiraIssues, jiraProjects } = useApp();
   const issues = jiraIssues || MOCK_ISSUES_FALLBACK;
   const projects = jiraProjects || MOCK_PROJECTS_FALLBACK;
+
+  // Calcular horas imputadas en WorkSuite por issue key
+  const hoursByIssue = useMemo(() => {
+    const map = {};
+    for (const dayWls of Object.values(worklogs || {})) {
+      for (const wl of dayWls) {
+        map[wl.issue] = (map[wl.issue] || 0) + wl.seconds;
+      }
+    }
+    return map;
+  }, [worklogs]);
 
   const [tf, stf] = useState([]);
   const [sr, ssr] = useState("");
   const [so, sso] = useState({key:"key",dir:"asc"});
 
-  const jql = useMemo(()=>{
-    const p=[];
-    if(filters.spaceKeys.length)p.push(`project in (${filters.spaceKeys.join(",")})`);
-    if(filters.authorId)p.push(`worklogAuthor="${filters.authorId}"`);
-    if(filters.jql)p.push(`(${filters.jql})`);
-    return(p.length?p.join(" AND "):"no filters")+" ORDER BY updated DESC";
-  },[filters]);
+
 
   const filteredIssues = useMemo(()=>{
     let l=issues;
@@ -806,7 +842,7 @@ function TasksView({ filters, onOpenLog }) {
           <td><span style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--tx3)"}}>{i.project}</span></td>
           <td style={{fontSize:11}}>{i.assignee}</td>
           <td><span className="er">{i.epic}</span></td>
-          <td className="hc">{i.hours>0?`${i.hours}h`:"—"}</td>
+          <td className="hc">{hoursByIssue[i.key] ? TimeParser.format(hoursByIssue[i.key]) : "—"}</td>
           <td><button className="btn-log btn-log-sm" onClick={()=>onOpenLog({issueKey:i.key})}>{t("btnHours")}</button></td>
         </tr>;
       })}</tbody></table></div>}
@@ -959,7 +995,7 @@ function HDMapView({ hd, onSeat, currentUser }) {
           <div className="chip">{t("seatsTotal")}: <strong>{SEATS.length}</strong></div>
         </div>
         <div className="hd-legend">
-          {[[t("legendFree"),"var(--seat-free)"],[t("legendOcc"),"var(--seat-occ)"],[t("legendFixed"),"var(--seat-fixed)"]].map(([l,c])=>(
+          {[[t("legendFree"),"var(--seat-free)"],[t("legendOcc"),"var(--seat-occ)"],[t("legendFixed"),"var(--seat-fixed)"],[t("legendMine"),"var(--amber)"]].map(([l,c])=>(
             <div key={l} className="hd-leg"><div className="hd-leg-dot" style={{background:c}}/>{l}</div>
           ))}
         </div>
@@ -991,7 +1027,7 @@ function HDTableView({ hd, onCell, currentUser }) {
         <div className="cal-t">{fmtMonthYear(yr, mo, lang)}</div>
         <button className="n-arr" onClick={next}>›</button>
         <div className="hd-legend" style={{marginLeft:"auto"}}>
-          {[[t("legendFree"),"var(--seat-free)"],[t("legendOcc"),"var(--seat-occ)"],[t("legendFixed"),"var(--seat-fixed)"]].map(([l,c])=>(
+          {[[t("legendFree"),"var(--seat-free)"],[t("legendOcc"),"var(--seat-occ)"],[t("legendFixed"),"var(--seat-fixed)"],[t("legendMine"),"var(--amber)"]].map(([l,c])=>(
             <div key={l} className="hd-leg"><div className="hd-leg-dot" style={{background:c}}/>{l}</div>
           ))}
         </div>
@@ -1189,6 +1225,180 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
 // ADMIN — Settings Module
 // ══════════════════════════════════════════════════════════════════
 
+// ── SSO Config (solo admin) ──────────────────────────────────────
+function SSOConfig() {
+  const [cfg, setCfg] = useState({ ad_group_id: '', ad_group_name: '', allow_google: true, allow_microsoft: true });
+  const [loading, setLoading] = useState(true);
+  const [saving,  setSaving]  = useState(false);
+  const [ok,      setOk]      = useState('');
+  const [err,     setErr]     = useState('');
+
+  useEffect(() => {
+    supabase.from('sso_config').select('*').eq('id', 1).single()
+      .then(({ data }) => {
+        if (data) setCfg({
+          ad_group_id:   data.ad_group_id   ?? '',
+          ad_group_name: data.ad_group_name ?? '',
+          allow_google:      data.allow_google      ?? true,
+          allow_microsoft:   data.allow_microsoft   ?? true,
+        });
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const save = async () => {
+    setSaving(true); setErr(''); setOk('');
+    const { error } = await supabase.from('sso_config').update({
+      ad_group_id:   cfg.ad_group_id.trim()   || null,
+      ad_group_name: cfg.ad_group_name.trim() || null,
+      allow_google:      cfg.allow_google,
+      allow_microsoft:   cfg.allow_microsoft,
+      updated_at: new Date().toISOString(),
+    }).eq('id', 1);
+    if (error) setErr(error.message);
+    else { setOk('\u2713 Configuraci\u00f3n guardada'); setTimeout(() => setOk(''), 3000); }
+    setSaving(false);
+  };
+
+  if (loading) return <div style={{color:'var(--tx3)',fontSize:12}}>Cargando...</div>;
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+
+      {/* Providers habilitados */}
+      <div>
+        <div className="a-lbl" style={{marginBottom:10}}>Providers habilitados</div>
+        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+          {[
+            { key:'allow_microsoft', icon:'🏢', label:'Microsoft / Azure AD', desc:'Login con cuenta corporativa Microsoft 365' },
+            { key:'allow_google',    icon:'🌐', label:'Google',               desc:'Login con cuenta Google' },
+          ].map(({ key, icon, label, desc }) => (
+            <div key={key}
+              onClick={() => setCfg(c => ({ ...c, [key]: !c[key] }))}
+              style={{
+                display:'flex', alignItems:'center', gap:12, padding:'10px 14px',
+                background:'var(--sf2)', borderRadius:'var(--r)',
+                border:`1px solid ${cfg[key] ? 'rgba(62,207,142,.3)' : 'var(--bd)'}`,
+                cursor:'pointer', transition:'var(--ease)',
+              }}>
+              <div style={{
+                width:18, height:18, borderRadius:4, flexShrink:0,
+                background: cfg[key] ? 'var(--green)' : 'transparent',
+                border: `2px solid ${cfg[key] ? 'var(--green)' : 'var(--bd2)'}`,
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}>
+                {cfg[key] && <span style={{color:'#fff',fontSize:11,fontWeight:700,lineHeight:1}}>\u2713</span>}
+              </div>
+              <span style={{fontSize:16}}>{icon}</span>
+              <div>
+                <div style={{fontSize:12,fontWeight:600,color:'var(--tx)'}}>{label}</div>
+                <div style={{fontSize:11,color:'var(--tx3)'}}>{desc}</div>
+              </div>
+              <div style={{marginLeft:'auto',fontSize:10,fontWeight:700,
+                color: cfg[key] ? 'var(--green)' : 'var(--tx3)'}}>
+                {cfg[key] ? 'ACTIVO' : 'INACTIVO'}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Grupo AD */}
+      {cfg.allow_microsoft && (
+        <div>
+          <div className="a-lbl" style={{marginBottom:6}}>Restricci\u00f3n por grupo de Azure AD</div>
+          <div style={{fontSize:11,color:'var(--tx3)',marginBottom:10,lineHeight:1.6}}>
+            Solo los usuarios que pertenezcan a este grupo podr\u00e1n acceder con Microsoft.
+            Deja en blanco para permitir cualquier cuenta de tu tenant.
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            <div>
+              <div style={{fontSize:10,color:'var(--tx3)',marginBottom:4}}>Object ID del grupo</div>
+              <input className="a-inp" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                value={cfg.ad_group_id}
+                onChange={e => setCfg(c => ({ ...c, ad_group_id: e.target.value }))}
+                style={{fontFamily:'var(--mono)',fontSize:12}}/>
+              <div style={{fontSize:10,color:'var(--tx3)',marginTop:4}}>
+                Azure Portal \u2192 Azure Active Directory \u2192 Groups \u2192 [tu grupo] \u2192 Object ID
+              </div>
+            </div>
+            <div>
+              <div style={{fontSize:10,color:'var(--tx3)',marginBottom:4}}>Nombre del grupo (referencia)</div>
+              <input className="a-inp" placeholder="ej. WorkSuite-Users"
+                value={cfg.ad_group_name}
+                onChange={e => setCfg(c => ({ ...c, ad_group_name: e.target.value }))}/>
+            </div>
+          </div>
+          {cfg.ad_group_id && (
+            <div style={{marginTop:10,padding:'8px 12px',background:'rgba(62,207,142,.06)',
+              border:'1px solid rgba(62,207,142,.2)',borderRadius:'var(--r)',fontSize:11,color:'var(--green)'}}>
+              \u2713 Solo usuarios del grupo <strong>{cfg.ad_group_name || cfg.ad_group_id}</strong> podr\u00e1n entrar con Microsoft
+            </div>
+          )}
+          {!cfg.ad_group_id && (
+            <div style={{marginTop:10,padding:'8px 12px',background:'rgba(245,166,35,.06)',
+              border:'1px solid rgba(245,166,35,.2)',borderRadius:'var(--r)',fontSize:11,color:'var(--amber)'}}>
+              \u26a0 Sin restricci\u00f3n de grupo: cualquier usuario de tu tenant podr\u00e1 acceder
+            </div>
+          )}
+        </div>
+      )}
+
+      <button className="btn-p" onClick={save} disabled={saving} style={{maxWidth:220}}>
+        {saving ? 'Guardando...' : 'Guardar configuraci\u00f3n SSO'}
+      </button>
+      {ok  && <div className="saved-ok"><span className="dot-ok"/> {ok}</div>}
+      {err && <div style={{fontSize:11,color:'var(--red)'}}>{err}</div>}
+
+      {/* Instrucciones colapsables */}
+      <SSOInstructions/>
+    </div>
+  );
+}
+
+function SSOInstructions() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{borderTop:'1px solid var(--bd)',paddingTop:12}}>
+      <button className="btn-g" onClick={() => setOpen(o => !o)} style={{width:'100%',textAlign:'left',display:'flex',justifyContent:'space-between'}}>
+        <span>\u{2139} C\u00f3mo configurar los providers en los portales externos</span>
+        <span>{open ? '\u25b2' : '\u25bc'}</span>
+      </button>
+      {open && (
+        <div style={{marginTop:12,display:'flex',flexDirection:'column',gap:16,fontSize:12,color:'var(--tx2)',lineHeight:1.7}}>
+          <div>
+            <div style={{fontWeight:700,color:'var(--tx)',marginBottom:6}}>\uD83C\uDFE2 Microsoft Azure AD</div>
+            <ol style={{margin:0,paddingLeft:18,display:'flex',flexDirection:'column',gap:4}}>
+              <li>Ve a <a href="https://portal.azure.com" target="_blank" rel="noreferrer" style={{color:'var(--ac2)'}}>portal.azure.com</a> \u2192 Azure Active Directory \u2192 App registrations \u2192 New registration</li>
+              <li>Name: <code style={{fontFamily:'var(--mono)',background:'var(--sf3)',padding:'1px 5px',borderRadius:3}}>WorkSuite</code> \u2014 Supported account types: <em>this organizational directory only</em></li>
+              <li>Redirect URI: <code style={{fontFamily:'var(--mono)',background:'var(--sf3)',padding:'1px 5px',borderRadius:3,fontSize:10}}>https://enclhswdbwbgxbjykdtj.supabase.co/auth/v1/callback</code></li>
+              <li>Certificates & secrets \u2192 New client secret \u2192 copia el valor</li>
+              <li>Token configuration \u2192 Add groups claim \u2192 Security groups</li>
+              <li>En Supabase Dashboard \u2192 Authentication \u2192 Providers \u2192 Azure: pega Client ID, Secret y Tenant ID</li>
+            </ol>
+          </div>
+          <div>
+            <div style={{fontWeight:700,color:'var(--tx)',marginBottom:6}}>\uD83C\uDF10 Google</div>
+            <ol style={{margin:0,paddingLeft:18,display:'flex',flexDirection:'column',gap:4}}>
+              <li>Ve a <a href="https://console.cloud.google.com" target="_blank" rel="noreferrer" style={{color:'var(--ac2)'}}>console.cloud.google.com</a> \u2192 APIs & Services \u2192 Credentials \u2192 Create OAuth 2.0 Client ID</li>
+              <li>Redirect URI: <code style={{fontFamily:'var(--mono)',background:'var(--sf3)',padding:'1px 5px',borderRadius:3,fontSize:10}}>https://enclhswdbwbgxbjykdtj.supabase.co/auth/v1/callback</code></li>
+              <li>En Supabase Dashboard \u2192 Authentication \u2192 Providers \u2192 Google: pega Client ID y Secret</li>
+            </ol>
+          </div>
+          <div>
+            <div style={{fontWeight:700,color:'var(--tx)',marginBottom:6}}>\uD83E\uDD1D Auth Hook (una sola vez)</div>
+            <ol style={{margin:0,paddingLeft:18,display:'flex',flexDirection:'column',gap:4}}>
+              <li>Supabase Dashboard \u2192 Authentication \u2192 Hooks</li>
+              <li>Add hook \u2192 selecciona <em>Before User Creation</em></li>
+              <li>Edge function: <code style={{fontFamily:'var(--mono)',background:'var(--sf3)',padding:'1px 5px',borderRadius:3}}>auth-hook-sso</code></li>
+            </ol>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Token personal Jira por usuario ──────────────────────────────
 function PersonalJiraToken() {
   const [token,    setToken]    = useState('');
@@ -1358,6 +1568,12 @@ function AdminSettings() {
       <div className="a-card">
         <div className="a-ct">🔑 Mi token personal de Jira</div>
         <PersonalJiraToken />
+      </div>
+
+      {/* ── SSO & Acceso ── */}
+      <div className="a-card">
+        <div className="a-ct">🔐 SSO &amp; Control de acceso</div>
+        <SSOConfig />
       </div>
     </div>
   );
@@ -2236,7 +2452,7 @@ function WorkSuiteApp() {
           )}
           {mod==="jt" && view==="calendar" && (<main className="content"><CalendarView filters={filters} worklogs={worklogs} onDayClick={handleDayClick} onOpenLog={openLogModal}/></main>)}
           {mod==="jt" && view==="day"      && (<main className="content"><DayView date={activeDay} filters={filters} worklogs={worklogs} onDateChange={setActiveDay} onOpenLog={openLogModal} onDeleteWorklog={handleDeleteWorklog}/></main>)}
-          {mod==="jt" && view==="tasks"    && (<main className="content"><TasksView filters={filters} onOpenLog={openLogModal}/></main>)}
+          {mod==="jt" && view==="tasks"    && (<main className="content"><TasksView filters={filters} onOpenLog={openLogModal} worklogs={worklogs}/></main>)}
           {mod==="hd" && view==="map"      && (<main className="content"><HDMapView hd={hd} onSeat={sid=>handleHdSeatClick(sid,TODAY)} currentUser={CURRENT_USER}/></main>)}
           {mod==="hd" && view==="table"    && (<main className="content"><HDTableView hd={hd} onCell={(sid,date)=>handleHdSeatClick(sid,date)} currentUser={CURRENT_USER}/></main>)}
           {view==="admin" && (<AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER}/>)}
