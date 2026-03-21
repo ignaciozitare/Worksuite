@@ -63,42 +63,44 @@ export class JiraCloudAdapter implements IJiraApi {
     return data.values.map(p => ({ key: p.key, name: p.name, id: p.id }));
   }
 
-  async getIssues(projectKey: string): Promise<JiraIssue[]> {
-    const jql   = encodeURIComponent(`project = ${projectKey} ORDER BY updated DESC`);
-    const fields = 'summary,issuetype,status,priority,project,assignee,labels,parent,customfield_10014,customfield_10008';
-    const data  = await this.fetch<{ issues: JiraIssueRaw[] }>(
-      `/search?jql=${jql}&maxResults=100&fields=${fields}`,
-    );
+ async getIssues(projectKey: string): Promise<JiraIssue[]> {
+  const body = {
+    jql: `project = "${projectKey}" ORDER BY updated DESC`,
+    maxResults: 100,
+    fields: ['summary', 'issuetype', 'status', 'priority', 'project', 
+             'assignee', 'labels', 'parent', 'customfield_10014', 'customfield_10008'],
+  };
 
-    return data.issues.map(i => {
-      const f = i.fields;
+  const data = await this.fetch<{ issues: JiraIssueRaw[] }>(
+    '/search/jql',
+    { method: 'POST', body: JSON.stringify(body) },
+  );
 
-      // Resolución de epic — Jira Cloud usa `parent` cuando la issue es Story/Task
-      let epicKey  = '—';
-      let epicName = '—';
-
-      if (f.parent && f.parent.fields?.issuetype?.name === 'Epic') {
-        epicKey  = f.parent.key;
-        epicName = f.parent.fields.summary ?? f.parent.key;
-      } else if (f.customfield_10014) {
-        epicKey  = f.customfield_10014;
-        epicName = (f.customfield_10008 as { fields?: { summary?: string } } | null)?.fields?.summary ?? epicKey;
-      }
-
-      return {
-        key:      i.key,
-        summary:  f.summary,
-        type:     f.issuetype.name,
-        status:   f.status.name,
-        priority: f.priority?.name ?? 'Medium',
-        project:  f.project.key,
-        epic:     epicKey,
-        epicName,
-        assignee: f.assignee?.displayName ?? '',
-        labels:   f.labels ?? [],
-      };
-    });
-  }
+  return data.issues.map(i => {
+    const f = i.fields;
+    let epicKey  = '—';
+    let epicName = '—';
+    if (f.parent && f.parent.fields?.issuetype?.name === 'Epic') {
+      epicKey  = f.parent.key;
+      epicName = f.parent.fields.summary ?? f.parent.key;
+    } else if (f.customfield_10014) {
+      epicKey  = f.customfield_10014;
+      epicName = (f.customfield_10008 as any)?.fields?.summary ?? epicKey;
+    }
+    return {
+      key:      i.key,
+      summary:  f.summary,
+      type:     f.issuetype.name,
+      status:   f.status.name,
+      priority: f.priority?.name ?? 'Medium',
+      project:  f.project.key,
+      epic:     epicKey,
+      epicName,
+      assignee: f.assignee?.displayName ?? '',
+      labels:   f.labels ?? [],
+    };
+  });
+}
 
   async addWorklog(
     issueKey:  string,
