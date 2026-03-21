@@ -2710,7 +2710,7 @@ function WorkSuiteApp() {
   } : { id: '', name: 'Loading...', email: '', avatar: '..', role: 'user', deskType: 'hotdesk', active: true, modules: ["jt","hd"] };
 
   useEffect(() => {
-    if (!authUser) return;
+    if (!authUser) { setLoadingData(false); return; }
     let cancelled = false;
 
     async function loadAll() {
@@ -2951,6 +2951,9 @@ function WorkSuiteApp() {
       </div>
     );
   }
+
+  // Guard: if somehow rendered without auth, return null so parent can redirect
+  if (!authUser) return null;
 
   return (
     <AppCtx.Provider value={{ lang, t, theme, jiraIssues, jiraProjects }}>
