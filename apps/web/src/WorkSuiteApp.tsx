@@ -2960,8 +2960,6 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       const x=Math.min(S.crtS.x,S.crtE.x),y=Math.min(S.crtS.y,S.crtE.y);
       const rw=Math.abs(S.crtE.x-S.crtS.x),rh=Math.abs(S.crtE.y-S.crtS.y);
       const isW=S.tool==='wall';const mn=isW?GRID:GRID*2;
-      else if(S.tool==='door'){ni={type:'door',x,y,w:Math.max(snap(rw),GRID*3),h:GRID,angle:0,double:false,label:'Door',id:Math.random().toString(36).slice(2)};}
-      else if(S.tool==='window'){ni={type:'window',x,y,w:Math.max(snap(rw),GRID*2),h:GRID,angle:0,double:false,label:'Window',id:Math.random().toString(36).slice(2)};}
       const w=Math.max(snap(rw),mn),h=Math.max(snap(rh),isW?GRID:mn);
       if(w<mn&&h<mn){S.crtS=null;S.crtE=null;draw();return;}
       saveH();let ni;
