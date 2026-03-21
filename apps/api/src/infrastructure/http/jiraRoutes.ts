@@ -13,6 +13,7 @@ interface JiraConnection {
   api_token: string;
 }
 
+// Obtiene el adaptador Jira del admin (para leer proyectos/issues)
 async function adapterForUser(supabase: SupabaseClient, userId: string): Promise<JiraCloudAdapter> {
   const { data, error } = await supabase
     .from('jira_connections')
@@ -26,6 +27,16 @@ async function adapterForUser(supabase: SupabaseClient, userId: string): Promise
 
   const conn = data as JiraConnection;
   return new JiraCloudAdapter(conn.base_url, conn.email, conn.api_token);
+}
+
+// Obtiene la conexión admin (cualquier jira_connection existente)
+async function getAdminConnection(supabase: SupabaseClient): Promise<JiraConnection | null> {
+  const { data } = await supabase
+    .from('jira_connections')
+    .select('base_url, email, api_token, user_id')
+    .limit(1)
+    .single();
+  return data as JiraConnection | null;
 }
 
 const saveConnectionSchema = {
@@ -77,7 +88,6 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
       const normalizedUrl = baseUrl.trim().replace(/\/$/, '');
 
       if (apiToken.trim() === '__keep__') {
-        // Solo actualizar URL y email, mantener token existente
         const { error } = await supabase
           .from('jira_connections')
           .update({ base_url: normalizedUrl, email: email.trim(), updated_at: new Date().toISOString() })
@@ -146,14 +156,49 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
     '/worklogs/:issueKey/sync',
     { schema: { body: syncBodySchema } },
     async (req, reply) => {
-      const userId = (req.user as { sub: string }).sub;
+      const user    = req.user as { sub: string; email: string };
       const { issueKey } = req.params;
       const { worklogId, seconds, startedAt, description } = req.body;
 
       try {
-        const adapter = await adapterForUser(supabase, userId);
-        const result  = await adapter.addWorklog(issueKey, seconds, startedAt, description);
+        // 1. ¿Tiene el usuario su propio token de Jira?
+        const { data: userRow } = await supabase
+          .from('users')
+          .select('jira_api_token, email')
+          .eq('id', user.sub)
+          .single();
 
+        let adapter: JiraCloudAdapter;
+        let commentPrefix = '';
+
+        if (userRow?.jira_api_token) {
+          // ── Opción B: token personal del usuario ─────────────────────────
+          // Obtener base_url de la conexión admin (el usuario no tiene su propia conexión)
+          const adminConn = await getAdminConnection(supabase);
+          if (!adminConn) {
+            throw Object.assign(new Error('Jira no configurado — el admin debe configurar la conexión en Settings'), { statusCode: 404 });
+          }
+          const userEmail = userRow.email ?? user.email;
+          adapter = new JiraCloudAdapter(adminConn.base_url, userEmail, userRow.jira_api_token);
+          app.log.info({ userId: user.sub, userEmail }, 'Jira sync con token personal del usuario');
+        } else {
+          // ── Opción C: fallback al token del admin ─────────────────────────
+          adapter = await adapterForUser(supabase, user.sub);
+          const userEmail = userRow?.email ?? user.email;
+          commentPrefix = `[Imputado por: ${userEmail}] `;
+          app.log.info({ userId: user.sub, userEmail }, 'Jira sync con token admin (fallback)');
+        }
+
+        const finalComment = commentPrefix + (description ?? '');
+
+        const result = await adapter.addWorklog(
+          issueKey,
+          seconds,
+          startedAt,
+          finalComment || undefined,
+        );
+
+        // Actualizar flag en Supabase
         const { error: dbErr } = await supabase
           .from('worklogs')
           .update({ synced_to_jira: true, jira_worklog_id: result.id })
