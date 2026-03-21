@@ -11,8 +11,6 @@ export function LoginPage() {
   const [loading,  setLoading]  = useState(false);
   const [ssoLoading, setSsoLoading] = useState<'google'|'microsoft'|null>(null);
   const [error,    setError]    = useState('');
-
-  // Estado de providers — empieza en null (cargando)
   const [ssoReady,    setSsoReady]    = useState(false);
   const [googleOn,    setGoogleOn]    = useState(false);
   const [microsoftOn, setMicrosoftOn] = useState(false);
@@ -24,36 +22,26 @@ export function LoginPage() {
       .eq('id', 1)
       .single()
       .then(({ data }) => {
-        if (data) {
-          setGoogleOn(!!data.allow_google);
-          setMicrosoftOn(!!data.allow_microsoft);
-        }
+        if (data) { setGoogleOn(!!data.allow_google); setMicrosoftOn(!!data.allow_microsoft); }
       })
       .finally(() => setSsoReady(true));
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setError(''); setLoading(true);
     try {
       if (remember) localStorage.setItem('ws_email', email);
-      else          localStorage.removeItem('ws_email');
+      else localStorage.removeItem('ws_email');
       const { error: err } = await supabase.auth.signInWithPassword({ email, password: pwd });
-      if (err) setError(err.message === 'Invalid login credentials'
-        ? 'Email o contraseña incorrectos' : err.message);
-    } finally {
-      setLoading(false);
-    }
+      if (err) setError(err.message === 'Invalid login credentials' ? 'Invalid email or password' : err.message);
+    } finally { setLoading(false); }
   };
 
   const handleGoogle = async () => {
     if (!googleOn) return;
     setSsoLoading('google'); setError('');
-    const { error: err } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: REDIRECT_URL },
-    });
+    const { error: err } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: REDIRECT_URL } });
     if (err) { setError(err.message); setSsoLoading(null); }
   };
 
@@ -67,117 +55,129 @@ export function LoginPage() {
     if (err) { setError(err.message); setSsoLoading(null); }
   };
 
-  const ssoButtons = [
-    { key:'microsoft', label:'Continuar con Microsoft', enabled:microsoftOn, loading:ssoLoading==='microsoft', icon:<MicrosoftIcon/>, onClick:handleMicrosoft },
-    { key:'google',    label:'Continuar con Google',    enabled:googleOn,    loading:ssoLoading==='google',    icon:<GoogleIcon/>,    onClick:handleGoogle    },
-  ];
-
   return (
     <div style={S.root}>
       <style>{`
-        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-        @keyframes spin { to{transform:rotate(360deg)} }
-        .ws-sso-btn:hover:not(:disabled) { background:#212130 !important; border-color:#3a3a58 !important; }
+        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .ws-btn:hover:not(:disabled){background:#1e1e2e!important;border-color:#3a3a52!important}
+        .ws-btn:focus-visible{outline:2px solid #4f6ef7;outline-offset:2px}
+        .ws-input:focus{border-color:#4f6ef7!important;box-shadow:0 0 0 3px rgba(79,110,247,0.15)!important}
+        .ws-submit:hover:not(:disabled){background:#3d5ef0!important}
+        .ws-submit:active:not(:disabled){transform:scale(0.99)}
+        .ws-eye:hover{color:#8888a8!important}
       `}</style>
 
       <div style={S.card}>
         {/* Logo */}
         <div style={S.logo}>
-          <div style={S.logoDot}/>
+          <div style={S.dot}/>
           <span style={{color:'#7b93ff',fontWeight:700}}>Work</span>
           <span style={{color:'#8888a8',fontWeight:300}}>Suite</span>
         </div>
-        <div style={S.subtitle}>Inicia sesión para continuar</div>
+        <p style={S.subtitle}>Sign in to your account</p>
 
-        {/* SSO buttons */}
+        {/* SSO — skeleton while loading */}
         {!ssoReady ? (
-          // Skeleton mientras carga
           <div style={{display:'flex',flexDirection:'column',gap:10}}>
             {[0,1].map(i=>(
-              <div key={i} style={{
-                height:42, borderRadius:7,
-                background:'linear-gradient(90deg,#1b1b22 25%,#21212c 50%,#1b1b22 75%)',
-                backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite',
-              }}/>
+              <div key={i} style={{height:42,borderRadius:7,
+                background:'linear-gradient(90deg,#1b1b22 25%,#252530 50%,#1b1b22 75%)',
+                backgroundSize:'200% 100%',animation:'shimmer 1.4s infinite'}}/>
             ))}
           </div>
         ) : (
           <div style={{display:'flex',flexDirection:'column',gap:10}}>
-            {ssoButtons.map(btn => (
-              <button
-                key={btn.key}
-                className="ws-sso-btn"
-                onClick={btn.onClick}
-                disabled={!btn.enabled || !!ssoLoading || loading}
-                title={!btn.enabled ? 'No configurado — contacta con el administrador' : undefined}
-                style={{
-                  display:'flex', alignItems:'center', gap:10,
-                  padding:'10px 16px', width:'100%',
-                  background: btn.enabled ? '#1b1b22' : '#161619',
-                  border: `1px solid ${btn.enabled ? '#2a2a38' : '#1e1e28'}`,
-                  borderRadius:7, fontSize:13, fontWeight:500,
-                  fontFamily:'inherit', cursor: btn.enabled ? 'pointer' : 'not-allowed',
-                  opacity: btn.enabled ? 1 : 0.4,
-                  transition:'all 0.15s ease',
-                }}
-              >
-                {btn.loading ? <Spinner/> : btn.icon}
-                <span style={{color: btn.enabled ? '#e4e4ef' : '#40404e'}}>
-                  {btn.label}
-                </span>
-                {!btn.enabled && (
-                  <span style={{
-                    marginLeft:'auto', fontSize:9, fontWeight:700,
-                    letterSpacing:'0.08em', color:'#2a2a3a',
-                    textTransform:'uppercase',
-                  }}>No disponible</span>
-                )}
-              </button>
-            ))}
+            {/* Microsoft */}
+            <button className="ws-btn" onClick={handleMicrosoft}
+              disabled={!microsoftOn||!!ssoLoading||loading}
+              title={!microsoftOn?'Not configured — contact your administrator':undefined}
+              style={{...S.ssoBtn,opacity:microsoftOn?1:0.35,cursor:microsoftOn?'pointer':'not-allowed',
+                background:microsoftOn?'#1b1b22':'#161619',borderColor:microsoftOn?'#2a2a38':'#1e1e28'}}>
+              {ssoLoading==='microsoft'?<SpinIcon/>:<MsIcon/>}
+              <span style={{color:microsoftOn?'#e4e4ef':'#3a3a50',flex:1,textAlign:'left'}}>
+                Continue with Microsoft
+              </span>
+              {!microsoftOn&&<span style={S.badge}>Unavailable</span>}
+            </button>
+            {/* Google */}
+            <button className="ws-btn" onClick={handleGoogle}
+              disabled={!googleOn||!!ssoLoading||loading}
+              title={!googleOn?'Not configured — contact your administrator':undefined}
+              style={{...S.ssoBtn,opacity:googleOn?1:0.35,cursor:googleOn?'pointer':'not-allowed',
+                background:googleOn?'#1b1b22':'#161619',borderColor:googleOn?'#2a2a38':'#1e1e28'}}>
+              {ssoLoading==='google'?<SpinIcon/>:<GgIcon/>}
+              <span style={{color:googleOn?'#e4e4ef':'#3a3a50',flex:1,textAlign:'left'}}>
+                Continue with Google
+              </span>
+              {!googleOn&&<span style={S.badge}>Unavailable</span>}
+            </button>
           </div>
         )}
 
-        {/* Divider — solo si hay SSO activo */}
-        {ssoReady && (googleOn || microsoftOn) && (
+        {/* Divider — only if at least one SSO active */}
+        {ssoReady&&(googleOn||microsoftOn)&&(
           <div style={S.divider}>
-            <div style={S.divLine}/><span style={S.divText}>o con email</span><div style={S.divLine}/>
+            <div style={S.divLine}/><span style={S.divTxt}>or with email</span><div style={S.divLine}/>
           </div>
         )}
+        {ssoReady&&!(googleOn||microsoftOn)&&(
+          <div style={S.divider}><div style={S.divLine}/></div>
+        )}
 
-        {/* Form email/password */}
+        {/* Form */}
         <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:14}}>
           <div style={S.field}>
-            <label style={S.label}>Email</label>
-            <input style={S.input} type="email" autoComplete="email"
-              placeholder="tu@empresa.com" value={email}
+            <label style={S.lbl}>Email</label>
+            <input className="ws-input" style={S.input} type="email" autoComplete="email"
+              placeholder="you@company.com" value={email}
               onChange={e=>setEmail(e.target.value)} required/>
           </div>
+
           <div style={S.field}>
-            <label style={S.label}>Contraseña</label>
+            <label style={S.lbl}>Password</label>
             <div style={{position:'relative'}}>
-              <input style={{...S.input,paddingRight:40}}
+              <input className="ws-input" style={{...S.input,paddingRight:40}}
                 type={showPwd?'text':'password'} autoComplete="current-password"
                 placeholder="••••••••" value={pwd}
                 onChange={e=>setPwd(e.target.value)} required/>
-              <button type="button" onClick={()=>setShowPwd(s=>!s)} style={S.eyeBtn} tabIndex={-1}>
-                {showPwd?'🙈':'👁'}
+              <button type="button" className="ws-eye"
+                onClick={()=>setShowPwd(s=>!s)}
+                style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',
+                  background:'none',border:'none',cursor:'pointer',padding:'4px',
+                  color:'#50506a',display:'flex',alignItems:'center',justifyContent:'center',
+                  borderRadius:4,transition:'color 0.15s'}}>
+                {showPwd ? <EyeOffIcon/> : <EyeIcon/>}
               </button>
             </div>
           </div>
-          <label style={{display:'flex',alignItems:'center',fontSize:12,color:'#8888a8',cursor:'pointer',userSelect:'none',marginTop:-4}}>
-            <input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)} style={{marginRight:6}}/>
-            Recordar email
+
+          <label style={{display:'flex',alignItems:'center',gap:8,fontSize:12,color:'#8888a8',
+            cursor:'pointer',userSelect:'none',marginTop:-4}}>
+            <input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}
+              style={{width:14,height:14,accentColor:'#4f6ef7',cursor:'pointer'}}/>
+            Remember email
           </label>
-          {error && (
-            <div style={{padding:'8px 12px',background:'rgba(224,82,82,0.08)',
-              border:'1px solid rgba(224,82,82,0.25)',borderRadius:6,color:'#e05252',fontSize:12}}>
+
+          {error&&(
+            <div style={{padding:'9px 12px',background:'rgba(224,82,82,0.08)',
+              border:'1px solid rgba(224,82,82,0.22)',borderRadius:6,color:'#e05252',fontSize:12,
+              display:'flex',alignItems:'center',gap:8}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
               {error}
             </div>
           )}
-          <button type="submit"
-            style={{...S.submitBtn, opacity:loading?0.7:1}}
+
+          <button type="submit" className="ws-submit"
+            style={{...S.submit,opacity:loading?0.7:1}}
             disabled={loading||!!ssoLoading}>
-            {loading?'Iniciando sesión…':'Iniciar sesión'}
+            {loading?(
+              <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                <SpinIcon/> Signing in…
+              </span>
+            ):'Sign in'}
           </button>
         </form>
       </div>
@@ -185,7 +185,27 @@ export function LoginPage() {
   );
 }
 
-function GoogleIcon() {
+// ── SVG Icons (professional, no emojis) ──────────────────────────
+
+function EyeIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
+  );
+}
+
+function GgIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{flexShrink:0}}>
       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -196,7 +216,7 @@ function GoogleIcon() {
   );
 }
 
-function MicrosoftIcon() {
+function MsIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 21 21" fill="none" style={{flexShrink:0}}>
       <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
@@ -207,30 +227,63 @@ function MicrosoftIcon() {
   );
 }
 
-function Spinner() {
+function SpinIcon() {
   return (
-    <div style={{
-      width:16, height:16, flexShrink:0,
-      border:'2px solid #7b93ff33', borderTop:'2px solid #7b93ff',
-      borderRadius:'50%', animation:'spin 0.8s linear infinite',
-    }}/>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+      style={{animation:'spin 0.8s linear infinite',flexShrink:0}}>
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3"/>
+      <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+    </svg>
   );
 }
 
+// ── Styles ─────────────────────────────────────────────────────────
+
 const S: Record<string, React.CSSProperties> = {
-  root: { minHeight:'100vh', background:'#0d0d10', display:'flex', alignItems:'center', justifyContent:'center', padding:16, fontFamily:"'Inter',system-ui,sans-serif" },
-  card: { background:'#141418', border:'1px solid #2a2a38', borderRadius:12, padding:'36px 32px', width:'100%', maxWidth:400, boxShadow:'0 20px 60px rgba(0,0,0,0.6)', display:'flex', flexDirection:'column', gap:20 },
-  logo: { display:'flex', alignItems:'center', gap:8, justifyContent:'center', fontSize:22, fontWeight:700, letterSpacing:-0.5 },
-  logoDot: { width:10, height:10, borderRadius:'50%', background:'#4f6ef7', boxShadow:'0 0 10px #4f6ef7' },
-  subtitle: { textAlign:'center', color:'#50506a', fontSize:13, marginTop:-10 },
-  divider: { display:'flex', alignItems:'center', gap:12 },
-  divLine: { flex:1, height:1, background:'#2a2a38' },
-  divText: { color:'#50506a', fontSize:11, whiteSpace:'nowrap', fontWeight:500, letterSpacing:'0.05em', textTransform:'uppercase' },
-  field: { display:'flex', flexDirection:'column', gap:5 },
-  label: { fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#50506a' },
-  input: { width:'100%', background:'#1b1b22', border:'1px solid #2a2a38', borderRadius:6, padding:'9px 12px', color:'#e4e4ef', fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box', transition:'border-color 0.15s' },
-  eyeBtn: { position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', fontSize:15, padding:'2px 4px', color:'#50506a' },
-  submitBtn: { width:'100%', padding:'10px 0', background:'#4f6ef7', border:'none', borderRadius:7, color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', transition:'all 0.15s ease', marginTop:2 },
+  root: {
+    minHeight: '100vh', background: '#0d0d10',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: 16, fontFamily: "'Inter', system-ui, sans-serif",
+  },
+  card: {
+    background: '#141418', border: '1px solid #252530',
+    borderRadius: 14, padding: '40px 36px', width: '100%', maxWidth: 400,
+    boxShadow: '0 24px 64px rgba(0,0,0,0.65)',
+    display: 'flex', flexDirection: 'column', gap: 22,
+  },
+  logo: {
+    display: 'flex', alignItems: 'center', gap: 8,
+    justifyContent: 'center', fontSize: 24, fontWeight: 700, letterSpacing: -0.5,
+  },
+  dot: { width: 10, height: 10, borderRadius: '50%', background: '#4f6ef7', boxShadow: '0 0 12px #4f6ef7' },
+  subtitle: { textAlign: 'center', color: '#50506a', fontSize: 13, margin: '-12px 0 -4px' },
+  ssoBtn: {
+    display: 'flex', alignItems: 'center', gap: 10,
+    padding: '10px 14px', width: '100%',
+    border: '1px solid', borderRadius: 8, fontSize: 13, fontWeight: 500,
+    fontFamily: 'inherit', transition: 'all 0.15s ease',
+  },
+  badge: {
+    fontSize: 9, fontWeight: 700, letterSpacing: '0.07em',
+    color: '#2a2a3a', textTransform: 'uppercase',
+  },
+  divider: { display: 'flex', alignItems: 'center', gap: 12, margin: '-4px 0' },
+  divLine: { flex: 1, height: 1, background: '#202028' },
+  divTxt: { color: '#40404e', fontSize: 11, whiteSpace: 'nowrap', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' },
+  field: { display: 'flex', flexDirection: 'column', gap: 6 },
+  lbl: { fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#50506a' },
+  input: {
+    width: '100%', background: '#1b1b22', border: '1px solid #252530',
+    borderRadius: 7, padding: '9px 12px', color: '#e4e4ef', fontSize: 13,
+    fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
+  },
+  submit: {
+    width: '100%', padding: '11px 0', background: '#4f6ef7', border: 'none',
+    borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600,
+    cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s ease',
+    marginTop: 2, letterSpacing: '0.01em',
+  },
 };
 
 export default LoginPage;
