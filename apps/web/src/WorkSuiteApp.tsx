@@ -6,6 +6,7 @@ import {
   createContext, useContext, useRef, useEffect,
   Component
 } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from './shared/lib/api';
 import { useAuth } from './shared/hooks/useAuth';
 
@@ -1897,7 +1898,6 @@ function AdminUsers({ users, setUsers, currentUser }) {
 
 function AdminHotDesk({ hd, setHd, users }) {
   const { t } = useApp();
-  // Building/floor selection for seat map
   const [buildings,  setBuildings]  = useState([]);
   const [floors,     setFloors]     = useState([]);
   const [selBldg,    setSelBldg]    = useState(null);
@@ -1908,17 +1908,14 @@ function AdminHotDesk({ hd, setHd, users }) {
   const [selDates,   setSelDates]   = useState([]);
   const [yr, sYr]  = useState(new Date().getFullYear());
   const [mo, sMo]  = useState(new Date().getMonth());
-
-  const hotdeskUsers = users.filter(u => u.deskType===DeskType.HOTDESK || u.deskType===DeskType.FIXED);
   const CELL=52,PAD=14,LH=18;
+  const hotdeskUsers = users.filter(u => u.deskType===DeskType.HOTDESK || u.deskType===DeskType.FIXED);
 
-  // Load buildings
   useEffect(()=>{
     supabase.from('buildings').select('*').eq('active',true).order('name')
       .then(({data})=>{if(data){setBuildings(data);if(data[0])setSelBldg(data[0]);}});
   },[]);
 
-  // Load floors when building changes
   useEffect(()=>{
     if(!selBldg){setFloors([]);setSelFloor(null);return;}
     supabase.from('blueprints').select('id,floor_name,floor_order,layout')
@@ -1926,7 +1923,6 @@ function AdminHotDesk({ hd, setHd, users }) {
       .then(({data})=>{if(data){setFloors(data);setSelFloor(data[0]||null);}});
   },[selBldg?.id]);
 
-  // Get seats from selected blueprint
   function getSeatsForItem(item) {
     if(item.shape==='circle'){
       const{x,y,w,h}=item,cx=x+w/2,cy=y+h/2,R=Math.min(w,h)/2-PAD-CELL/2;
@@ -1951,132 +1947,156 @@ function AdminHotDesk({ hd, setHd, users }) {
     return result;
   },[selFloor?.id]);
 
-  const confirmAssign = () => {
+  const confirmAssign = async () => {
     if (!selSeat || !selUser) return;
+    const usr = users.find(u=>u.id===selUser);
     if (asFixed) {
-      const usr = users.find(u=>u.id===selUser);
       setHd(h=>({ ...h, fixed:{ ...h.fixed, [selSeat]:usr?.name||selUser }, reservations:h.reservations.filter(r=>r.seatId!==selSeat) }));
-      // Persist to Supabase
-      supabase.from('fixed_assignments').upsert({seat_id:selSeat,user_id:selUser,user_name:usr?.name||selUser}).then(({error})=>{if(error)console.error(error);});
+      await supabase.from('fixed_assignments').upsert({seat_id:selSeat,user_id:selUser,user_name:usr?.name||selUser});
     } else {
       if (!selDates.length) return;
-      const usr = users.find(u=>u.id===selUser);
       setHd(h=>({ ...h, reservations:[ ...h.reservations.filter(r=>!selDates.includes(r.date)||r.seatId!==selSeat), ...selDates.map(date=>({seatId:selSeat,date,userId:selUser,userName:usr?.name||selUser})) ]}));
       const rows=selDates.map(d=>({id:`res-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,seat_id:selSeat,user_id:selUser,user_name:usr?.name||selUser,date:d}));
-      supabase.from('seat_reservations').upsert(rows,{onConflict:'seat_id,date'}).then(({error})=>{if(error)console.error(error);});
+      await supabase.from('seat_reservations').upsert(rows,{onConflict:'seat_id,date'});
     }
     setSelSeat(null); setSelUser(''); setSelDates([]); setAsFixed(false);
   };
+
   const removeFixed = async (sid) => {
     setHd(h=>{ const f={...h.fixed}; delete f[sid]; return {...h,fixed:f}; });
     await supabase.from('fixed_assignments').delete().eq('seat_id',sid);
   };
+
   const occupiedForSeat = selSeat ? hd.reservations.filter(r=>r.seatId===selSeat).map(r=>r.date) : [];
 
   return (
-    <div style={{display:'flex',flexDirection:'column',gap:16}}>
-      <div>
+    <div style={{display:'flex',flexDirection:'column',gap:14,height:'100%',overflow:'hidden'}}>
+      <div style={{flexShrink:0}}>
         <div className="sec-t">{t('hotdeskTitle')}</div>
-        <div className="sec-sub">Manage seat assignments and fixed allocations. Select building and floor to see seats.</div>
+        <div className="sec-sub">Assign seats and fixed allocations from the floor plan.</div>
       </div>
 
       {/* Building + Floor selectors */}
-      {buildings.length > 0 && (
-        <div style={{display:'flex',gap:10,alignItems:'center'}}>
+      <div style={{display:'flex',gap:8,alignItems:'center',flexShrink:0}}>
+        {buildings.length > 0 ? <>
           <select className="a-inp" style={{width:'auto',fontSize:12,padding:'5px 10px'}}
             value={selBldg?.id||''} onChange={e=>{const b=buildings.find(x=>x.id===e.target.value);setSelBldg(b||null);}}>
             {buildings.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
           <select className="a-inp" style={{width:'auto',fontSize:12,padding:'5px 10px'}}
-            value={selFloor?.id||''} onChange={e=>{const fl=floors.find(x=>x.id===e.target.value);setSelFloor(fl||null);}}>
+            value={selFloor?.id||''} onChange={e=>{const fl=floors.find(x=>x.id===e.target.value);setSelFloor(fl||null);setSelSeat(null);}}>
             {floors.map(fl=><option key={fl.id} value={fl.id}>{fl.floor_name}</option>)}
           </select>
-          {selFloor && <span style={{fontSize:11,color:'var(--tx3)'}}>{seats.length} seats</span>}
-        </div>
-      )}
-      {buildings.length === 0 && (
-        <div style={{fontSize:12,color:'var(--tx3)'}}>No buildings configured. Create one in Admin → Blueprint.</div>
-      )}
+          <span style={{fontSize:11,color:'var(--tx3)'}}>{seats.length} seats</span>
+        </> : (
+          <div style={{fontSize:12,color:'var(--tx3)'}}>No buildings — create in Admin → Blueprint first.</div>
+        )}
+      </div>
 
-      <div style={{display:'grid',gridTemplateColumns:'minmax(200px,320px) 1fr',gap:20,alignItems:'start'}}>
-        <div>
-          {/* Seat grid from blueprint */}
-          <div style={{fontSize:9,fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:10}}>SELECT SEAT</div>
-          {seats.length === 0 && <div style={{fontSize:12,color:'var(--tx3)',marginBottom:12}}>Select a floor with seats to manage.</div>}
-          <div className="seat-grid" style={{gridTemplateColumns:'repeat(auto-fill,minmax(52px,1fr))'}}>
-            {seats.map(seat=>{
-              const st=ReservationService.statusOf(seat.id,MOCK_TODAY,hd.fixed,hd.reservations);
-              const isSel=selSeat===seat.id;
-              return(
-                <button key={seat.id} className={`seat-btn ${isSel?'sel':st===SeatStatus.FIXED?'is-fixed':st===SeatStatus.OCCUPIED?'is-occ':''}`}
-                  onClick={()=>{setSelSeat(seat.id);setSelDates([]);setSelUser('');setAsFixed(false);}}>
-                  {seat.id}
-                  {hd.fixed[seat.id]&&<div style={{fontSize:8,color:'var(--red)',marginTop:1,lineHeight:1}}>{hd.fixed[seat.id].split(' ')[0].slice(0,5)}</div>}
-                </button>
-              );
-            })}
+      {/* Main layout: map left, controls right */}
+      <div style={{display:'flex',gap:16,flex:1,minHeight:0,overflow:'hidden'}}>
+
+        {/* Floor map */}
+        <div style={{flex:'0 0 auto',width:420}}>
+          {selFloor && <BlueprintHDMap
+            hd={hd}
+            blueprint={selFloor}
+            currentUser={{id:''}}
+            onSeat={sid=>{setSelSeat(sid);setSelDates([]);setSelUser('');setAsFixed(false);}}
+            highlightSeat={selSeat}
+          />}
+          {!selFloor&&<div style={{height:300,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:12}}>Select a building & floor</div>}
+        </div>
+
+        {/* Right: seat grid + assign panel */}
+        <div style={{flex:1,display:'flex',flexDirection:'column',gap:12,overflow:'auto'}}>
+
+          {/* Seat grid */}
+          <div>
+            <div style={{fontSize:9,fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:8}}>SELECT SEAT</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+              {seats.map(seat=>{
+                const st=ReservationService.statusOf(seat.id,MOCK_TODAY,hd.fixed,hd.reservations);
+                const isSel=selSeat===seat.id;
+                return(
+                  <button key={seat.id}
+                    onClick={()=>{setSelSeat(seat.id);setSelDates([]);setSelUser('');setAsFixed(false);}}
+                    style={{width:46,height:36,border:`1px solid ${isSel?'var(--ac)':st===SeatStatus.FIXED?'rgba(239,68,68,.4)':st===SeatStatus.OCCUPIED?'rgba(59,130,246,.35)':'var(--bd)'}`,
+                      borderRadius:'var(--r)',background:isSel?'var(--glow)':st===SeatStatus.FIXED?'rgba(239,68,68,.06)':st===SeatStatus.OCCUPIED?'rgba(59,130,246,.06)':'var(--sf2)',
+                      color:isSel?'var(--ac2)':st===SeatStatus.FIXED?'var(--red)':st===SeatStatus.OCCUPIED?'var(--ac2)':'var(--tx2)',
+                      cursor:'pointer',fontSize:9,fontWeight:600,textAlign:'center',lineHeight:1.2,padding:'2px 3px',transition:'var(--ease)'}}>
+                    {seat.id}
+                    {hd.fixed[seat.id]&&<div style={{fontSize:7,lineHeight:1,marginTop:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{hd.fixed[seat.id].split(' ')[0].slice(0,5)}</div>}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Fixed seats list */}
+          {/* Fixed seats summary */}
           {Object.keys(hd.fixed).length>0&&(
-            <div style={{marginTop:16}}>
-              <div style={{fontSize:9,fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:8}}>{t('fixedSeats')}</div>
-              {Object.entries(hd.fixed).map(([sid,uname])=>(
-                <div key={sid} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 10px',background:'var(--sf2)',border:'1px solid rgba(224,82,82,.2)',borderRadius:'var(--r)',marginBottom:4}}>
-                  <span style={{fontFamily:'var(--mono)',color:'var(--red)',fontWeight:700,fontSize:12,minWidth:32}}>{sid}</span>
-                  <span style={{flex:1,fontSize:12,color:'var(--tx2)'}}>{uname}</span>
-                  <button onClick={()=>removeFixed(sid)} title="Release fixed seat"
-                    style={{background:'none',border:'none',color:'var(--tx3)',cursor:'pointer',fontSize:13,padding:'2px 4px',borderRadius:3}}>×</button>
+            <div>
+              <div style={{fontSize:9,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:6}}>Fixed seats</div>
+              <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                {Object.entries(hd.fixed).map(([sid,uname])=>(
+                  <div key={sid} style={{display:'flex',alignItems:'center',gap:5,padding:'4px 8px',background:'rgba(239,68,68,.06)',border:'1px solid rgba(239,68,68,.2)',borderRadius:'var(--r)',fontSize:11}}>
+                    <span style={{fontFamily:'var(--mono)',color:'var(--red)',fontWeight:700,fontSize:11}}>{sid}</span>
+                    <span style={{color:'var(--tx2)'}}>{uname}</span>
+                    <button onClick={()=>removeFixed(sid)} style={{background:'none',border:'none',color:'var(--tx3)',cursor:'pointer',fontSize:12,padding:'0 2px',lineHeight:1}}>×</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Assign panel */}
+          {selSeat ? (
+            <div className="a-card" style={{marginBottom:0,flexShrink:0}}>
+              <div className="a-ct">🪑 Assign — <span style={{color:'var(--ac2)',fontFamily:'var(--mono)'}}>{selSeat}</span>
+                <span style={{fontSize:10,fontWeight:400,color:'var(--tx3)',marginLeft:8}}>
+                  {hd.fixed[selSeat]?'Fixed: '+hd.fixed[selSeat]:hd.reservations.find(r=>r.seatId===selSeat&&r.date===MOCK_TODAY)?.userName||'Free today'}
+                </span>
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                <select className="a-inp" value={selUser} onChange={e=>setSelUser(e.target.value)} style={{cursor:'pointer'}}>
+                  <option value="">— Select user —</option>
+                  {hotdeskUsers.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
+                </select>
+                <div onClick={()=>setAsFixed(f=>!f)} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',background:'var(--sf2)',borderRadius:'var(--r)',border:`1px solid ${asFixed?'rgba(239,68,68,.3)':'var(--bd)'}`,cursor:'pointer'}}>
+                  <div style={{width:14,height:14,borderRadius:3,background:asFixed?'var(--red)':'transparent',border:`2px solid ${asFixed?'var(--red)':'var(--bd2)'}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    {asFixed&&<span style={{color:'#fff',fontSize:9,fontWeight:700}}>✓</span>}
+                  </div>
+                  <div>
+                    <div style={{fontSize:12,color:asFixed?'var(--red)':'var(--tx2)',fontWeight:asFixed?600:400}}>📌 Mark as permanent</div>
+                    <div style={{fontSize:10,color:'var(--tx3)'}}>Seat permanently locked for this person</div>
+                  </div>
                 </div>
-              ))}
+                {!asFixed&&(
+                  <div>
+                    <div style={{fontSize:9,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:6}}>Select dates</div>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+                      <button className="n-arr" onClick={()=>mo===0?(sMo(11),sYr(y=>y-1)):sMo(m=>m-1)}>‹</button>
+                      <span style={{fontSize:11,fontWeight:600,color:'var(--ac2)'}}>{fmtMonthYear(yr,mo,'en')}</span>
+                      <button className="n-arr" onClick={()=>mo===11?(sMo(0),sYr(y=>y+1)):sMo(m=>m+1)}>›</button>
+                    </div>
+                    <MiniCalendar year={yr} month={mo} selectedDates={selDates} onToggleDate={d=>setSelDates(p=>p.includes(d)?p.filter(x=>x!==d):[...p,d])} occupiedDates={occupiedForSeat}/>
+                    {selDates.length>0&&<div style={{fontSize:10,color:'var(--green)',marginTop:6}}>{selDates.length} date{selDates.length!==1?'s':''} selected</div>}
+                  </div>
+                )}
+                <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+                  <button className="b-cancel" onClick={()=>{setSelSeat(null);setSelUser('');setSelDates([]);}}>Cancel</button>
+                  <button className="b-sub" onClick={confirmAssign} disabled={!selUser||(!asFixed&&selDates.length===0)}>
+                    {asFixed?'📌 Assign permanently':'Assign ('+selDates.length+')'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{padding:16,background:'var(--sf2)',borderRadius:'var(--r2)',border:'1px solid var(--bd)',color:'var(--tx3)',fontSize:12,textAlign:'center'}}>
+              ← Click a seat on the map or in the grid above to assign it
             </div>
           )}
         </div>
-
-        {/* Right panel: assign */}
-        {selSeat ? (
-          <div className="a-card" style={{marginBottom:0}}>
-            <div className="a-ct">🪑 {t('assignSeat')} — <span style={{color:'var(--ac2)',fontFamily:'var(--mono)'}}>{selSeat}</span></div>
-            <div style={{display:'flex',flexDirection:'column',gap:12}}>
-              <div>
-                <div className="a-lbl" style={{marginBottom:6}}>{t('assignTo')}</div>
-                <select className="a-inp" value={selUser} onChange={e=>setSelUser(e.target.value)} style={{cursor:'pointer'}}>
-                  <option value="">— Select user —</option>
-                  {hotdeskUsers.map(u=><option key={u.id} value={u.id}>{u.name} ({u.deskType})</option>)}
-                </select>
-              </div>
-              <div onClick={()=>setAsFixed(f=>!f)} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:'var(--sf2)',borderRadius:'var(--r)',border:`1px solid ${asFixed?'rgba(224,82,82,.3)':'var(--bd)'}`,cursor:'pointer'}}>
-                <div style={{width:16,height:16,borderRadius:3,background:asFixed?'var(--red)':'transparent',border:`2px solid ${asFixed?'var(--red)':'var(--bd2)'}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                  {asFixed&&<span style={{color:'#fff',fontSize:10,fontWeight:700}}>✓</span>}
-                </div>
-                <div>
-                  <div style={{fontSize:12,color:asFixed?'var(--red)':'var(--tx2)',fontWeight:asFixed?600:400}}>📌 {t('asFixed')}</div>
-                  <div style={{fontSize:10,color:'var(--tx3)',marginTop:1}}>{t('asFixedHint')}</div>
-                </div>
-              </div>
-              {!asFixed&&(
-                <div>
-                  <div className="a-lbl" style={{marginBottom:8}}>{t('hdSelectDates')}</div>
-                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-                    <button className="n-arr" onClick={()=>mo===0?(sMo(11),sYr(y=>y-1)):sMo(m=>m-1)}>‹</button>
-                    <span style={{fontSize:12,fontWeight:600,color:'var(--ac2)'}}>{fmtMonthYear(yr,mo,'en')}</span>
-                    <button className="n-arr" onClick={()=>mo===11?(sMo(0),sYr(y=>y+1)):sMo(m=>m+1)}>›</button>
-                  </div>
-                  <MiniCalendar year={yr} month={mo} selectedDates={selDates} onToggleDate={d=>setSelDates(p=>p.includes(d)?p.filter(x=>x!==d):[...p,d])} occupiedDates={occupiedForSeat}/>
-                  {selDates.length>0&&<div style={{fontSize:10,color:'var(--green)',marginTop:8}}>{selDates.length} date{selDates.length!==1?'s':''} selected</div>}
-                </div>
-              )}
-              <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
-                <button className="b-cancel" onClick={()=>{setSelSeat(null);setSelUser('');setSelDates([]);}}>{t('cancel')}</button>
-                <button className="b-sub" onClick={confirmAssign} disabled={!selUser||(!asFixed&&selDates.length===0)}>
-                  {asFixed?'📌 '+t('confirmAssign'):t('confirmAssign')+' ('+selDates.length+')'}
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:'var(--r2)',padding:32,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:13,minHeight:200}}>← {t('selectSeat')}</div>
-        )}
       </div>
     </div>
   );
@@ -2087,7 +2107,7 @@ function AdminHotDesk({ hd, setHd, users }) {
 // BLUEPRINT HD MAP — renders blueprint layout for seat reservation
 // ══════════════════════════════════════════════════════════════════
 
-function BlueprintHDMap({ hd, onSeat, currentUser, blueprint }) {
+function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null }) {
   const { theme } = useApp();
   const canvasRef = useRef(null);
   const cwRef = useRef(null);
@@ -2223,6 +2243,8 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint }) {
       ctx.fillStyle=fc;ctx.strokeStyle=sc;ctx.lineWidth=isHov?2:1;
       rr(x,y,w,h,5);ctx.fill();ctx.stroke();
       if(!isOcc&&!isHov){ctx.fillStyle='rgba(255,255,255,.02)';ctx.strokeStyle=sc+'33';ctx.lineWidth=.4;rr(x+3,y+3,w-6,h-6,3);ctx.fill();ctx.stroke();}
+      // Highlight ring for admin-selected seat
+      if(id===highlightSeat){ctx.strokeStyle='#f59e0b';ctx.lineWidth=2.5;ctx.setLineDash([]);rr(x-3,y-3,w+6,h+6,7);ctx.stroke();}
       // Only show seat ID — color conveys status
       ctx.fillStyle=tc;ctx.font='bold 9px monospace';
       ctx.textAlign='center';ctx.textBaseline='middle';
@@ -2618,11 +2640,12 @@ function BlueprintCanvas({ items: initItems, onChange }) {
     drg:false,rsz:false,crt:false,pan:false,
     dragOff:{x:0,y:0},rHandle:null,origItem:null,
     dragS:null,crtS:null,crtE:null,panLast:null,clickOrig:null,
-    clN:1,rN:1,zN:1,hist:[],fwd:[],selBox:null,multiSel:[],
+    clN:1,rN:1,zN:1,hist:[],fwd:[],selBox:null,multiSel:[],multiDragOffsets:[],
   });
   const [tool, _setTool] = useState('select');
   const [,forceRender] = useState(0);
   const re = () => forceRender(n=>n+1);
+  const [tbTip, setTbTip] = useState(null); // {text, x, y}
 
   const S = stateRef.current;
   const GRID=24,CELL=52,PAD=14,LH=18,WW=2400,WH=1800,HS=7;
@@ -2661,6 +2684,27 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='z'&&!inInput){e.preventDefault();doUndo();return;}
       if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='z'&&!inInput){e.preventDefault();doRedo();return;}
       if((e.ctrlKey||e.metaKey)&&e.key==='d'&&!inInput){e.preventDefault();doDuplicate();return;}
+      if(e.key==='f'&&!inInput&&!e.ctrlKey&&!e.metaKey){e.preventDefault();
+        if(!S.items.length){S.cam={cx:0,cy:0,s:1};draw();return;}
+        let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+        S.items.forEach(i=>{if(i.x<minX)minX=i.x;if(i.y<minY)minY=i.y;if(i.x+i.w>maxX)maxX=i.x+i.w;if(i.y+i.h>maxY)maxY=i.y+i.h;});
+        const cvs=canvasRef.current;if(!cvs)return;
+        const W=cvs.width,H=cvs.height,PAD2=40;
+        const s2=Math.min((W-PAD2*2)/(maxX-minX),(H-PAD2*2)/(maxY-minY),2);
+        S.cam={cx:(W-(maxX-minX)*s2)/2-minX*s2,cy:(H-(maxY-minY)*s2)/2-minY*s2,s:s2};draw();return;
+      }
+      if(e.key==='f'&&!inInput&&!e.ctrlKey){
+        e.preventDefault();
+        if(!S.items.length){S.cam={cx:0,cy:0,s:1};draw();return;}
+        let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+        S.items.forEach(i=>{if(i.x<minX)minX=i.x;if(i.y<minY)minY=i.y;if(i.x+i.w>maxX)maxX=i.x+i.w;if(i.y+i.h>maxY)maxY=i.y+i.h;});
+        const cvs=canvasRef.current;if(!cvs)return;
+        const W=cvs.width,H=cvs.height,PAD=40;
+        const bW=maxX-minX,bH=maxY-minY;
+        const s=Math.min((W-PAD*2)/bW,(H-PAD*2)/bH,2);
+        S.cam={cx:(W-bW*s)/2-minX*s,cy:(H-bH*s)/2-minY*s,s};draw();
+        return;
+      }
     }
     cw.addEventListener('wheel',wheelH,{passive:false});
     window.addEventListener('keydown',onKey);
@@ -2682,14 +2726,15 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       for(let y=Math.floor(tl.y/GRID)*GRID;y<br.y+GRID;y+=GRID){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WW,y);ctx.stroke();}
     }
     // Items
-    ['zone','wall','room','desk','circle'].forEach(type=>{S.items.filter(i=>i.type===type).forEach(i=>{ctx.save();drawItem(ctx,i,S.sel===i||(!S.sel&&(S.multiSel||[]).includes(i)));ctx.restore();});});
+    ['zone','wall','door','window','room','desk','circle'].forEach(type=>{S.items.filter(i=>i.type===type).forEach(i=>{ctx.save();drawItem(ctx,i,S.sel===i||(!S.sel&&(S.multiSel||[]).includes(i)));ctx.restore();});});
     if(S.selBox&&S.selBox.w>2&&S.selBox.h>2){ctx.fillStyle='rgba(59,130,246,.06)';ctx.strokeStyle='rgba(96,165,250,.7)';ctx.lineWidth=1/S.cam.s;ctx.setLineDash([4/S.cam.s,3/S.cam.s]);ctx.fillRect(S.selBox.x,S.selBox.y,S.selBox.w,S.selBox.h);ctx.strokeRect(S.selBox.x,S.selBox.y,S.selBox.w,S.selBox.h);ctx.setLineDash([]);}
     // Preview
     if(S.crt&&S.crtS&&S.crtE){
       const x=Math.min(S.crtS.x,S.crtE.x),y=Math.min(S.crtS.y,S.crtE.y);
       const w=Math.abs(S.crtE.x-S.crtS.x),h=Math.abs(S.crtE.y-S.crtS.y);
       const mn=S.tool==='wall'?GRID:GRID*2;
-      if(w>=mn||h>=mn){ctx.save();ctx.globalAlpha=.4;drawItem(ctx,{type:S.tool,x,y,w:Math.max(w,mn),h:Math.max(h,S.tool==='wall'?GRID:mn),label:'?',prefix:'A',shape:S.tool==='circle'?'circle':undefined,disabled:[],occupants:{}});ctx.restore();}
+      if(S.tool==='wall'&&S._wallPts&&S._wallPts.length>1){ctx.save();ctx.globalAlpha=.5;ctx.strokeStyle='rgba(160,160,180,.8)';ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(S._wallPts[0].x,S._wallPts[0].y);S._wallPts.slice(1).forEach(pt=>ctx.lineTo(pt.x,pt.y));ctx.stroke();ctx.restore();}
+      else if(w>=mn||h>=mn){ctx.save();ctx.globalAlpha=.4;drawItem(ctx,{type:S.tool,x,y,w:Math.max(w,mn),h:Math.max(h,S.tool==='wall'?GRID:mn),label:'?',prefix:'A',shape:S.tool==='circle'?'circle':undefined,disabled:[],occupants:{}});ctx.restore();}
     }
     ctx.restore();
   }
@@ -2760,8 +2805,72 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,y+h*0.22);
     }else if(i.type==='wall'){
-      ctx.fillStyle='rgba(60,60,70,.5)';ctx.strokeStyle='rgba(140,140,160,.45)';ctx.lineWidth=.8;ctx.setLineDash([]);
-      rr(ctx,x,y,w,h,2);ctx.fill();ctx.stroke();
+      // Polyline wall: i.pts = [{x,y},...] or fallback to rect
+      ctx.strokeStyle='rgba(160,160,180,.8)';ctx.lineWidth=3;ctx.setLineDash([]);ctx.lineCap='round';ctx.lineJoin='round';
+      if(i.pts&&i.pts.length>1){
+        ctx.beginPath();ctx.moveTo(i.pts[0].x,i.pts[0].y);
+        for(let k=1;k<i.pts.length;k++)ctx.lineTo(i.pts[k].x,i.pts[k].y);
+        ctx.stroke();
+        if(isSel){i.pts.forEach(pt=>{ctx.fillStyle='#60a5fa';ctx.beginPath();ctx.arc(pt.x,pt.y,4/S.cam.s,0,2*Math.PI);ctx.fill();});}
+      }else{ctx.fillStyle='rgba(60,60,70,.5)';rr(ctx,x,y,w,h,2);ctx.fill();ctx.stroke();}
+      ctx.lineCap='butt';ctx.lineJoin='miter';
+    }else if(i.type==='door'){
+      // Architectural door symbol: line + arc
+      const ang=i.angle||0,sw=i.w||GRID*2;
+      ctx.save();ctx.translate(x,y);ctx.rotate(ang*Math.PI/180);
+      ctx.strokeStyle='#fb923c';ctx.lineWidth=1.5;ctx.setLineDash([]);
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(sw,0);ctx.stroke(); // door width line
+      // Arc from wall to open position
+      ctx.strokeStyle='#fb923c';ctx.lineWidth=1;ctx.setLineDash([3,2]);
+      ctx.beginPath();ctx.arc(0,0,sw,0,-Math.PI/2);ctx.stroke();
+      if(i.double){ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-sw,0);ctx.stroke();ctx.beginPath();ctx.arc(0,0,sw,Math.PI,-Math.PI/2);ctx.stroke();}
+      ctx.setLineDash([]);
+      if(isSel){ctx.strokeStyle='#60a5fa';ctx.lineWidth=1/S.cam.s;ctx.setLineDash([4/S.cam.s,3/S.cam.s]);ctx.strokeRect(-4/S.cam.s,-sw-4/S.cam.s,(i.double?sw*2:sw)+8/S.cam.s,sw+8/S.cam.s);ctx.setLineDash([]);}
+      ctx.restore();
+    }else if(i.type==='window'){
+      // Architectural window symbol: two parallel lines with tick marks
+      const ang=i.angle||0,sw=i.w||GRID*2,th=6;
+      ctx.save();ctx.translate(x,y);ctx.rotate(ang*Math.PI/180);
+      ctx.strokeStyle='#38bdf8';ctx.lineWidth=1.5;ctx.setLineDash([]);
+      ctx.beginPath();ctx.moveTo(0,-th/2);ctx.lineTo(sw,-th/2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(0,th/2);ctx.lineTo(sw,th/2);ctx.stroke();
+      ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(0,-th/2);ctx.lineTo(0,th/2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(sw,-th/2);ctx.lineTo(sw,th/2);ctx.stroke();
+      if(i.double){const m=sw/2;ctx.beginPath();ctx.moveTo(m,-th/2);ctx.lineTo(m,th/2);ctx.stroke();}
+      ctx.restore();
+    }else if(i.type==='door'){
+      // Door: gap in wall + arc showing swing
+      const thick=h||GRID,cx2=x+w/2,cy2=y+thick/2;
+      ctx.fillStyle='rgba(30,15,5,.5)';ctx.strokeStyle='#fb923c';ctx.lineWidth=1.2;ctx.setLineDash([]);
+      ctx.fillRect(x,y,w,thick);ctx.strokeRect(x,y,w,thick);
+      // Door arc
+      ctx.strokeStyle='rgba(251,146,60,.5)';ctx.lineWidth=.8;
+      ctx.beginPath();
+      if(i.double){
+        ctx.arc(x,y+thick/2,w/2,0,-Math.PI/2,true);ctx.moveTo(x+w,y+thick/2);ctx.arc(x+w,y+thick/2,w/2,Math.PI,-Math.PI/2,false);
+      } else {
+        ctx.arc(x,y+thick/2,w,-Math.PI/2,0);
+      }
+      ctx.stroke();
+      ctx.fillStyle='#fb923c';ctx.font='500 8px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(i.double?'DD':'D',cx2,y-6);
+    }else if(i.type==='window'){
+      // Window: 3 horizontal lines (glazing bars)
+      const thick=h||GRID;
+      ctx.fillStyle='rgba(10,30,50,.4)';ctx.strokeStyle='#38bdf8';ctx.lineWidth=1.2;ctx.setLineDash([]);
+      ctx.fillRect(x,y,w,thick);ctx.strokeRect(x,y,w,thick);
+      // Glazing lines
+      ctx.strokeStyle='rgba(56,189,248,.4)';ctx.lineWidth=.7;
+      if(i.double){
+        [.33,.5,.67].forEach(t=>{ctx.beginPath();ctx.moveTo(x+w*t,y);ctx.lineTo(x+w*t,y+thick);ctx.stroke();});
+      } else {
+        ctx.beginPath();ctx.moveTo(x+w/2,y);ctx.lineTo(x+w/2,y+thick);ctx.stroke();
+      }
+      ctx.strokeStyle='#38bdf8';ctx.lineWidth=.7;
+      ctx.beginPath();ctx.moveTo(x,y+thick/2);ctx.lineTo(x+w,y+thick/2);ctx.stroke();
+      ctx.fillStyle='#38bdf8';ctx.font='500 8px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(i.double?'WW':'W',x+w/2,y-6);
     }
     if(isSel){
       const hs=HS/S.cam.s;
@@ -2779,8 +2888,25 @@ function BlueprintCanvas({ items: initItems, onChange }) {
     if(S.tool==='eraser'){saveH();const idx=S.items.findLastIndex(i=>hitI(i,p.x,p.y));if(idx>=0){if(S.sel===S.items[idx])S.sel=null;S.items.splice(idx,1);onChange([...S.items]);draw();re();return;}return;}
     if(S.tool==='select'){
       if(S.sel){const h=getHdl(S.sel,p.x,p.y);if(h){S.rsz=true;S.rHandle=h;S.origItem={...S.sel};S.dragS=p;return;}}
-      for(let i=S.items.length-1;i>=0;i--){if(hitI(S.items[i],p.x,p.y)){S.sel=S.items[i];S.drg=true;S.dragOff={x:p.x-S.sel.x,y:p.y-S.sel.y};S.origItem={...S.sel};S.dragS=p;draw();re();return;}}
+      for(let i=S.items.length-1;i>=0;i--){
+        if(hitI(S.items[i],p.x,p.y)){
+          const hit=S.items[i];
+          if(S.multiSel.length>1&&S.multiSel.includes(hit)){
+            // Multi-drag: record offsets for all selected items
+            saveH();S.sel=hit;S.drg=true;S.dragS=p;
+            S.multiDragOffsets=S.multiSel.map(it=>({item:it,dx:p.x-it.x,dy:p.y-it.y,origX:it.x,origY:it.y}));
+          } else {
+            S.sel=hit;S.multiSel=[hit];S.drg=true;S.dragOff={x:p.x-hit.x,y:p.y-hit.y};S.origItem={...hit};S.dragS=p;S.multiDragOffsets=[];
+          }
+          draw();re();return;
+        }
+      }
       S.sel=null;S.multiSel=[];S.selBox={sx:p.x,sy:p.y,x:p.x,y:p.y,w:0,h:0};draw();re();return;
+    }
+    if(S.tool==='wall'){
+      // Wall pencil: start new point list
+      S.crt=true;S._wallPts=[{x:snap(p.x),y:snap(p.y)}];S.crtS=ps;S.crtE=ps;
+      return;
     }
     S.crt=true;S.crtS=ps;S.crtE=ps;
   }
@@ -2796,8 +2922,25 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       S.sel.x=x;S.sel.y=y;S.sel.w=w;S.sel.h=h;draw();re();return;
     }
     if(S.selBox){S.selBox.x=Math.min(S.selBox.sx,p.x);S.selBox.y=Math.min(S.selBox.sy,p.y);S.selBox.w=Math.abs(p.x-S.selBox.sx);S.selBox.h=Math.abs(p.y-S.selBox.sy);S.multiSel=S.items.filter(i=>i.x<S.selBox.x+S.selBox.w&&i.x+i.w>S.selBox.x&&i.y<S.selBox.y+S.selBox.h&&i.y+i.h>S.selBox.y);draw();return;}
-    if(S.drg&&S.sel){S.sel.x=snap(p.x-S.dragOff.x);S.sel.y=snap(p.y-S.dragOff.y);draw();re();return;}
-    if(S.crt){S.crtE=ps;draw();}
+    if(S.drg&&S.sel){
+      if(S.multiDragOffsets&&S.multiDragOffsets.length>1){
+        // Move all selected items together
+        S.multiDragOffsets.forEach(({item,dx,dy})=>{item.x=snap(p.x-dx);item.y=snap(p.y-dy);}); // move all together
+      } else {
+        S.sel.x=snap(p.x-S.dragOff.x);S.sel.y=snap(p.y-S.dragOff.y);
+      }
+      draw();re();return;
+    }
+    if(S.crt){
+      S.crtE=ps;
+      if(S.tool==='wall'&&S._wallPts){
+        const last=S._wallPts[S._wallPts.length-1];
+        const nx=snap(p.x),ny=snap(p.y);
+        // Only add if moved at least one grid cell
+        if(Math.abs(nx-last.x)>=GRID/2||Math.abs(ny-last.y)>=GRID/2)S._wallPts.push({x:nx,y:ny});
+      }
+      draw();
+    }
   }
 
   function handleMU(e){
@@ -2809,7 +2952,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
         const sh=getSeats(S.sel).find(s=>p.x>=s.x&&p.x<=s.x+s.w&&p.y>=s.y&&p.y<=s.y+s.h);
         if(sh){saveH();if(!S.sel.disabled)S.sel.disabled=[];S.sel.disabled.includes(sh.id)?S.sel.disabled=S.sel.disabled.filter(d=>d!==sh.id):S.sel.disabled.push(sh.id);onChange([...S.items]);draw();S.drg=false;S.origItem=null;S.dragS=null;re();return;}
       }
-      S.drg=false;S.origItem=null;S.dragS=null;onChange([...S.items]);return;
+      S.drg=false;S.origItem=null;S.dragS=null;S.multiDragOffsets=[];onChange([...S.items]);return;
     }
     if(S.selBox){const sel=S.items.filter(i=>i.x<S.selBox.x+S.selBox.w&&i.x+i.w>S.selBox.x&&i.y<S.selBox.y+S.selBox.h&&i.y+i.h>S.selBox.y);S.multiSel=sel;S.sel=sel.length===1?sel[0]:null;S.selBox=null;re();draw();return;}
     if(S.crt){
@@ -2817,13 +2960,17 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       const x=Math.min(S.crtS.x,S.crtE.x),y=Math.min(S.crtS.y,S.crtE.y);
       const rw=Math.abs(S.crtE.x-S.crtS.x),rh=Math.abs(S.crtE.y-S.crtS.y);
       const isW=S.tool==='wall';const mn=isW?GRID:GRID*2;
+      else if(S.tool==='door'){ni={type:'door',x,y,w:Math.max(snap(rw),GRID*3),h:GRID,angle:0,double:false,label:'Door',id:Math.random().toString(36).slice(2)};}
+      else if(S.tool==='window'){ni={type:'window',x,y,w:Math.max(snap(rw),GRID*2),h:GRID,angle:0,double:false,label:'Window',id:Math.random().toString(36).slice(2)};}
       const w=Math.max(snap(rw),mn),h=Math.max(snap(rh),isW?GRID:mn);
       if(w<mn&&h<mn){S.crtS=null;S.crtE=null;draw();return;}
       saveH();let ni;
       if(S.tool==='desk'||S.tool==='circle'){const l=String.fromCharCode(64+S.clN);ni={type:S.tool,shape:S.tool==='circle'?'circle':undefined,x,y,w,h,label:'Zone '+l,prefix:l,id:Math.random().toString(36).slice(2),disabled:[],occupants:{}};S.clN++;}
       else if(S.tool==='room'){ni={type:'room',x,y,w,h,label:'Room '+S.rN++,id:Math.random().toString(36).slice(2)};}
       else if(S.tool==='zone'){ni={type:'zone',x,y,w,h,label:'Zone '+S.zN++,id:Math.random().toString(36).slice(2)};}
-      else if(S.tool==='wall'){ni={type:'wall',x,y,w,h,id:Math.random().toString(36).slice(2)};}
+      else if(S.tool==='door'){ni={type:'door',x,y,w:Math.max(snap(rw),GRID*2),h:GRID,label:'',double:w>=GRID*3,id:Math.random().toString(36).slice(2)};}
+      else if(S.tool==='window'){ni={type:'window',x,y,w:Math.max(snap(rw),GRID*2),h:GRID,label:'',double:w>=GRID*3,id:Math.random().toString(36).slice(2)};}
+      else if(S.tool==='wall'){const pts=S._wallPts||[{x,y},{x:x+w,y:y}];S._wallPts=null;ni={type:'wall',x:pts[0].x,y:pts[0].y,w:Math.max(w,GRID),h:GRID,pts,label:'',id:Math.random().toString(36).slice(2)};}
       if(ni){S.items.push(ni);S.sel=ni;}
       S.crtS=null;S.crtE=null;onChange([...S.items]);draw();re();
     }
@@ -2848,8 +2995,10 @@ function BlueprintCanvas({ items: initItems, onChange }) {
     {id:'circle', lbl:'Round',    tip:'Circular / round table',    dot:'#22c55e', circle:true},
     {id:'room',   lbl:'Room',     tip:'Meeting room',              dot:'#3b82f6', circle:false},
     {id:'zone',   lbl:'Zone',     tip:'Zone / area label',         dot:'#818cf8', circle:false},
-    {id:'wall',   lbl:'Wall',     tip:'Wall or divider',           dot:'#888',    circle:false},
-    {id:'eraser', lbl:'✕',        tip:'Erase element',             dot:null, danger:true},
+    {id:'wall',   lbl:'Wall',     tip:'Draw walls (click+drag along grid)',  dot:'#888', circle:false},
+    {id:'door',    lbl:'Door',     tip:'Door (single/double)',      dot:'#fb923c', circle:false},
+    {id:'window',  lbl:'Window',   tip:'Window (single/double)',    dot:'#38bdf8', circle:false},
+    {id:'eraser', lbl:'✕',        tip:'Erase element',              dot:null, danger:true},
   ];
 
   function doUndo(){if(S.hist.length){S.fwd.push(JSON.parse(JSON.stringify(S.items)));S.items=S.hist.pop();S.sel=null;onChange([...S.items]);draw();re();}}
@@ -2864,22 +3013,21 @@ function BlueprintCanvas({ items: initItems, onChange }) {
     onChange([...S.items]);draw();re();
   }
 
-  // Btn helper — custom tooltip via data-tip attr + click flash microinteraction
+  // Btn helper — React-state tooltip + click flash
   function abtn(tip,lbl,onClick,extra={}){
     return (
       <button
-        data-tip={tip}
         className="tb-btn"
+        onMouseEnter={e=>{const r=e.currentTarget.getBoundingClientRect();setTbTip({text:tip,x:r.left+r.width/2,y:r.top-8});}}
+        onMouseLeave={()=>setTbTip(null)}
         onClick={e=>{
-          // Flash microinteraction
-          const b=e.currentTarget;
-          b.classList.add('tb-flash');
+          const b=e.currentTarget;b.classList.add('tb-flash');
           setTimeout(()=>b.classList.remove('tb-flash'),180);
-          onClick();
+          setTbTip(null);onClick();
         }}
         style={{display:'flex',alignItems:'center',justifyContent:'center',minWidth:32,height:30,padding:'0 8px',
           border:'1px solid var(--bd)',borderRadius:6,background:'var(--sf2)',color:'var(--tx2)',
-          cursor:'pointer',fontSize:12,fontFamily:'inherit',gap:4,position:'relative',overflow:'visible',...extra}}>
+          cursor:'pointer',fontSize:12,fontFamily:'inherit',gap:4,...extra}}>
         {lbl}
       </button>
     );
@@ -2895,10 +3043,13 @@ function BlueprintCanvas({ items: initItems, onChange }) {
           const bg=isActive?(t.danger?'rgba(239,68,68,.12)':t.sel?'rgba(59,130,246,.2)':'rgba(59,130,246,.12)'):'var(--sf2)';
           const color=isActive?(t.danger?'#ef4444':'#7b93ff'):'var(--tx2)';
           return (
-            <button key={t.id} data-tip={t.tip} onClick={()=>setTool(t.id)}
+            <button key={t.id}
+              onMouseEnter={e=>{const r=e.currentTarget.getBoundingClientRect();setTbTip({text:t.tip,x:r.left+r.width/2,y:r.top-8});}}
+              onMouseLeave={()=>setTbTip(null)}
+              onClick={()=>{setTool(t.id);setTbTip(null);}}
               style={{position:'relative',display:'flex',alignItems:'center',gap:6,padding:'5px 12px',
                 border:`1px solid ${border}`,borderRadius:20,background:bg,
-                color,cursor:'pointer',fontSize:11,fontFamily:'inherit',fontWeight:isActive?600:400,whiteSpace:'nowrap',transition:'all .12s',overflow:'visible'}}>
+                color,cursor:'pointer',fontSize:11,fontFamily:'inherit',fontWeight:isActive?600:400,whiteSpace:'nowrap',transition:'all .12s'}}>
               {t.dot&&<span style={{width:8,height:8,borderRadius:t.circle?'50%':'2px',background:t.dot,flexShrink:0}}/>}
               {t.lbl}
             </button>
@@ -2911,7 +3062,16 @@ function BlueprintCanvas({ items: initItems, onChange }) {
         {abtn('Relabel clusters A, B, C… (top→bottom, left→right)','A,B,C…',relabelClusters)}
         <div style={{width:1,height:20,background:'var(--bd)',margin:'0 2px'}}/>
         {abtn('Toggle grid','⊞',()=>{S.showGrid=!S.showGrid;draw();})}
-        {abtn('Reset zoom','⊡',()=>{S.cam={cx:0,cy:0,s:1};draw();})}
+        {abtn('Fit all to screen [F]',<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>,()=>{
+  if(!S.items.length){S.cam={cx:0,cy:0,s:1};draw();return;}
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  S.items.forEach(i=>{if(i.x<minX)minX=i.x;if(i.y<minY)minY=i.y;if(i.x+i.w>maxX)maxX=i.x+i.w;if(i.y+i.h>maxY)maxY=i.y+i.h;});
+  const cvs=canvasRef.current;if(!cvs)return;
+  const W=cvs.width,H=cvs.height,PAD=40;
+  const bW=maxX-minX,bH=maxY-minY;
+  const s=Math.min((W-PAD*2)/bW,(H-PAD*2)/bH,2);
+  S.cam={cx:(W-bW*s)/2-minX*s,cy:(H-bH*s)/2-minY*s,s};draw();
+})}
       </div>
 
       {/* Canvas + properties side by side */}
@@ -2919,7 +3079,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       {/* Canvas */}
       <div ref={cwRef} style={{flex:1,position:'relative',background:'#0c1018',overflow:'hidden',minHeight:0}}>
         <canvas ref={canvasRef}
-          style={{display:'block',cursor:tool==='select'?'default':tool==='eraser'?'cell':'crosshair'}}
+          style={{display:'block',cursor:tool==='select'?'default':tool==='eraser'?'cell':tool==='wall'?'crosshair':'crosshair'}}
           onMouseDown={handleMD} onMouseMove={handleMM} onMouseUp={handleMU} onMouseLeave={handleMU}/>
       </div>
 
@@ -2981,12 +3141,43 @@ function BlueprintCanvas({ items: initItems, onChange }) {
                 </div>
               ))}
             </div>
+            {/* Door/Window: double toggle + angle */}
+            {(selItem?.type==='door'||selItem?.type==='window')&&<>
+              <div style={{display:'flex',gap:6}}>
+                <button onClick={()=>{saveH();selItem.double=!selItem.double;onChange([...S.items]);draw();re();}}
+                  style={{flex:1,padding:'4px 6px',border:`1px solid ${selItem.double?'#fb923c':'var(--bd)'}`,borderRadius:4,
+                    background:selItem.double?'rgba(251,146,60,.12)':'transparent',
+                    color:selItem.double?'#fb923c':'var(--tx2)',cursor:'pointer',fontSize:10,fontFamily:'inherit'}}>
+                  {selItem.double?'Double':'Single'}
+                </button>
+              </div>
+              <div>
+                <div style={{fontSize:9,fontWeight:600,color:'var(--tx3)',textTransform:'uppercase',marginBottom:3}}>Angle</div>
+                <input className="a-inp" type="number" step={45} defaultValue={selItem.angle||0} style={{fontSize:11,padding:'3px 5px'}}
+                  onChange={e=>{saveH();selItem.angle=parseInt(e.target.value)||0;onChange([...S.items]);draw();re();}}
+                  onKeyDown={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()}/>
+              </div>
+            </>}
             <button onClick={()=>{if(!S.sel)return;saveH();S.items=S.items.filter(i=>i!==S.sel);S.sel=null;onChange([...S.items]);draw();re();}}
               style={{padding:'4px',border:'1px solid rgba(239,68,68,.2)',borderRadius:4,background:'transparent',color:'#ef4444',cursor:'pointer',fontSize:11,fontFamily:'inherit'}}>✕ Delete</button>
           </>}
         </div>
       </div>
       </div>{/* end canvas+props */}
+      {/* Tooltip portal — renders on document.body to escape overflow:hidden stacking contexts */}
+      {tbTip && createPortal(
+        <div style={{position:'fixed',left:tbTip.x,top:tbTip.y,transform:'translate(-50%,-100%)',
+          background:'#1a1a28',color:'#c8c8e8',fontSize:11,fontWeight:500,
+          padding:'5px 10px',borderRadius:5,border:'1px solid rgba(255,255,255,.1)',
+          boxShadow:'0 4px 14px rgba(0,0,0,.6)',pointerEvents:'none',zIndex:99999,
+          whiteSpace:'nowrap',animation:'mbIn .1s ease'}}>
+          {tbTip.text}
+          <div style={{position:'absolute',top:'100%',left:'50%',transform:'translateX(-50%)',
+            borderLeft:'5px solid transparent',borderRight:'5px solid transparent',
+            borderTop:'5px solid #1a1a28'}}/>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
@@ -3277,11 +3468,7 @@ tr.hd-row-today > td.hd-td{background:rgba(139,92,246,.12) !important;border-top
 .hd-cell-name{margin-left:6px;font-size:9px;line-height:1;color:var(--tx2);max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .hd-tooltip{position:fixed;z-index:9900;background:var(--sf);border:1px solid var(--bd2);border-radius:var(--r2);padding:12px;box-shadow:var(--shadow);width:480px;pointer-events:none;animation:mbIn .15s ease;}
 .hd-tooltip-title{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px;}
-/* Custom tooltip via data-tip */
-[data-tip]{position:relative;}
-[data-tip]::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#1a1a28;color:#c8c8e8;font-size:11px;font-weight:500;white-space:nowrap;padding:4px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.08);box-shadow:0 4px 12px rgba(0,0,0,.5);pointer-events:none;opacity:0;transition:opacity .15s;z-index:9999;}
-[data-tip]::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1a1a28;pointer-events:none;opacity:0;transition:opacity .15s;z-index:9999;}
-[data-tip]:hover::after,[data-tip]:hover::before{opacity:1;}
+/* Tooltips handled via React state - see BpTooltip component */
 /* Action button click flash */
 .tb-btn:active,.tb-flash{background:rgba(79,110,247,.25) !important;border-color:var(--ac) !important;color:var(--ac2) !important;transform:scale(.94);}
 .tb-btn{transition:all .12s;}
