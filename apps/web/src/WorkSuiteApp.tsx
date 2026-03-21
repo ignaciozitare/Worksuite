@@ -1,13 +1,14 @@
 // @ts-nocheck
 // WorkSuite — Fase 2 — Prototype connected to real Supabase + real Jira API
 
-import {
+import React, {
   useState, useMemo, useCallback,
   createContext, useContext, useRef, useEffect,
   Component
 } from "react";
 import { createPortal } from "react-dom";
 import { supabase } from './shared/lib/api';
+import { RetroBoard, AdminRetroTeams } from './RetroBoard';
 import { useAuth } from './shared/hooks/useAuth';
 
 // ── API helpers ────────────────────────────────────────────────────────────
@@ -3235,8 +3236,9 @@ function BlueprintCanvas({ items: initItems, onChange }) {
 // ══════════════════════════════════════════════════════════════════
 
 const ALL_MODULES = [
-  {id:'jt', label:'Jira Tracker'},
-  {id:'hd', label:'HotDesk'},
+  {id:'jt',    label:'Jira Tracker'},
+  {id:'hd',    label:'HotDesk'},
+  {id:'retro', label:'RetroBoard 🔁'},
 ];
 
 const ALL_ADMIN_PERMS = [
@@ -3247,6 +3249,8 @@ const ALL_ADMIN_PERMS = [
   {id:'jira_config',label:'Jira Config',      desc:'Connect and configure Jira integration'},
   {id:'sso',        label:'SSO / Auth',       desc:'Configure SSO providers'},
   {id:'roles',      label:'Role Manager',     desc:'Create and edit permission roles'},
+  {id:'retro_teams',    label:'Retro Teams',     desc:'Create and manage retrospective teams'},
+  {id:'retro_sessions', label:'Retro Sessions',  desc:'View and manage past retro sessions'},
 ];
 
 function AdminRoles() {
@@ -3424,6 +3428,24 @@ function AdminRoles() {
 }
 
 
+// Shell wrapper to load teams from Supabase for admin
+function AdminRetroTeamsShell({ users }) {
+  const [teams, setTeams] = React.useState([]);
+  React.useEffect(()=>{
+    if(supabase){
+      Promise.all([
+        supabase.from("retro_teams").select("*"),
+        supabase.from("retro_team_members").select("*"),
+      ]).then(([{data:td},{data:md}])=>{
+        const t=(td||[]).map(t=>({...t,members:(md||[]).filter(m=>m.team_id===t.id).map(m=>{const u=users.find(x=>x.id===m.user_id);return{...m,name:u?.name,email:u?.email};})}));
+        setTeams(t);
+      });
+    }
+  },[users.length]);
+  return <AdminRetroTeams wsUsers={users} teams={teams} setTeams={setTeams}/>;
+}
+
+
 function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   const { t } = useApp();
   const isAdmin = currentUser.role === 'admin';
@@ -3444,11 +3466,12 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   }
 
   const NAV = [
-    { id:"settings",  icon:"⚙",  label:t("adminSettings") },
-    { id:"users",     icon:"👥", label:t("adminUsers"),  badge:"Admin" },
-    { id:"roles",     icon:"🛡", label:"Roles & Perms" },
-    { id:"hotdesk",   icon:"🪑", label:t("adminHotDesk"),hd:true },
-    { id:"blueprint", icon:"🗺", label:"Blueprint" },
+    { id:"settings",   icon:"⚙",  label:t("adminSettings") },
+    { id:"users",      icon:"👥", label:t("adminUsers"),  badge:"Admin" },
+    { id:"roles",      icon:"🛡", label:"Roles & Perms" },
+    { id:"hotdesk",    icon:"🪑", label:t("adminHotDesk"),hd:true },
+    { id:"blueprint",  icon:"🗺", label:"Blueprint" },
+    { id:"retroteams", icon:"🔁", label:"Retro Teams" },
   ];
   return (
     <div className="admin-wrap">
@@ -3462,6 +3485,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
         {mod==="hotdesk"   && <AdminHotDesk hd={hd} setHd={setHd} users={users}/>}
         {mod==="roles"     && <AdminRoles/>}
         {mod==="blueprint" && <AdminBlueprint/>}
+        {mod==="retroteams" && <AdminRetroTeamsShell users={users}/>}
       </div>
     </div>
   );
@@ -4055,6 +4079,9 @@ function WorkSuiteApp() {
             {(CURRENT_USER.modules||["jt","hd"]).includes("hd") && (
               <button className={`sw-btn ${mod==="hd"?"active-green":""}`} onClick={()=>{ setMod("hd"); setView("map"); }}>{t("moduleSwitchHD")}</button>
             )}
+            {(CURRENT_USER.modules||["jt","hd","retro"]).includes("retro") && (
+              <button className={`sw-btn ${mod==="retro"?"active-retro":""}`} onClick={()=>{ setMod("retro"); setView("retro"); }}>🔁 RetroBoard</button>
+            )}
           </div>
           <div className="top-right">
             <div className="sw-group">
@@ -4092,7 +4119,7 @@ function WorkSuiteApp() {
           </div>
         </header>
 
-        <nav className="nav-bar">
+        {mod !== "retro" && <nav className="nav-bar">
           {currentNavItems.map(item=>(
             <button key={item.id}
               className={`n-btn ${view===item.id?(mod==="hd"?"active-hd":"active"):""}`}
@@ -4111,7 +4138,7 @@ function WorkSuiteApp() {
             </>
           )}
 
-        </nav>
+        </nav>}
 
         <div className="body">
           {mod==="jt" && view!=="admin" && (
@@ -4131,6 +4158,11 @@ function WorkSuiteApp() {
           {mod==="hd" && view==="table"    && (
             <main className="content">
               <HDTableView hd={hd} onCell={(sid,date)=>handleHdSeatClick(sid,date)} currentUser={CURRENT_USER} blueprint={selectedBlueprint}/>
+            </main>
+          )}
+          {mod==="retro" && view!=="admin" && (
+            <main className="content" style={{padding:0,overflow:"hidden",display:"flex",flexDirection:"column",height:"100%"}}>
+              <RetroBoard currentUser={CURRENT_USER} wsUsers={users} lang={lang}/>
             </main>
           )}
           {view==="admin" && (<AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER}/>)}
