@@ -1809,17 +1809,51 @@ function WorkSuiteApp() {
   }, []);
 
   const handleSaveWorklog = useCallback(async (date, wl) => {
-    setWorklogs(p => ({ ...p, [date]: [...(p[date] || []), wl] }));
+  setWorklogs(p => ({ ...p, [date]: [...(p[date] || []), wl] }));
+  try {
+    const { error } = await supabase.from('worklogs').insert({
+      id: wl.id, issue_key: wl.issue, issue_summary: wl.summary,
+      issue_type: wl.type, epic_key: wl.epic, epic_name: wl.epicName,
+      project_key: wl.project, author_id: CURRENT_USER.id, author_name: CURRENT_USER.name,
+      date, started_at: wl.started, seconds: wl.seconds, description: wl.description || '',
+    });
+    if (error) { console.error('Save worklog error:', error.message); return; }
+
+    // ── Sync automático a Jira ──────────────────────────────────
     try {
-      const { error } = await supabase.from('worklogs').insert({
-        id: wl.id, issue_key: wl.issue, issue_summary: wl.summary,
-        issue_type: wl.type, epic_key: wl.epic, epic_name: wl.epicName,
-        project_key: wl.project, author_id: CURRENT_USER.id, author_name: CURRENT_USER.name,
-        date, started_at: wl.started, seconds: wl.seconds, description: wl.description || '',
+      const startedAt = `${date}T${wl.started}:00.000+0000`;
+      const headers = { ...await getAuthHeader(), 'Content-Type': 'application/json' };
+      const syncRes = await fetch(`${API_BASE}/jira/worklogs/${wl.issue}/sync`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          worklogId:   wl.id,
+          seconds:     wl.seconds,
+          startedAt,
+          description: wl.description || '',
+        }),
       });
-      if (error) console.error('Save worklog error:', error.message);
-    } catch (err) { console.error('Save worklog failed:', err); }
-  }, [CURRENT_USER.id, CURRENT_USER.name]);
+      const syncJson = await syncRes.json();
+      if (syncJson.ok) {
+        // Marcar como sincronizado en UI
+        setWorklogs(p => ({
+          ...p,
+          [date]: (p[date] || []).map(w =>
+            w.id === wl.id ? { ...w, syncedToJira: true } : w
+          ),
+        }));
+        notify('✓ Worklog guardado y sincronizado con Jira');
+      } else {
+        notify('Worklog guardado (sync Jira fallido: ' + (syncJson.error?.message || 'error') + ')');
+      }
+    } catch (syncErr) {
+      console.error('Jira sync failed:', syncErr);
+      notify('Worklog guardado (Jira no disponible)');
+    }
+    // ────────────────────────────────────────────────────────────
+
+  } catch (err) { console.error('Save worklog failed:', err); }
+}, [CURRENT_USER.id, CURRENT_USER.name]);
 
   const handleDeleteWorklog = useCallback(async (date, id) => {
     setWorklogs(p => {
