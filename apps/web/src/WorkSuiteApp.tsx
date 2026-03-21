@@ -1786,159 +1786,396 @@ function AdminHotDesk({ hd, setHd, users }) {
 
 
 // ══════════════════════════════════════════════════════════════════
+// BLUEPRINT HD MAP — renders blueprint layout for seat reservation
+// ══════════════════════════════════════════════════════════════════
+
+function BlueprintHDMap({ hd, onSeat, currentUser, blueprint }) {
+  const { theme } = useApp();
+  const canvasRef = useRef(null);
+  const cwRef = useRef(null);
+  const [hoveredSeat, setHoveredSeat] = useState(null);
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({x:0,y:0});
+
+  const items = (() => {
+    try { return Array.isArray(blueprint?.layout) ? blueprint.layout : []; } catch { return []; }
+  })();
+
+  // Calculate bounding box of all items to fit canvas
+  const bbox = useMemo(() => {
+    if(!items.length) return {minX:0,minY:0,maxX:800,maxY:600};
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    items.forEach(i=>{
+      if(i.x<minX) minX=i.x; if(i.y<minY) minY=i.y;
+      if(i.x+i.w>maxX) maxX=i.x+i.w; if(i.y+i.h>maxY) maxY=i.y+i.h;
+    });
+    return {minX:minX-20,minY:minY-20,maxX:maxX+20,maxY:maxY+20};
+  }, [blueprint?.id]);
+
+  const CELL=52,PAD=14,LH=18;
+  const dk = theme==='dark';
+
+  // Get seat positions from a cluster item
+  function getSeatsForItem(item) {
+    if(item.shape==='circle'){
+      const{x,y,w,h}=item,cx=x+w/2,cy=y+h/2,R=Math.min(w,h)/2-PAD-CELL/2;
+      const n=Math.max(1,Math.floor(2*Math.PI*Math.max(R,1)/(CELL+8)));
+      const pfx=((item.prefix||item.label||'A').replace(/\s/g,'').slice(0,3)||'A').toUpperCase();
+      return Array.from({length:n},(_,i)=>{
+        const a=(i/n)*2*Math.PI-Math.PI/2;
+        return{id:pfx+(i+1),x:cx+R*Math.cos(a)-CELL/2+2,y:cy+R*Math.sin(a)-CELL/2+2,w:CELL-4,h:CELL-4};
+      });
+    }
+    const{x,y,w,h}=item,cols=Math.max(1,Math.floor((w-PAD*2)/CELL)),rows=Math.max(1,Math.floor((h-PAD*2-LH)/CELL));
+    const tW=cols*CELL,tH=rows*CELL,sx=x+PAD+(w-PAD*2-tW)/2,sy=y+LH+PAD+(h-LH-PAD*2-tH)/2;
+    const pfx=((item.prefix||item.label||'A').replace(/\s/g,'').slice(0,3)||'A').toUpperCase();
+    let n=1;return Array.from({length:cols*rows},(_,i)=>{const r=Math.floor(i/cols),cc=i%cols;const s={id:pfx+n,x:sx+cc*CELL+2,y:sy+r*CELL+2,w:CELL-4,h:CELL-4};n++;return s;});
+  }
+
+  // All active seats from blueprint
+  const allSeats = useMemo(() => {
+    const seats = [];
+    items.forEach(item=>{
+      if(item.type==='desk'||item.type==='circle'){
+        const dis=item.disabled||[];
+        getSeatsForItem(item).forEach(s=>{
+          if(!dis.includes(s.id)) seats.push({...s, clusterLabel:item.label});
+        });
+      }
+    });
+    return seats;
+  }, [blueprint?.id]);
+
+  useEffect(() => {
+    const cw = cwRef.current;
+    if(!cw) return;
+    function resize() {
+      const cvs = canvasRef.current;
+      if(!cvs) return;
+      const W = cw.clientWidth, H = cw.clientHeight;
+      cvs.width = W; cvs.height = H;
+      // Compute scale to fit bbox
+      const bW = bbox.maxX-bbox.minX, bH = bbox.maxY-bbox.minY;
+      const s = Math.min((W-40)/bW, (H-40)/bH, 1.5);
+      const ox = (W - bW*s)/2 - bbox.minX*s;
+      const oy = (H - bH*s)/2 - bbox.minY*s;
+      setScale(s); setOffset({x:ox, y:oy});
+    }
+    resize();
+    const ro = new ResizeObserver(resize); ro.observe(cw);
+    return ()=>ro.disconnect();
+  }, [bbox]);
+
+  // Draw
+  useEffect(() => {
+    const cvs = canvasRef.current;
+    if(!cvs) return;
+    const ctx = cvs.getContext('2d');
+    const W=cvs.width, H=cvs.height;
+    ctx.clearRect(0,0,W,H);
+    ctx.save();
+    ctx.setTransform(scale,0,0,scale,offset.x,offset.y);
+
+    function rr(x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();}
+
+    // Draw items (background first: zones, walls, rooms)
+    ['zone','wall','room'].forEach(type=>{
+      items.filter(i=>i.type===type).forEach(i=>{
+        const{x,y,w,h}=i;
+        if(type==='zone'){ctx.fillStyle=dk?'rgba(40,30,80,.2)':'rgba(238,242,255,.6)';ctx.strokeStyle='#818cf8';ctx.lineWidth=1;ctx.setLineDash([6,4]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=dk?'rgba(165,180,252,.55)':'#4338ca';ctx.font='500 10px var(--font-sans,sans-serif)';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,y+6);}
+        else if(type==='wall'){ctx.fillStyle=dk?'rgba(70,70,70,.5)':'rgba(140,140,140,.3)';ctx.strokeStyle=dk?'#666':'#aaa';ctx.lineWidth=1;ctx.setLineDash([]);rr(x,y,w,h,2);ctx.fill();ctx.stroke();}
+        else if(type==='room'){ctx.fillStyle=dk?'rgba(15,30,70,.5)':'rgba(219,234,254,.6)';ctx.strokeStyle='#3b82f6';ctx.lineWidth=1;ctx.setLineDash([]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();const mw=Math.min(w-20,66),mh=Math.min(h-20,18);ctx.fillStyle=dk?'rgba(30,58,138,.25)':'rgba(191,219,254,.4)';ctx.strokeStyle='rgba(147,197,253,.3)';ctx.lineWidth=.5;rr(x+(w-mw)/2,y+(h-mh)/2,mw,mh,2);ctx.fill();ctx.stroke();ctx.fillStyle=dk?'#93c5fd':'#1e40af';ctx.font='500 10px var(--font-sans,sans-serif)';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText(i.label||'Room',x+w/2,y+8);}
+      });
+    });
+
+    // Draw clusters (border + zone label)
+    items.filter(i=>i.type==='desk'||i.type==='circle').forEach(i=>{
+      const{x,y,w,h}=i;
+      ctx.fillStyle=dk?'rgba(3,15,6,.4)':'rgba(240,253,244,.5)';
+      ctx.strokeStyle=dk?'rgba(34,197,94,.3)':'rgba(22,101,52,.25)';
+      ctx.lineWidth=1;ctx.setLineDash([5,4]);
+      if(i.shape==='circle'){const cx=x+w/2,cy=y+h/2,R=Math.min(w,h)/2;ctx.beginPath();ctx.arc(cx,cy,R,0,2*Math.PI);ctx.fill();ctx.stroke();}
+      else{rr(x,y,w,h,7);ctx.fill();ctx.stroke();}
+      ctx.setLineDash([]);
+      // Zone label — just above first row of seats (not at top of cluster box)
+      const seats=getSeatsForItem(i);
+      if(seats.length>0){
+        const firstY=Math.min(...seats.map(s=>s.y));
+        ctx.fillStyle=dk?'rgba(134,239,172,.5)':'rgba(22,101,52,.5)';
+        ctx.font='500 9px var(--font-sans,sans-serif)';
+        ctx.textAlign='center';ctx.textBaseline='bottom';
+        ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,firstY-4);
+      }
+    });
+
+    // Draw seats
+    allSeats.forEach(s=>{
+      const{x,y,w,h,id}=s;
+      const res=hd.reservations.find(r=>r.seatId===id&&r.date===TODAY);
+      const isFixed=!!hd.fixed[id];
+      const isMine=res?.userId===currentUser.id;
+      const isOcc=!!res||isFixed;
+      const isHov=hoveredSeat===id;
+      let fc,sc,tc;
+      if(isFixed){fc=dk?'rgba(80,0,0,.55)':'rgba(254,226,226,.8)';sc='#ef4444';tc=dk?'#fca5a5':'#991b1b';}
+      else if(isMine){fc=dk?'rgba(60,40,0,.6)':'rgba(255,251,235,.8)';sc='#f59e0b';tc=dk?'#fcd34d':'#92400e';}
+      else if(isOcc){fc=dk?'rgba(20,30,80,.55)':'rgba(219,234,254,.8)';sc='#3b82f6';tc=dk?'#93c5fd':'#1e40af';}
+      else{fc=dk?'rgba(5,35,12,.65)':'rgba(220,252,231,.85)';sc=isHov?'#4ade80':'#22c55e';tc=dk?'#86efac':'#166534';}
+      ctx.fillStyle=fc;ctx.strokeStyle=sc;ctx.lineWidth=isHov?2:1;
+      rr(x,y,w,h,5);ctx.fill();ctx.stroke();
+      if(!isOcc&&!isHov){ctx.fillStyle='rgba(255,255,255,.02)';ctx.strokeStyle=sc+'33';ctx.lineWidth=.4;rr(x+3,y+3,w-6,h-6,3);ctx.fill();ctx.stroke();}
+      ctx.fillStyle=tc;ctx.font='bold 9px var(--font-mono,monospace)';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      const lbl=isFixed?(hd.fixed[id]||id).split(' ')[0].slice(0,8):res?.userName?res.userName.split(' ')[0].slice(0,8):id;
+      const showName=isFixed||res;
+      ctx.fillText(showName?id:id,x+w/2,y+h/2+(showName?-6:0));
+      if(showName){ctx.fillStyle=tc;ctx.font='7px var(--font-sans,sans-serif)';ctx.fillText(lbl,x+w/2,y+h/2+7);}
+    });
+
+    ctx.restore();
+  }, [items, hd, scale, offset, hoveredSeat, theme]);
+
+  // Hit test seat in canvas coords
+  function seatAt(px,py){
+    const wx=(px-offset.x)/scale, wy=(py-offset.y)/scale;
+    return allSeats.find(s=>wx>=s.x&&wx<=s.x+s.w&&wy>=s.y&&wy<=s.y+s.h)||null;
+  }
+
+  const freeCount = allSeats.filter(s=>!hd.fixed[s.id]&&!hd.reservations.find(r=>r.seatId===s.id&&r.date===TODAY)).length;
+  const occCount  = allSeats.filter(s=>hd.reservations.find(r=>r.seatId===s.id&&r.date===TODAY)).length;
+  const fixCount  = allSeats.filter(s=>hd.fixed[s.id]).length;
+
+  return (
+    <div className="hd-map-wrap">
+      <div className="hd-map-header">
+        <div className="cal-stats" style={{marginLeft:0}}>
+          <div className="chip">Free: <strong style={{color:'var(--green)'}}>{freeCount}</strong></div>
+          <div className="chip">Occupied: <strong style={{color:'var(--ac2)'}}>{occCount}</strong></div>
+          <div className="chip">Fixed: <strong style={{color:'var(--red)'}}>{fixCount}</strong></div>
+          <div className="chip">Total: <strong>{allSeats.length}</strong></div>
+        </div>
+        <div className="hd-legend">
+          {[['Free','var(--seat-free)'],['Occupied','var(--seat-occ)'],['Fixed','var(--seat-fixed)'],['Mine','var(--amber)']].map(([l,col])=>(
+            <div key={l} className="hd-leg"><div className="hd-leg-dot" style={{background:col}}/>{l}</div>
+          ))}
+        </div>
+      </div>
+      <div className="hd-card" ref={cwRef} style={{position:'relative',height:'calc(100vh - 220px)',minHeight:400,padding:0,overflow:'hidden'}}>
+        <canvas ref={canvasRef} style={{display:'block',width:'100%',height:'100%',
+          cursor: hoveredSeat ? 'pointer' : 'default'}}
+          onMouseMove={e=>{
+            const r=canvasRef.current?.getBoundingClientRect();
+            if(!r)return;
+            const s=seatAt(e.clientX-r.left,e.clientY-r.top);
+            setHoveredSeat(s?.id||null);
+          }}
+          onMouseLeave={()=>setHoveredSeat(null)}
+          onClick={e=>{
+            const r=canvasRef.current?.getBoundingClientRect();
+            if(!r)return;
+            const s=seatAt(e.clientX-r.left,e.clientY-r.top);
+            if(s) onSeat(s.id);
+          }}
+        />
+        {!allSeats.length && (
+          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:13,flexDirection:'column',gap:8}}>
+            <span style={{fontSize:24}}>🗺</span>
+            <span>No seats in this blueprint. Edit it in Admin → Blueprint.</span>
+          </div>
+        )}
+      </div>
+      <div className="hd-sub">Click on a green seat to reserve · <span style={{color:'var(--amber)'}}>● your reservation</span></div>
+    </div>
+  );
+}
+
+
+// ══════════════════════════════════════════════════════════════════
 // BLUEPRINT EDITOR — Admin module
 // ══════════════════════════════════════════════════════════════════
 
 function AdminBlueprint() {
   const [buildings, setBuildings]   = useState([]);
-  const [selBldg,   setSelBldg]     = useState(null); // {id,name,address}
-  const [floors,    setFloors]      = useState([]);   // blueprints rows
+  const [selBldg,   setSelBldg]     = useState(null);
+  const [floors,    setFloors]      = useState([]);
   const [selFloor,  setSelFloor]    = useState(null);
   const [saving,    setSaving]      = useState(false);
   const [msg,       setMsg]         = useState('');
-  const [showEdit,  setShowEdit]    = useState(false); // building form
+  const [showEdit,  setShowEdit]    = useState(false);
   const [bForm,     setBForm]       = useState({name:'',address:''});
-  const [editorKey, setEditorKey]   = useState(0);    // force re-mount editor
+  const [collapsed, setCollapsed]   = useState({}); // {[bId]: bool}
+  const [editorKey, setEditorKey]   = useState(0);
+  const dragFloorRef = useRef(null);
 
-  // Load buildings
   useEffect(() => {
     supabase.from('buildings').select('*').eq('active',true).order('name')
       .then(({data})=>{ if(data) setBuildings(data); });
   }, []);
 
-  // Load floors when building selected
   useEffect(() => {
     if(!selBldg){setFloors([]);setSelFloor(null);return;}
     supabase.from('blueprints').select('id,floor_name,floor_order,layout')
       .eq('building_id',selBldg.id).order('floor_order')
-      .then(({data})=>{ if(data){setFloors(data);setSelFloor(data[0]||null);} });
+      .then(({data})=>{ if(data){setFloors(data);if(!selFloor||!data.find(f=>f.id===selFloor.id))setSelFloor(data[0]||null);}});
   }, [selBldg?.id]);
 
   const saveBuilding = async () => {
     if(!bForm.name.trim()) return;
     setSaving(true);
-    const {data,error} = await supabase.from('buildings')
-      .insert({name:bForm.name.trim(),address:bForm.address.trim()||null})
-      .select().single();
-    if(!error&&data){
-      setBuildings(b=>[...b,data]);
-      setSelBldg(data);
-      setBForm({name:'',address:''});
-      setShowEdit(false);
-      setMsg('Building created');setTimeout(()=>setMsg(''),3000);
-    }
+    const{data,error}=await supabase.from('buildings').insert({name:bForm.name.trim(),address:bForm.address.trim()||null}).select().single();
+    if(!error&&data){setBuildings(b=>[...b,data]);setSelBldg(data);setBForm({name:'',address:''});setShowEdit(false);setMsg('Building created');setTimeout(()=>setMsg(''),3000);}
     setSaving(false);
   };
 
   const addFloor = async () => {
     if(!selBldg) return;
-    const name = prompt('Floor name:', 'Floor '+(floors.length+1));
+    const name=prompt('Floor name:','Floor '+(floors.length+1));
     if(!name) return;
-    const{data,error}=await supabase.from('blueprints').insert({
-      building_id:selBldg.id, floor_name:name, floor_order:floors.length, layout:[]
-    }).select().single();
+    const{data,error}=await supabase.from('blueprints').insert({building_id:selBldg.id,floor_name:name,floor_order:floors.length,layout:[]}).select().single();
     if(!error&&data){setFloors(f=>[...f,data]);setSelFloor(data);}
   };
 
   const deleteFloor = async (id) => {
     if(!confirm('Delete this floor and its layout?')) return;
     await supabase.from('blueprints').delete().eq('id',id);
-    const next = floors.filter(f=>f.id!==id);
+    const next=floors.filter(f=>f.id!==id);
     setFloors(next);
-    setSelFloor(next[0]||null);
+    setSelFloor(selFloor?.id===id?(next[0]||null):selFloor);
   };
 
-  const renameFloor = async (id, name) => {
-    if(!name.trim()) return;
-    await supabase.from('blueprints').update({floor_name:name}).eq('id',id);
-    setFloors(f=>f.map(fl=>fl.id===id?{...fl,floor_name:name}:fl));
+  const renameFloor = async (id) => {
+    const fl=floors.find(f=>f.id===id);
+    const nv=prompt('Rename:',fl?.floor_name||'');
+    if(!nv||!nv.trim()) return;
+    await supabase.from('blueprints').update({floor_name:nv.trim()}).eq('id',id);
+    setFloors(f=>f.map(fl=>fl.id===id?{...fl,floor_name:nv.trim()}:fl));
+  };
+
+  const moveFloor = async (id, dir) => {
+    const idx=floors.findIndex(f=>f.id===id);
+    const newIdx=idx+dir;
+    if(newIdx<0||newIdx>=floors.length) return;
+    const next=[...floors];
+    [next[idx],next[newIdx]]=[next[newIdx],next[idx]];
+    setFloors(next);
+    // persist new order
+    await Promise.all(next.map((f,i)=>supabase.from('blueprints').update({floor_order:i}).eq('id',f.id)));
   };
 
   const saveLayout = async (layout) => {
     if(!selFloor) return;
     setSaving(true);
-    const{error}=await supabase.from('blueprints')
-      .update({layout,updated_at:new Date().toISOString()}).eq('id',selFloor.id);
-    if(!error){setMsg('✓ Blueprint saved');setTimeout(()=>setMsg(''),3000);}
-    else setMsg('Error: '+error.message);
+    const{error}=await supabase.from('blueprints').update({layout,updated_at:new Date().toISOString()}).eq('id',selFloor.id);
+    if(!error){
+      setFloors(f=>f.map(fl=>fl.id===selFloor.id?{...fl,layout}:fl));
+      setSelFloor(sf=>sf?.id===selFloor.id?{...sf,layout}:sf);
+      setMsg('✓ Blueprint saved');setTimeout(()=>setMsg(''),3000);
+    }else setMsg('Error: '+error.message);
     setSaving(false);
+  };
+
+  const deleteBuilding = async (id) => {
+    if(!confirm('Delete building and ALL its floors?')) return;
+    await supabase.from('buildings').delete().eq('id',id);
+    setBuildings(b=>b.filter(x=>x.id!==id));
+    if(selBldg?.id===id){setSelBldg(null);setFloors([]);setSelFloor(null);}
+  };
+
+  const renameBuilding = async (b) => {
+    const nv=prompt('Building name:',b.name);
+    if(!nv||!nv.trim()) return;
+    await supabase.from('buildings').update({name:nv.trim()}).eq('id',b.id);
+    setBuildings(bs=>bs.map(x=>x.id===b.id?{...x,name:nv.trim()}:x));
+    if(selBldg?.id===b.id) setSelBldg(sb=>({...sb,name:nv.trim()}));
   };
 
   return (
     <div style={{display:'flex',gap:0,height:'100%',flex:1,minHeight:0}}>
-      {/* Left: building/floor list */}
-      <div style={{width:220,borderRight:'1px solid var(--bd)',display:'flex',flexDirection:'column',background:'var(--sf)',overflow:'hidden'}}>
-        <div style={{padding:'10px 12px',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+      {/* Sidebar: buildings + collapsible floors */}
+      <div style={{width:220,borderRight:'1px solid var(--bd)',display:'flex',flexDirection:'column',background:'var(--sf)',overflow:'hidden',flexShrink:0}}>
+        <div style={{padding:'8px 10px',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
           <span style={{fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--tx3)'}}>Buildings</span>
           <button className="btn-g" onClick={()=>setShowEdit(s=>!s)} style={{fontSize:10,padding:'2px 8px'}}>+ Add</button>
         </div>
 
         {showEdit && (
-          <div style={{padding:'10px 12px',borderBottom:'1px solid var(--bd)',display:'flex',flexDirection:'column',gap:7,background:'var(--sf2)'}}>
-            <input className="a-inp" placeholder="Building name *" value={bForm.name} onChange={e=>setBForm(b=>({...b,name:e.target.value}))}/>
-            <input className="a-inp" placeholder="Address (optional)" value={bForm.address} onChange={e=>setBForm(b=>({...b,address:e.target.value}))}/>
-            <div style={{display:'flex',gap:6}}>
-              <button className="b-cancel" style={{flex:1,padding:'5px'}} onClick={()=>setShowEdit(false)}>Cancel</button>
-              <button className="b-sub" style={{flex:1,padding:'5px'}} onClick={saveBuilding} disabled={saving}>Save</button>
+          <div style={{padding:'8px 10px',borderBottom:'1px solid var(--bd)',display:'flex',flexDirection:'column',gap:6,background:'var(--sf2)',flexShrink:0}}>
+            <input className="a-inp" placeholder="Building name *" value={bForm.name} onChange={e=>setBForm(b=>({...b,name:e.target.value}))} style={{fontSize:11,padding:'4px 7px'}}/>
+            <input className="a-inp" placeholder="Address (optional)" value={bForm.address} onChange={e=>setBForm(b=>({...b,address:e.target.value}))} style={{fontSize:11,padding:'4px 7px'}}/>
+            <div style={{display:'flex',gap:5}}>
+              <button className="b-cancel" style={{flex:1,padding:'4px',fontSize:11}} onClick={()=>setShowEdit(false)}>Cancel</button>
+              <button className="b-sub" style={{flex:1,padding:'4px',fontSize:11}} onClick={saveBuilding} disabled={saving}>Save</button>
             </div>
           </div>
         )}
 
-        {/* Building list */}
         <div style={{flex:1,overflowY:'auto'}}>
-          {buildings.length===0 && <div style={{padding:'16px 12px',fontSize:11,color:'var(--tx3)'}}>No buildings yet</div>}
-          {buildings.map(b=>(
-            <div key={b.id}
-              onClick={()=>setSelBldg(b)}
-              style={{padding:'8px 12px',cursor:'pointer',borderBottom:'1px solid var(--bd)',
-                background:selBldg?.id===b.id?'var(--glow)':'transparent',
-                borderLeft:selBldg?.id===b.id?'2px solid var(--ac)':'2px solid transparent'}}>
-              <div style={{fontWeight:500,fontSize:12,color:selBldg?.id===b.id?'var(--ac2)':'var(--tx)'}}>{b.name}</div>
-              {b.address&&<div style={{fontSize:10,color:'var(--tx3)',marginTop:1}}>{b.address}</div>}
-            </div>
-          ))}
+          {buildings.length===0 && <div style={{padding:'14px 10px',fontSize:11,color:'var(--tx3)'}}>No buildings yet</div>}
+          {buildings.map(b=>{
+            const isSelB=selBldg?.id===b.id;
+            const isCollapsed=collapsed[b.id];
+            const bFloors=isSelB?floors:[];
+            return (
+              <div key={b.id} style={{borderBottom:'1px solid var(--bd)'}}>
+                {/* Building row */}
+                <div style={{display:'flex',alignItems:'center',gap:0,padding:'6px 8px',
+                  background:isSelB?'var(--glow)':'transparent',
+                  borderLeft:`2px solid ${isSelB?'var(--ac)':'transparent'}`}}>
+                  <button onClick={()=>{
+                    if(isSelB){setCollapsed(c=>({...c,[b.id]:!c[b.id]}));}
+                    else{setSelBldg(b);setCollapsed(c=>({...c,[b.id]:false}));}
+                  }} style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',fontSize:10,padding:'0 4px 0 0',flexShrink:0}}>
+                    {isCollapsed?'▶':'▼'}
+                  </button>
+                  <div style={{flex:1,fontWeight:600,fontSize:12,color:isSelB?'var(--ac2)':'var(--tx)',cursor:'pointer',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}
+                    onClick={()=>{setSelBldg(b);setCollapsed(c=>({...c,[b.id]:false}));}}>
+                    🏢 {b.name}
+                  </div>
+                  <button onClick={e=>{e.stopPropagation();renameBuilding(b);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:10,color:'var(--tx3)',padding:'1px 3px',opacity:.6}}>✎</button>
+                  <button onClick={e=>{e.stopPropagation();deleteBuilding(b.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'var(--tx3)',padding:'1px 3px',opacity:.6}}>×</button>
+                </div>
+
+                {/* Floors list (collapsed by default if not selected) */}
+                {isSelB && !isCollapsed && (
+                  <div style={{paddingLeft:8}}>
+                    {bFloors.map((fl,idx)=>(
+                      <div key={fl.id} style={{display:'flex',alignItems:'center',gap:4,padding:'4px 8px',
+                        background:selFloor?.id===fl.id?'rgba(79,110,247,.06)':'transparent',
+                        borderLeft:`1px solid ${selFloor?.id===fl.id?'var(--ac)':'var(--bd)'}`,
+                        cursor:'pointer'}}
+                        onClick={()=>{setSelFloor(fl);setEditorKey(k=>k+1);}}>
+                        <span style={{flex:1,fontSize:11,color:selFloor?.id===fl.id?'var(--ac2)':'var(--tx2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                          {fl.floor_name}
+                        </span>
+                        <button onClick={e=>{e.stopPropagation();moveFloor(fl.id,-1);}} disabled={idx===0}
+                          style={{background:'none',border:'none',cursor:'pointer',fontSize:10,color:'var(--tx3)',padding:'1px 2px',opacity:idx===0?.2:1}} title="Move up">↑</button>
+                        <button onClick={e=>{e.stopPropagation();moveFloor(fl.id,1);}} disabled={idx===bFloors.length-1}
+                          style={{background:'none',border:'none',cursor:'pointer',fontSize:10,color:'var(--tx3)',padding:'1px 2px',opacity:idx===bFloors.length-1?.2:1}} title="Move down">↓</button>
+                        <button onClick={e=>{e.stopPropagation();renameFloor(fl.id);}}
+                          style={{background:'none',border:'none',cursor:'pointer',fontSize:10,color:'var(--tx3)',padding:'1px 3px'}}>✎</button>
+                        <button onClick={e=>{e.stopPropagation();deleteFloor(fl.id);}}
+                          style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'var(--tx3)',padding:'1px 3px'}}>×</button>
+                      </div>
+                    ))}
+                    <button className="btn-g" onClick={addFloor} style={{fontSize:10,padding:'3px 8px',margin:'4px 8px',width:'calc(100% - 16px)'}}>+ Add floor</button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        {/* Floor list for selected building */}
-        {selBldg && (
-          <>
-            <div style={{padding:'8px 12px',borderTop:'1px solid var(--bd)',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'space-between',background:'var(--sf2)'}}>
-              <span style={{fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--tx3)'}}>Floors</span>
-              <button className="btn-g" onClick={addFloor} style={{fontSize:10,padding:'2px 8px'}}>+ Add</button>
-            </div>
-            <div style={{overflowY:'auto',maxHeight:200}}>
-              {floors.map(fl=>(
-                <div key={fl.id}
-                  onClick={()=>{setSelFloor(fl);setEditorKey(k=>k+1);}}
-                  style={{padding:'6px 12px',cursor:'pointer',borderBottom:'1px solid var(--bd)',
-                    display:'flex',alignItems:'center',gap:6,
-                    background:selFloor?.id===fl.id?'rgba(79,110,247,.06)':'transparent'}}>
-                  <span style={{flex:1,fontSize:11,color:selFloor?.id===fl.id?'var(--ac2)':'var(--tx2)'}}>{fl.floor_name}</span>
-                  <button onClick={e=>{e.stopPropagation();const n=prompt('Rename:',fl.floor_name);if(n)renameFloor(fl.id,n);}}
-                    style={{background:'none',border:'none',cursor:'pointer',fontSize:10,color:'var(--tx3)',padding:'1px 3px'}}>✎</button>
-                  <button onClick={e=>{e.stopPropagation();deleteFloor(fl.id);}}
-                    style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'var(--tx3)',padding:'1px 3px'}}>×</button>
-                </div>
-              ))}
-              {floors.length===0&&<div style={{padding:'10px 12px',fontSize:11,color:'var(--tx3)'}}>No floors yet</div>}
-            </div>
-          </>
-        )}
+        {msg&&<div style={{padding:'6px 10px',fontSize:11,color:'var(--green)',borderTop:'1px solid var(--bd)',flexShrink:0}}>{msg}</div>}
       </div>
 
       {/* Right: editor */}
       <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
-        {!selBldg || !selFloor ? (
+        {!selBldg||!selFloor ? (
           <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:13}}>
             {buildings.length===0?'Create a building first':'Select a building and floor to edit its blueprint'}
           </div>
         ) : (
-          <BlueprintEditorPanel key={editorKey+'-'+selFloor.id}
-            floor={selFloor}
-            onSave={saveLayout}
-            saving={saving}
-            msg={msg}
-          />
+          <BlueprintEditorPanel key={editorKey+'-'+selFloor.id} floor={selFloor} onSave={saveLayout} saving={saving} msg={msg}/>
         )}
       </div>
     </div>
@@ -1969,70 +2206,89 @@ function BlueprintEditorPanel({ floor, onSave, saving, msg }) {
 // ─────────────────────────────────────────────────────────────────
 // BUILDING SELECTOR — shown in HotDesk before map
 // ─────────────────────────────────────────────────────────────────
-function BuildingSelector({ onSelect }) {
+// ── Building/Floor dropdown selectors (used in HotDesk nav bar) ──────────────
+function BuildingFloorSelectors({ selectedBuilding, selectedBlueprint, onChange }) {
   const [buildings, setBuildings] = useState([]);
   const [floors,    setFloors]    = useState([]);
-  const [selB,      setSelB]      = useState(null);
-  const [loading,   setLoading]   = useState(true);
 
   useEffect(() => {
     supabase.from('buildings').select('*').eq('active',true).order('name')
-      .then(({data})=>{ if(data)setBuildings(data); setLoading(false); });
+      .then(({data})=>{
+        if(!data) return;
+        setBuildings(data);
+        // Auto-select: last used from localStorage, or first building
+        const lastBid = localStorage.getItem('ws_last_building');
+        const b = data.find(x=>x.id===lastBid) || data[0];
+        if(b && !selectedBuilding) onChange(b, null);
+      });
   }, []);
 
   useEffect(() => {
-    if(!selB){setFloors([]);return;}
+    if(!selectedBuilding){setFloors([]);return;}
     supabase.from('blueprints').select('id,floor_name,floor_order,layout')
-      .eq('building_id',selB.id).order('floor_order')
-      .then(({data})=>{ if(data)setFloors(data); });
-  }, [selB?.id]);
+      .eq('building_id',selectedBuilding.id).order('floor_order')
+      .then(({data})=>{
+        if(!data) return;
+        setFloors(data);
+        // Auto-select: last used floor or first
+        const lastFid = localStorage.getItem('ws_last_floor_'+selectedBuilding.id);
+        const fl = data.find(x=>x.id===lastFid) || data[0];
+        if(fl && (!selectedBlueprint || selectedBlueprint.id !== fl.id)) {
+          onChange(selectedBuilding, fl);
+        }
+      });
+  }, [selectedBuilding?.id]);
 
-  if(loading) return <div style={{padding:32,color:'var(--tx3)',fontSize:13}}>Loading buildings…</div>;
+  const selectBuilding = (bid) => {
+    const b = buildings.find(x=>x.id===bid);
+    if(!b) return;
+    localStorage.setItem('ws_last_building', bid);
+    setFloors([]);
+    onChange(b, null);
+  };
+
+  const selectFloor = (fid) => {
+    const fl = floors.find(x=>x.id===fid);
+    if(!fl || !selectedBuilding) return;
+    localStorage.setItem('ws_last_floor_'+selectedBuilding.id, fid);
+    onChange(selectedBuilding, fl);
+  };
 
   if(buildings.length===0) return (
+    <span style={{fontSize:11,color:'var(--tx3)',padding:'0 8px'}}>No buildings — configure in Admin → Blueprint</span>
+  );
+
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:6}}>
+      <select
+        value={selectedBuilding?.id||''}
+        onChange={e=>selectBuilding(e.target.value)}
+        style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:'var(--r)',
+          padding:'4px 8px',fontSize:11,color:'var(--tx)',outline:'none',cursor:'pointer',fontFamily:'inherit'}}>
+        <option value="">— Building —</option>
+        {buildings.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+      </select>
+      <select
+        value={selectedBlueprint?.id||''}
+        onChange={e=>selectFloor(e.target.value)}
+        disabled={!selectedBuilding||floors.length===0}
+        style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:'var(--r)',
+          padding:'4px 8px',fontSize:11,color:'var(--tx)',outline:'none',cursor:'pointer',fontFamily:'inherit',
+          opacity:(!selectedBuilding||floors.length===0)?0.5:1}}>
+        <option value="">— Floor —</option>
+        {floors.map(fl=><option key={fl.id} value={fl.id}>{fl.floor_name}</option>)}
+      </select>
+    </div>
+  );
+}
+
+// Legacy full-page selector kept for no-buildings case
+function BuildingSelector({ onSelect }) {
+  return (
     <div style={{padding:32,textAlign:'center',color:'var(--tx3)'}}>
       <div style={{fontSize:24,marginBottom:12}}>🏢</div>
       <div style={{fontSize:13,marginBottom:6}}>No buildings configured yet</div>
       <div style={{fontSize:11}}>An admin needs to create a building and blueprint in Admin → Blueprint</div>
-    </div>
-  );
-
-  return (
-    <div style={{maxWidth:560,margin:'40px auto',padding:'0 16px'}}>
-      <div style={{fontSize:18,fontWeight:700,color:'var(--tx)',marginBottom:4}}>Select your workspace</div>
-      <div style={{fontSize:12,color:'var(--tx3)',marginBottom:24}}>Choose a building and floor to see seat availability</div>
-
-      {/* Building cards */}
-      <div style={{display:'flex',flexWrap:'wrap',gap:10,marginBottom:24}}>
-        {buildings.map(b=>(
-          <div key={b.id} onClick={()=>setSelB(b)}
-            style={{padding:'12px 16px',border:`1px solid ${selB?.id===b.id?'var(--ac)':'var(--bd)'}`,
-              borderRadius:'var(--r2)',cursor:'pointer',minWidth:140,flex:1,
-              background:selB?.id===b.id?'var(--glow)':'var(--sf)',transition:'var(--ease)'}}>
-            <div style={{fontWeight:600,fontSize:13,color:selB?.id===b.id?'var(--ac2)':'var(--tx)'}}>{b.name}</div>
-            {b.address&&<div style={{fontSize:10,color:'var(--tx3)',marginTop:2}}>{b.address}</div>}
-          </div>
-        ))}
-      </div>
-
-      {/* Floor list */}
-      {selB && (
-        <div>
-          <div style={{fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:10}}>Select floor</div>
-          {floors.length===0 && <div style={{fontSize:12,color:'var(--tx3)'}}>No floors configured for this building</div>}
-          <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
-            {floors.map(fl=>(
-              <button key={fl.id}
-                onClick={()=>onSelect(selB,fl)}
-                style={{padding:'10px 20px',border:'1px solid var(--ac)',borderRadius:'var(--r)',
-                  background:'var(--glow)',color:'var(--ac2)',fontSize:13,fontWeight:600,cursor:'pointer',
-                  fontFamily:'inherit',transition:'var(--ease)'}}>
-                {fl.floor_name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -2063,7 +2319,6 @@ function BlueprintCanvas({ items: initItems, onChange }) {
 
   useEffect(()=>{
     const cvs=canvasRef.current;const cw=cwRef.current;if(!cvs||!cw)return;
-    let animId;
     function resize(){cvs.width=cw.clientWidth;cvs.height=Math.max(cw.clientHeight,300);draw();}
     const ro=new ResizeObserver(resize);ro.observe(cw);
     resize();
@@ -2076,8 +2331,16 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       S.cam.cx=sx-(sx-S.cam.cx)*ratio; S.cam.cy=sy-(sy-S.cam.cy)*ratio; S.cam.s=ns;
       draw();
     }
+    // Spacebar → select tool (regardless of current tool)
+    function onKey(e){
+      if(e.key===' '&&document.activeElement?.tagName!=='INPUT'&&document.activeElement?.tagName!=='TEXTAREA'){
+        e.preventDefault();
+        setTool('select');
+      }
+    }
     cw.addEventListener('wheel',wheelH,{passive:false});
-    return()=>{ro.disconnect();cw.removeEventListener('wheel',wheelH);};
+    window.addEventListener('keydown',onKey);
+    return()=>{ro.disconnect();cw.removeEventListener('wheel',wheelH);window.removeEventListener('keydown',onKey);};
   },[]);
 
   function draw(){
@@ -2247,38 +2510,45 @@ function BlueprintCanvas({ items: initItems, onChange }) {
   }
 
   const TB_TOOLS=[
-    {id:'select',lbl:'↖',tip:'Select'},
-    {id:'desk',lbl:'▭',tip:'Cluster'},
-    {id:'circle',lbl:'○',tip:'Round cluster'},
-    {id:'room',lbl:'⬜',tip:'Room'},
-    {id:'zone',lbl:'⬛',tip:'Zone'},
-    {id:'wall',lbl:'▬',tip:'Wall'},
-    {id:'eraser',lbl:'✕',tip:'Erase'},
+    {id:'select', lbl:'↖ Select', tip:'Select / move / resize (Space)', dot:null, sel:true},
+    {id:'desk',   lbl:'Cluster',  tip:'Rectangular desk cluster',        dot:'#22c55e', circle:false},
+    {id:'circle', lbl:'Round',    tip:'Circular / round table',          dot:'#22c55e', circle:true},
+    {id:'room',   lbl:'Room',     tip:'Meeting room',                    dot:'#3b82f6', circle:false},
+    {id:'zone',   lbl:'Zone',     tip:'Zone label / area',               dot:'#818cf8', circle:false},
+    {id:'wall',   lbl:'Wall',     tip:'Wall or divider',                 dot:'#888',    circle:false},
+    {id:'eraser', lbl:'✕ Erase',  tip:'Erase element',                   dot:null, danger:true},
   ];
 
   return (
-    <div style={{display:'flex',flex:1,minHeight:0,overflow:'hidden'}}>
-      {/* Mini toolbar */}
-      <div style={{display:'flex',flexDirection:'column',gap:3,padding:'6px 4px',borderRight:'1px solid var(--bd)',background:'var(--sf)',alignItems:'center'}}>
-        {TB_TOOLS.map(t=>(
-          <button key={t.id} title={t.tip}
-            onClick={()=>setTool(t.id)}
-            style={{width:28,height:28,border:`1px solid ${tool===t.id?'#3b82f6':'var(--bd)'}`,
-              borderRadius:4,background:tool===t.id?'#3b82f6':'var(--sf2)',
-              color:tool===t.id?'#fff':'var(--tx2)',cursor:'pointer',fontSize:12,
-              display:'flex',alignItems:'center',justifyContent:'center'}}>
-            {t.lbl}
-          </button>
-        ))}
-        <div style={{width:'80%',height:1,background:'var(--bd)',margin:'2px 0'}}/>
-        <button title="Undo" onClick={()=>{if(S.hist.length){S.items=S.hist.pop();S.sel=null;onChange([...S.items]);draw();re();}}}
-          style={{width:28,height:28,border:'1px solid var(--bd)',borderRadius:4,background:'var(--sf2)',color:'var(--tx2)',cursor:'pointer',fontSize:12}}>↩</button>
+    <div style={{display:'flex',flex:1,minHeight:0,overflow:'hidden',flexDirection:'column'}}>
+      {/* Horizontal pill toolbar */}
+      <div style={{display:'flex',gap:4,padding:'6px 10px',borderBottom:'1px solid var(--bd)',background:'var(--sf)',alignItems:'center',flexShrink:0,flexWrap:'wrap'}}>
+        {TB_TOOLS.map(t=>{
+          const isActive=tool===t.id;
+          const border=isActive?(t.danger?'#ef4444':'#3b82f6'):'var(--bd)';
+          const bg=isActive?(t.danger?'rgba(239,68,68,.12)':t.sel?'#3b82f6':'rgba(59,130,246,.12)'):'var(--sf2)';
+          const color=isActive?(t.danger?'#ef4444':t.sel?'#fff':'#7b93ff'):'var(--tx2)';
+          return (
+            <button key={t.id} title={t.tip} onClick={()=>setTool(t.id)}
+              style={{position:'relative',display:'flex',alignItems:'center',gap:6,padding:'5px 12px',
+                border:`1px solid ${border}`,borderRadius:20,background:bg,
+                color,cursor:'pointer',fontSize:11,fontFamily:'inherit',fontWeight:isActive?600:400,whiteSpace:'nowrap',transition:'all .12s'}}>
+              {t.dot&&<span style={{width:8,height:8,borderRadius:t.circle?'50%':'2px',background:t.dot,flexShrink:0}}/>}
+              {t.lbl}
+            </button>
+          );
+        })}
+        <div style={{width:1,height:20,background:'var(--bd)',margin:'0 2px'}}/>
+        <button title="Undo (Ctrl+Z)" onClick={()=>{if(S.hist.length){S.items=S.hist.pop();S.sel=null;onChange([...S.items]);draw();re();}}}
+          style={{display:'flex',alignItems:'center',justifyContent:'center',width:32,height:30,border:'1px solid var(--bd)',borderRadius:6,background:'var(--sf2)',color:'var(--tx2)',cursor:'pointer',fontSize:13}}>↩</button>
         <button title="Toggle grid" onClick={()=>{S.showGrid=!S.showGrid;draw();}}
-          style={{width:28,height:28,border:'1px solid var(--bd)',borderRadius:4,background:'var(--sf2)',color:'var(--tx2)',cursor:'pointer',fontSize:11}}>⊞</button>
-        <button title="Reset zoom" onClick={()=>{S.cam={cx:0,cy:0,s:1};draw();}}
-          style={{width:28,height:28,border:'1px solid var(--bd)',borderRadius:4,background:'var(--sf2)',color:'var(--tx2)',cursor:'pointer',fontSize:11}}>⊡</button>
+          style={{display:'flex',alignItems:'center',justifyContent:'center',width:32,height:30,border:'1px solid var(--bd)',borderRadius:6,background:'var(--sf2)',color:'var(--tx2)',cursor:'pointer',fontSize:13}}>⊞</button>
+        <button title="Reset zoom / fit" onClick={()=>{S.cam={cx:0,cy:0,s:1};draw();}}
+          style={{display:'flex',alignItems:'center',justifyContent:'center',width:32,height:30,border:'1px solid var(--bd)',borderRadius:6,background:'var(--sf2)',color:'var(--tx2)',cursor:'pointer',fontSize:13}}>⊡</button>
       </div>
 
+      {/* Canvas + properties side by side */}
+      <div style={{display:'flex',flex:1,minHeight:0,overflow:'hidden'}}>
       {/* Canvas */}
       <div ref={cwRef} style={{flex:1,position:'relative',background:'#0c1018',overflow:'hidden',minHeight:0}}>
         <canvas ref={canvasRef}
@@ -2349,6 +2619,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
           </>}
         </div>
       </div>
+      </div>{/* end canvas+props */}
     </div>
   );
 }
@@ -2941,6 +3212,11 @@ function WorkSuiteApp() {
   ];
   const currentNavItems = mod === 'jt' ? jtNavItems : hdNavItems;
 
+  const handleBuildingFloorChange = useCallback((b, fl) => {
+    setSelectedBuilding(b);
+    setSelectedBlueprint(fl);
+  }, []);
+
   if (loadingData) {
     return (
       <div style={{ minHeight: '100vh', background: '#0d0d10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -2987,8 +3263,7 @@ function WorkSuiteApp() {
             <div className="avatar">{CURRENT_USER.avatar}</div>
             <span className="u-name">{CURRENT_USER.name}</span>
             <span className={`r-tag ${CURRENT_USER.role==="admin"?"r-admin":"r-user"}`}>{CURRENT_USER.role==="admin"?t("roleAdmin"):t("roleUser")}</span>
-            {isAdmin && (
-              <button onClick={()=>setView("admin")}
+            <button onClick={()=>setView("admin")}
                 style={{
                   background: view==="admin" ? "var(--ac)" : "rgba(79,110,247,.15)",
                   border: `1px solid ${view==="admin" ? "var(--ac)" : "rgba(79,110,247,.4)"}`,
@@ -3003,9 +3278,8 @@ function WorkSuiteApp() {
                   <circle cx="12" cy="12" r="3"/>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
-                Admin
+                {isAdmin ? 'Admin' : 'Config'}
               </button>
-            )}
             <button onClick={logout} style={{background:"transparent",border:"1px solid var(--bd)",borderRadius:"var(--r)",color:"var(--tx3)",fontSize:10,padding:"3px 8px",cursor:"pointer",fontWeight:600}}>
               Logout
             </button>
@@ -3020,6 +3294,17 @@ function WorkSuiteApp() {
               {item.label}
             </button>
           ))}
+          {mod==="hd" && view!=="admin" && (
+            <>
+              <div className="n-sep"/>
+              <BuildingFloorSelectors
+                selectedBuilding={selectedBuilding}
+                selectedBlueprint={selectedBlueprint}
+                onChange={handleBuildingFloorChange}
+              />
+            </>
+          )}
+          {isAdmin&&(<><div className="n-sep"/><button className={`n-btn ${view==="admin"?"active":""}`} onClick={()=>setView("admin")}>⚙ {t("navAdmin")}</button></>)}
         </nav>
 
         <div className="body">
@@ -3031,28 +3316,15 @@ function WorkSuiteApp() {
           {mod==="jt" && view==="tasks"    && (<main className="content"><TasksView filters={filters} onOpenLog={openLogModal} worklogs={worklogs}/></main>)}
           {mod==="hd" && view==="map"      && (
             <main className="content">
-              {!selectedBuilding || !selectedBlueprint
-                ? <BuildingSelector
-                    onSelect={(b,bp)=>{setSelectedBuilding(b);setSelectedBlueprint(bp);}}
-                  />
-                : <HDMapView hd={hd} onSeat={sid=>handleHdSeatClick(sid,TODAY)} currentUser={CURRENT_USER}
-                    building={selectedBuilding} blueprint={selectedBlueprint}
-                    onChangeFloor={()=>{setSelectedBuilding(null);setSelectedBlueprint(null);}}
-                  />
+              {selectedBlueprint
+                ? <BlueprintHDMap hd={hd} onSeat={sid=>handleHdSeatClick(sid,TODAY)} currentUser={CURRENT_USER} blueprint={selectedBlueprint}/>
+                : <div style={{padding:32,textAlign:'center',color:'var(--tx3)',fontSize:13}}>Select a building and floor above to see the map</div>
               }
             </main>
           )}
           {mod==="hd" && view==="table"    && (
             <main className="content">
-              {!selectedBuilding || !selectedBlueprint
-                ? <BuildingSelector
-                    onSelect={(b,bp)=>{setSelectedBuilding(b);setSelectedBlueprint(bp);}}
-                  />
-                : <HDTableView hd={hd} onCell={(sid,date)=>handleHdSeatClick(sid,date)} currentUser={CURRENT_USER}
-                    building={selectedBuilding} blueprint={selectedBlueprint}
-                    onChangeFloor={()=>{setSelectedBuilding(null);setSelectedBlueprint(null);}}
-                  />
-              }
+              <HDTableView hd={hd} onCell={(sid,date)=>handleHdSeatClick(sid,date)} currentUser={CURRENT_USER}/>
             </main>
           )}
           {view==="admin" && (<AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER}/>)}
