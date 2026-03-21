@@ -1110,6 +1110,7 @@ function HDTableView({ hd, onCell, currentUser, blueprint }) {
   const [yr, sYr] = useState(new Date().getFullYear());
   const [mo, sMo] = useState(new Date().getMonth());
   const [tooltip, setTooltip] = useState(null);
+  const [hidePast, setHidePast] = useState(false);
 
   const days = daysInMonth(yr, mo);
   function isoD(d) { return `${yr}-${String(mo+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
@@ -1151,6 +1152,13 @@ function HDTableView({ hd, onCell, currentUser, blueprint }) {
         <button className="n-arr" onClick={prev}>‹</button>
         <div className="cal-t">{fmtMonthYear(yr, mo, lang)}</div>
         <button className="n-arr" onClick={next}>›</button>
+        <button onClick={()=>setHidePast(h=>!h)}
+          style={{display:'flex',alignItems:'center',gap:5,padding:'4px 10px',fontSize:11,fontWeight:600,
+            border:`1px solid ${hidePast?'var(--ac)':'var(--bd)'}`,borderRadius:'var(--r)',
+            background:hidePast?'var(--glow)':'var(--sf2)',color:hidePast?'var(--ac2)':'var(--tx2)',
+            cursor:'pointer',transition:'all .15s',whiteSpace:'nowrap'}}>
+          {hidePast?'▼ All days':'▲ Future only'}
+        </button>
         <div className="hd-legend" style={{marginLeft:"auto"}}>
           {[[t("legendFree"),"var(--seat-free)"],[t("legendOcc"),"var(--seat-occ)"],[t("legendFixed"),"var(--seat-fixed)"],["Mine","var(--amber)"]].map(([l,c])=>(
             <div key={l} className="hd-leg"><div className="hd-leg-dot" style={{background:c}}/>{l}</div>
@@ -1187,7 +1195,7 @@ function HDTableView({ hd, onCell, currentUser, blueprint }) {
             </tr>
           </thead>
           <tbody>
-            {Array.from({length:days},(_,i)=>i+1).map(d => {
+            {Array.from({length:days},(_,i)=>i+1).filter(d=>!hidePast||isoD(d)>=MOCK_TODAY).map(d => {
               const iso   = isoD(d);
               const dow   = new Date(iso+"T00:00:00").getDay();
               const isWe  = dow===0||dow===6;
@@ -2084,6 +2092,7 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint }) {
   const canvasRef = useRef(null);
   const cwRef = useRef(null);
   const [hoveredSeat, setHoveredSeat] = useState(null);
+  const [seatHoverInfo, setSeatHoverInfo] = useState(null); // {id, name, x, y}
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({x:0,y:0});
 
@@ -2172,9 +2181,9 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint }) {
     ['zone','wall','room'].forEach(type=>{
       items.filter(i=>i.type===type).forEach(i=>{
         const{x,y,w,h}=i;
-        if(type==='zone'){ctx.fillStyle=dk?'rgba(40,30,80,.2)':'rgba(238,242,255,.6)';ctx.strokeStyle='#818cf8';ctx.lineWidth=1;ctx.setLineDash([6,4]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=dk?'rgba(165,180,252,.75)':'#4338ca';ctx.font='600 18px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,y+h/2);}
+        if(type==='zone'){ctx.fillStyle=dk?'rgba(40,30,80,.2)':'rgba(238,242,255,.6)';ctx.strokeStyle='#818cf8';ctx.lineWidth=1;ctx.setLineDash([6,4]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=dk?'rgba(165,180,252,.85)':'#4338ca';ctx.font='700 20px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,y+h*0.22);}
         else if(type==='wall'){ctx.fillStyle=dk?'rgba(70,70,70,.5)':'rgba(140,140,140,.3)';ctx.strokeStyle=dk?'#666':'#aaa';ctx.lineWidth=1;ctx.setLineDash([]);rr(x,y,w,h,2);ctx.fill();ctx.stroke();}
-        else if(type==='room'){ctx.fillStyle=dk?'rgba(15,30,70,.5)':'rgba(219,234,254,.6)';ctx.strokeStyle='#3b82f6';ctx.lineWidth=1;ctx.setLineDash([]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();ctx.fillStyle=dk?'#93c5fd':'#1e40af';ctx.font='600 18px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(i.label||'Room',x+w/2,y+h/2);}
+        else if(type==='room'){ctx.fillStyle=dk?'rgba(15,30,70,.5)':'rgba(219,234,254,.6)';ctx.strokeStyle='#3b82f6';ctx.lineWidth=1;ctx.setLineDash([]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();ctx.fillStyle=dk?'#93c5fd':'#1e40af';ctx.font='600 20px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(i.label||'Room',x+w/2,y+h*0.22);}
       });
     });
 
@@ -2256,8 +2265,14 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint }) {
             if(!r)return;
             const s=seatAt(e.clientX-r.left,e.clientY-r.top);
             setHoveredSeat(s?.id||null);
+            if(s){
+              const res=hd.reservations.find(rv=>rv.seatId===s.id&&rv.date===TODAY);
+              const isFixed=!!hd.fixed[s.id];
+              const name=isFixed?hd.fixed[s.id]:res?.userName||null;
+              setSeatHoverInfo({id:s.id,name,x:e.clientX,y:e.clientY});
+            }else{setSeatHoverInfo(null);}
           }}
-          onMouseLeave={()=>setHoveredSeat(null)}
+          onMouseLeave={()=>{setHoveredSeat(null);setSeatHoverInfo(null);}}
           onClick={e=>{
             const r=canvasRef.current?.getBoundingClientRect();
             if(!r)return;
@@ -2272,6 +2287,16 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint }) {
           </div>
         )}
       </div>
+      {seatHoverInfo&&(
+        <div style={{position:'fixed',left:seatHoverInfo.x+14,top:seatHoverInfo.y-10,
+          background:'var(--sf)',border:'1px solid var(--bd2)',borderRadius:'var(--r)',
+          padding:'5px 10px',zIndex:9901,pointerEvents:'none',
+          boxShadow:'var(--shadow)',animation:'mbIn .1s ease',whiteSpace:'nowrap'}}>
+          <span style={{fontFamily:'var(--mono)',fontWeight:700,color:hoveredSeat?'var(--ac2)':'var(--tx)',fontSize:12}}>{seatHoverInfo.id}</span>
+          {seatHoverInfo.name&&<span style={{fontSize:11,color:'var(--tx2)',marginLeft:8}}>{seatHoverInfo.name}</span>}
+          {!seatHoverInfo.name&&<span style={{fontSize:11,color:'var(--green)',marginLeft:8}}>Free</span>}
+        </div>
+      )}
       <div className="hd-sub">Click on a green seat to reserve · <span style={{color:'var(--amber)'}}>● your reservation</span></div>
     </div>
   );
@@ -2593,7 +2618,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
     drg:false,rsz:false,crt:false,pan:false,
     dragOff:{x:0,y:0},rHandle:null,origItem:null,
     dragS:null,crtS:null,crtE:null,panLast:null,clickOrig:null,
-    clN:1,rN:1,zN:1,hist:[],fwd:[],
+    clN:1,rN:1,zN:1,hist:[],fwd:[],selBox:null,multiSel:[],
   });
   const [tool, _setTool] = useState('select');
   const [,forceRender] = useState(0);
@@ -2657,13 +2682,8 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       for(let y=Math.floor(tl.y/GRID)*GRID;y<br.y+GRID;y+=GRID){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WW,y);ctx.stroke();}
     }
     // Items
-    ['zone','wall','room','desk','circle'].forEach(type=>{
-      S.items.filter(i=>i.type===type).forEach(i=>{
-        ctx.save();
-        drawItem(ctx,i,S.sel===i);
-        ctx.restore();
-      });
-    });
+    ['zone','wall','room','desk','circle'].forEach(type=>{S.items.filter(i=>i.type===type).forEach(i=>{ctx.save();drawItem(ctx,i,S.sel===i||(!S.sel&&(S.multiSel||[]).includes(i)));ctx.restore();});});
+    if(S.selBox&&S.selBox.w>2&&S.selBox.h>2){ctx.fillStyle='rgba(59,130,246,.06)';ctx.strokeStyle='rgba(96,165,250,.7)';ctx.lineWidth=1/S.cam.s;ctx.setLineDash([4/S.cam.s,3/S.cam.s]);ctx.fillRect(S.selBox.x,S.selBox.y,S.selBox.w,S.selBox.h);ctx.strokeRect(S.selBox.x,S.selBox.y,S.selBox.w,S.selBox.h);ctx.setLineDash([]);}
     // Preview
     if(S.crt&&S.crtS&&S.crtE){
       const x=Math.min(S.crtS.x,S.crtE.x),y=Math.min(S.crtS.y,S.crtE.y);
@@ -2729,16 +2749,16 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       ctx.fillStyle='rgba(10,20,50,.55)';ctx.strokeStyle='#3b82f6';ctx.lineWidth=1;ctx.setLineDash([]);
       rr(ctx,x,y,w,h,6);ctx.fill();ctx.stroke();
       // Label: centered in room, 2x bigger (18px)
-      ctx.fillStyle='#93c5fd';ctx.font='600 18px var(--font-sans,sans-serif)';
+      ctx.fillStyle='#93c5fd';ctx.font='600 20px var(--font-sans,sans-serif)';
       ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(i.label||'Room',x+w/2,y+h/2);
+      ctx.fillText(i.label||'Room',x+w/2,y+h*0.22);
     }else if(i.type==='zone'){
       ctx.fillStyle='rgba(30,20,60,.2)';ctx.strokeStyle='#818cf8';ctx.lineWidth=.8;ctx.setLineDash([6,4]);
       rr(ctx,x,y,w,h,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);
       // Label: centered in zone, 2x bigger (18px)
-      ctx.fillStyle='rgba(165,180,252,.7)';ctx.font='600 18px var(--font-sans,sans-serif)';
+      ctx.fillStyle='rgba(165,180,252,.75)';ctx.font='700 20px var(--font-sans,sans-serif)';
       ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,y+h/2);
+      ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,y+h*0.22);
     }else if(i.type==='wall'){
       ctx.fillStyle='rgba(60,60,70,.5)';ctx.strokeStyle='rgba(140,140,160,.45)';ctx.lineWidth=.8;ctx.setLineDash([]);
       rr(ctx,x,y,w,h,2);ctx.fill();ctx.stroke();
@@ -2760,7 +2780,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
     if(S.tool==='select'){
       if(S.sel){const h=getHdl(S.sel,p.x,p.y);if(h){S.rsz=true;S.rHandle=h;S.origItem={...S.sel};S.dragS=p;return;}}
       for(let i=S.items.length-1;i>=0;i--){if(hitI(S.items[i],p.x,p.y)){S.sel=S.items[i];S.drg=true;S.dragOff={x:p.x-S.sel.x,y:p.y-S.sel.y};S.origItem={...S.sel};S.dragS=p;draw();re();return;}}
-      S.sel=null;draw();re();return;
+      S.sel=null;S.multiSel=[];S.selBox={sx:p.x,sy:p.y,x:p.x,y:p.y,w:0,h:0};draw();re();return;
     }
     S.crt=true;S.crtS=ps;S.crtE=ps;
   }
@@ -2775,6 +2795,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       if(h2.includes('w')){const nw=Math.max(mn,snap(o.w-dx));x=snap(o.x+o.w-nw);w=nw;}if(h2.includes('n')){const nh=Math.max(mn,snap(o.h-dy));y=snap(o.y+o.h-nh);h=nh;}
       S.sel.x=x;S.sel.y=y;S.sel.w=w;S.sel.h=h;draw();re();return;
     }
+    if(S.selBox){S.selBox.x=Math.min(S.selBox.sx,p.x);S.selBox.y=Math.min(S.selBox.sy,p.y);S.selBox.w=Math.abs(p.x-S.selBox.sx);S.selBox.h=Math.abs(p.y-S.selBox.sy);S.multiSel=S.items.filter(i=>i.x<S.selBox.x+S.selBox.w&&i.x+i.w>S.selBox.x&&i.y<S.selBox.y+S.selBox.h&&i.y+i.h>S.selBox.y);draw();return;}
     if(S.drg&&S.sel){S.sel.x=snap(p.x-S.dragOff.x);S.sel.y=snap(p.y-S.dragOff.y);draw();re();return;}
     if(S.crt){S.crtE=ps;draw();}
   }
@@ -2790,6 +2811,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       }
       S.drg=false;S.origItem=null;S.dragS=null;onChange([...S.items]);return;
     }
+    if(S.selBox){const sel=S.items.filter(i=>i.x<S.selBox.x+S.selBox.w&&i.x+i.w>S.selBox.x&&i.y<S.selBox.y+S.selBox.h&&i.y+i.h>S.selBox.y);S.multiSel=sel;S.sel=sel.length===1?sel[0]:null;S.selBox=null;re();draw();return;}
     if(S.crt){
       S.crt=false;if(!S.crtS||!S.crtE)return;
       const x=Math.min(S.crtS.x,S.crtE.x),y=Math.min(S.crtS.y,S.crtE.y);
@@ -2842,17 +2864,26 @@ function BlueprintCanvas({ items: initItems, onChange }) {
     onChange([...S.items]);draw();re();
   }
 
-  // Btn helper — uses title attr (native tooltip works in all major browsers)
-  const abtn=(tip,lbl,onClick,extra={})=>(
-    <button
-      title={tip}
-      onClick={onClick}
-      style={{display:'flex',alignItems:'center',justifyContent:'center',minWidth:32,height:30,padding:'0 8px',
-        border:'1px solid var(--bd)',borderRadius:6,background:'var(--sf2)',color:'var(--tx2)',
-        cursor:'pointer',fontSize:12,fontFamily:'inherit',gap:4,position:'relative',...extra}}>
-      {lbl}
-    </button>
-  );
+  // Btn helper — custom tooltip via data-tip attr + click flash microinteraction
+  function abtn(tip,lbl,onClick,extra={}){
+    return (
+      <button
+        data-tip={tip}
+        className="tb-btn"
+        onClick={e=>{
+          // Flash microinteraction
+          const b=e.currentTarget;
+          b.classList.add('tb-flash');
+          setTimeout(()=>b.classList.remove('tb-flash'),180);
+          onClick();
+        }}
+        style={{display:'flex',alignItems:'center',justifyContent:'center',minWidth:32,height:30,padding:'0 8px',
+          border:'1px solid var(--bd)',borderRadius:6,background:'var(--sf2)',color:'var(--tx2)',
+          cursor:'pointer',fontSize:12,fontFamily:'inherit',gap:4,position:'relative',overflow:'visible',...extra}}>
+        {lbl}
+      </button>
+    );
+  }
 
   return (
     <div style={{display:'flex',flex:1,minHeight:0,overflow:'hidden',flexDirection:'column'}}>
@@ -2864,10 +2895,10 @@ function BlueprintCanvas({ items: initItems, onChange }) {
           const bg=isActive?(t.danger?'rgba(239,68,68,.12)':t.sel?'rgba(59,130,246,.2)':'rgba(59,130,246,.12)'):'var(--sf2)';
           const color=isActive?(t.danger?'#ef4444':'#7b93ff'):'var(--tx2)';
           return (
-            <button key={t.id} title={t.tip} onClick={()=>setTool(t.id)}
+            <button key={t.id} data-tip={t.tip} onClick={()=>setTool(t.id)}
               style={{position:'relative',display:'flex',alignItems:'center',gap:6,padding:'5px 12px',
                 border:`1px solid ${border}`,borderRadius:20,background:bg,
-                color,cursor:'pointer',fontSize:11,fontFamily:'inherit',fontWeight:isActive?600:400,whiteSpace:'nowrap',transition:'all .12s'}}>
+                color,cursor:'pointer',fontSize:11,fontFamily:'inherit',fontWeight:isActive?600:400,whiteSpace:'nowrap',transition:'all .12s',overflow:'visible'}}>
               {t.dot&&<span style={{width:8,height:8,borderRadius:t.circle?'50%':'2px',background:t.dot,flexShrink:0}}/>}
               {t.lbl}
             </button>
@@ -3231,7 +3262,7 @@ option{background:var(--sf2);color:var(--tx);}
 .hd-td{padding:2px;border-bottom:1px solid var(--bd);background:var(--sf);}
 .hd-td.date-cell{position:sticky;left:0;z-index:4;background:var(--sf);padding:0 12px;border-right:2px solid var(--bd);white-space:nowrap;font-size:11px;height:34px;vertical-align:middle;color:var(--tx2);}
 tr.hd-row-we > td.hd-td{background:var(--sf2) !important;}
-tr.hd-row-today > td.hd-td{background:rgba(79,110,247,.05) !important;}
+tr.hd-row-today > td.hd-td{background:rgba(139,92,246,.12) !important;border-top:1px solid rgba(139,92,246,.2);border-bottom:1px solid rgba(139,92,246,.2);}
 .hd-cell{cursor:pointer;border-radius:3px;height:30px;width:100%;display:flex;align-items:center;justify-content:center;transition:all .1s;}
 .hd-cell:hover{filter:brightness(1.15);transform:scale(1.08);}
 .hd-cell-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
@@ -3246,6 +3277,14 @@ tr.hd-row-today > td.hd-td{background:rgba(79,110,247,.05) !important;}
 .hd-cell-name{margin-left:6px;font-size:9px;line-height:1;color:var(--tx2);max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .hd-tooltip{position:fixed;z-index:9900;background:var(--sf);border:1px solid var(--bd2);border-radius:var(--r2);padding:12px;box-shadow:var(--shadow);width:480px;pointer-events:none;animation:mbIn .15s ease;}
 .hd-tooltip-title{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px;}
+/* Custom tooltip via data-tip */
+[data-tip]{position:relative;}
+[data-tip]::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#1a1a28;color:#c8c8e8;font-size:11px;font-weight:500;white-space:nowrap;padding:4px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.08);box-shadow:0 4px 12px rgba(0,0,0,.5);pointer-events:none;opacity:0;transition:opacity .15s;z-index:9999;}
+[data-tip]::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1a1a28;pointer-events:none;opacity:0;transition:opacity .15s;z-index:9999;}
+[data-tip]:hover::after,[data-tip]:hover::before{opacity:1;}
+/* Action button click flash */
+.tb-btn:active,.tb-flash{background:rgba(79,110,247,.25) !important;border-color:var(--ac) !important;color:var(--ac2) !important;transform:scale(.94);}
+.tb-btn{transition:all .12s;}
 .seat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;}
 .seat-btn{background:var(--sf2);border:2px solid var(--bd);border-radius:var(--r2);padding:10px 4px;cursor:pointer;color:var(--tx2);font-size:12px;font-weight:500;text-align:center;line-height:1.4;transition:var(--ease);}
 .seat-btn:hover{border-color:var(--bd2);color:var(--tx);}
