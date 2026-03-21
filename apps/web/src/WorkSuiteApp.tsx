@@ -1424,7 +1424,7 @@ function SSOConfig() {
   if (loading) return <div style={{color:'var(--tx3)',fontSize:12}}>Cargando...</div>;
 
   return (
-    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+    <div style={{display:'flex',flexDirection:'column',gap:10}}>
 
       {/* Providers habilitados */}
       <div>
@@ -1763,11 +1763,30 @@ function AddUserModal({ existingUsers, onClose, onSave }) {
     if (pwd !== conf)                              e.conf  = t("errPasswordMatch");
     return e;
   };
-  const submit = () => {
+  const submit = async () => {
     const errs = validate();
     if (Object.keys(errs).length) { setEr(errs); return; }
     setDone(true);
-    setTimeout(() => { onSave({ id:`u-${Date.now()}`, name:name.trim(), email:email.toLowerCase().trim(), avatar:makeAvatar(name), role, deskType:desk, active:true }); onClose(); }, 750);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({ name: name.trim(), email: email.toLowerCase().trim(), password: pwd, role, deskType: desk })
+      });
+      const json = await res.json();
+      if (!res.ok) { setEr({ email: json.error || 'Error creating user' }); setDone(false); return; }
+      // Map snake_case → camelCase for local state
+      const u = json.user;
+      onSave({ id: u.id, name: u.name, email: u.email, avatar: u.avatar||makeAvatar(u.name), role: u.role, deskType: u.desk_type||'hotdesk', active: u.active });
+      setTimeout(() => onClose(), 600);
+    } catch(err) {
+      setEr({ email: String(err) }); setDone(false);
+    }
   };
   return (
     <div className="ov" onClick={e=>e.target===e.currentTarget&&onClose()}>
@@ -1998,14 +2017,16 @@ function AdminHotDesk({ hd, setHd, users }) {
 
         {/* Floor map */}
         <div style={{flex:'0 0 auto',width:420}}>
-          {selFloor && <BlueprintHDMap
+          <div style={{flex:1,minHeight:350}}>
+          {selFloor ? <BlueprintHDMap
             hd={hd}
             blueprint={selFloor}
             currentUser={{id:''}}
             onSeat={sid=>{setSelSeat(sid);setSelDates([]);setSelUser('');setAsFixed(false);}}
             highlightSeat={selSeat}
-          />}
-          {!selFloor&&<div style={{height:300,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:12}}>Select a building & floor</div>}
+          /> : <div style={{height:300,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:12}}>Select a building & floor</div>}
+        </div>
+
         </div>
 
         {/* Right: seat grid + assign panel */}
@@ -2684,6 +2705,12 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='z'&&!inInput){e.preventDefault();doUndo();return;}
       if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='z'&&!inInput){e.preventDefault();doRedo();return;}
       if((e.ctrlKey||e.metaKey)&&e.key==='d'&&!inInput){e.preventDefault();doDuplicate();return;}
+      if((e.key==='Delete'||e.key==='Backspace')&&!inInput){
+        e.preventDefault();
+        if(S.sel){saveH();S.items=S.items.filter(i=>i!==S.sel);S.sel=null;S.multiSel=[];onChange([...S.items]);draw();re();}
+        else if(S.multiSel.length>0){saveH();S.items=S.items.filter(i=>!S.multiSel.includes(i));S.sel=null;S.multiSel=[];onChange([...S.items]);draw();re();}
+        return;
+      }
       if(e.key==='f'&&!inInput&&!e.ctrlKey&&!e.metaKey){e.preventDefault();
         if(!S.items.length){S.cam={cx:0,cy:0,s:1};draw();return;}
         let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
@@ -2815,16 +2842,25 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       }else{ctx.fillStyle='rgba(60,60,70,.5)';rr(ctx,x,y,w,h,2);ctx.fill();ctx.stroke();}
       ctx.lineCap='butt';ctx.lineJoin='miter';
     }else if(i.type==='door'){
-      // Architectural door symbol: line + arc
+      // Architectural door: pivot line + 90° sweep arc
       const ang=i.angle||0,sw=i.w||GRID*2;
       ctx.save();ctx.translate(x,y);ctx.rotate(ang*Math.PI/180);
       ctx.strokeStyle='#fb923c';ctx.lineWidth=1.5;ctx.setLineDash([]);
-      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(sw,0);ctx.stroke(); // door width line
-      // Arc from wall to open position
-      ctx.strokeStyle='#fb923c';ctx.lineWidth=1;ctx.setLineDash([3,2]);
-      ctx.beginPath();ctx.arc(0,0,sw,0,-Math.PI/2);ctx.stroke();
-      if(i.double){ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-sw,0);ctx.stroke();ctx.beginPath();ctx.arc(0,0,sw,Math.PI,-Math.PI/2);ctx.stroke();}
-      ctx.setLineDash([]);
+      ctx.lineCap='round';
+      // Wall gap line
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(sw,0);ctx.stroke();
+      // Door leaf: solid line from hinge to open edge
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-sw);ctx.stroke();
+      // Sweep arc: quarter circle from closed→open (90°)
+      ctx.lineWidth=0.8;ctx.setLineDash([3/S.cam.s,3/S.cam.s]);
+      ctx.beginPath();ctx.arc(0,0,sw,0,-Math.PI/2,true);ctx.stroke();
+      if(i.double){
+        ctx.setLineDash([]);ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(sw,0);ctx.lineTo(sw,-sw);ctx.stroke();
+        ctx.lineWidth=0.8;ctx.setLineDash([3/S.cam.s,3/S.cam.s]);
+        ctx.beginPath();ctx.arc(sw,0,sw,Math.PI,-Math.PI/2,false);ctx.stroke();
+      }
+      ctx.setLineDash([]);ctx.lineCap='butt';
       if(isSel){ctx.strokeStyle='#60a5fa';ctx.lineWidth=1/S.cam.s;ctx.setLineDash([4/S.cam.s,3/S.cam.s]);ctx.strokeRect(-4/S.cam.s,-sw-4/S.cam.s,(i.double?sw*2:sw)+8/S.cam.s,sw+8/S.cam.s);ctx.setLineDash([]);}
       ctx.restore();
     }else if(i.type==='window'){
@@ -2887,7 +2923,19 @@ function BlueprintCanvas({ items: initItems, onChange }) {
     const p=evW(e),ps=evWS(e);S.clickOrig={...p};
     if(S.tool==='eraser'){saveH();const idx=S.items.findLastIndex(i=>hitI(i,p.x,p.y));if(idx>=0){if(S.sel===S.items[idx])S.sel=null;S.items.splice(idx,1);onChange([...S.items]);draw();re();return;}return;}
     if(S.tool==='select'){
-      if(S.sel){const h=getHdl(S.sel,p.x,p.y);if(h){S.rsz=true;S.rHandle=h;S.origItem={...S.sel};S.dragS=p;return;}}
+      if(S.sel){
+        // Wall point editing: click on a point handle to drag it
+        if(S.sel.type==='wall'&&S.sel.pts){
+          const hs2=8/S.cam.s;
+          for(let k=0;k<S.sel.pts.length;k++){
+            const pt=S.sel.pts[k];
+            if(Math.abs(p.x-pt.x)<hs2&&Math.abs(p.y-pt.y)<hs2){
+              S._wallPtIdx=k;S._wallPtDrag=true;S.dragS=p;draw();re();return;
+            }
+          }
+        }
+        const h=getHdl(S.sel,p.x,p.y);if(h){S.rsz=true;S.rHandle=h;S.origItem={...S.sel};S.dragS=p;return;}
+      }
       for(let i=S.items.length-1;i>=0;i--){
         if(hitI(S.items[i],p.x,p.y)){
           const hit=S.items[i];
@@ -2922,6 +2970,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       S.sel.x=x;S.sel.y=y;S.sel.w=w;S.sel.h=h;draw();re();return;
     }
     if(S.selBox){S.selBox.x=Math.min(S.selBox.sx,p.x);S.selBox.y=Math.min(S.selBox.sy,p.y);S.selBox.w=Math.abs(p.x-S.selBox.sx);S.selBox.h=Math.abs(p.y-S.selBox.sy);S.multiSel=S.items.filter(i=>i.x<S.selBox.x+S.selBox.w&&i.x+i.w>S.selBox.x&&i.y<S.selBox.y+S.selBox.h&&i.y+i.h>S.selBox.y);draw();return;}
+    if(S._wallPtDrag&&S.sel&&S.sel.pts){S.sel.pts[S._wallPtIdx]={x:snap(p.x),y:snap(p.y)};S.sel.x=S.sel.pts[0].x;S.sel.y=S.sel.pts[0].y;draw();re();return;}
     if(S.drg&&S.sel){
       if(S.multiDragOffsets&&S.multiDragOffsets.length>1){
         // Move all selected items together
@@ -2946,6 +2995,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
   function handleMU(e){
     if(S.pan){S.pan=false;S.panLast=null;return;}
     if(S.rsz){S.rsz=false;S.rHandle=null;S.origItem=null;S.dragS=null;onChange([...S.items]);return;}
+    if(S._wallPtDrag){S._wallPtDrag=false;S._wallPtIdx=null;onChange([...S.items]);draw();re();return;}
     if(S.drg){
       const p=evW(e);const moved=Math.abs(p.x-(S.clickOrig?.x||0))>4/S.cam.s||Math.abs(p.y-(S.clickOrig?.y||0))>4/S.cam.s;
       if(!moved&&S.sel&&(S.sel.type==='desk'||S.sel.type==='circle')){
@@ -3141,20 +3191,20 @@ function BlueprintCanvas({ items: initItems, onChange }) {
             </div>
             {/* Door/Window: double toggle + angle */}
             {(selItem?.type==='door'||selItem?.type==='window')&&<>
-              <div style={{display:'flex',gap:6}}>
+              <div style={{display:'flex',gap:5}}>
                 <button onClick={()=>{saveH();selItem.double=!selItem.double;onChange([...S.items]);draw();re();}}
                   style={{flex:1,padding:'4px 6px',border:`1px solid ${selItem.double?'#fb923c':'var(--bd)'}`,borderRadius:4,
                     background:selItem.double?'rgba(251,146,60,.12)':'transparent',
                     color:selItem.double?'#fb923c':'var(--tx2)',cursor:'pointer',fontSize:10,fontFamily:'inherit'}}>
                   {selItem.double?'Double':'Single'}
                 </button>
+                <button title="Rotate 90°" onClick={()=>{saveH();selItem.angle=((selItem.angle||0)+90)%360;onChange([...S.items]);draw();re();}}
+                  style={{padding:'4px 8px',border:'1px solid var(--bd)',borderRadius:4,background:'var(--sf2)',
+                    color:'var(--tx2)',cursor:'pointer',fontSize:12,fontFamily:'inherit'}}>
+                  ↻ 90°
+                </button>
               </div>
-              <div>
-                <div style={{fontSize:9,fontWeight:600,color:'var(--tx3)',textTransform:'uppercase',marginBottom:3}}>Angle</div>
-                <input className="a-inp" type="number" step={45} defaultValue={selItem.angle||0} style={{fontSize:11,padding:'3px 5px'}}
-                  onChange={e=>{saveH();selItem.angle=parseInt(e.target.value)||0;onChange([...S.items]);draw();re();}}
-                  onKeyDown={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()}/>
-              </div>
+              <div style={{fontSize:9,color:'var(--tx3)',marginTop:2}}>Rotation: {selItem.angle||0}°</div>
             </>}
             <button onClick={()=>{if(!S.sel)return;saveH();S.items=S.items.filter(i=>i!==S.sel);S.sel=null;onChange([...S.items]);draw();re();}}
               style={{padding:'4px',border:'1px solid rgba(239,68,68,.2)',borderRadius:4,background:'transparent',color:'#ef4444',cursor:'pointer',fontSize:11,fontFamily:'inherit'}}>✕ Delete</button>
@@ -3180,6 +3230,200 @@ function BlueprintCanvas({ items: initItems, onChange }) {
   );
 }
 
+// ══════════════════════════════════════════════════════════════════
+// ROLE MANAGER
+// ══════════════════════════════════════════════════════════════════
+
+const ALL_MODULES = [
+  {id:'jt', label:'Jira Tracker'},
+  {id:'hd', label:'HotDesk'},
+];
+
+const ALL_ADMIN_PERMS = [
+  {id:'users',      label:'Users',            desc:'Create, edit and deactivate users'},
+  {id:'hotdesk',    label:'HotDesk Config',   desc:'Manage seat assignments and fixed allocations'},
+  {id:'blueprint',  label:'Blueprint Editor', desc:'Create and edit floor plans'},
+  {id:'settings',   label:'General Settings', desc:'Jira connection and platform-wide settings'},
+  {id:'jira_config',label:'Jira Config',      desc:'Connect and configure Jira integration'},
+  {id:'sso',        label:'SSO / Auth',       desc:'Configure SSO providers'},
+  {id:'roles',      label:'Role Manager',     desc:'Create and edit permission roles'},
+];
+
+function AdminRoles() {
+  const [roles, setRoles] = useState([]);
+  const [selRole, setSelRole] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [newRoleName, setNewRoleName] = useState('');
+
+  useEffect(()=>{
+    supabase.from('roles').select('*').order('created_at')
+      .then(({data})=>{ if(data) setRoles(data); });
+  },[]);
+
+  const createRole = async () => {
+    if(!newRoleName.trim()) return;
+    const {data,error} = await supabase.from('roles').insert({
+      name: newRoleName.trim().toLowerCase().replace(/\s+/g,'_'),
+      description: newRoleName.trim(),
+      permissions: {
+        modules: ['jt','hd'],
+        admin: { users:false,hotdesk:false,blueprint:false,settings:false,jira_config:false,sso:false,roles:false }
+      }
+    }).select().single();
+    if(!error&&data){ setRoles(r=>[...r,data]); setSelRole(data); setNewRoleName(''); }
+    else setMsg(error?.message||'Error');
+  };
+
+  const deleteRole = async (id) => {
+    if(!confirm('Delete this role?')) return;
+    await supabase.from('roles').delete().eq('id',id);
+    setRoles(r=>r.filter(x=>x.id!==id));
+    if(selRole?.id===id) setSelRole(null);
+  };
+
+  const updatePerm = async (key, value) => {
+    if(!selRole) return;
+    const updated = { ...selRole.permissions, ...value };
+    setSelRole(r=>({...r, permissions: updated}));
+    setRoles(rs=>rs.map(r=>r.id===selRole.id?{...r,permissions:updated}:r));
+    await supabase.from('roles').update({permissions:updated}).eq('id',selRole.id);
+  };
+
+  const toggleModule = (modId) => {
+    const mods = selRole.permissions.modules||[];
+    const next = mods.includes(modId) ? mods.filter(m=>m!==modId) : [...mods, modId];
+    updatePerm('modules', {modules: next});
+  };
+
+  const toggleAdmin = (permId) => {
+    const cur = selRole.permissions.admin||{};
+    updatePerm('admin', {admin: {...cur, [permId]: !cur[permId]}});
+  };
+
+  const saveDescription = async (desc) => {
+    if(!selRole) return;
+    setSelRole(r=>({...r,description:desc}));
+    await supabase.from('roles').update({description:desc}).eq('id',selRole.id);
+  };
+
+  return (
+    <div style={{display:'flex',gap:0,height:'100%',flex:1,minHeight:0}}>
+      {/* Sidebar */}
+      <div style={{width:220,borderRight:'1px solid var(--bd)',display:'flex',flexDirection:'column',flexShrink:0}}>
+        <div style={{padding:'10px 12px',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',gap:6}}>
+          <input className="a-inp" placeholder="New role name" value={newRoleName}
+            onChange={e=>setNewRoleName(e.target.value)}
+            onKeyDown={e=>{if(e.key==='Enter')createRole();}}
+            style={{flex:1,fontSize:11,padding:'4px 7px'}}/>
+          <button className="btn-g" onClick={createRole} style={{padding:'4px 8px',fontSize:11,flexShrink:0}}>+</button>
+        </div>
+        <div style={{flex:1,overflowY:'auto'}}>
+          {roles.map(r=>(
+            <div key={r.id} style={{display:'flex',alignItems:'center',padding:'8px 12px',cursor:'pointer',
+              background:selRole?.id===r.id?'var(--glow)':'transparent',
+              borderLeft:`2px solid ${selRole?.id===r.id?'var(--ac)':'transparent'}`,
+              borderBottom:'1px solid var(--bd)'}}
+              onClick={()=>setSelRole(r)}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:12,fontWeight:600,color:selRole?.id===r.id?'var(--ac2)':'var(--tx)'}}>
+                  {r.name}
+                  {r.is_system && <span style={{fontSize:9,color:'var(--tx3)',marginLeft:6,fontWeight:400}}>system</span>}
+                </div>
+                {r.description&&<div style={{fontSize:10,color:'var(--tx3)',marginTop:1}}>{r.description}</div>}
+              </div>
+              {!r.is_system&&(
+                <button onClick={e=>{e.stopPropagation();deleteRole(r.id);}}
+                  style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'var(--tx3)',padding:'1px 3px'}}>×</button>
+              )}
+            </div>
+          ))}
+        </div>
+        {msg&&<div style={{padding:'6px 10px',fontSize:11,color:'var(--red)'}}>{msg}</div>}
+      </div>
+
+      {/* Right: permissions editor */}
+      {selRole ? (
+        <div style={{flex:1,padding:20,overflowY:'auto'}}>
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:16,fontWeight:700,color:'var(--tx)',marginBottom:4}}>{selRole.name}</div>
+            <input className="a-inp" defaultValue={selRole.description}
+              onBlur={e=>saveDescription(e.target.value)}
+              placeholder="Role description"
+              disabled={selRole.is_system}
+              style={{fontSize:12,padding:'5px 8px',width:'100%',maxWidth:380}}/>
+          </div>
+
+          {/* Modules */}
+          <div style={{marginBottom:20}}>
+            <div style={{fontSize:11,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:10}}>
+              Visible Modules
+            </div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+              {ALL_MODULES.map(mod=>{
+                const on=(selRole.permissions.modules||[]).includes(mod.id);
+                return (
+                  <div key={mod.id} onClick={()=>!selRole.is_system&&toggleModule(mod.id)}
+                    style={{display:'flex',alignItems:'center',gap:8,padding:'8px 14px',
+                      border:`1px solid ${on?'var(--ac)':'var(--bd)'}`,borderRadius:'var(--r2)',
+                      background:on?'var(--glow)':'var(--sf2)',
+                      cursor:selRole.is_system?'default':'pointer',opacity:selRole.is_system?.7:1,transition:'var(--ease)'}}>
+                    <div style={{width:14,height:14,borderRadius:3,background:on?'var(--ac)':'transparent',
+                      border:`2px solid ${on?'var(--ac)':'var(--bd2)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff'}}>
+                      {on&&'✓'}
+                    </div>
+                    <span style={{fontSize:12,fontWeight:600,color:on?'var(--ac2)':'var(--tx2)'}}>{mod.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Admin permissions */}
+          <div>
+            <div style={{fontSize:11,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:10}}>
+              Admin Access
+              <span style={{fontSize:10,fontWeight:400,marginLeft:8,color:'var(--tx3)'}}>— controls what appears in the Admin panel</span>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              {ALL_ADMIN_PERMS.map(perm=>{
+                const on=selRole.permissions.admin?.[perm.id]||false;
+                return (
+                  <div key={perm.id} onClick={()=>!selRole.is_system&&toggleAdmin(perm.id)}
+                    style={{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',
+                      border:`1px solid ${on?'rgba(79,110,247,.3)':'var(--bd)'}`,borderRadius:'var(--r)',
+                      background:on?'rgba(79,110,247,.05)':'var(--sf2)',
+                      cursor:selRole.is_system?'default':'pointer',transition:'var(--ease)'}}>
+                    <div style={{width:18,height:18,borderRadius:4,background:on?'var(--ac)':'transparent',
+                      border:`2px solid ${on?'var(--ac)':'var(--bd2)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#fff',flexShrink:0}}>
+                      {on&&'✓'}
+                    </div>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:600,color:on?'var(--ac2)':'var(--tx)'}}>{perm.label}</div>
+                      <div style={{fontSize:10,color:'var(--tx3)'}}>{perm.desc}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {selRole.is_system&&(
+            <div style={{marginTop:16,fontSize:11,color:'var(--tx3)',padding:'8px 12px',background:'var(--sf2)',borderRadius:'var(--r)',border:'1px solid var(--bd)'}}>
+              ⚠ System roles cannot be edited.
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:13}}>
+          ← Select a role to configure permissions
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   const { t } = useApp();
   const isAdmin = currentUser.role === 'admin';
@@ -3202,6 +3446,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   const NAV = [
     { id:"settings",  icon:"⚙",  label:t("adminSettings") },
     { id:"users",     icon:"👥", label:t("adminUsers"),  badge:"Admin" },
+    { id:"roles",     icon:"🛡", label:"Roles & Perms" },
     { id:"hotdesk",   icon:"🪑", label:t("adminHotDesk"),hd:true },
     { id:"blueprint", icon:"🗺", label:"Blueprint" },
   ];
@@ -3215,6 +3460,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
         {mod==="settings"  && <AdminSettings/>}
         {mod==="users"     && <AdminUsers users={users} setUsers={setUsers} currentUser={currentUser}/>}
         {mod==="hotdesk"   && <AdminHotDesk hd={hd} setHd={setHd} users={users}/>}
+        {mod==="roles"     && <AdminRoles/>}
         {mod==="blueprint" && <AdminBlueprint/>}
       </div>
     </div>
@@ -3272,8 +3518,8 @@ textarea.fi{resize:vertical;min-height:52px;font-family:var(--mono);font-size:11
 .pick-i{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:var(--r);cursor:pointer;user-select:none;font-size:12px;color:var(--tx2);transition:background .1s;}
 .pick-i:hover{background:var(--sf3);}
 .pick-i.on{background:var(--glow);color:var(--tx);}
-.cb{width:13px;height:13px;border-radius:3px;border:1px solid var(--bd2);background:var(--sf3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:8px;color:transparent;transition:var(--ease);}
-.pick-i.on .cb{background:var(--ac);border-color:var(--ac);color:#fff;}
+.cb{width:16px;height:16px;border-radius:4px;border:2px solid var(--bd2);background:var(--sf3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:transparent;transition:var(--ease);line-height:1;}
+.pick-i.on .cb{background:var(--ac);border-color:var(--ac);color:#fff;box-shadow:0 0 0 3px rgba(79,110,247,.2);}
 .kb{font-family:var(--mono);color:var(--ac2);font-size:10px;font-weight:500;}
 .btn-p{font-size:12px;font-weight:600;width:100%;padding:8px;border-radius:var(--r);border:none;background:var(--ac);color:#fff;cursor:pointer;transition:var(--ease);}
 .btn-p:hover{background:var(--ac2);}
