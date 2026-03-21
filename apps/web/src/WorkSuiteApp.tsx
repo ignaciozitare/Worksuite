@@ -318,12 +318,12 @@ const MOCK_USERS = [
 ];
 
 const SEATS = [
-  {id:"A1",x:75,y:80},{id:"A2",x:135,y:80},{id:"A3",x:195,y:80},
-  {id:"A4",x:75,y:140},{id:"A5",x:135,y:140},{id:"A6",x:195,y:140},
-  {id:"B1",x:262,y:80},{id:"B2",x:322,y:80},{id:"B3",x:382,y:80},
-  {id:"B4",x:262,y:140},{id:"B5",x:322,y:140},{id:"B6",x:382,y:140},
-  {id:"C1",x:75,y:282},{id:"C2",x:135,y:282},{id:"C3",x:195,y:282},
-  {id:"C4",x:255,y:282},{id:"C5",x:315,y:282},{id:"C6",x:375,y:282},
+  {id:"A1",x:60,y:90},{id:"A2",x:124,y:90},{id:"A3",x:188,y:90},
+  {id:"A4",x:60,y:160},{id:"A5",x:124,y:160},{id:"A6",x:188,y:160},
+  {id:"B1",x:288,y:90},{id:"B2",x:352,y:90},{id:"B3",x:416,y:90},
+  {id:"B4",x:288,y:160},{id:"B5",x:352,y:160},{id:"B6",x:416,y:160},
+  {id:"C1",x:60,y:300},{id:"C2",x:130,y:300},{id:"C3",x:200,y:300},
+  {id:"C4",x:270,y:300},{id:"C5",x:340,y:300},{id:"C6",x:410,y:300},
 ];
 
 const TODAY = new Date().toISOString().slice(0,10);
@@ -583,11 +583,18 @@ function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave, curren
 // JIRA TRACKER — Filter Sidebar
 // ══════════════════════════════════════════════════════════════════
 
-function JTFilterSidebar({ filters, onApply, onExport, mobileOpen, onMobileClose }) {
+function JTFilterSidebar({ filters, onApply, onExport, mobileOpen, onMobileClose, users, onProjectChange }) {
   const { t, jiraProjects } = useApp();
   const projects = jiraProjects || MOCK_PROJECTS_FALLBACK;
   const [l, sL] = useState(filters);
-  const ts = k => sL(f=>({...f, spaceKeys: f.spaceKeys.includes(k)?f.spaceKeys.filter(x=>x!==k):[...f.spaceKeys,k]}));
+
+  const ts = k => {
+    const isAdding = !l.spaceKeys.includes(k);
+    const newKeys = isAdding ? [...l.spaceKeys, k] : l.spaceKeys.filter(x => x !== k);
+    sL(f => ({ ...f, spaceKeys: newKeys }));
+    // Al seleccionar un proyecto, cargar sus issues automáticamente
+    if (isAdding && onProjectChange) onProjectChange(k);
+  };
 
   return (
     <aside className={`sb ${mobileOpen?"sb-open":""}`}>
@@ -598,7 +605,7 @@ function JTFilterSidebar({ filters, onApply, onExport, mobileOpen, onMobileClose
       <div className="sb-s"><div className="sb-lbl">{t("filterByUser")}</div>
         <select className="fi" value={l.authorId} onChange={e=>sL({...l,authorId:e.target.value})}>
           <option value="">{t("allUsers")}</option>
-          {MOCK_USERS.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
+          {(users||[]).map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
         </select>
       </div>
       <div className="sb-s">
@@ -752,17 +759,57 @@ function TasksView({ filters, onOpenLog }) {
 
   const ts=k=>sso(s=>s.key===k?{...s,dir:s.dir==="asc"?"desc":"asc"}:{key:k,dir:"asc"});
   const A=({k})=>so.key!==k?<span style={{fontSize:9,color:"var(--tx3)"}}>⇅</span>:<span style={{fontSize:9,color:"var(--ac2)"}}>{so.dir==="asc"?"↑":"↓"}</span>;
-  const sc=s=>s==="Done"?"s-done":s==="In Progress"?"s-prog":"s-todo";
   const pc=p=>p==="Critical"?"p-crit":p==="High"?"p-high":p==="Medium"?"p-med":"p-low";
   const pt=[...new Set(issues.map(i=>i.type))];
 
+  // Calcular horas imputadas en WorkSuite por issue
+  const { worklogs: allWorklogs } = { worklogs: {} }; // se pasa desde arriba si hace falta
+
+  const sc = s => {
+    const sl = (s||'').toLowerCase();
+    if (sl.includes('done') || sl.includes('cerrad') || sl.includes('complet') || sl.includes('resuelto')) return 's-done';
+    if (sl.includes('progress') || sl.includes('curso') || sl.includes('proceso') || sl.includes('review') || sl.includes('testing')) return 's-prog';
+    return 's-todo';
+  };
+
   return(
     <div>
-      <div className="tk-h"><div className="tk-t">{t("navTasks")}</div><div className="c-bdg">{filteredIssues.length}/{issues.length}</div><button className="btn-log" style={{marginLeft:"auto"}} onClick={()=>onOpenLog({})}>{t("logHours")}</button></div>
-      <div className="jql-b"><strong>{t("jqlGenerated")}:</strong> {jql}</div>
-      <div className="f-row"><input className="fi" style={{maxWidth:220}} type="search" placeholder={t("searchPlaceholder")} value={sr} onChange={e=>ssr(e.target.value)}/>{pt.map(ty=><button key={ty} className={`pill ${tf.includes(ty)?"on":""}`} onClick={()=>stf(f=>f.includes(ty)?f.filter(x=>x!==ty):[...f,ty])}>{ty}</button>)}{tf.length>0&&<button className="btn-g" onClick={()=>stf([])}>{t("clearFilter")}</button>}</div>
+      <div className="tk-h">
+        <div className="tk-t">{t("navTasks")}</div>
+        <div className="c-bdg">{filteredIssues.length}/{issues.length}</div>
+        <button className="btn-log" style={{marginLeft:"auto"}} onClick={()=>onOpenLog({})}>{t("logHours")}</button>
+      </div>
+      <div className="f-row">
+        <input className="fi" style={{maxWidth:220}} type="search" placeholder={t("searchPlaceholder")} value={sr} onChange={e=>ssr(e.target.value)}/>
+        {pt.map(ty=><button key={ty} className={`pill ${tf.includes(ty)?"on":""}`} onClick={()=>stf(f=>f.includes(ty)?f.filter(x=>x!==ty):[...f,ty])}>{ty}</button>)}
+        {tf.length>0&&<button className="btn-g" onClick={()=>stf([])}>{t("clearFilter")}</button>}
+      </div>
       {filteredIssues.length===0&&<div className="empty"><div className="empty-i">🔍</div><div>{t("noResults")}</div></div>}
-      {filteredIssues.length>0&&<div style={{overflowX:"auto"}}><table><thead><tr><th onClick={()=>ts("key")}>{t("colKey")} <A k="key"/></th><th onClick={()=>ts("summary")}>{t("colSummary")} <A k="summary"/></th><th>{t("colType")}</th><th onClick={()=>ts("status")}>{t("colStatus")} <A k="status"/></th><th onClick={()=>ts("priority")}>{t("colPriority")} <A k="priority"/></th><th>{t("colProject")}</th><th>{t("colAssignee")}</th><th>{t("colEpic")}</th><th onClick={()=>ts("hours")}>{t("colTime")} <A k="hours"/></th><th>{t("colAction")}</th></tr></thead><tbody>{filteredIssues.map((i,idx)=><tr key={i.key||idx}><td><span className="ik">{i.key}</span></td><td><div className="ism">{i.summary}</div><div style={{marginTop:2}}>{(i.labels||[]).slice(0,3).map(l=><span key={l} className="tag">{l}</span>)}</div></td><td><span className="t-pill">{i.type}</span></td><td><span className={`s-b ${sc(i.status)}`}>{i.status}</span></td><td><span className={pc(i.priority)}>{i.priority}</span></td><td><span style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--tx3)"}}>{i.project}</span></td><td style={{fontSize:11}}>{i.assignee}</td><td><span className="er">{i.epic}</span></td><td className="hc">{i.hours>0?`${i.hours}h`:"—"}</td><td><button className="btn-log btn-log-sm" onClick={()=>onOpenLog({issueKey:i.key})}>{t("btnHours")}</button></td></tr>)}</tbody></table></div>}
+      {filteredIssues.length>0&&<div style={{overflowX:"auto"}}><table><thead><tr>
+        <th onClick={()=>ts("key")}>{t("colKey")} <A k="key"/></th>
+        <th onClick={()=>ts("summary")}>{t("colSummary")} <A k="summary"/></th>
+        <th>{t("colType")}</th>
+        <th onClick={()=>ts("status")}>{t("colStatus")} <A k="status"/></th>
+        <th onClick={()=>ts("priority")}>{t("colPriority")} <A k="priority"/></th>
+        <th>{t("colProject")}</th>
+        <th>{t("colAssignee")}</th>
+        <th>{t("colEpic")}</th>
+        <th title="Horas imputadas en WorkSuite">{t("colTime")}</th>
+        <th>{t("colAction")}</th>
+      </tr></thead><tbody>{filteredIssues.map((i,idx)=>{
+        return <tr key={i.key||idx}>
+          <td><span className="ik">{i.key}</span></td>
+          <td><div className="ism">{i.summary}</div><div style={{marginTop:2}}>{(i.labels||[]).slice(0,3).map(l=><span key={l} className="tag">{l}</span>)}</div></td>
+          <td><span className="t-pill">{i.type}</span></td>
+          <td><span className={`s-b ${sc(i.status)}`}>{i.status}</span></td>
+          <td><span className={pc(i.priority)}>{i.priority}</span></td>
+          <td><span style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--tx3)"}}>{i.project}</span></td>
+          <td style={{fontSize:11}}>{i.assignee}</td>
+          <td><span className="er">{i.epic}</span></td>
+          <td className="hc">{i.hours>0?`${i.hours}h`:"—"}</td>
+          <td><button className="btn-log btn-log-sm" onClick={()=>onOpenLog({issueKey:i.key})}>{t("btnHours")}</button></td>
+        </tr>;
+      })}</tbody></table></div>}
     </div>
   );
 }
@@ -773,56 +820,72 @@ function TasksView({ filters, onOpenLog }) {
 
 function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true }) {
   const { theme } = useApp();
-  const COLORS = theme === "light"
-    ? { free:"#0f9060", occ:"#4f6ef7", fixed:"#c02828", amber:"#b86800", bd:"#dcdce8", sf:"#ffffff", sf2:"#f5f5fb", sf3:"#eaeaf2", tx3:"#9494b8" }
-    : { free:"#3ecf8e", occ:"#4f6ef7", fixed:"#e05252", amber:"#f5a623", bd:"#2a2a38", sf:"#141418", sf2:"#1b1b22", sf3:"#21212c", tx3:"#50506a" };
+  const C = theme === "light"
+    ? { free:"#0f9060", occ:"#4f6ef7", fixed:"#c02828", amber:"#b86800",
+        bd:"#d0d0e0", sf:"#ffffff", sf2:"#f0f0f8", sf3:"#e4e4ef", tx3:"#8888aa",
+        zoneBg:"#f8f8fd", zoneBd:"#c0c0d8" }
+    : { free:"#3ecf8e", occ:"#4f6ef7", fixed:"#e05252", amber:"#f5a623",
+        bd:"#2a2a38", sf:"#141418", sf2:"#1b1b22", sf3:"#21212c", tx3:"#50506a",
+        zoneBg:"#18181f", zoneBd:"#2a2a38" };
 
-  const colOf = st => st===SeatStatus.FIXED ? COLORS.fixed : st===SeatStatus.OCCUPIED ? COLORS.occ : COLORS.free;
+  const colOf = st => st===SeatStatus.FIXED ? C.fixed : st===SeatStatus.OCCUPIED ? C.occ : C.free;
+
+  const SeatIcon = ({ seat }) => {
+    const st     = ReservationService.statusOf(seat.id, MOCK_TODAY, hd.fixed, hd.reservations);
+    const res    = ReservationService.resOf(seat.id, MOCK_TODAY, hd.reservations);
+    const col    = colOf(st);
+    const isMine = res?.userId === currentUser.id;
+    const isMyFixed = hd.fixed[seat.id] === currentUser.name;
+    const stroke = (isMine || isMyFixed) ? C.amber : col;
+    const lbl    = hd.fixed[seat.id]
+      ? hd.fixed[seat.id].split(" ")[0].slice(0,7)
+      : res ? res.userName.split(" ")[0].slice(0,7) : "";
+    const { x, y } = seat;
+    const op = theme === "light" ? 0.18 : 0.10;
+    return (
+      <g className={onSeat?"hd-seat":""} onClick={()=>onSeat&&onSeat(seat.id)}>
+        {highlightSeat===seat.id && <rect x={x-25} y={y-18} width={50} height={46} rx={9} fill="none" stroke={C.amber} strokeWidth={2} strokeDasharray="5 3"/>}
+        {/* desk */}
+        <rect x={x-21} y={y-10} width={42} height={22} rx={6} fill={col} fillOpacity={op} stroke={stroke} strokeWidth={isMine||isMyFixed?2:1.5}/>
+        {/* monitor */}
+        <rect x={x-8} y={y-8} width={16} height={10} rx={2} fill={col} fillOpacity={op*1.5} stroke={col} strokeOpacity={0.35} strokeWidth={1}/>
+        {/* chair */}
+        <rect x={x-11} y={y+14} width={22} height={12} rx={5} fill={col} fillOpacity={op} stroke={stroke} strokeWidth={1.2}/>
+        {/* label */}
+        <text x={x} y={y+34} textAnchor="middle" fill={col} fontSize={8} fontWeight={700} fontFamily="monospace">{seat.id}</text>
+        {showOccupants && lbl && <text x={x} y={y+6} textAnchor="middle" fill={stroke} fontSize={7} fontWeight={700}>{lbl}</text>}
+        {showOccupants && (isMine||isMyFixed) && <circle cx={x+17} cy={y-14} r={4} fill={C.amber} stroke={C.sf} strokeWidth={1}/>}
+      </g>
+    );
+  };
 
   return (
-    <svg viewBox="0 0 640 390" style={{width:"100%",display:"block"}}>
-      <rect x={8} y={8} width={624} height={374} rx={10} fill={COLORS.sf2} stroke={COLORS.bd} strokeWidth={1.5}/>
-      <line x1={453} y1={10} x2={453} y2={382} stroke={COLORS.bd} strokeWidth={2}/>
-      <line x1={453} y1={200} x2={632} y2={200} stroke={COLORS.bd} strokeWidth={2}/>
-      <rect x={455} y={11} width={174} height={188} fill={COLORS.sf3} rx={4}/>
-      <text x={542} y={88} textAnchor="middle" fill={COLORS.tx3} fontSize={10} fontWeight={700} letterSpacing={2}>MEETING</text>
-      <text x={542} y={103} textAnchor="middle" fill={COLORS.tx3} fontSize={10} fontWeight={700} letterSpacing={2}>ROOM</text>
-      <ellipse cx={542} cy={148} rx={46} ry={24} fill={COLORS.sf2} stroke={COLORS.bd} strokeWidth={1}/>
-      <rect x={455} y={201} width={174} height={181} fill={COLORS.sf3} rx={4}/>
-      <text x={542} y={282} textAnchor="middle" fill={COLORS.tx3} fontSize={10} fontWeight={700} letterSpacing={2}>KITCHEN /</text>
-      <text x={542} y={298} textAnchor="middle" fill={COLORS.tx3} fontSize={10} fontWeight={700} letterSpacing={2}>RESTROOMS</text>
-      <rect x={270} y={376} width={100} height={10} rx={3} fill={COLORS.sf2} stroke={COLORS.bd}/>
-      <text x={320} y={384} textAnchor="middle" fill={COLORS.tx3} fontSize={8} fontWeight={700} letterSpacing={2}>▲ ENTRANCE</text>
-      <rect x={52} y={58} width={165} height={107} rx={8} fill={COLORS.sf} stroke={COLORS.bd} strokeWidth={1}/>
-      <rect x={239} y={58} width={165} height={107} rx={8} fill={COLORS.sf} stroke={COLORS.bd} strokeWidth={1}/>
-      <rect x={52} y={260} width={345} height={48} rx={8} fill={COLORS.sf} stroke={COLORS.bd} strokeWidth={1}/>
-      <text x={134} y={50} textAnchor="middle" fill={COLORS.tx3} fontSize={9} fontWeight={700} letterSpacing={2}>ZONE A</text>
-      <text x={321} y={50} textAnchor="middle" fill={COLORS.tx3} fontSize={9} fontWeight={700} letterSpacing={2}>ZONE B</text>
-      <text x={225} y={252} textAnchor="middle" fill={COLORS.tx3} fontSize={9} fontWeight={700} letterSpacing={2}>ZONE C</text>
-      {highlightSeat && SEATS.filter(s=>s.id===highlightSeat).map(s=>(
-        <circle key="ring" cx={s.x} cy={s.y} r={26} fill="none" stroke={COLORS.amber} strokeWidth={2} strokeDasharray="5 3" style={{animation:"pulse 1.5s ease infinite"}}/>
-      ))}
-      {SEATS.map(seat => {
-        const st = ReservationService.statusOf(seat.id, MOCK_TODAY, hd.fixed, hd.reservations);
-        const res = ReservationService.resOf(seat.id, MOCK_TODAY, hd.reservations);
-        const col = colOf(st);
-        const isMine = res?.userId===currentUser.id;
-        const strokeCol = (showOccupants && isMine) ? COLORS.amber : col;
-        const lbl = hd.fixed[seat.id] ? hd.fixed[seat.id].split(" ")[0].slice(0,8) : res ? res.userName.split(" ")[0].slice(0,8) : "";
-        return (
-          <g key={seat.id} className={onSeat?"hd-seat":""} onClick={()=>onSeat&&onSeat(seat.id)}>
-            <rect x={seat.x-22} y={seat.y-22} width={44} height={44} rx={7}
-              fill={col} fillOpacity={0.08} stroke={strokeCol} strokeWidth={isMine?2.5:1.5}/>
-            <rect x={seat.x-13} y={seat.y-3} width={26} height={12} rx={3}
-              fill={col} fillOpacity={0.14} stroke={col} strokeOpacity={0.3} strokeWidth={1}/>
-            <circle cx={seat.x} cy={seat.y-12} r={4}
-              fill={col} fillOpacity={0.18} stroke={col} strokeOpacity={0.4} strokeWidth={1}/>
-            <text x={seat.x} y={seat.y+19} textAnchor="middle" fill={col} fontSize={9} fontWeight={700}>{seat.id}</text>
-            {showOccupants && lbl&&<text x={seat.x} y={seat.y+8} textAnchor="middle" fill={col} fillOpacity={0.8} fontSize={8}>{lbl}</text>}
-            {showOccupants && isMine&&<circle cx={seat.x+18} cy={seat.y-18} r={4} fill={COLORS.amber} stroke={COLORS.bd} strokeWidth={1}/>}
-          </g>
-        );
-      })}
+    <svg viewBox="0 0 660 420" style={{width:"100%",display:"block",borderRadius:8}}>
+      <rect x={0} y={0} width={660} height={420} rx={12} fill={C.sf2}/>
+      {/* Right dividers */}
+      <line x1={472} y1={0} x2={472} y2={420} stroke={C.bd} strokeWidth={1.5}/>
+      <line x1={472} y1={210} x2={660} y2={210} stroke={C.bd} strokeWidth={1.5}/>
+      {/* Meeting room */}
+      <rect x={473} y={0} width={187} height={210} fill={C.sf3}/>
+      <text x={566} y={85} textAnchor="middle" fill={C.tx3} fontSize={10} fontWeight={700} letterSpacing={2}>MEETING</text>
+      <text x={566} y={100} textAnchor="middle" fill={C.tx3} fontSize={10} fontWeight={700} letterSpacing={2}>ROOM</text>
+      <ellipse cx={566} cy={155} rx={52} ry={26} fill={C.sf2} stroke={C.bd} strokeWidth={1}/>
+      {/* Kitchen */}
+      <rect x={473} y={211} width={187} height={209} fill={C.sf3}/>
+      <text x={566} y={295} textAnchor="middle" fill={C.tx3} fontSize={10} fontWeight={700} letterSpacing={2}>KITCHEN /</text>
+      <text x={566} y={311} textAnchor="middle" fill={C.tx3} fontSize={10} fontWeight={700} letterSpacing={2}>RESTROOMS</text>
+      {/* Entrance */}
+      <rect x={266} y={408} width={112} height={10} rx={3} fill={C.sf2} stroke={C.bd}/>
+      <text x={322} y={416} textAnchor="middle" fill={C.tx3} fontSize={8} fontWeight={700} letterSpacing={1.5}>▲ ENTRANCE</text>
+      {/* Zone boxes */}
+      <rect x={16} y={28} width={216} height={170} rx={10} fill={C.zoneBg} stroke={C.zoneBd} strokeWidth={1.2}/>
+      <text x={124} y={20} textAnchor="middle" fill={C.tx3} fontSize={9} fontWeight={700} letterSpacing={2}>ZONE A</text>
+      <rect x={244} y={28} width={216} height={170} rx={10} fill={C.zoneBg} stroke={C.zoneBd} strokeWidth={1.2}/>
+      <text x={352} y={20} textAnchor="middle" fill={C.tx3} fontSize={9} fontWeight={700} letterSpacing={2}>ZONE B</text>
+      <rect x={16} y={238} width={444} height={170} rx={10} fill={C.zoneBg} stroke={C.zoneBd} strokeWidth={1.2}/>
+      <text x={238} y={230} textAnchor="middle" fill={C.tx3} fontSize={9} fontWeight={700} letterSpacing={2}>ZONE C</text>
+      {/* Seats */}
+      {SEATS.map(seat => <SeatIcon key={seat.id} seat={seat}/>)}
     </svg>
   );
 }
@@ -1003,55 +1066,120 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
   const [yr, sYr] = useState(new Date().getFullYear());
   const [mo, sMo] = useState(new Date().getMonth());
   const [sel, sSel] = useState(initDate ? [initDate] : []);
-  const st  = ReservationService.statusOf(seatId, initDate||MOCK_TODAY, hd.fixed, hd.reservations);
-  const res = ReservationService.resOf(seatId, initDate||MOCK_TODAY, hd.reservations);
+
+  const date = initDate || MOCK_TODAY;
+  const st    = ReservationService.statusOf(seatId, date, hd.fixed, hd.reservations);
+  const res   = ReservationService.resOf(seatId, date, hd.reservations);
   const isMine = res?.userId === currentUser.id;
-  const isFixed = st === SeatStatus.FIXED;
-  const occupiedDates = hd.reservations.filter(r=>r.seatId===seatId).map(r=>r.date);
-  const toggle = iso => sSel(p => p.includes(iso) ? p.filter(x=>x!==iso) : [...p, iso]);
-  const prev = ()=>mo===0?(sMo(11),sYr(y=>y-1)):sMo(m=>m-1);
-  const next = ()=>mo===11?(sMo(0),sYr(y=>y+1)):sMo(m=>m+1);
+
+  // El puesto es "fijo" del usuario actual si está en fixed con su nombre
+  const fixedOwner   = hd.fixed[seatId];
+  const isMyFixed    = fixedOwner === currentUser.name;
+  const isOtherFixed = st === SeatStatus.FIXED && !isMyFixed;
+
+  // Fechas donde el usuario ya tiene reserva en OTRO puesto (para bloquear en el mini-cal)
+  const myReservedDates = hd.reservations
+    .filter(r => r.userId === currentUser.id && r.seatId !== seatId)
+    .map(r => r.date);
+
+  // Fechas ocupadas para este puesto (por otros)
+  const occupiedDates = hd.reservations.filter(r => r.seatId === seatId).map(r => r.date);
+
+  // Combinar: no puede seleccionar días donde ya reservó otro puesto
+  const blockedDates = [...new Set([...occupiedDates, ...myReservedDates])];
+
+  const toggle = iso => sSel(p => p.includes(iso) ? p.filter(x => x !== iso) : [...p, iso]);
+  const prev = () => mo === 0 ? (sMo(11), sYr(y => y-1)) : sMo(m => m-1);
+  const next = () => mo === 11 ? (sMo(0), sYr(y => y+1)) : sMo(m => m+1);
+
+  // Título dinámico
+  let title = t("hdReserveTitle");
+  if (isMyFixed) title = isMine ? t("hdReleaseTitle") : "Mi puesto fijo";
+  else if (isMine) title = t("hdReleaseTitle");
+  else if (isOtherFixed) title = t("hdAdminManage");
+
   return (
-    <div className="ov" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="ov" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="mb" style={{maxWidth:400}}>
         <div className="mh">
-          <div className="mt">🪑 {isFixed ? t("hdAdminManage") : isMine ? t("hdReleaseTitle") : t("hdReserveTitle")}</div>
+          <div className="mt">🪑 {title}</div>
           <button className="mc" onClick={onClose}>×</button>
         </div>
         <div className="mbody">
+          {/* Info del puesto */}
           <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:"var(--sf2)",borderRadius:"var(--r)",border:"1px solid var(--bd)"}}>
             <div style={{fontFamily:"var(--mono)",fontWeight:700,color:"var(--ac2)",fontSize:16}}>{seatId}</div>
             <div style={{fontSize:12}}>
-              {isFixed&&<div style={{color:"var(--red)"}}>{t("legendFixed")}: {hd.fixed[seatId]}</div>}
-              {!isFixed&&res&&<div style={{color:"var(--ac2)"}}>{t("legendOcc")}: {res.userName}</div>}
-              {!isFixed&&!res&&<div style={{color:"var(--green)"}}>{t("legendFree")}</div>}
+              {isMyFixed && <div style={{color:"var(--amber)"}}>📌 Tu puesto permanente</div>}
+              {isOtherFixed && <div style={{color:"var(--red)"}}>{t("legendFixed")}: {fixedOwner}</div>}
+              {!st.includes && res && !isMine && <div style={{color:"var(--ac2)"}}>{t("legendOcc")}: {res.userName}</div>}
+              {st === SeatStatus.FREE && <div style={{color:"var(--green)"}}>{t("legendFree")}</div>}
             </div>
           </div>
-          {isMine && (
-            <div>
-              <div style={{fontSize:12,color:"var(--tx2)",marginBottom:8}}>{t("hdReleaseQ")}</div>
-              <button className="b-danger" style={{width:"100%"}} onClick={()=>onRelease(seatId,initDate||MOCK_TODAY)}>{t("hdReleaseBtn")}</button>
+
+          {/* Bloqueo por puesto fijo de otro */}
+          {isOtherFixed && (
+            <div style={{fontSize:12,color:"var(--tx3)",padding:"8px 12px",background:"var(--sf2)",borderRadius:"var(--r)",border:"1px solid var(--bd)"}}>
+              {t("hdNoReserve")}
             </div>
           )}
-          {!isFixed && !isMine && (
+
+          {/* Mi puesto fijo — puedo liberarlo para un día */}
+          {isMyFixed && !isMine && (
+            <div style={{fontSize:12,color:"var(--tx2)",lineHeight:1.6}}>
+              Este es tu puesto permanente. Si no lo vas a usar hoy puedes liberarlo para que otro compañero lo ocupe.
+              <button className="b-danger" style={{width:"100%",marginTop:10}} onClick={()=>onRelease(seatId, date)}>
+                Liberar para hoy ({date})
+              </button>
+            </div>
+          )}
+
+          {/* Mi reserva — puedo liberarla */}
+          {isMine && !isMyFixed && (
+            <div>
+              <div style={{fontSize:12,color:"var(--tx2)",marginBottom:8}}>{t("hdReleaseQ")}</div>
+              <button className="b-danger" style={{width:"100%"}} onClick={()=>onRelease(seatId, date)}>{t("hdReleaseBtn")}</button>
+            </div>
+          )}
+
+          {/* Puesto liberado por el fijo — otro puede reservar */}
+          {isMyFixed && isMine && (
+            <div style={{fontSize:12,color:"var(--tx2)",marginBottom:8}}>
+              {t("hdReleaseQ")}
+              <button className="b-danger" style={{width:"100%",marginTop:8}} onClick={()=>onRelease(seatId, date)}>{t("hdReleaseBtn")}</button>
+            </div>
+          )}
+
+          {/* Reserva libre — seleccionar fechas (filtra días con otra reserva) */}
+          {!isOtherFixed && !isMine && !isMyFixed && (
             <>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <button className="n-arr" onClick={prev}>‹</button>
-                <span style={{fontSize:12,fontWeight:600,color:"var(--ac2)"}}>{fmtMonthYear(yr,mo,lang)}</span>
-                <button className="n-arr" onClick={next}>›</button>
-              </div>
-              <MiniCalendar year={yr} month={mo} selectedDates={sel} onToggleDate={toggle} occupiedDates={occupiedDates}/>
-              {sel.length>0&&<div style={{fontSize:11,color:"var(--green)",background:"rgba(62,207,142,.07)",border:"1px solid rgba(62,207,142,.2)",borderRadius:"var(--r)",padding:"6px 10px"}}>{t("hdSelectDates")}: {sel.sort().join(", ")}</div>}
+              {myReservedDates.includes(date) ? (
+                <div style={{fontSize:12,color:"var(--amber)",padding:"8px 12px",background:"rgba(245,166,35,.07)",borderRadius:"var(--r)",border:"1px solid rgba(245,166,35,.25)"}}>
+                  ⚠ {t("hdAlreadyRes")}
+                </div>
+              ) : (
+                <>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <button className="n-arr" onClick={prev}>‹</button>
+                    <span style={{fontSize:12,fontWeight:600,color:"var(--ac2)"}}>{fmtMonthYear(yr,mo,lang)}</span>
+                    <button className="n-arr" onClick={next}>›</button>
+                  </div>
+                  <MiniCalendar year={yr} month={mo} selectedDates={sel} onToggleDate={toggle} occupiedDates={blockedDates}/>
+                  {sel.length>0&&<div style={{fontSize:11,color:"var(--green)",background:"rgba(62,207,142,.07)",border:"1px solid rgba(62,207,142,.2)",borderRadius:"var(--r)",padding:"6px 10px"}}>{t("hdSelectDates")}: {sel.sort().join(", ")}</div>}
+                </>
+              )}
             </>
           )}
         </div>
-        {!isMine && !isFixed && (
-          <div className="mf">
-            <button className="b-cancel" onClick={onClose}>{t("cancel")}</button>
-            <button className="b-sub" onClick={()=>onConfirm(seatId,sel)} disabled={sel.length===0}>{t("hdConfirm")} {sel.length>0&&`(${sel.length})`}</button>
-          </div>
-        )}
-        {(isMine||isFixed) && <div className="mf"><button className="b-cancel" onClick={onClose}>{t("cancel")}</button></div>}
+
+        <div className="mf">
+          <button className="b-cancel" onClick={onClose}>{t("cancel")}</button>
+          {!isOtherFixed && !isMine && !isMyFixed && !myReservedDates.includes(date) && (
+            <button className="b-sub" onClick={()=>onConfirm(seatId,sel)} disabled={sel.length===0}>
+              {t("hdConfirm")} {sel.length>0&&`(${sel.length})`}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1060,6 +1188,74 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
 // ══════════════════════════════════════════════════════════════════
 // ADMIN — Settings Module
 // ══════════════════════════════════════════════════════════════════
+
+// ── Token personal Jira por usuario ──────────────────────────────
+function PersonalJiraToken() {
+  const [token,    setToken]    = useState('');
+  const [show,     setShow]     = useState(false);
+  const [saving,   setSaving]   = useState(false);
+  const [hasToken, setHasToken] = useState(false);
+  const [ok,       setOk]       = useState('');
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from('users').select('jira_api_token').eq('id', user.id).single()
+        .then(({ data }) => setHasToken(!!data?.jira_api_token));
+    });
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setSaving(false); return; }
+    const { error } = await supabase.from('users')
+      .update({ jira_api_token: token.trim() || null })
+      .eq('id', user.id);
+    if (!error) {
+      setHasToken(!!token.trim());
+      setToken('');
+      setOk(token.trim() ? '✓ Token guardado' : '✓ Token eliminado');
+      setTimeout(() => setOk(''), 3000);
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:10}}>
+      <div style={{display:'flex',alignItems:'center',gap:8}}>
+        <div style={{width:8,height:8,borderRadius:'50%',
+          background:hasToken?'var(--green)':'var(--tx3)',
+          boxShadow:hasToken?'0 0 5px var(--green)':'none'}}/>
+        <span style={{fontSize:12,color:hasToken?'var(--green)':'var(--tx3)'}}>
+          {hasToken
+            ? 'Token personal configurado — tus imputaciones aparecerán con tu nombre en Jira'
+            : 'Sin token personal — se usará el token del admin (con nota de autor en comentario)'}
+        </span>
+      </div>
+      <div style={{display:'flex',gap:6}}>
+        <input className="a-inp" type={show?'text':'password'}
+          placeholder={hasToken ? '••••••••• (dejar vacío para eliminar)' : 'ATatt3x...'}
+          value={token} onChange={e=>setToken(e.target.value)} style={{flex:1}}/>
+        <button className="btn-g" onClick={()=>setShow(s=>!s)}
+          style={{padding:'0 10px',flexShrink:0}}>
+          {show?'Ocultar':'Mostrar'}
+        </button>
+      </div>
+      <div style={{fontSize:10,color:'var(--tx3)',lineHeight:1.6}}>
+        Genera tu token en{' '}
+        <a href="https://id.atlassian.com/manage-profile/security/api-tokens"
+          target="_blank" rel="noreferrer" style={{color:'var(--ac2)'}}>
+          id.atlassian.com → Security → API tokens
+        </a>
+      </div>
+      <button className="btn-p" onClick={save} disabled={saving} style={{maxWidth:200}}>
+        {saving ? 'Guardando...' : hasToken ? 'Actualizar token' : 'Guardar token'}
+      </button>
+      {ok && <div className="saved-ok"><span className="dot-ok"/> {ok}</div>}
+    </div>
+  );
+}
 
 function AdminSettings() {
   const { t } = useApp();
@@ -1157,12 +1353,15 @@ function AdminSettings() {
           )}
         </div>
       </div>
+
+      {/* ── Token personal del usuario ── */}
+      <div className="a-card">
+        <div className="a-ct">🔑 Mi token personal de Jira</div>
+        <PersonalJiraToken />
+      </div>
     </div>
   );
 }
-
-// ══════════════════════════════════════════════════════════════════
-// ADMIN — Add User Modal
 // ══════════════════════════════════════════════════════════════════
 
 function AddUserModal({ existingUsers, onClose, onSave }) {
@@ -1371,7 +1570,23 @@ function AdminHotDesk({ hd, setHd, users }) {
 
 function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   const { t } = useApp();
+  const isAdmin = currentUser.role === 'admin';
   const [mod, setMod] = useState("settings");
+
+  // Usuario no-admin solo ve su token personal
+  if (!isAdmin) {
+    return (
+      <div className="admin-content" style={{maxWidth:600}}>
+        <div className="sec-t">Mi configuración</div>
+        <div className="sec-sub">Configura tu token personal de Jira para que tus imputaciones aparezcan con tu nombre.</div>
+        <div className="a-card">
+          <div className="a-ct">🔑 Mi token personal de Jira</div>
+          <PersonalJiraToken />
+        </div>
+      </div>
+    );
+  }
+
   const NAV = [
     { id:"settings", icon:"⚙",  label:t("adminSettings") },
     { id:"users",    icon:"👥", label:t("adminUsers"),   badge:"Admin" },
@@ -1809,51 +2024,48 @@ function WorkSuiteApp() {
   }, []);
 
   const handleSaveWorklog = useCallback(async (date, wl) => {
-  setWorklogs(p => ({ ...p, [date]: [...(p[date] || []), wl] }));
-  try {
-    const { error } = await supabase.from('worklogs').insert({
-      id: wl.id, issue_key: wl.issue, issue_summary: wl.summary,
-      issue_type: wl.type, epic_key: wl.epic, epic_name: wl.epicName,
-      project_key: wl.project, author_id: CURRENT_USER.id, author_name: CURRENT_USER.name,
-      date, started_at: wl.started, seconds: wl.seconds, description: wl.description || '',
-    });
-    if (error) { console.error('Save worklog error:', error.message); return; }
-
-    // ── Sync automático a Jira ──────────────────────────────────
+    setWorklogs(p => ({ ...p, [date]: [...(p[date] || []), wl] }));
     try {
-      const startedAt = `${date}T${wl.started}:00.000+0000`;
-      const headers = { ...await getAuthHeader(), 'Content-Type': 'application/json' };
-      const syncRes = await fetch(`${API_BASE}/jira/worklogs/${wl.issue}/sync`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          worklogId:   wl.id,
-          seconds:     wl.seconds,
-          startedAt,
-          description: wl.description || '',
-        }),
+      const { error } = await supabase.from('worklogs').insert({
+        id: wl.id, issue_key: wl.issue, issue_summary: wl.summary,
+        issue_type: wl.type, epic_key: wl.epic, epic_name: wl.epicName,
+        project_key: wl.project, author_id: CURRENT_USER.id, author_name: CURRENT_USER.name,
+        date, started_at: wl.started, seconds: wl.seconds, description: wl.description || '',
       });
-      const syncJson = await syncRes.json();
-      if (syncJson.ok) {
-        // Marcar como sincronizado en UI
-        setWorklogs(p => ({
-          ...p,
-          [date]: (p[date] || []).map(w =>
-            w.id === wl.id ? { ...w, syncedToJira: true } : w
-          ),
-        }));
-        notify('✓ Worklog guardado y sincronizado con Jira');
-      } else {
-        notify('Worklog guardado (sync Jira fallido: ' + (syncJson.error?.message || 'error') + ')');
-      }
-    } catch (syncErr) {
-      console.error('Jira sync failed:', syncErr);
-      notify('Worklog guardado (Jira no disponible)');
-    }
-    // ────────────────────────────────────────────────────────────
+      if (error) { console.error('Save worklog error:', error.message); return; }
 
-  } catch (err) { console.error('Save worklog failed:', err); }
-}, [CURRENT_USER.id, CURRENT_USER.name]);
+      // ── Sync automático a Jira ──────────────────────────────────
+      try {
+        const startedAt = `${date}T${wl.started}:00.000+0000`;
+        const headers = { ...await getAuthHeader(), 'Content-Type': 'application/json' };
+        const syncRes = await fetch(`${API_BASE}/jira/worklogs/${wl.issue}/sync`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            worklogId:   wl.id,
+            seconds:     wl.seconds,
+            startedAt,
+            description: wl.description || '',
+          }),
+        });
+        const syncJson = await syncRes.json();
+        if (syncJson.ok) {
+          setWorklogs(p => ({
+            ...p,
+            [date]: (p[date] || []).map(w =>
+              w.id === wl.id ? { ...w, syncedToJira: true } : w
+            ),
+          }));
+          notify('✓ Worklog guardado y sincronizado con Jira');
+        } else {
+          notify('Worklog guardado (sync Jira: ' + (syncJson.error?.message || 'error') + ')');
+        }
+      } catch (syncErr) {
+        console.error('Jira sync failed:', syncErr);
+        notify('Worklog guardado (Jira no disponible)');
+      }
+    } catch (err) { console.error('Save worklog failed:', err); }
+  }, [CURRENT_USER.id, CURRENT_USER.name]);
 
   const handleDeleteWorklog = useCallback(async (date, id) => {
     setWorklogs(p => {
@@ -1869,6 +2081,22 @@ function WorkSuiteApp() {
 
   const handleExport = f => CsvService.exportWorklogs(worklogs, f.from, f.to, f.authorId || null, f.spaceKeys);
   const handleDayClick = d => { setActiveDay(d); setView('day'); };
+
+  const loadJiraIssues = useCallback(async (projectKey) => {
+    try {
+      const headers = { ...await getAuthHeader(), 'Content-Type': 'application/json' };
+      const res  = await fetch(`${API_BASE}/jira/issues?project=${projectKey}`, { headers });
+      const json = await res.json();
+      if (json.ok && json.data?.length) {
+        setJiraIssues(json.data.map((i, idx) => ({
+          id: idx + 1, key: i.key, summary: i.summary, type: i.type,
+          status: i.status, priority: i.priority ?? 'Medium', project: i.project,
+          assignee: i.assignee ?? '', epic: i.epic ?? '—', epicName: i.epicName ?? '—',
+          hours: 0, labels: i.labels ?? [],
+        })));
+      }
+    } catch (e) { console.error('loadJiraIssues failed:', e); }
+  }, []);
 
   const notify = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
@@ -1969,8 +2197,21 @@ function WorkSuiteApp() {
             <span className={`r-tag ${CURRENT_USER.role==="admin"?"r-admin":"r-user"}`}>{CURRENT_USER.role==="admin"?t("roleAdmin"):t("roleUser")}</span>
             {isAdmin && (
               <button onClick={()=>setView("admin")}
-                style={{background:view==="admin"?"rgba(79,110,247,.1)":"transparent",border:`1px solid ${view==="admin"?"rgba(79,110,247,.35)":"var(--bd)"}`,borderRadius:"var(--r)",color:view==="admin"?"var(--ac2)":"var(--tx2)",fontSize:11,fontWeight:600,padding:"4px 10px",cursor:"pointer",transition:"var(--ease)",display:"flex",alignItems:"center",gap:5}}>
-                ⚙ Admin
+                style={{
+                  background: view==="admin" ? "var(--ac)" : "rgba(79,110,247,.15)",
+                  border: `1px solid ${view==="admin" ? "var(--ac)" : "rgba(79,110,247,.4)"}`,
+                  borderRadius: "var(--r)",
+                  color: view==="admin" ? "#fff" : "var(--ac2)",
+                  fontSize: 11, fontWeight: 700, padding: "5px 12px",
+                  cursor: "pointer", transition: "var(--ease)",
+                  display: "flex", alignItems: "center", gap: 6,
+                  boxShadow: view==="admin" ? "0 0 10px rgba(79,110,247,.3)" : "none",
+                }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                Admin
               </button>
             )}
             <button onClick={logout} style={{background:"transparent",border:"1px solid var(--bd)",borderRadius:"var(--r)",color:"var(--tx3)",fontSize:10,padding:"3px 8px",cursor:"pointer",fontWeight:600}}>
@@ -1987,12 +2228,11 @@ function WorkSuiteApp() {
               {item.label}
             </button>
           ))}
-          {isAdmin&&(<><div className="n-sep"/><button className={`n-btn ${view==="admin"?"active":""}`} onClick={()=>setView("admin")}>⚙ {t("navAdmin")}</button></>)}
         </nav>
 
         <div className="body">
           {mod==="jt" && view!=="admin" && (
-            <JTFilterSidebar filters={filters} onApply={f=>{setFilters(f);setSbOpen(false);}} onExport={handleExport} mobileOpen={sbOpen} onMobileClose={()=>setSbOpen(false)}/>
+            <JTFilterSidebar filters={filters} onApply={f=>{setFilters(f);setSbOpen(false);}} onExport={handleExport} mobileOpen={sbOpen} onMobileClose={()=>setSbOpen(false)} users={users} onProjectChange={loadJiraIssues}/>
           )}
           {mod==="jt" && view==="calendar" && (<main className="content"><CalendarView filters={filters} worklogs={worklogs} onDayClick={handleDayClick} onOpenLog={openLogModal}/></main>)}
           {mod==="jt" && view==="day"      && (<main className="content"><DayView date={activeDay} filters={filters} worklogs={worklogs} onDateChange={setActiveDay} onOpenLog={openLogModal} onDeleteWorklog={handleDeleteWorklog}/></main>)}
