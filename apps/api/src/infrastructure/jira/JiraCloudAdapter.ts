@@ -64,7 +64,7 @@ export class JiraCloudAdapter implements IJiraApi {
   }
 
   async getIssues(projectKey: string): Promise<JiraIssue[]> {
-    const jql   = encodeURIComponent(`project = ${projectKey} AND statusCategory != Done ORDER BY updated DESC`);
+    const jql   = encodeURIComponent(`project = ${projectKey} ORDER BY updated DESC`);
     const fields = 'summary,issuetype,status,priority,project,assignee,labels,parent,customfield_10014,customfield_10008';
     const data  = await this.fetch<{ issues: JiraIssueRaw[] }>(
       `/search?jql=${jql}&maxResults=100&fields=${fields}`,
