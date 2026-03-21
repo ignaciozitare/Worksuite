@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../shared/lib/api';
+import { supabase } from '../../shared/lib/api';
 
 const REDIRECT_URL = `${window.location.origin}/`;
 
