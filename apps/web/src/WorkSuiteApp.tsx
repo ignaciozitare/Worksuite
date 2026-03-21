@@ -926,41 +926,121 @@ function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true 
   );
 }
 
-function MiniOfficeMap({ hd, seatId }) {
+// ── Blueprint mini-map for tooltip — renders blueprint layout at small scale ─
+function BlueprintMiniMap({ blueprint, hd, seatId }) {
+  const canvasRef = useRef(null);
   const { theme } = useApp();
-  const COLORS = theme === "light"
-    ? { free:"#0f9060", occ:"#4f6ef7", fixed:"#c02828", amber:"#b86800", bd:"#dcdce8", sf:"#ffffff", sf2:"#f5f5fb", sf3:"#eaeaf2", tx3:"#9494b8" }
-    : { free:"#3ecf8e", occ:"#4f6ef7", fixed:"#e05252", amber:"#f5a623", bd:"#2a2a38", sf:"#141418", sf2:"#1b1b22", sf3:"#21212c", tx3:"#50506a" };
-  const colOf = st => st===SeatStatus.FIXED ? COLORS.fixed : st===SeatStatus.OCCUPIED ? COLORS.occ : COLORS.free;
-  return (
-    <svg viewBox="0 0 220 130" style={{width:"100%",display:"block"}}>
-      <rect x={1} y={1} width={218} height={128} rx={10} fill={COLORS.sf2} stroke={COLORS.bd}/>
-      <rect x={8} y={20} width={132} height={56} rx={6} fill={COLORS.sf} stroke={COLORS.bd}/>
-      <rect x={8} y={82} width={132} height={20} rx={6} fill={COLORS.sf} stroke={COLORS.bd}/>
-      <rect x={142} y={20} width={70} height={52} rx={6} fill={COLORS.sf3} stroke={COLORS.bd}/>
-      <rect x={142} y={74} width={70} height={28} rx={6} fill={COLORS.sf3} stroke={COLORS.bd}/>
-      {SEATS.map(seat => {
-        const st = ReservationService.statusOf(seat.id, MOCK_TODAY, hd.fixed, hd.reservations);
-        const col = colOf(st);
-        const x = 14 + (seat.x - 75) * 0.34;
-        const y = seat.y < 200 ? (24 + (seat.y - 80) * 0.28) : 86;
-        const isTarget = seat.id === seatId;
-        return (
-          <g key={seat.id}>
-            {isTarget && <rect x={x-2} y={y-2} width={16} height={12} rx={3} fill="none" stroke={COLORS.amber} strokeWidth={1.6} />}
-            <rect x={x} y={y} width={12} height={8} rx={2} fill={col} fillOpacity={0.24} stroke={col} strokeWidth={isTarget?1.2:.8}/>
-            <text x={x+6} y={y+7.2} textAnchor="middle" fill={col} fontSize={4.4} fontWeight={700}>{seat.id}</text>
-          </g>
-        );
-      })}
-    </svg>
-  );
+  const dk = theme !== 'light';
+
+  const items = (() => {
+    try { return Array.isArray(blueprint?.layout) ? blueprint.layout : []; } catch { return []; }
+  })();
+
+  const CELL=52, PAD=14, LH=18;
+
+  function getSeatsForItem(item) {
+    if(item.shape==='circle'){
+      const{x,y,w,h}=item,cx=x+w/2,cy=y+h/2,R=Math.min(w,h)/2-PAD-CELL/2;
+      const n=Math.max(1,Math.floor(2*Math.PI*Math.max(R,1)/(CELL+8)));
+      const pfx=((item.prefix||item.label||'A').replace(/\s/g,'').slice(0,3)||'A').toUpperCase();
+      return Array.from({length:n},(_,i)=>{const a=(i/n)*2*Math.PI-Math.PI/2;return{id:pfx+(i+1),x:cx+R*Math.cos(a)-CELL/2+2,y:cy+R*Math.sin(a)-CELL/2+2,w:CELL-4,h:CELL-4};});
+    }
+    const{x,y,w,h}=item,cols=Math.max(1,Math.floor((w-PAD*2)/CELL)),rows=Math.max(1,Math.floor((h-PAD*2-LH)/CELL));
+    const tW=cols*CELL,tH=rows*CELL,sx=x+PAD+(w-PAD*2-tW)/2,sy=y+LH+PAD+(h-LH-PAD*2-tH)/2;
+    const pfx=((item.prefix||item.label||'A').replace(/\s/g,'').slice(0,3)||'A').toUpperCase();
+    let n=1;return Array.from({length:cols*rows},(_,i)=>{const r=Math.floor(i/cols),cc=i%cols;const s={id:pfx+n,x:sx+cc*CELL+2,y:sy+r*CELL+2,w:CELL-4,h:CELL-4};n++;return s;});
+  }
+
+  const allSeats = useMemo(()=>{
+    const seats=[];
+    items.forEach(item=>{
+      if(item.type==='desk'||item.type==='circle'){
+        const dis=item.disabled||[];
+        getSeatsForItem(item).forEach(s=>{if(!dis.includes(s.id))seats.push(s);});
+      }
+    });
+    return seats;
+  },[blueprint?.id]);
+
+  const bbox = useMemo(()=>{
+    if(!items.length)return{minX:0,minY:0,maxX:400,maxY:300};
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    items.forEach(i=>{if(i.x<minX)minX=i.x;if(i.y<minY)minY=i.y;if(i.x+i.w>maxX)maxX=i.x+i.w;if(i.y+i.h>maxY)maxY=i.y+i.h;});
+    return{minX:minX-16,minY:minY-16,maxX:maxX+16,maxY:maxY+16};
+  },[blueprint?.id]);
+
+  useEffect(()=>{
+    const cvs=canvasRef.current;if(!cvs)return;
+    const ctx=cvs.getContext('2d');
+    const W=cvs.width,H=cvs.height;
+    ctx.clearRect(0,0,W,H);
+    const bW=bbox.maxX-bbox.minX,bH=bbox.maxY-bbox.minY;
+    const s=Math.min(W/bW,H/bH);
+    const ox=(W-bW*s)/2-bbox.minX*s, oy=(H-bH*s)/2-bbox.minY*s;
+
+    function rr(x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();}
+
+    ctx.save();ctx.setTransform(s,0,0,s,ox,oy);
+
+    // Draw non-cluster items as faint background
+    items.forEach(i=>{
+      const{x,y,w,h}=i;
+      if(i.type==='zone'){ctx.fillStyle=dk?'rgba(40,30,80,.15)':'rgba(238,242,255,.5)';ctx.strokeStyle='rgba(129,140,248,.3)';ctx.lineWidth=1/s;ctx.setLineDash([4/s,3/s]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);}
+      else if(i.type==='room'){ctx.fillStyle=dk?'rgba(15,30,70,.3)':'rgba(219,234,254,.4)';ctx.strokeStyle='rgba(59,130,246,.3)';ctx.lineWidth=1/s;ctx.setLineDash([]);rr(x,y,w,h,4);ctx.fill();ctx.stroke();}
+      else if(i.type==='wall'){ctx.fillStyle=dk?'rgba(60,60,70,.4)':'rgba(140,140,140,.2)';ctx.strokeStyle='rgba(100,100,110,.3)';ctx.lineWidth=1/s;ctx.setLineDash([]);rr(x,y,w,h,2);ctx.fill();ctx.stroke();}
+      else if(i.type==='desk'||i.type==='circle'){
+        ctx.fillStyle=dk?'rgba(3,15,6,.3)':'rgba(240,253,244,.4)';
+        ctx.strokeStyle='rgba(34,197,94,.2)';ctx.lineWidth=1/s;ctx.setLineDash([3/s,3/s]);
+        if(i.shape==='circle'){const cx=i.x+i.w/2,cy=i.y+i.h/2,R=Math.min(i.w,i.h)/2;ctx.beginPath();ctx.arc(cx,cy,R,0,2*Math.PI);ctx.fill();ctx.stroke();}
+        else{rr(i.x,i.y,i.w,i.h,5);ctx.fill();ctx.stroke();}
+        ctx.setLineDash([]);
+      }
+    });
+
+    // Draw all seats small
+    allSeats.forEach(seat=>{
+      const{x,y,w,h,id}=seat;
+      const isTarget=id===seatId;
+      const res=hd.reservations.find(r=>r.seatId===id&&r.date===TODAY);
+      const isFixed=!!hd.fixed[id];
+      const isMine=res?.userId===hd._currentUserId;
+      let col;
+      if(isTarget) col='#f59e0b';
+      else if(isFixed) col='#ef4444';
+      else if(res) col='#3b82f6';
+      else col='#22c55e';
+      ctx.fillStyle=col+(isTarget?'':'44');
+      ctx.strokeStyle=col;
+      ctx.lineWidth=(isTarget?2.5:0.8)/s;
+      rr(x,y,w,h,3);ctx.fill();ctx.stroke();
+      // Target gets a glow + label
+      if(isTarget){
+        ctx.fillStyle=col;
+        ctx.font=`bold ${Math.max(8,10/s)}px monospace`;
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(id,x+w/2,y+h/2);
+      }
+    });
+
+    ctx.restore();
+  },[blueprint?.id, hd, seatId, theme]);
+
+  return <canvas ref={canvasRef} width={220} height={140} style={{display:'block',width:'100%',borderRadius:6}}/>;
 }
 
-function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser }) {
+function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser, blueprint }) {
   const { theme } = useApp();
   const ref = useRef(null);
   const [pos, setPos] = useState({ left: anchorX - 140, top: anchorY + 8 });
+
+  // Enrich hd with currentUserId for mini-map coloring
+  const hdWithUser = useMemo(()=>({...hd, _currentUserId: currentUser?.id}), [hd, currentUser?.id]);
+
+  const res = hd.reservations.find(r=>r.seatId===seatId&&r.date===TODAY);
+  const isFixed = !!hd.fixed[seatId];
+  const isMine = res?.userId === currentUser?.id;
+  const ownerName = isFixed ? hd.fixed[seatId] : res?.userName;
+
   useEffect(() => {
     if (!ref.current) return;
     const el = ref.current;
@@ -972,10 +1052,29 @@ function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser }) {
     if (top + r.height > window.innerHeight - 12) top = anchorY - r.height - 8;
     setPos({ left, top });
   }, [anchorX, anchorY]);
+
   return (
-    <div ref={ref} className="hd-tooltip" data-theme={theme} style={{ left: pos.left, top: pos.top }}>
-      <div className="hd-tooltip-title">Seat <span style={{ color:"var(--ac2)",fontFamily:"var(--mono)" }}>{seatId}</span> · today</div>
-      <MiniOfficeMap hd={hd} seatId={seatId} />
+    <div ref={ref} className="hd-tooltip" data-theme={theme} style={{ left: pos.left, top: pos.top, width: 240 }}>
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+        <span style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:13,
+          color: isMine?'var(--amber)': isFixed?'var(--red)': res?'var(--ac2)':'var(--green)'}}>
+          {seatId}
+        </span>
+        <span style={{fontSize:10,padding:'2px 7px',borderRadius:10,fontWeight:600,
+          background: isMine?'rgba(245,158,11,.12)': isFixed?'rgba(239,68,68,.12)': res?'rgba(59,130,246,.12)':'rgba(34,197,94,.12)',
+          color: isMine?'#f59e0b': isFixed?'#ef4444': res?'#3b82f6':'#22c55e'}}>
+          {isMine?'My seat': isFixed?'Fixed': res?'Occupied':'Free'}
+        </span>
+        {ownerName && <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>{ownerName.split(' ')[0]}</span>}
+      </div>
+      {/* Mini-map showing position */}
+      <div style={{background:'var(--sf2)',borderRadius:6,overflow:'hidden',border:'1px solid var(--bd)'}}>
+        {blueprint
+          ? <BlueprintMiniMap blueprint={blueprint} hd={hdWithUser} seatId={seatId}/>
+          : <div style={{height:80,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'var(--tx3)'}}>No map available</div>
+        }
+      </div>
     </div>
   );
 }
@@ -1006,7 +1105,7 @@ function HDMapView({ hd, onSeat, currentUser }) {
   );
 }
 
-function HDTableView({ hd, onCell, currentUser }) {
+function HDTableView({ hd, onCell, currentUser, blueprint }) {
   const { t, lang } = useApp();
   const [yr, sYr] = useState(new Date().getFullYear());
   const [mo, sMo] = useState(new Date().getMonth());
@@ -1020,33 +1119,68 @@ function HDTableView({ hd, onCell, currentUser }) {
   const DOW_ES = ["D","L","M","X","J","V","S"];
   const DOW    = lang==="es" ? DOW_ES : DOW_EN;
 
+  // Get seats from blueprint, fallback to legacy SEATS
+  const CELL=52,PAD=14,LH=18;
+  const seats = useMemo(()=>{
+    const items = (() => { try { return Array.isArray(blueprint?.layout) ? blueprint.layout : []; } catch { return []; }})();
+    if(!items.length) return SEATS.map(s=>({...s}));
+    const result=[];
+    items.forEach(item=>{
+      if(item.type!=='desk'&&item.type!=='circle') return;
+      const dis=item.disabled||[];
+      let seatList;
+      if(item.shape==='circle'){
+        const{x,y,w,h}=item,cx=x+w/2,cy=y+h/2,R=Math.min(w,h)/2-PAD-CELL/2;
+        const n=Math.max(1,Math.floor(2*Math.PI*Math.max(R,1)/(CELL+8)));
+        const pfx=((item.prefix||item.label||'A').replace(/\s/g,'').slice(0,3)||'A').toUpperCase();
+        seatList=Array.from({length:n},(_,i)=>{const a=(i/n)*2*Math.PI-Math.PI/2;return{id:pfx+(i+1)};});
+      } else {
+        const{x,y,w,h}=item,cols=Math.max(1,Math.floor((w-PAD*2)/CELL)),rows=Math.max(1,Math.floor((h-PAD*2-LH)/CELL));
+        const pfx=((item.prefix||item.label||'A').replace(/\s/g,'').slice(0,3)||'A').toUpperCase();
+        let n=1;seatList=Array.from({length:cols*rows},()=>{const s={id:pfx+n};n++;return s;});
+      }
+      seatList.forEach(s=>{ if(!dis.includes(s.id)) result.push(s); });
+    });
+    return result;
+  },[blueprint?.id]);
+
   return (
-    <div>
-      <div className="cal-h" style={{marginBottom:14}}>
+    <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
+      {/* Header */}
+      <div className="cal-h" style={{marginBottom:10,flexShrink:0,padding:'0 4px'}}>
         <button className="n-arr" onClick={prev}>‹</button>
         <div className="cal-t">{fmtMonthYear(yr, mo, lang)}</div>
         <button className="n-arr" onClick={next}>›</button>
         <div className="hd-legend" style={{marginLeft:"auto"}}>
-          {[[t("legendFree"),"var(--seat-free)"],[t("legendOcc"),"var(--seat-occ)"],[t("legendFixed"),"var(--seat-fixed)"],[t("legendMine"),"var(--amber)"]].map(([l,c])=>(
+          {[[t("legendFree"),"var(--seat-free)"],[t("legendOcc"),"var(--seat-occ)"],[t("legendFixed"),"var(--seat-fixed)"],["Mine","var(--amber)"]].map(([l,c])=>(
             <div key={l} className="hd-leg"><div className="hd-leg-dot" style={{background:c}}/>{l}</div>
           ))}
         </div>
       </div>
-      <div className="hd-table-wrap">
-        <table className="hd-tbl">
+
+      {/* Scrollable table — horizontal + vertical */}
+      <div style={{flex:1,overflow:'auto',borderRadius:'var(--r2)',border:'1px solid var(--bd)',background:'var(--sf)'}}>
+        <table className="hd-tbl" style={{minWidth: 120 + seats.length * 52}}>
           <thead>
             <tr>
-              <th className="hd-th date-col">{lang==="es"?"Fecha":"Date"}</th>
-              {SEATS.map(s => {
+              <th className="hd-th date-col" style={{minWidth:90,left:0,zIndex:8}}>{lang==="es"?"Fecha":"Date"}</th>
+              {seats.map(s => {
                 const st = ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations);
                 const col = st===SeatStatus.FIXED ? "var(--seat-fixed)" : st===SeatStatus.OCCUPIED ? "var(--seat-occ)" : "var(--seat-free)";
                 return (
                   <th key={s.id} className="hd-th seat-col"
-                    onMouseEnter={e => { const r = e.currentTarget.getBoundingClientRect(); setTooltip({ seatId:s.id, ax: r.left + r.width/2, ay: r.bottom }); }}
+                    style={{minWidth:48,cursor:'pointer'}}
+                    onMouseEnter={e => {
+                      const r = e.currentTarget.getBoundingClientRect();
+                      setTooltip({ seatId:s.id, ax: r.left + r.width/2, ay: r.bottom });
+                    }}
                     onMouseLeave={() => setTooltip(null)}>
-                    <span style={{color:col}}>{s.id}</span>
-                    {hd.fixed[s.id] && <div style={{fontSize:8,color:"var(--red)",marginTop:1,fontWeight:400}}>{hd.fixed[s.id].split(" ")[0]}</div>}
-                    <div style={{fontSize:9,color:"var(--tx3)",marginTop:1,opacity:.5}}>🗺</div>
+                    <span style={{color:col,fontSize:10,fontWeight:700}}>{s.id}</span>
+                    {hd.fixed[s.id] && (
+                      <div style={{fontSize:7,color:"var(--red)",marginTop:1,fontWeight:400,lineHeight:1}}>
+                        {hd.fixed[s.id].split(" ")[0].slice(0,6)}
+                      </div>
+                    )}
                   </th>
                 );
               })}
@@ -1061,26 +1195,34 @@ function HDTableView({ hd, onCell, currentUser }) {
               const rowCls = isWe ? "hd-row-we" : isTod ? "hd-row-today" : "";
               return (
                 <tr key={d} className={rowCls}>
-                  <td className={`hd-td date-cell`} style={{color: isWe?"var(--tx3)": isTod?"var(--ac2)":"var(--tx2)", fontWeight:isTod?600:400}}>
-                    {isTod && <span style={{color:"var(--ac2)",marginRight:4,fontSize:9}}>▶</span>}
+                  <td className="hd-td date-cell" style={{
+                    position:'sticky',left:0,zIndex:4,background:'var(--sf)',
+                    color: isWe?"var(--tx3)": isTod?"var(--ac2)":"var(--tx2)",
+                    fontWeight:isTod?600:400, minWidth:90, paddingLeft:10
+                  }}>
+                    {isTod && <span style={{color:"var(--ac2)",marginRight:3,fontSize:9}}>▶</span>}
                     <span style={{fontFamily:"var(--mono)",fontSize:11}}>{DOW[dow]}</span>
                     {" "}<span style={{fontFamily:"var(--mono)",fontSize:11}}>{String(d).padStart(2,"0")}</span>
                   </td>
-                  {SEATS.map(seat => {
+                  {seats.map(seat => {
                     const st     = ReservationService.statusOf(seat.id, iso, hd.fixed, hd.reservations);
                     const res    = ReservationService.resOf(seat.id, iso, hd.reservations);
                     const isMine = res?.userId===currentUser.id;
                     const ownerName = st===SeatStatus.FIXED ? hd.fixed[seat.id] : res?.userName;
-                    const ownerLabel = ownerName ? ownerName.split(" ")[0] : "";
+                    const ownerLabel = ownerName ? ownerName.split(" ")[0].slice(0,7) : "";
                     const cls    = isMine ? "mine" : st===SeatStatus.FIXED ? "fx" : st===SeatStatus.OCCUPIED ? "occ" : "free";
                     return (
-                      <td key={seat.id} className="hd-td">
+                      <td key={seat.id} className="hd-td" style={{padding:2,minWidth:48}}>
                         {isWe ? (
-                          <div style={{height:30,borderRadius:3,background:"var(--sf3)"}}/>
+                          <div style={{height:28,borderRadius:3,background:"var(--sf2)"}}/>
                         ) : (
-                          <div className={`hd-cell ${cls}`} onClick={() => onCell(seat.id, iso)}>
+                          <div className={`hd-cell ${cls}`}
+                            style={{height:28,fontSize:9}}
+                            onClick={() => onCell(seat.id, iso)}>
                             <div className={`hd-cell-dot ${cls}`}/>
-                            {(st!==SeatStatus.FREE && ownerLabel) && <span className="hd-cell-name">{ownerLabel}</span>}
+                            {(st!==SeatStatus.FREE && ownerLabel) && (
+                              <span className="hd-cell-name" style={{fontSize:9}}>{ownerLabel}</span>
+                            )}
                           </div>
                         )}
                       </td>
@@ -1092,7 +1234,17 @@ function HDTableView({ hd, onCell, currentUser }) {
           </tbody>
         </table>
       </div>
-      {tooltip && <SeatTooltip seatId={tooltip.seatId} anchorX={tooltip.ax} anchorY={tooltip.ay} hd={hd} currentUser={currentUser}/>}
+
+      {tooltip && (
+        <SeatTooltip
+          seatId={tooltip.seatId}
+          anchorX={tooltip.ax}
+          anchorY={tooltip.ay}
+          hd={hd}
+          currentUser={currentUser}
+          blueprint={blueprint}
+        />
+      )}
     </div>
   );
 }
@@ -1882,9 +2034,9 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint }) {
     ['zone','wall','room'].forEach(type=>{
       items.filter(i=>i.type===type).forEach(i=>{
         const{x,y,w,h}=i;
-        if(type==='zone'){ctx.fillStyle=dk?'rgba(40,30,80,.2)':'rgba(238,242,255,.6)';ctx.strokeStyle='#818cf8';ctx.lineWidth=1;ctx.setLineDash([6,4]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=dk?'rgba(165,180,252,.55)':'#4338ca';ctx.font='500 10px var(--font-sans,sans-serif)';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,y+6);}
+        if(type==='zone'){ctx.fillStyle=dk?'rgba(40,30,80,.2)':'rgba(238,242,255,.6)';ctx.strokeStyle='#818cf8';ctx.lineWidth=1;ctx.setLineDash([6,4]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=dk?'rgba(165,180,252,.75)':'#4338ca';ctx.font='600 18px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,y+h/2);}
         else if(type==='wall'){ctx.fillStyle=dk?'rgba(70,70,70,.5)':'rgba(140,140,140,.3)';ctx.strokeStyle=dk?'#666':'#aaa';ctx.lineWidth=1;ctx.setLineDash([]);rr(x,y,w,h,2);ctx.fill();ctx.stroke();}
-        else if(type==='room'){ctx.fillStyle=dk?'rgba(15,30,70,.5)':'rgba(219,234,254,.6)';ctx.strokeStyle='#3b82f6';ctx.lineWidth=1;ctx.setLineDash([]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();const mw=Math.min(w-20,66),mh=Math.min(h-20,18);ctx.fillStyle=dk?'rgba(30,58,138,.25)':'rgba(191,219,254,.4)';ctx.strokeStyle='rgba(147,197,253,.3)';ctx.lineWidth=.5;rr(x+(w-mw)/2,y+(h-mh)/2,mw,mh,2);ctx.fill();ctx.stroke();ctx.fillStyle=dk?'#93c5fd':'#1e40af';ctx.font='500 10px var(--font-sans,sans-serif)';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText(i.label||'Room',x+w/2,y+8);}
+        else if(type==='room'){ctx.fillStyle=dk?'rgba(15,30,70,.5)':'rgba(219,234,254,.6)';ctx.strokeStyle='#3b82f6';ctx.lineWidth=1;ctx.setLineDash([]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();ctx.fillStyle=dk?'#93c5fd':'#1e40af';ctx.font='600 18px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(i.label||'Room',x+w/2,y+h/2);}
       });
     });
 
@@ -2305,7 +2457,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
     drg:false,rsz:false,crt:false,pan:false,
     dragOff:{x:0,y:0},rHandle:null,origItem:null,
     dragS:null,crtS:null,crtE:null,panLast:null,clickOrig:null,
-    clN:1,rN:1,zN:1,hist:[],
+    clN:1,rN:1,zN:1,hist:[],fwd:[],
   });
   const [tool, _setTool] = useState('select');
   const [,forceRender] = useState(0);
@@ -2314,6 +2466,16 @@ function BlueprintCanvas({ items: initItems, onChange }) {
   const S = stateRef.current;
   const GRID=24,CELL=52,PAD=14,LH=18,WW=2400,WH=1800,HS=7;
   const snap=v=>Math.round(v/GRID)*GRID;
+
+  function relabelClusters(){
+    saveH();
+    // Sort clusters top→bottom, left→right
+    const clusters=S.items.filter(i=>i.type==='desk'||i.type==='circle');
+    clusters.sort((a,b)=>{const rowA=Math.round(a.y/50),rowB=Math.round(b.y/50);return rowA!==rowB?rowA-rowB:a.x-b.x;});
+    const alpha='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    clusters.forEach((cl,idx)=>{ cl.prefix=alpha[idx%26]||'A'; });
+    onChange([...S.items]);draw();re();
+  }
 
   function setTool(t){ S.tool=t; _setTool(t); if(t!=='select'){S.sel=null;re();} draw(); }
 
@@ -2331,12 +2493,13 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       S.cam.cx=sx-(sx-S.cam.cx)*ratio; S.cam.cy=sy-(sy-S.cam.cy)*ratio; S.cam.s=ns;
       draw();
     }
-    // Spacebar → select tool (regardless of current tool)
+    // Spacebar → select tool; Ctrl+Z → undo; Ctrl+Shift+Z → redo
     function onKey(e){
-      if(e.key===' '&&document.activeElement?.tagName!=='INPUT'&&document.activeElement?.tagName!=='TEXTAREA'){
-        e.preventDefault();
-        setTool('select');
-      }
+      const inInput=document.activeElement?.tagName==='INPUT'||document.activeElement?.tagName==='TEXTAREA';
+      if(e.key===' '&&!inInput){e.preventDefault();setTool('select');return;}
+      if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='z'&&!inInput){e.preventDefault();doUndo();return;}
+      if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='z'&&!inInput){e.preventDefault();doRedo();return;}
+      if((e.ctrlKey||e.metaKey)&&e.key==='d'&&!inInput){e.preventDefault();doDuplicate();return;}
     }
     cw.addEventListener('wheel',wheelH,{passive:false});
     window.addEventListener('keydown',onKey);
@@ -2417,17 +2580,29 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       if(i.shape==='circle'){const cx=x+w/2,cy=y+h/2,R=Math.min(w,h)/2;ctx.beginPath();ctx.arc(cx,cy,R,0,2*Math.PI);ctx.fill();ctx.stroke();}
       else{rr(ctx,x,y,w,h,7);ctx.fill();ctx.stroke();}
       ctx.setLineDash([]);
-      ctx.fillStyle='rgba(134,239,172,.5)';ctx.font='500 9px var(--font-sans,sans-serif)';ctx.textAlign='center';ctx.textBaseline='top';
-      ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,i.shape==='circle'?y+Math.min(w,h)/2-13:y+4);
-      getSeats(i).forEach(s=>drawSeat(ctx,s,dis.includes(s.id)));
+      // Cluster zone name: small, close to seats (just above first row)
+      const clSeats=getSeats(i);
+      if(clSeats.length>0){
+        const firstY=Math.min(...clSeats.map(s=>s.y));
+        ctx.fillStyle='rgba(134,239,172,.55)';ctx.font='600 9px var(--font-sans,sans-serif)';
+        ctx.textAlign='center';ctx.textBaseline='bottom';
+        ctx.fillText((i.label||'').toUpperCase(),x+w/2,firstY-2);
+      }
+      clSeats.forEach(s=>drawSeat(ctx,s,dis.includes(s.id)));
     }else if(i.type==='room'){
       ctx.fillStyle='rgba(10,20,50,.55)';ctx.strokeStyle='#3b82f6';ctx.lineWidth=1;ctx.setLineDash([]);
       rr(ctx,x,y,w,h,6);ctx.fill();ctx.stroke();
-      ctx.fillStyle='#93c5fd';ctx.font='500 9px var(--font-sans,sans-serif)';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText(i.label||'Room',x+w/2,y+8);
+      // Label: centered in room, 2x bigger (18px)
+      ctx.fillStyle='#93c5fd';ctx.font='600 18px var(--font-sans,sans-serif)';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(i.label||'Room',x+w/2,y+h/2);
     }else if(i.type==='zone'){
       ctx.fillStyle='rgba(30,20,60,.2)';ctx.strokeStyle='#818cf8';ctx.lineWidth=.8;ctx.setLineDash([6,4]);
       rr(ctx,x,y,w,h,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);
-      ctx.fillStyle='rgba(165,180,252,.5)';ctx.font='500 9px var(--font-sans,sans-serif)';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,y+6);
+      // Label: centered in zone, 2x bigger (18px)
+      ctx.fillStyle='rgba(165,180,252,.7)';ctx.font='600 18px var(--font-sans,sans-serif)';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,y+h/2);
     }else if(i.type==='wall'){
       ctx.fillStyle='rgba(60,60,70,.5)';ctx.strokeStyle='rgba(140,140,160,.45)';ctx.lineWidth=.8;ctx.setLineDash([]);
       rr(ctx,x,y,w,h,2);ctx.fill();ctx.stroke();
@@ -2440,7 +2615,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
     }
   }
 
-  function saveH(){S.hist.push(JSON.parse(JSON.stringify(S.items)));}
+  function saveH(){S.hist.push(JSON.parse(JSON.stringify(S.items)));S.fwd=[];}
 
   function handleMD(e){
     if(e.button===1){e.preventDefault();S.pan=true;S.panLast={x:e.clientX,y:e.clientY};return;}
@@ -2510,14 +2685,36 @@ function BlueprintCanvas({ items: initItems, onChange }) {
   }
 
   const TB_TOOLS=[
-    {id:'select', lbl:'↖ Select', tip:'Select / move / resize (Space)', dot:null, sel:true},
-    {id:'desk',   lbl:'Cluster',  tip:'Rectangular desk cluster',        dot:'#22c55e', circle:false},
-    {id:'circle', lbl:'Round',    tip:'Circular / round table',          dot:'#22c55e', circle:true},
-    {id:'room',   lbl:'Room',     tip:'Meeting room',                    dot:'#3b82f6', circle:false},
-    {id:'zone',   lbl:'Zone',     tip:'Zone label / area',               dot:'#818cf8', circle:false},
-    {id:'wall',   lbl:'Wall',     tip:'Wall or divider',                 dot:'#888',    circle:false},
-    {id:'eraser', lbl:'✕ Erase',  tip:'Erase element',                   dot:null, danger:true},
+    {id:'select', lbl:'↖', tip:'Select / move / resize  [Space]', dot:null, sel:true},
+    {id:'desk',   lbl:'Cluster',  tip:'Rectangular desk cluster',  dot:'#22c55e', circle:false},
+    {id:'circle', lbl:'Round',    tip:'Circular / round table',    dot:'#22c55e', circle:true},
+    {id:'room',   lbl:'Room',     tip:'Meeting room',              dot:'#3b82f6', circle:false},
+    {id:'zone',   lbl:'Zone',     tip:'Zone / area label',         dot:'#818cf8', circle:false},
+    {id:'wall',   lbl:'Wall',     tip:'Wall or divider',           dot:'#888',    circle:false},
+    {id:'eraser', lbl:'✕',        tip:'Erase element',             dot:null, danger:true},
   ];
+
+  function doUndo(){if(S.hist.length){S.fwd.push(JSON.parse(JSON.stringify(S.items)));S.items=S.hist.pop();S.sel=null;onChange([...S.items]);draw();re();}}
+  function doRedo(){if(S.fwd.length){S.hist.push(JSON.parse(JSON.stringify(S.items)));S.items=S.fwd.pop();S.sel=null;onChange([...S.items]);draw();re();}}
+  function doDuplicate(){
+    if(!S.sel) return;
+    saveH();
+    const clone=JSON.parse(JSON.stringify(S.sel));
+    clone.id=Math.random().toString(36).slice(2);
+    clone.x+=24;clone.y+=24;
+    S.items.push(clone);S.sel=clone;
+    onChange([...S.items]);draw();re();
+  }
+
+  // Btn helper — consistent style for action buttons
+  const abtn=(tip,lbl,onClick,extra={})=>(
+    <button title={tip} onClick={onClick}
+      style={{display:'flex',alignItems:'center',justifyContent:'center',minWidth:32,height:30,padding:'0 8px',
+        border:'1px solid var(--bd)',borderRadius:6,background:'var(--sf2)',color:'var(--tx2)',
+        cursor:'pointer',fontSize:12,fontFamily:'inherit',gap:4,...extra}}>
+      {lbl}
+    </button>
+  );
 
   return (
     <div style={{display:'flex',flex:1,minHeight:0,overflow:'hidden',flexDirection:'column'}}>
@@ -2526,8 +2723,8 @@ function BlueprintCanvas({ items: initItems, onChange }) {
         {TB_TOOLS.map(t=>{
           const isActive=tool===t.id;
           const border=isActive?(t.danger?'#ef4444':'#3b82f6'):'var(--bd)';
-          const bg=isActive?(t.danger?'rgba(239,68,68,.12)':t.sel?'#3b82f6':'rgba(59,130,246,.12)'):'var(--sf2)';
-          const color=isActive?(t.danger?'#ef4444':t.sel?'#fff':'#7b93ff'):'var(--tx2)';
+          const bg=isActive?(t.danger?'rgba(239,68,68,.12)':t.sel?'rgba(59,130,246,.2)':'rgba(59,130,246,.12)'):'var(--sf2)';
+          const color=isActive?(t.danger?'#ef4444':'#7b93ff'):'var(--tx2)';
           return (
             <button key={t.id} title={t.tip} onClick={()=>setTool(t.id)}
               style={{position:'relative',display:'flex',alignItems:'center',gap:6,padding:'5px 12px',
@@ -2539,12 +2736,13 @@ function BlueprintCanvas({ items: initItems, onChange }) {
           );
         })}
         <div style={{width:1,height:20,background:'var(--bd)',margin:'0 2px'}}/>
-        <button title="Undo (Ctrl+Z)" onClick={()=>{if(S.hist.length){S.items=S.hist.pop();S.sel=null;onChange([...S.items]);draw();re();}}}
-          style={{display:'flex',alignItems:'center',justifyContent:'center',width:32,height:30,border:'1px solid var(--bd)',borderRadius:6,background:'var(--sf2)',color:'var(--tx2)',cursor:'pointer',fontSize:13}}>↩</button>
-        <button title="Toggle grid" onClick={()=>{S.showGrid=!S.showGrid;draw();}}
-          style={{display:'flex',alignItems:'center',justifyContent:'center',width:32,height:30,border:'1px solid var(--bd)',borderRadius:6,background:'var(--sf2)',color:'var(--tx2)',cursor:'pointer',fontSize:13}}>⊞</button>
-        <button title="Reset zoom / fit" onClick={()=>{S.cam={cx:0,cy:0,s:1};draw();}}
-          style={{display:'flex',alignItems:'center',justifyContent:'center',width:32,height:30,border:'1px solid var(--bd)',borderRadius:6,background:'var(--sf2)',color:'var(--tx2)',cursor:'pointer',fontSize:13}}>⊡</button>
+        {abtn('Undo  [Ctrl+Z]','↩',doUndo)}
+        {abtn('Redo  [Ctrl+Shift+Z]','↪',doRedo)}
+        {abtn('Duplicate selected','⧉',doDuplicate)}
+        {abtn('Relabel clusters A, B, C… (top→bottom, left→right)','A,B,C…',relabelClusters)}
+        <div style={{width:1,height:20,background:'var(--bd)',margin:'0 2px'}}/>
+        {abtn('Toggle grid','⊞',()=>{S.showGrid=!S.showGrid;draw();})}
+        {abtn('Reset zoom','⊡',()=>{S.cam={cx:0,cy:0,s:1};draw();})}
       </div>
 
       {/* Canvas + properties side by side */}
@@ -3324,7 +3522,7 @@ function WorkSuiteApp() {
           )}
           {mod==="hd" && view==="table"    && (
             <main className="content">
-              <HDTableView hd={hd} onCell={(sid,date)=>handleHdSeatClick(sid,date)} currentUser={CURRENT_USER}/>
+              <HDTableView hd={hd} onCell={(sid,date)=>handleHdSeatClick(sid,date)} currentUser={CURRENT_USER} blueprint={selectedBlueprint}/>
             </main>
           )}
           {view==="admin" && (<AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER}/>)}
