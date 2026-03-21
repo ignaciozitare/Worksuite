@@ -1025,7 +1025,7 @@ function BlueprintMiniMap({ blueprint, hd, seatId }) {
     ctx.restore();
   },[blueprint?.id, hd, seatId, theme]);
 
-  return <canvas ref={canvasRef} width={220} height={140} style={{display:'block',width:'100%',borderRadius:6}}/>;
+  return <canvas ref={canvasRef} width={440} height={280} style={{display:'block',width:'100%',borderRadius:6}}/>;
 }
 
 function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser, blueprint }) {
@@ -1054,7 +1054,7 @@ function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser, blueprint }) {
   }, [anchorX, anchorY]);
 
   return (
-    <div ref={ref} className="hd-tooltip" data-theme={theme} style={{ left: pos.left, top: pos.top, width: 240 }}>
+    <div ref={ref} className="hd-tooltip" data-theme={theme} style={{ left: pos.left, top: pos.top, width: 480 }}>
       {/* Header */}
       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
         <span style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:13,
@@ -1889,48 +1889,186 @@ function AdminUsers({ users, setUsers, currentUser }) {
 
 function AdminHotDesk({ hd, setHd, users }) {
   const { t } = useApp();
-  const [selSeat, setSelSeat] = useState(null);
-  const [selUser, setSelUser] = useState("");
-  const [asFixed, setAsFixed] = useState(false);
-  const [yr, sYr] = useState(new Date().getFullYear());
-  const [mo, sMo] = useState(new Date().getMonth());
-  const [selDates, setSelDates] = useState([]);
+  // Building/floor selection for seat map
+  const [buildings,  setBuildings]  = useState([]);
+  const [floors,     setFloors]     = useState([]);
+  const [selBldg,    setSelBldg]    = useState(null);
+  const [selFloor,   setSelFloor]   = useState(null);
+  const [selSeat,    setSelSeat]    = useState(null);
+  const [selUser,    setSelUser]    = useState('');
+  const [asFixed,    setAsFixed]    = useState(false);
+  const [selDates,   setSelDates]   = useState([]);
+  const [yr, sYr]  = useState(new Date().getFullYear());
+  const [mo, sMo]  = useState(new Date().getMonth());
+
   const hotdeskUsers = users.filter(u => u.deskType===DeskType.HOTDESK || u.deskType===DeskType.FIXED);
+  const CELL=52,PAD=14,LH=18;
+
+  // Load buildings
+  useEffect(()=>{
+    supabase.from('buildings').select('*').eq('active',true).order('name')
+      .then(({data})=>{if(data){setBuildings(data);if(data[0])setSelBldg(data[0]);}});
+  },[]);
+
+  // Load floors when building changes
+  useEffect(()=>{
+    if(!selBldg){setFloors([]);setSelFloor(null);return;}
+    supabase.from('blueprints').select('id,floor_name,floor_order,layout')
+      .eq('building_id',selBldg.id).order('floor_order')
+      .then(({data})=>{if(data){setFloors(data);setSelFloor(data[0]||null);}});
+  },[selBldg?.id]);
+
+  // Get seats from selected blueprint
+  function getSeatsForItem(item) {
+    if(item.shape==='circle'){
+      const{x,y,w,h}=item,cx=x+w/2,cy=y+h/2,R=Math.min(w,h)/2-PAD-CELL/2;
+      const n=Math.max(1,Math.floor(2*Math.PI*Math.max(R,1)/(CELL+8)));
+      const pfx=((item.prefix||item.label||'A').replace(/\s/g,'').slice(0,3)||'A').toUpperCase();
+      return Array.from({length:n},(_,i)=>{const a=(i/n)*2*Math.PI-Math.PI/2;return{id:pfx+(i+1)};});
+    }
+    const{x,y,w,h}=item,cols=Math.max(1,Math.floor((w-PAD*2)/CELL)),rows=Math.max(1,Math.floor((h-PAD*2-LH)/CELL));
+    const pfx=((item.prefix||item.label||'A').replace(/\s/g,'').slice(0,3)||'A').toUpperCase();
+    let n=1;return Array.from({length:cols*rows},()=>{const s={id:pfx+n};n++;return s;});
+  }
+
+  const seats = useMemo(()=>{
+    const items=(() => { try { return Array.isArray(selFloor?.layout)?selFloor.layout:[]; } catch { return []; }})();
+    if(!items.length) return SEATS.map(s=>({...s}));
+    const result=[];
+    items.forEach(item=>{
+      if(item.type!=='desk'&&item.type!=='circle') return;
+      const dis=item.disabled||[];
+      getSeatsForItem(item).forEach(s=>{ if(!dis.includes(s.id)) result.push(s); });
+    });
+    return result;
+  },[selFloor?.id]);
+
   const confirmAssign = () => {
     if (!selSeat || !selUser) return;
     if (asFixed) {
       const usr = users.find(u=>u.id===selUser);
       setHd(h=>({ ...h, fixed:{ ...h.fixed, [selSeat]:usr?.name||selUser }, reservations:h.reservations.filter(r=>r.seatId!==selSeat) }));
+      // Persist to Supabase
+      supabase.from('fixed_assignments').upsert({seat_id:selSeat,user_id:selUser,user_name:usr?.name||selUser}).then(({error})=>{if(error)console.error(error);});
     } else {
       if (!selDates.length) return;
       const usr = users.find(u=>u.id===selUser);
       setHd(h=>({ ...h, reservations:[ ...h.reservations.filter(r=>!selDates.includes(r.date)||r.seatId!==selSeat), ...selDates.map(date=>({seatId:selSeat,date,userId:selUser,userName:usr?.name||selUser})) ]}));
+      const rows=selDates.map(d=>({id:`res-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,seat_id:selSeat,user_id:selUser,user_name:usr?.name||selUser,date:d}));
+      supabase.from('seat_reservations').upsert(rows,{onConflict:'seat_id,date'}).then(({error})=>{if(error)console.error(error);});
     }
-    setSelSeat(null); setSelUser(""); setSelDates([]); setAsFixed(false);
+    setSelSeat(null); setSelUser(''); setSelDates([]); setAsFixed(false);
   };
-  const removeFixed = sid => setHd(h=>{ const f={...h.fixed}; delete f[sid]; return {...h,fixed:f}; });
+  const removeFixed = async (sid) => {
+    setHd(h=>{ const f={...h.fixed}; delete f[sid]; return {...h,fixed:f}; });
+    await supabase.from('fixed_assignments').delete().eq('seat_id',sid);
+  };
   const occupiedForSeat = selSeat ? hd.reservations.filter(r=>r.seatId===selSeat).map(r=>r.date) : [];
+
   return (
-    <div>
-      <div className="sec-t">{t("hotdeskTitle")}</div>
-      <div className="sec-sub">Manage seat assignments and fixed allocations for your team.</div>
-      <div style={{display:"grid",gridTemplateColumns:"minmax(200px,280px) 1fr",gap:20,alignItems:"start"}}>
-        <div>
-          <div style={{fontSize:9,fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"var(--tx3)",marginBottom:10}}>SELECT SEAT</div>
-          <div className="seat-grid">{SEATS.map(seat=>{const st=ReservationService.statusOf(seat.id,MOCK_TODAY,hd.fixed,hd.reservations);const isSel=selSeat===seat.id;return(<button key={seat.id} className={`seat-btn ${isSel?"sel":st===SeatStatus.FIXED?"is-fixed":st===SeatStatus.OCCUPIED?"is-occ":""}`} onClick={()=>{setSelSeat(seat.id);setSelDates([]);setSelUser("");setAsFixed(false);}}>{seat.id}{hd.fixed[seat.id]&&<div style={{fontSize:9,color:"var(--red)",marginTop:2}}>{hd.fixed[seat.id].split(" ")[0]}</div>}</button>);})}</div>
-          {Object.keys(hd.fixed).length>0&&(<div><div style={{fontSize:9,fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"var(--tx3)",marginBottom:8}}>{t("fixedSeats")}</div>{Object.entries(hd.fixed).map(([sid,uname])=>(<div key={sid} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",background:"var(--sf2)",border:"1px solid rgba(224,82,82,.2)",borderRadius:"var(--r)",marginBottom:4}}><span style={{fontFamily:"var(--mono)",color:"var(--red)",fontWeight:700,fontSize:12,minWidth:32}}>{sid}</span><span style={{flex:1,fontSize:12,color:"var(--tx2)"}}>{uname}</span><button onClick={()=>removeFixed(sid)} style={{background:"none",border:"none",color:"var(--tx3)",cursor:"pointer",fontSize:13,padding:"2px 4px",borderRadius:3}}>×</button></div>))}</div>)}
+    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+      <div>
+        <div className="sec-t">{t('hotdeskTitle')}</div>
+        <div className="sec-sub">Manage seat assignments and fixed allocations. Select building and floor to see seats.</div>
+      </div>
+
+      {/* Building + Floor selectors */}
+      {buildings.length > 0 && (
+        <div style={{display:'flex',gap:10,alignItems:'center'}}>
+          <select className="a-inp" style={{width:'auto',fontSize:12,padding:'5px 10px'}}
+            value={selBldg?.id||''} onChange={e=>{const b=buildings.find(x=>x.id===e.target.value);setSelBldg(b||null);}}>
+            {buildings.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
+          <select className="a-inp" style={{width:'auto',fontSize:12,padding:'5px 10px'}}
+            value={selFloor?.id||''} onChange={e=>{const fl=floors.find(x=>x.id===e.target.value);setSelFloor(fl||null);}}>
+            {floors.map(fl=><option key={fl.id} value={fl.id}>{fl.floor_name}</option>)}
+          </select>
+          {selFloor && <span style={{fontSize:11,color:'var(--tx3)'}}>{seats.length} seats</span>}
         </div>
+      )}
+      {buildings.length === 0 && (
+        <div style={{fontSize:12,color:'var(--tx3)'}}>No buildings configured. Create one in Admin → Blueprint.</div>
+      )}
+
+      <div style={{display:'grid',gridTemplateColumns:'minmax(200px,320px) 1fr',gap:20,alignItems:'start'}}>
+        <div>
+          {/* Seat grid from blueprint */}
+          <div style={{fontSize:9,fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:10}}>SELECT SEAT</div>
+          {seats.length === 0 && <div style={{fontSize:12,color:'var(--tx3)',marginBottom:12}}>Select a floor with seats to manage.</div>}
+          <div className="seat-grid" style={{gridTemplateColumns:'repeat(auto-fill,minmax(52px,1fr))'}}>
+            {seats.map(seat=>{
+              const st=ReservationService.statusOf(seat.id,MOCK_TODAY,hd.fixed,hd.reservations);
+              const isSel=selSeat===seat.id;
+              return(
+                <button key={seat.id} className={`seat-btn ${isSel?'sel':st===SeatStatus.FIXED?'is-fixed':st===SeatStatus.OCCUPIED?'is-occ':''}`}
+                  onClick={()=>{setSelSeat(seat.id);setSelDates([]);setSelUser('');setAsFixed(false);}}>
+                  {seat.id}
+                  {hd.fixed[seat.id]&&<div style={{fontSize:8,color:'var(--red)',marginTop:1,lineHeight:1}}>{hd.fixed[seat.id].split(' ')[0].slice(0,5)}</div>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Fixed seats list */}
+          {Object.keys(hd.fixed).length>0&&(
+            <div style={{marginTop:16}}>
+              <div style={{fontSize:9,fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:8}}>{t('fixedSeats')}</div>
+              {Object.entries(hd.fixed).map(([sid,uname])=>(
+                <div key={sid} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 10px',background:'var(--sf2)',border:'1px solid rgba(224,82,82,.2)',borderRadius:'var(--r)',marginBottom:4}}>
+                  <span style={{fontFamily:'var(--mono)',color:'var(--red)',fontWeight:700,fontSize:12,minWidth:32}}>{sid}</span>
+                  <span style={{flex:1,fontSize:12,color:'var(--tx2)'}}>{uname}</span>
+                  <button onClick={()=>removeFixed(sid)} title="Release fixed seat"
+                    style={{background:'none',border:'none',color:'var(--tx3)',cursor:'pointer',fontSize:13,padding:'2px 4px',borderRadius:3}}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Right panel: assign */}
         {selSeat ? (
           <div className="a-card" style={{marginBottom:0}}>
-            <div className="a-ct">🪑 {t("assignSeat")} — <span style={{color:"var(--ac2)",fontFamily:"var(--mono)"}}>{selSeat}</span></div>
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <div><div className="a-lbl" style={{marginBottom:6}}>{t("assignTo")}</div><select className="a-inp" value={selUser} onChange={e=>setSelUser(e.target.value)} style={{cursor:"pointer"}}><option value="">— Select user —</option>{hotdeskUsers.map(u=><option key={u.id} value={u.id}>{u.name} ({u.deskType})</option>)}</select></div>
-              <div onClick={()=>setAsFixed(f=>!f)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"var(--sf2)",borderRadius:"var(--r)",border:`1px solid ${asFixed?"rgba(224,82,82,.3)":"var(--bd)"}`,cursor:"pointer"}}><div style={{width:16,height:16,borderRadius:3,background:asFixed?"var(--red)":"transparent",border:`2px solid ${asFixed?"var(--red)":"var(--bd2)"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{asFixed&&<span style={{color:"#fff",fontSize:10,fontWeight:700}}>✓</span>}</div><div><div style={{fontSize:12,color:asFixed?"var(--red)":"var(--tx2)",fontWeight:asFixed?600:400}}>📌 {t("asFixed")}</div><div style={{fontSize:10,color:"var(--tx3)",marginTop:1}}>{t("asFixedHint")}</div></div></div>
-              {!asFixed&&(<div><div className="a-lbl" style={{marginBottom:8}}>{t("hdSelectDates")}</div><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}><button className="n-arr" onClick={()=>mo===0?(sMo(11),sYr(y=>y-1)):sMo(m=>m-1)}>‹</button><span style={{fontSize:12,fontWeight:600,color:"var(--ac2)"}}>{fmtMonthYear(yr,mo,"en")}</span><button className="n-arr" onClick={()=>mo===11?(sMo(0),sYr(y=>y+1)):sMo(m=>m+1)}>›</button></div><MiniCalendar year={yr} month={mo} selectedDates={selDates} onToggleDate={d=>setSelDates(p=>p.includes(d)?p.filter(x=>x!==d):[...p,d])} occupiedDates={occupiedForSeat}/>{selDates.length>0&&<div style={{fontSize:10,color:"var(--green)",marginTop:8}}>{selDates.length} date{selDates.length!==1?"s":""} selected</div>}</div>)}
-              <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}><button className="b-cancel" onClick={()=>{setSelSeat(null);setSelUser("");setSelDates([]);}}>{t("cancel")}</button><button className="b-sub" onClick={confirmAssign} disabled={!selUser||((!asFixed)&&selDates.length===0)}>{asFixed?"📌 "+t("confirmAssign"):t("confirmAssign")+" ("+selDates.length+")"}</button></div>
+            <div className="a-ct">🪑 {t('assignSeat')} — <span style={{color:'var(--ac2)',fontFamily:'var(--mono)'}}>{selSeat}</span></div>
+            <div style={{display:'flex',flexDirection:'column',gap:12}}>
+              <div>
+                <div className="a-lbl" style={{marginBottom:6}}>{t('assignTo')}</div>
+                <select className="a-inp" value={selUser} onChange={e=>setSelUser(e.target.value)} style={{cursor:'pointer'}}>
+                  <option value="">— Select user —</option>
+                  {hotdeskUsers.map(u=><option key={u.id} value={u.id}>{u.name} ({u.deskType})</option>)}
+                </select>
+              </div>
+              <div onClick={()=>setAsFixed(f=>!f)} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:'var(--sf2)',borderRadius:'var(--r)',border:`1px solid ${asFixed?'rgba(224,82,82,.3)':'var(--bd)'}`,cursor:'pointer'}}>
+                <div style={{width:16,height:16,borderRadius:3,background:asFixed?'var(--red)':'transparent',border:`2px solid ${asFixed?'var(--red)':'var(--bd2)'}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  {asFixed&&<span style={{color:'#fff',fontSize:10,fontWeight:700}}>✓</span>}
+                </div>
+                <div>
+                  <div style={{fontSize:12,color:asFixed?'var(--red)':'var(--tx2)',fontWeight:asFixed?600:400}}>📌 {t('asFixed')}</div>
+                  <div style={{fontSize:10,color:'var(--tx3)',marginTop:1}}>{t('asFixedHint')}</div>
+                </div>
+              </div>
+              {!asFixed&&(
+                <div>
+                  <div className="a-lbl" style={{marginBottom:8}}>{t('hdSelectDates')}</div>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+                    <button className="n-arr" onClick={()=>mo===0?(sMo(11),sYr(y=>y-1)):sMo(m=>m-1)}>‹</button>
+                    <span style={{fontSize:12,fontWeight:600,color:'var(--ac2)'}}>{fmtMonthYear(yr,mo,'en')}</span>
+                    <button className="n-arr" onClick={()=>mo===11?(sMo(0),sYr(y=>y+1)):sMo(m=>m+1)}>›</button>
+                  </div>
+                  <MiniCalendar year={yr} month={mo} selectedDates={selDates} onToggleDate={d=>setSelDates(p=>p.includes(d)?p.filter(x=>x!==d):[...p,d])} occupiedDates={occupiedForSeat}/>
+                  {selDates.length>0&&<div style={{fontSize:10,color:'var(--green)',marginTop:8}}>{selDates.length} date{selDates.length!==1?'s':''} selected</div>}
+                </div>
+              )}
+              <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+                <button className="b-cancel" onClick={()=>{setSelSeat(null);setSelUser('');setSelDates([]);}}>{t('cancel')}</button>
+                <button className="b-sub" onClick={confirmAssign} disabled={!selUser||(!asFixed&&selDates.length===0)}>
+                  {asFixed?'📌 '+t('confirmAssign'):t('confirmAssign')+' ('+selDates.length+')'}
+                </button>
+              </div>
             </div>
           </div>
-        ) : (<div style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:"var(--r2)",padding:32,display:"flex",alignItems:"center",justifyContent:"center",color:"var(--tx3)",fontSize:13,minHeight:200}}>← {t("selectSeat")}</div>)}
+        ) : (
+          <div style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:'var(--r2)',padding:32,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:13,minHeight:200}}>← {t('selectSeat')}</div>
+        )}
       </div>
     </div>
   );
@@ -2076,12 +2214,10 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint }) {
       ctx.fillStyle=fc;ctx.strokeStyle=sc;ctx.lineWidth=isHov?2:1;
       rr(x,y,w,h,5);ctx.fill();ctx.stroke();
       if(!isOcc&&!isHov){ctx.fillStyle='rgba(255,255,255,.02)';ctx.strokeStyle=sc+'33';ctx.lineWidth=.4;rr(x+3,y+3,w-6,h-6,3);ctx.fill();ctx.stroke();}
-      ctx.fillStyle=tc;ctx.font='bold 9px var(--font-mono,monospace)';
+      // Only show seat ID — color conveys status
+      ctx.fillStyle=tc;ctx.font='bold 9px monospace';
       ctx.textAlign='center';ctx.textBaseline='middle';
-      const lbl=isFixed?(hd.fixed[id]||id).split(' ')[0].slice(0,8):res?.userName?res.userName.split(' ')[0].slice(0,8):id;
-      const showName=isFixed||res;
-      ctx.fillText(showName?id:id,x+w/2,y+h/2+(showName?-6:0));
-      if(showName){ctx.fillStyle=tc;ctx.font='7px var(--font-sans,sans-serif)';ctx.fillText(lbl,x+w/2,y+h/2+7);}
+      ctx.fillText(id,x+w/2,y+h/2);
     });
 
     ctx.restore();
@@ -2706,12 +2842,14 @@ function BlueprintCanvas({ items: initItems, onChange }) {
     onChange([...S.items]);draw();re();
   }
 
-  // Btn helper — consistent style for action buttons
+  // Btn helper — uses title attr (native tooltip works in all major browsers)
   const abtn=(tip,lbl,onClick,extra={})=>(
-    <button title={tip} onClick={onClick}
+    <button
+      title={tip}
+      onClick={onClick}
       style={{display:'flex',alignItems:'center',justifyContent:'center',minWidth:32,height:30,padding:'0 8px',
         border:'1px solid var(--bd)',borderRadius:6,background:'var(--sf2)',color:'var(--tx2)',
-        cursor:'pointer',fontSize:12,fontFamily:'inherit',gap:4,...extra}}>
+        cursor:'pointer',fontSize:12,fontFamily:'inherit',gap:4,position:'relative',...extra}}>
       {lbl}
     </button>
   );
@@ -3106,7 +3244,7 @@ tr.hd-row-today > td.hd-td{background:rgba(79,110,247,.05) !important;}
 .hd-cell-dot.fx{background:var(--seat-fixed);}
 .hd-cell-dot.mine{background:var(--amber);}
 .hd-cell-name{margin-left:6px;font-size:9px;line-height:1;color:var(--tx2);max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.hd-tooltip{position:fixed;z-index:9900;background:var(--sf);border:1px solid var(--bd2);border-radius:var(--r2);padding:12px;box-shadow:var(--shadow);width:280px;pointer-events:none;animation:mbIn .15s ease;}
+.hd-tooltip{position:fixed;z-index:9900;background:var(--sf);border:1px solid var(--bd2);border-radius:var(--r2);padding:12px;box-shadow:var(--shadow);width:480px;pointer-events:none;animation:mbIn .15s ease;}
 .hd-tooltip-title{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);margin-bottom:8px;}
 .seat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;}
 .seat-btn{background:var(--sf2);border:2px solid var(--bd);border-radius:var(--r2);padding:10px 4px;cursor:pointer;color:var(--tx2);font-size:12px;font-weight:500;text-align:center;line-height:1.4;transition:var(--ease);}
@@ -3502,7 +3640,7 @@ function WorkSuiteApp() {
               />
             </>
           )}
-          {isAdmin&&(<><div className="n-sep"/><button className={`n-btn ${view==="admin"?"active":""}`} onClick={()=>setView("admin")}>⚙ {t("navAdmin")}</button></>)}
+
         </nav>
 
         <div className="body">
