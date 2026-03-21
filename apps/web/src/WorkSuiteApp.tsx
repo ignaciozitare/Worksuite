@@ -1800,8 +1800,8 @@ function AddUserModal({ existingUsers, onClose, onSave }) {
                 <div className="fr"><label className="fl">{t("fieldEmail")}</label><input className={`mi ${er.email?"err":""}`} type="email" placeholder="john@co.com" value={email} onChange={e=>{setEmail(e.target.value);setEr(v=>({...v,email:null}));}}/>{er.email&&<span className="em">{er.email}</span>}</div>
                 <div className="fr"><label className="fl">{t("fieldRole")}</label><select className="mi" value={role} onChange={e=>setRole(e.target.value)}><option value="user">{t("roleUser")}</option><option value="admin">{t("roleAdmin")}</option></select></div>
               </div>
-              <div className="fr"><label className="fl">{t("fieldPassword")}</label><div style={{display:"flex",gap:6}}><input className={`mi ${er.pwd?"err":""}`} type={show?"text":"password"} placeholder="········" style={{flex:1}} value={pwd} onChange={e=>{setPwd(e.target.value);setEr(v=>({...v,pwd:null}));}}/><button className="btn-g" onClick={()=>setShow(s=>!s)} style={{flexShrink:0,padding:"0 10px"}}>{show?"🙈":"👁"}</button></div><PasswordStrength password={pwd}/>{er.pwd&&<span className="em">{er.pwd}</span>}</div>
-              <div className="fr"><label className="fl">{t("fieldConfirm")}</label><input className={`mi ${er.conf?"err":""}`} type={show?"text":"password"} placeholder="········" value={conf} onChange={e=>{setConf(e.target.value);setEr(v=>({...v,conf:null}));}}/>{er.conf&&<span className="em">{er.conf}</span>}</div>
+              <div className="fr"><label className="fl">{t("fieldPassword")}</label><div style={{display:"flex",gap:6}}><input className={`mi ${er.pwd?"err":""}`} type={show?"text":"password"} placeholder="········" autoComplete="new-password" style={{flex:1}} value={pwd} onChange={e=>{setPwd(e.target.value);setEr(v=>({...v,pwd:null}));}}/><button className="btn-g" onClick={()=>setShow(s=>!s)} style={{flexShrink:0,padding:"0 10px"}}>{show?"🙈":"👁"}</button></div><PasswordStrength password={pwd}/>{er.pwd&&<span className="em">{er.pwd}</span>}</div>
+              <div className="fr"><label className="fl">{t("fieldConfirm")}</label><input className={`mi ${er.conf?"err":""}`} type={show?"text":"password"} placeholder="········" autoComplete="new-password" value={conf} onChange={e=>{setConf(e.target.value);setEr(v=>({...v,conf:null}));}}/>{er.conf&&<span className="em">{er.conf}</span>}</div>
             </div>
             <div className="mf"><button className="b-cancel" onClick={onClose}>{t("cancel")}</button><button className="b-sub" onClick={submit}>{t("saveUser")}</button></div>
           </>
@@ -1831,7 +1831,7 @@ function ChangePasswordModal({ user, onClose }) {
               <div><div style={{fontWeight:600}}>{user.name}</div><div style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--tx3)"}}>{user.email}</div></div>
             </div>
             <div className="fr"><label className="fl">{t("newPassword")}</label><div style={{display:"flex",gap:6}}><input className={`mi ${er.pwd?"err":""}`} type={show?"text":"password"} placeholder="········" style={{flex:1}} autoFocus value={pwd} onChange={e=>{setPwd(e.target.value);setEr(v=>({...v,pwd:null}));}}/><button className="btn-g" onClick={()=>setShow(s=>!s)} style={{flexShrink:0,padding:"0 10px"}}>{show?"🙈":"👁"}</button></div><PasswordStrength password={pwd}/>{er.pwd&&<span className="em">{er.pwd}</span>}</div>
-            <div className="fr"><label className="fl">{t("confirmPassword")}</label><input className={`mi ${er.conf?"err":""}`} type={show?"text":"password"} placeholder="········" value={conf} onChange={e=>{setConf(e.target.value);setEr(v=>({...v,conf:null}));}}/>{er.conf&&<span className="em">{er.conf}</span>}</div>
+            <div className="fr"><label className="fl">{t("confirmPassword")}</label><input className={`mi ${er.conf?"err":""}`} type={show?"text":"password"} placeholder="········" autoComplete="new-password" value={conf} onChange={e=>{setConf(e.target.value);setEr(v=>({...v,conf:null}));}}/>{er.conf&&<span className="em">{er.conf}</span>}</div>
           </div><div className="mf"><button className="b-cancel" onClick={onClose}>{t("cancel")}</button><button className="b-sub" onClick={submit}>{t("updatePassword")}</button></div></>
         )}
       </div>
@@ -3350,7 +3350,7 @@ function AdminRoles() {
             <input className="a-inp" defaultValue={selRole.description}
               onBlur={e=>saveDescription(e.target.value)}
               placeholder="Role description"
-              disabled={selRole.is_system}
+              disabled={selRole.name==='admin'}
               style={{fontSize:12,padding:'5px 8px',width:'100%',maxWidth:380}}/>
           </div>
 
@@ -3363,11 +3363,11 @@ function AdminRoles() {
               {ALL_MODULES.map(mod=>{
                 const on=(selRole.permissions.modules||[]).includes(mod.id);
                 return (
-                  <div key={mod.id} onClick={()=>!selRole.is_system&&toggleModule(mod.id)}
+                  <div key={mod.id} onClick={()=>selRole.name!=='admin'&&toggleModule(mod.id)}
                     style={{display:'flex',alignItems:'center',gap:8,padding:'8px 14px',
                       border:`1px solid ${on?'var(--ac)':'var(--bd)'}`,borderRadius:'var(--r2)',
                       background:on?'var(--glow)':'var(--sf2)',
-                      cursor:selRole.is_system?'default':'pointer',opacity:selRole.is_system?.7:1,transition:'var(--ease)'}}>
+                      cursor:selRole.name==='admin'?'default':'pointer',opacity:selRole.name==='admin'?.6:1,transition:'var(--ease)'}}>
                     <div style={{width:14,height:14,borderRadius:3,background:on?'var(--ac)':'transparent',
                       border:`2px solid ${on?'var(--ac)':'var(--bd2)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff'}}>
                       {on&&'✓'}
@@ -3389,11 +3389,11 @@ function AdminRoles() {
               {ALL_ADMIN_PERMS.map(perm=>{
                 const on=selRole.permissions.admin?.[perm.id]||false;
                 return (
-                  <div key={perm.id} onClick={()=>!selRole.is_system&&toggleAdmin(perm.id)}
+                  <div key={perm.id} onClick={()=>selRole.name!=='admin'&&toggleAdmin(perm.id)}
                     style={{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',
                       border:`1px solid ${on?'rgba(79,110,247,.3)':'var(--bd)'}`,borderRadius:'var(--r)',
                       background:on?'rgba(79,110,247,.05)':'var(--sf2)',
-                      cursor:selRole.is_system?'default':'pointer',transition:'var(--ease)'}}>
+                      cursor:selRole.name==='admin'?'default':'pointer',transition:'var(--ease)'}}>
                     <div style={{width:18,height:18,borderRadius:4,background:on?'var(--ac)':'transparent',
                       border:`2px solid ${on?'var(--ac)':'var(--bd2)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#fff',flexShrink:0}}>
                       {on&&'✓'}
@@ -3408,9 +3408,9 @@ function AdminRoles() {
             </div>
           </div>
 
-          {selRole.is_system&&(
+          {selRole.name==='admin'&&(
             <div style={{marginTop:16,fontSize:11,color:'var(--tx3)',padding:'8px 12px',background:'var(--sf2)',borderRadius:'var(--r)',border:'1px solid var(--bd)'}}>
-              ⚠ System roles cannot be edited.
+              🔒 The <strong>admin</strong> role has full access and cannot be modified.
             </div>
           )}
         </div>
@@ -3433,10 +3433,10 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   if (!isAdmin) {
     return (
       <div className="admin-content" style={{maxWidth:600}}>
-        <div className="sec-t">Mi configuración</div>
-        <div className="sec-sub">Configura tu token personal de Jira para que tus imputaciones aparezcan con tu nombre.</div>
+        <div className="sec-t">Jira personal configuration</div>
+        <div className="sec-sub">Set your personal Jira API token so your time logs appear under your name in Jira.</div>
         <div className="a-card">
-          <div className="a-ct">🔑 Mi token personal de Jira</div>
+          <div className="a-ct">🔑 Personal Jira API token</div>
           <PersonalJiraToken />
         </div>
       </div>
