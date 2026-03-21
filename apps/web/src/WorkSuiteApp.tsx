@@ -1784,6 +1784,575 @@ function AdminHotDesk({ hd, setHd, users }) {
   );
 }
 
+
+// ══════════════════════════════════════════════════════════════════
+// BLUEPRINT EDITOR — Admin module
+// ══════════════════════════════════════════════════════════════════
+
+function AdminBlueprint() {
+  const [buildings, setBuildings]   = useState([]);
+  const [selBldg,   setSelBldg]     = useState(null); // {id,name,address}
+  const [floors,    setFloors]      = useState([]);   // blueprints rows
+  const [selFloor,  setSelFloor]    = useState(null);
+  const [saving,    setSaving]      = useState(false);
+  const [msg,       setMsg]         = useState('');
+  const [showEdit,  setShowEdit]    = useState(false); // building form
+  const [bForm,     setBForm]       = useState({name:'',address:''});
+  const [editorKey, setEditorKey]   = useState(0);    // force re-mount editor
+
+  // Load buildings
+  useEffect(() => {
+    supabase.from('buildings').select('*').eq('active',true).order('name')
+      .then(({data})=>{ if(data) setBuildings(data); });
+  }, []);
+
+  // Load floors when building selected
+  useEffect(() => {
+    if(!selBldg){setFloors([]);setSelFloor(null);return;}
+    supabase.from('blueprints').select('id,floor_name,floor_order,layout')
+      .eq('building_id',selBldg.id).order('floor_order')
+      .then(({data})=>{ if(data){setFloors(data);setSelFloor(data[0]||null);} });
+  }, [selBldg?.id]);
+
+  const saveBuilding = async () => {
+    if(!bForm.name.trim()) return;
+    setSaving(true);
+    const {data,error} = await supabase.from('buildings')
+      .insert({name:bForm.name.trim(),address:bForm.address.trim()||null})
+      .select().single();
+    if(!error&&data){
+      setBuildings(b=>[...b,data]);
+      setSelBldg(data);
+      setBForm({name:'',address:''});
+      setShowEdit(false);
+      setMsg('Building created');setTimeout(()=>setMsg(''),3000);
+    }
+    setSaving(false);
+  };
+
+  const addFloor = async () => {
+    if(!selBldg) return;
+    const name = prompt('Floor name:', 'Floor '+(floors.length+1));
+    if(!name) return;
+    const{data,error}=await supabase.from('blueprints').insert({
+      building_id:selBldg.id, floor_name:name, floor_order:floors.length, layout:[]
+    }).select().single();
+    if(!error&&data){setFloors(f=>[...f,data]);setSelFloor(data);}
+  };
+
+  const deleteFloor = async (id) => {
+    if(!confirm('Delete this floor and its layout?')) return;
+    await supabase.from('blueprints').delete().eq('id',id);
+    const next = floors.filter(f=>f.id!==id);
+    setFloors(next);
+    setSelFloor(next[0]||null);
+  };
+
+  const renameFloor = async (id, name) => {
+    if(!name.trim()) return;
+    await supabase.from('blueprints').update({floor_name:name}).eq('id',id);
+    setFloors(f=>f.map(fl=>fl.id===id?{...fl,floor_name:name}:fl));
+  };
+
+  const saveLayout = async (layout) => {
+    if(!selFloor) return;
+    setSaving(true);
+    const{error}=await supabase.from('blueprints')
+      .update({layout,updated_at:new Date().toISOString()}).eq('id',selFloor.id);
+    if(!error){setMsg('✓ Blueprint saved');setTimeout(()=>setMsg(''),3000);}
+    else setMsg('Error: '+error.message);
+    setSaving(false);
+  };
+
+  return (
+    <div style={{display:'flex',gap:0,height:'100%',flex:1,minHeight:0}}>
+      {/* Left: building/floor list */}
+      <div style={{width:220,borderRight:'1px solid var(--bd)',display:'flex',flexDirection:'column',background:'var(--sf)',overflow:'hidden'}}>
+        <div style={{padding:'10px 12px',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <span style={{fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--tx3)'}}>Buildings</span>
+          <button className="btn-g" onClick={()=>setShowEdit(s=>!s)} style={{fontSize:10,padding:'2px 8px'}}>+ Add</button>
+        </div>
+
+        {showEdit && (
+          <div style={{padding:'10px 12px',borderBottom:'1px solid var(--bd)',display:'flex',flexDirection:'column',gap:7,background:'var(--sf2)'}}>
+            <input className="a-inp" placeholder="Building name *" value={bForm.name} onChange={e=>setBForm(b=>({...b,name:e.target.value}))}/>
+            <input className="a-inp" placeholder="Address (optional)" value={bForm.address} onChange={e=>setBForm(b=>({...b,address:e.target.value}))}/>
+            <div style={{display:'flex',gap:6}}>
+              <button className="b-cancel" style={{flex:1,padding:'5px'}} onClick={()=>setShowEdit(false)}>Cancel</button>
+              <button className="b-sub" style={{flex:1,padding:'5px'}} onClick={saveBuilding} disabled={saving}>Save</button>
+            </div>
+          </div>
+        )}
+
+        {/* Building list */}
+        <div style={{flex:1,overflowY:'auto'}}>
+          {buildings.length===0 && <div style={{padding:'16px 12px',fontSize:11,color:'var(--tx3)'}}>No buildings yet</div>}
+          {buildings.map(b=>(
+            <div key={b.id}
+              onClick={()=>setSelBldg(b)}
+              style={{padding:'8px 12px',cursor:'pointer',borderBottom:'1px solid var(--bd)',
+                background:selBldg?.id===b.id?'var(--glow)':'transparent',
+                borderLeft:selBldg?.id===b.id?'2px solid var(--ac)':'2px solid transparent'}}>
+              <div style={{fontWeight:500,fontSize:12,color:selBldg?.id===b.id?'var(--ac2)':'var(--tx)'}}>{b.name}</div>
+              {b.address&&<div style={{fontSize:10,color:'var(--tx3)',marginTop:1}}>{b.address}</div>}
+            </div>
+          ))}
+        </div>
+
+        {/* Floor list for selected building */}
+        {selBldg && (
+          <>
+            <div style={{padding:'8px 12px',borderTop:'1px solid var(--bd)',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'space-between',background:'var(--sf2)'}}>
+              <span style={{fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--tx3)'}}>Floors</span>
+              <button className="btn-g" onClick={addFloor} style={{fontSize:10,padding:'2px 8px'}}>+ Add</button>
+            </div>
+            <div style={{overflowY:'auto',maxHeight:200}}>
+              {floors.map(fl=>(
+                <div key={fl.id}
+                  onClick={()=>{setSelFloor(fl);setEditorKey(k=>k+1);}}
+                  style={{padding:'6px 12px',cursor:'pointer',borderBottom:'1px solid var(--bd)',
+                    display:'flex',alignItems:'center',gap:6,
+                    background:selFloor?.id===fl.id?'rgba(79,110,247,.06)':'transparent'}}>
+                  <span style={{flex:1,fontSize:11,color:selFloor?.id===fl.id?'var(--ac2)':'var(--tx2)'}}>{fl.floor_name}</span>
+                  <button onClick={e=>{e.stopPropagation();const n=prompt('Rename:',fl.floor_name);if(n)renameFloor(fl.id,n);}}
+                    style={{background:'none',border:'none',cursor:'pointer',fontSize:10,color:'var(--tx3)',padding:'1px 3px'}}>✎</button>
+                  <button onClick={e=>{e.stopPropagation();deleteFloor(fl.id);}}
+                    style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'var(--tx3)',padding:'1px 3px'}}>×</button>
+                </div>
+              ))}
+              {floors.length===0&&<div style={{padding:'10px 12px',fontSize:11,color:'var(--tx3)'}}>No floors yet</div>}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Right: editor */}
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        {!selBldg || !selFloor ? (
+          <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:13}}>
+            {buildings.length===0?'Create a building first':'Select a building and floor to edit its blueprint'}
+          </div>
+        ) : (
+          <BlueprintEditorPanel key={editorKey+'-'+selFloor.id}
+            floor={selFloor}
+            onSave={saveLayout}
+            saving={saving}
+            msg={msg}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Blueprint editor panel (wraps the canvas editor) ─────────────
+function BlueprintEditorPanel({ floor, onSave, saving, msg }) {
+  const [items, setItems] = useState(() => {
+    try { return Array.isArray(floor.layout) ? floor.layout : []; } catch { return []; }
+  });
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div style={{padding:'6px 12px',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',gap:10,background:'var(--sf)',flexShrink:0}}>
+        <span style={{fontWeight:600,fontSize:13,color:'var(--tx)'}}>{floor.floor_name}</span>
+        <span style={{fontSize:11,color:'var(--tx3)',marginLeft:'auto'}}>{items.filter(i=>i.type==='desk'||i.type==='circle').length} clusters</span>
+        {msg&&<span style={{fontSize:11,color:'var(--green)'}}>{msg}</span>}
+        <button className="btn-p" style={{padding:'5px 14px',width:'auto'}} onClick={()=>onSave(items)} disabled={saving}>
+          {saving?'Saving…':'💾 Save blueprint'}
+        </button>
+      </div>
+      <BlueprintCanvas items={items} onChange={setItems}/>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// BUILDING SELECTOR — shown in HotDesk before map
+// ─────────────────────────────────────────────────────────────────
+function BuildingSelector({ onSelect }) {
+  const [buildings, setBuildings] = useState([]);
+  const [floors,    setFloors]    = useState([]);
+  const [selB,      setSelB]      = useState(null);
+  const [loading,   setLoading]   = useState(true);
+
+  useEffect(() => {
+    supabase.from('buildings').select('*').eq('active',true).order('name')
+      .then(({data})=>{ if(data)setBuildings(data); setLoading(false); });
+  }, []);
+
+  useEffect(() => {
+    if(!selB){setFloors([]);return;}
+    supabase.from('blueprints').select('id,floor_name,floor_order,layout')
+      .eq('building_id',selB.id).order('floor_order')
+      .then(({data})=>{ if(data)setFloors(data); });
+  }, [selB?.id]);
+
+  if(loading) return <div style={{padding:32,color:'var(--tx3)',fontSize:13}}>Loading buildings…</div>;
+
+  if(buildings.length===0) return (
+    <div style={{padding:32,textAlign:'center',color:'var(--tx3)'}}>
+      <div style={{fontSize:24,marginBottom:12}}>🏢</div>
+      <div style={{fontSize:13,marginBottom:6}}>No buildings configured yet</div>
+      <div style={{fontSize:11}}>An admin needs to create a building and blueprint in Admin → Blueprint</div>
+    </div>
+  );
+
+  return (
+    <div style={{maxWidth:560,margin:'40px auto',padding:'0 16px'}}>
+      <div style={{fontSize:18,fontWeight:700,color:'var(--tx)',marginBottom:4}}>Select your workspace</div>
+      <div style={{fontSize:12,color:'var(--tx3)',marginBottom:24}}>Choose a building and floor to see seat availability</div>
+
+      {/* Building cards */}
+      <div style={{display:'flex',flexWrap:'wrap',gap:10,marginBottom:24}}>
+        {buildings.map(b=>(
+          <div key={b.id} onClick={()=>setSelB(b)}
+            style={{padding:'12px 16px',border:`1px solid ${selB?.id===b.id?'var(--ac)':'var(--bd)'}`,
+              borderRadius:'var(--r2)',cursor:'pointer',minWidth:140,flex:1,
+              background:selB?.id===b.id?'var(--glow)':'var(--sf)',transition:'var(--ease)'}}>
+            <div style={{fontWeight:600,fontSize:13,color:selB?.id===b.id?'var(--ac2)':'var(--tx)'}}>{b.name}</div>
+            {b.address&&<div style={{fontSize:10,color:'var(--tx3)',marginTop:2}}>{b.address}</div>}
+          </div>
+        ))}
+      </div>
+
+      {/* Floor list */}
+      {selB && (
+        <div>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:10}}>Select floor</div>
+          {floors.length===0 && <div style={{fontSize:12,color:'var(--tx3)'}}>No floors configured for this building</div>}
+          <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+            {floors.map(fl=>(
+              <button key={fl.id}
+                onClick={()=>onSelect(selB,fl)}
+                style={{padding:'10px 20px',border:'1px solid var(--ac)',borderRadius:'var(--r)',
+                  background:'var(--glow)',color:'var(--ac2)',fontSize:13,fontWeight:600,cursor:'pointer',
+                  fontFamily:'inherit',transition:'var(--ease)'}}>
+                {fl.floor_name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// BLUEPRINT CANVAS (self-contained, used inside AdminBlueprint)
+// ─────────────────────────────────────────────────────────────────
+function BlueprintCanvas({ items: initItems, onChange }) {
+  const canvasRef = useRef(null);
+  const cwRef = useRef(null);
+  const stateRef = useRef({
+    items: initItems||[], sel:null, tool:'select', showGrid:true,
+    cam:{cx:0,cy:0,s:1},
+    drg:false,rsz:false,crt:false,pan:false,
+    dragOff:{x:0,y:0},rHandle:null,origItem:null,
+    dragS:null,crtS:null,crtE:null,panLast:null,clickOrig:null,
+    clN:1,rN:1,zN:1,hist:[],
+  });
+  const [tool, _setTool] = useState('select');
+  const [,forceRender] = useState(0);
+  const re = () => forceRender(n=>n+1);
+
+  const S = stateRef.current;
+  const GRID=24,CELL=52,PAD=14,LH=18,WW=2400,WH=1800,HS=7;
+  const snap=v=>Math.round(v/GRID)*GRID;
+
+  function setTool(t){ S.tool=t; _setTool(t); if(t!=='select'){S.sel=null;re();} draw(); }
+
+  useEffect(()=>{
+    const cvs=canvasRef.current;const cw=cwRef.current;if(!cvs||!cw)return;
+    let animId;
+    function resize(){cvs.width=cw.clientWidth;cvs.height=Math.max(cw.clientHeight,300);draw();}
+    const ro=new ResizeObserver(resize);ro.observe(cw);
+    resize();
+    function wheelH(e){
+      e.preventDefault();
+      const r=cvs.getBoundingClientRect();
+      const sx=e.clientX-r.left,sy=e.clientY-r.top;
+      const ns=Math.max(0.15,Math.min(4,S.cam.s+(e.deltaY<0?0.1:-0.1)));
+      const ratio=ns/S.cam.s;
+      S.cam.cx=sx-(sx-S.cam.cx)*ratio; S.cam.cy=sy-(sy-S.cam.cy)*ratio; S.cam.s=ns;
+      draw();
+    }
+    cw.addEventListener('wheel',wheelH,{passive:false});
+    return()=>{ro.disconnect();cw.removeEventListener('wheel',wheelH);};
+  },[]);
+
+  function draw(){
+    const cvs=canvasRef.current;if(!cvs)return;
+    const ctx=cvs.getContext('2d');
+    const W=cvs.width,H=cvs.height;
+    ctx.clearRect(0,0,W,H);
+    ctx.save();
+    ctx.setTransform(S.cam.s,0,0,S.cam.s,S.cam.cx,S.cam.cy);
+    // Grid
+    if(S.showGrid){
+      ctx.strokeStyle='rgba(255,255,255,.05)';ctx.lineWidth=.5/S.cam.s;
+      const tl=s2w(0,0),br=s2w(W,H);
+      for(let x=Math.floor(tl.x/GRID)*GRID;x<br.x+GRID;x+=GRID){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WH);ctx.stroke();}
+      for(let y=Math.floor(tl.y/GRID)*GRID;y<br.y+GRID;y+=GRID){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WW,y);ctx.stroke();}
+    }
+    // Items
+    ['zone','wall','room','desk','circle'].forEach(type=>{
+      S.items.filter(i=>i.type===type).forEach(i=>{
+        ctx.save();
+        drawItem(ctx,i,S.sel===i);
+        ctx.restore();
+      });
+    });
+    // Preview
+    if(S.crt&&S.crtS&&S.crtE){
+      const x=Math.min(S.crtS.x,S.crtE.x),y=Math.min(S.crtS.y,S.crtE.y);
+      const w=Math.abs(S.crtE.x-S.crtS.x),h=Math.abs(S.crtE.y-S.crtS.y);
+      const mn=S.tool==='wall'?GRID:GRID*2;
+      if(w>=mn||h>=mn){ctx.save();ctx.globalAlpha=.4;drawItem(ctx,{type:S.tool,x,y,w:Math.max(w,mn),h:Math.max(h,S.tool==='wall'?GRID:mn),label:'?',prefix:'A',shape:S.tool==='circle'?'circle':undefined,disabled:[],occupants:{}});ctx.restore();}
+    }
+    ctx.restore();
+  }
+
+  function s2w(sx,sy){return{x:(sx-S.cam.cx)/S.cam.s,y:(sy-S.cam.cy)/S.cam.s};}
+  function evW(e){const r=canvasRef.current.getBoundingClientRect();return s2w(e.clientX-r.left,e.clientY-r.top);}
+  function evWS(e){const p=evW(e);return{x:snap(p.x),y:snap(p.y)};}
+  function hitI(i,wx,wy){return wx>=i.x&&wx<=i.x+i.w&&wy>=i.y&&wy<=i.y+i.h;}
+
+  function hPts(i){const{x,y,w,h}=i,cx=x+w/2,cy=y+h/2;return{nw:{x,y},n:{x:cx,y},ne:{x:x+w,y},w:{x,y:cy},e:{x:x+w,y:cy},sw:{x,y:y+h},s:{x:cx,y:y+h},se:{x:x+w,y:y+h}};}
+  function getHdl(i,wx,wy){const ht=HS/S.cam.s;for(const[k,{x,y}]of Object.entries(hPts(i))){if(Math.abs(wx-x)<=ht&&Math.abs(wy-y)<=ht)return k;}return null;}
+
+  function rr(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();}
+
+  function getSeats(item){
+    if(item.shape==='circle'){
+      const{x,y,w,h}=item,cx=x+w/2,cy=y+h/2,R=Math.min(w,h)/2-PAD-CELL/2;
+      const n=Math.max(1,Math.floor(2*Math.PI*Math.max(R,1)/(CELL+8)));
+      const p=((item.prefix||item.label||'A').replace(/\s/g,'').slice(0,3)||'A').toUpperCase();
+      return Array.from({length:n},(_,i)=>{const a=(i/n)*2*Math.PI-Math.PI/2;return{id:p+(i+1),x:cx+R*Math.cos(a)-CELL/2+2,y:cy+R*Math.sin(a)-CELL/2+2,w:CELL-4,h:CELL-4};});
+    }
+    const{x,y,w,h}=item,cols=Math.max(1,Math.floor((w-PAD*2)/CELL)),rows=Math.max(1,Math.floor((h-PAD*2-LH)/CELL));
+    const tW=cols*CELL,tH=rows*CELL,sx=x+PAD+(w-PAD*2-tW)/2,sy=y+LH+PAD+(h-LH-PAD*2-tH)/2;
+    const p=((item.prefix||item.label||'A').replace(/\s/g,'').slice(0,3)||'A').toUpperCase();
+    let n=1;return Array.from({length:cols*rows},(_,i)=>{const r=Math.floor(i/cols),c=i%cols;const s={id:p+n,x:sx+c*CELL+2,y:sy+r*CELL+2,w:CELL-4,h:CELL-4};n++;return s;});
+  }
+
+  function drawSeat(ctx,s,dis){
+    const{x,y,w,h,id}=s;
+    const fc=dis?'rgba(25,12,12,.55)':'rgba(5,35,12,.65)';
+    const sc=dis?'rgba(90,50,50,.4)':'#22c55e';
+    const tc=dis?'rgba(120,80,80,.5)':'#86efac';
+    ctx.fillStyle=fc;ctx.strokeStyle=sc;ctx.lineWidth=dis?.5:1;
+    rr(ctx,x,y,w,h,5);ctx.fill();ctx.stroke();
+    ctx.fillStyle=tc;ctx.font='bold 9px var(--font-mono,monospace)';
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(id,x+w/2,y+h/2);
+    if(dis){ctx.strokeStyle='rgba(100,50,50,.4)';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(x+5,y+5);ctx.lineTo(x+w-5,y+h-5);ctx.moveTo(x+w-5,y+5);ctx.lineTo(x+5,y+h-5);ctx.stroke();}
+  }
+
+  function drawItem(ctx,i,isSel){
+    const{x,y,w,h}=i,dis=i.disabled||[];
+    if(i.type==='desk'||i.type==='circle'){
+      ctx.fillStyle='rgba(3,15,6,.5)';ctx.strokeStyle='rgba(34,197,94,.3)';ctx.lineWidth=1;ctx.setLineDash([5,4]);
+      if(i.shape==='circle'){const cx=x+w/2,cy=y+h/2,R=Math.min(w,h)/2;ctx.beginPath();ctx.arc(cx,cy,R,0,2*Math.PI);ctx.fill();ctx.stroke();}
+      else{rr(ctx,x,y,w,h,7);ctx.fill();ctx.stroke();}
+      ctx.setLineDash([]);
+      ctx.fillStyle='rgba(134,239,172,.5)';ctx.font='500 9px var(--font-sans,sans-serif)';ctx.textAlign='center';ctx.textBaseline='top';
+      ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,i.shape==='circle'?y+Math.min(w,h)/2-13:y+4);
+      getSeats(i).forEach(s=>drawSeat(ctx,s,dis.includes(s.id)));
+    }else if(i.type==='room'){
+      ctx.fillStyle='rgba(10,20,50,.55)';ctx.strokeStyle='#3b82f6';ctx.lineWidth=1;ctx.setLineDash([]);
+      rr(ctx,x,y,w,h,6);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#93c5fd';ctx.font='500 9px var(--font-sans,sans-serif)';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText(i.label||'Room',x+w/2,y+8);
+    }else if(i.type==='zone'){
+      ctx.fillStyle='rgba(30,20,60,.2)';ctx.strokeStyle='#818cf8';ctx.lineWidth=.8;ctx.setLineDash([6,4]);
+      rr(ctx,x,y,w,h,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle='rgba(165,180,252,.5)';ctx.font='500 9px var(--font-sans,sans-serif)';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,y+6);
+    }else if(i.type==='wall'){
+      ctx.fillStyle='rgba(60,60,70,.5)';ctx.strokeStyle='rgba(140,140,160,.45)';ctx.lineWidth=.8;ctx.setLineDash([]);
+      rr(ctx,x,y,w,h,2);ctx.fill();ctx.stroke();
+    }
+    if(isSel){
+      const hs=HS/S.cam.s;
+      ctx.strokeStyle='#60a5fa';ctx.lineWidth=1.5/S.cam.s;ctx.setLineDash([4/S.cam.s,3/S.cam.s]);
+      ctx.strokeRect(x-2/S.cam.s,y-2/S.cam.s,w+4/S.cam.s,h+4/S.cam.s);ctx.setLineDash([]);
+      Object.values(hPts(i)).forEach(({x:hx,y:hy})=>{ctx.fillStyle='#0c1018';ctx.strokeStyle='#60a5fa';ctx.lineWidth=1.2/S.cam.s;ctx.fillRect(hx-hs,hy-hs,hs*2,hs*2);ctx.strokeRect(hx-hs,hy-hs,hs*2,hs*2);});
+    }
+  }
+
+  function saveH(){S.hist.push(JSON.parse(JSON.stringify(S.items)));}
+
+  function handleMD(e){
+    if(e.button===1){e.preventDefault();S.pan=true;S.panLast={x:e.clientX,y:e.clientY};return;}
+    const p=evW(e),ps=evWS(e);S.clickOrig={...p};
+    if(S.tool==='eraser'){saveH();const idx=S.items.findLastIndex(i=>hitI(i,p.x,p.y));if(idx>=0){if(S.sel===S.items[idx])S.sel=null;S.items.splice(idx,1);onChange([...S.items]);draw();re();return;}return;}
+    if(S.tool==='select'){
+      if(S.sel){const h=getHdl(S.sel,p.x,p.y);if(h){S.rsz=true;S.rHandle=h;S.origItem={...S.sel};S.dragS=p;return;}}
+      for(let i=S.items.length-1;i>=0;i--){if(hitI(S.items[i],p.x,p.y)){S.sel=S.items[i];S.drg=true;S.dragOff={x:p.x-S.sel.x,y:p.y-S.sel.y};S.origItem={...S.sel};S.dragS=p;draw();re();return;}}
+      S.sel=null;draw();re();return;
+    }
+    S.crt=true;S.crtS=ps;S.crtE=ps;
+  }
+
+  function handleMM(e){
+    if(S.pan&&S.panLast){S.cam.cx+=e.clientX-S.panLast.x;S.cam.cy+=e.clientY-S.panLast.y;S.panLast={x:e.clientX,y:e.clientY};draw();return;}
+    const p=evW(e),ps=evWS(e);
+    if(S.rsz&&S.sel&&S.origItem){
+      const dx=ps.x-S.dragS.x,dy=ps.y-S.dragS.y,o=S.origItem,h2=S.rHandle;
+      const mn=S.sel.type==='wall'?GRID:GRID*2;let{x,y,w,h}=o;
+      if(h2.includes('e'))w=Math.max(mn,snap(o.w+dx));if(h2.includes('s'))h=Math.max(mn,snap(o.h+dy));
+      if(h2.includes('w')){const nw=Math.max(mn,snap(o.w-dx));x=snap(o.x+o.w-nw);w=nw;}if(h2.includes('n')){const nh=Math.max(mn,snap(o.h-dy));y=snap(o.y+o.h-nh);h=nh;}
+      S.sel.x=x;S.sel.y=y;S.sel.w=w;S.sel.h=h;draw();re();return;
+    }
+    if(S.drg&&S.sel){S.sel.x=snap(p.x-S.dragOff.x);S.sel.y=snap(p.y-S.dragOff.y);draw();re();return;}
+    if(S.crt){S.crtE=ps;draw();}
+  }
+
+  function handleMU(e){
+    if(S.pan){S.pan=false;S.panLast=null;return;}
+    if(S.rsz){S.rsz=false;S.rHandle=null;S.origItem=null;S.dragS=null;onChange([...S.items]);return;}
+    if(S.drg){
+      const p=evW(e);const moved=Math.abs(p.x-(S.clickOrig?.x||0))>4/S.cam.s||Math.abs(p.y-(S.clickOrig?.y||0))>4/S.cam.s;
+      if(!moved&&S.sel&&(S.sel.type==='desk'||S.sel.type==='circle')){
+        const sh=getSeats(S.sel).find(s=>p.x>=s.x&&p.x<=s.x+s.w&&p.y>=s.y&&p.y<=s.y+s.h);
+        if(sh){saveH();if(!S.sel.disabled)S.sel.disabled=[];S.sel.disabled.includes(sh.id)?S.sel.disabled=S.sel.disabled.filter(d=>d!==sh.id):S.sel.disabled.push(sh.id);onChange([...S.items]);draw();S.drg=false;S.origItem=null;S.dragS=null;re();return;}
+      }
+      S.drg=false;S.origItem=null;S.dragS=null;onChange([...S.items]);return;
+    }
+    if(S.crt){
+      S.crt=false;if(!S.crtS||!S.crtE)return;
+      const x=Math.min(S.crtS.x,S.crtE.x),y=Math.min(S.crtS.y,S.crtE.y);
+      const rw=Math.abs(S.crtE.x-S.crtS.x),rh=Math.abs(S.crtE.y-S.crtS.y);
+      const isW=S.tool==='wall';const mn=isW?GRID:GRID*2;
+      const w=Math.max(snap(rw),mn),h=Math.max(snap(rh),isW?GRID:mn);
+      if(w<mn&&h<mn){S.crtS=null;S.crtE=null;draw();return;}
+      saveH();let ni;
+      if(S.tool==='desk'||S.tool==='circle'){const l=String.fromCharCode(64+S.clN);ni={type:S.tool,shape:S.tool==='circle'?'circle':undefined,x,y,w,h,label:'Zone '+l,prefix:l,id:Math.random().toString(36).slice(2),disabled:[],occupants:{}};S.clN++;}
+      else if(S.tool==='room'){ni={type:'room',x,y,w,h,label:'Room '+S.rN++,id:Math.random().toString(36).slice(2)};}
+      else if(S.tool==='zone'){ni={type:'zone',x,y,w,h,label:'Zone '+S.zN++,id:Math.random().toString(36).slice(2)};}
+      else if(S.tool==='wall'){ni={type:'wall',x,y,w,h,id:Math.random().toString(36).slice(2)};}
+      if(ni){S.items.push(ni);S.sel=ni;}
+      S.crtS=null;S.crtE=null;onChange([...S.items]);draw();re();
+    }
+  }
+
+  const selItem = S.sel;
+  const isCl = selItem&&(selItem.type==='desk'||selItem.type==='circle');
+  const seats = isCl?getSeats(selItem):[];
+  const dis = isCl?(selItem.disabled||[]):[];
+
+  function pChange(key,val,num){
+    if(!S.sel)return;saveH();
+    let v=num?+val:val;
+    const mn=S.sel.type==='wall'?GRID:GRID*2;
+    if(num&&(key==='w'||key==='h'))v=Math.max(mn,snap(v));
+    S.sel[key]=v;onChange([...S.items]);draw();re();
+  }
+
+  const TB_TOOLS=[
+    {id:'select',lbl:'↖',tip:'Select'},
+    {id:'desk',lbl:'▭',tip:'Cluster'},
+    {id:'circle',lbl:'○',tip:'Round cluster'},
+    {id:'room',lbl:'⬜',tip:'Room'},
+    {id:'zone',lbl:'⬛',tip:'Zone'},
+    {id:'wall',lbl:'▬',tip:'Wall'},
+    {id:'eraser',lbl:'✕',tip:'Erase'},
+  ];
+
+  return (
+    <div style={{display:'flex',flex:1,minHeight:0,overflow:'hidden'}}>
+      {/* Mini toolbar */}
+      <div style={{display:'flex',flexDirection:'column',gap:3,padding:'6px 4px',borderRight:'1px solid var(--bd)',background:'var(--sf)',alignItems:'center'}}>
+        {TB_TOOLS.map(t=>(
+          <button key={t.id} title={t.tip}
+            onClick={()=>setTool(t.id)}
+            style={{width:28,height:28,border:`1px solid ${tool===t.id?'#3b82f6':'var(--bd)'}`,
+              borderRadius:4,background:tool===t.id?'#3b82f6':'var(--sf2)',
+              color:tool===t.id?'#fff':'var(--tx2)',cursor:'pointer',fontSize:12,
+              display:'flex',alignItems:'center',justifyContent:'center'}}>
+            {t.lbl}
+          </button>
+        ))}
+        <div style={{width:'80%',height:1,background:'var(--bd)',margin:'2px 0'}}/>
+        <button title="Undo" onClick={()=>{if(S.hist.length){S.items=S.hist.pop();S.sel=null;onChange([...S.items]);draw();re();}}}
+          style={{width:28,height:28,border:'1px solid var(--bd)',borderRadius:4,background:'var(--sf2)',color:'var(--tx2)',cursor:'pointer',fontSize:12}}>↩</button>
+        <button title="Toggle grid" onClick={()=>{S.showGrid=!S.showGrid;draw();}}
+          style={{width:28,height:28,border:'1px solid var(--bd)',borderRadius:4,background:'var(--sf2)',color:'var(--tx2)',cursor:'pointer',fontSize:11}}>⊞</button>
+        <button title="Reset zoom" onClick={()=>{S.cam={cx:0,cy:0,s:1};draw();}}
+          style={{width:28,height:28,border:'1px solid var(--bd)',borderRadius:4,background:'var(--sf2)',color:'var(--tx2)',cursor:'pointer',fontSize:11}}>⊡</button>
+      </div>
+
+      {/* Canvas */}
+      <div ref={cwRef} style={{flex:1,position:'relative',background:'#0c1018',overflow:'hidden',minHeight:0}}>
+        <canvas ref={canvasRef}
+          style={{display:'block',cursor:tool==='select'?'default':tool==='eraser'?'cell':'crosshair'}}
+          onMouseDown={handleMD} onMouseMove={handleMM} onMouseUp={handleMU} onMouseLeave={handleMU}/>
+      </div>
+
+      {/* Properties panel */}
+      <div style={{width:180,borderLeft:'1px solid var(--bd)',background:'var(--sf)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        <div style={{padding:'6px 8px',fontSize:9,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--tx3)',borderBottom:'1px solid var(--bd)'}}>Properties</div>
+        <div style={{padding:'8px',flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:7}}>
+          {!selItem && <div style={{fontSize:11,color:'var(--tx3)',textAlign:'center',padding:'12px 0'}}>Select an element</div>}
+          {selItem && <>
+            {isCl && <>
+              <div>
+                <div style={{fontSize:9,fontWeight:600,color:'var(--tx3)',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:3}}>Zone name</div>
+                <input className="a-inp" defaultValue={selItem.label||''} style={{fontSize:11,padding:'3px 6px'}}
+                  onChange={e=>pChange('label',e.target.value,false)}
+                  onKeyDown={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()}/>
+              </div>
+              <div>
+                <div style={{fontSize:9,fontWeight:600,color:'var(--tx3)',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:3}}>Seat prefix</div>
+                <input className="a-inp" defaultValue={selItem.prefix||''} maxLength={4} style={{fontSize:11,padding:'3px 6px'}}
+                  onChange={e=>pChange('prefix',e.target.value,false)}
+                  onKeyDown={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()}/>
+              </div>
+              <div style={{textAlign:'center',padding:'4px',background:'rgba(34,197,94,.08)',border:'1px solid rgba(34,197,94,.2)',borderRadius:4,fontSize:11,color:'#22c55e',fontWeight:700,fontFamily:'var(--mono)'}}>
+                {seats.length-dis.filter(d=>seats.some(s=>s.id===d)).length} active · {dis.length} off
+              </div>
+              <div>
+                <div style={{fontSize:9,fontWeight:600,color:'var(--tx3)',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:4}}>Seats (click = disable)</div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:2}}>
+                  {seats.map(s=>(
+                    <span key={s.id}
+                      onClick={()=>{saveH();if(!selItem.disabled)selItem.disabled=[];selItem.disabled.includes(s.id)?selItem.disabled=selItem.disabled.filter(d=>d!==s.id):selItem.disabled.push(s.id);onChange([...S.items]);draw();re();}}
+                      style={{padding:'1px 4px',borderRadius:2,fontSize:9,fontFamily:'var(--mono)',cursor:'pointer',border:'1px solid',
+                        background:dis.includes(s.id)?'rgba(80,30,30,.2)':'rgba(34,197,94,.1)',
+                        borderColor:dis.includes(s.id)?'rgba(100,50,50,.3)':'rgba(34,197,94,.35)',
+                        color:dis.includes(s.id)?'rgba(150,80,80,.6)':'#86efac',
+                        textDecoration:dis.includes(s.id)?'line-through':'none'}}>
+                      {s.id}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </>}
+            {!isCl && selItem.label!==undefined && (
+              <div>
+                <div style={{fontSize:9,fontWeight:600,color:'var(--tx3)',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:3}}>Label</div>
+                <input className="a-inp" defaultValue={selItem.label||''} style={{fontSize:11,padding:'3px 6px'}}
+                  onChange={e=>pChange('label',e.target.value,false)}
+                  onKeyDown={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()}/>
+              </div>
+            )}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
+              {[['W','w'],['H','h'],['X','x'],['Y','y']].map(([l,k])=>(
+                <div key={k}>
+                  <div style={{fontSize:9,color:'var(--tx3)',marginBottom:2}}>{l}</div>
+                  <input className="a-inp" type="number" step={GRID} defaultValue={selItem[k]} style={{fontSize:11,padding:'3px 5px'}}
+                    onChange={e=>pChange(k,e.target.value,true)}
+                    onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter')e.target.blur();}}
+                    onMouseDown={e=>e.stopPropagation()}/>
+                </div>
+              ))}
+            </div>
+            <button onClick={()=>{if(!S.sel)return;saveH();S.items=S.items.filter(i=>i!==S.sel);S.sel=null;onChange([...S.items]);draw();re();}}
+              style={{padding:'4px',border:'1px solid rgba(239,68,68,.2)',borderRadius:4,background:'transparent',color:'#ef4444',cursor:'pointer',fontSize:11,fontFamily:'inherit'}}>✕ Delete</button>
+          </>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   const { t } = useApp();
   const isAdmin = currentUser.role === 'admin';
@@ -1804,9 +2373,10 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   }
 
   const NAV = [
-    { id:"settings", icon:"⚙",  label:t("adminSettings") },
-    { id:"users",    icon:"👥", label:t("adminUsers"),   badge:"Admin" },
-    { id:"hotdesk",  icon:"🪑", label:t("adminHotDesk"), hd:true },
+    { id:"settings",  icon:"⚙",  label:t("adminSettings") },
+    { id:"users",     icon:"👥", label:t("adminUsers"),  badge:"Admin" },
+    { id:"hotdesk",   icon:"🪑", label:t("adminHotDesk"),hd:true },
+    { id:"blueprint", icon:"🗺", label:"Blueprint" },
   ];
   return (
     <div className="admin-wrap">
@@ -1815,9 +2385,10 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
         {NAV.map(item=>(<button key={item.id} className={`an-btn ${mod===item.id ? (item.hd?"active-hd":"active") : ""}`} onClick={()=>setMod(item.id)}><span className="an-icon">{item.icon}</span><span>{item.label}</span>{item.badge&&<span className="an-badge">{item.badge}</span>}</button>))}
       </nav>
       <div className="admin-content">
-        {mod==="settings" && <AdminSettings/>}
-        {mod==="users"    && <AdminUsers users={users} setUsers={setUsers} currentUser={currentUser}/>}
-        {mod==="hotdesk"  && <AdminHotDesk hd={hd} setHd={setHd} users={users}/>}
+        {mod==="settings"  && <AdminSettings/>}
+        {mod==="users"     && <AdminUsers users={users} setUsers={setUsers} currentUser={currentUser}/>}
+        {mod==="hotdesk"   && <AdminHotDesk hd={hd} setHd={setHd} users={users}/>}
+        {mod==="blueprint" && <AdminBlueprint/>}
       </div>
     </div>
   );
@@ -2116,6 +2687,8 @@ function WorkSuiteApp() {
   const [logModal,  setLogModal]  = useState(null);
   const [hd,        setHd]        = useState({ fixed: {}, reservations: [] });
   const [hdModal,   setHdModal]   = useState(null);
+  const [selectedBuilding, setSelectedBuilding] = useState(null); // {id, name}
+  const [selectedBlueprint, setSelectedBlueprint] = useState(null); // {id, floor_name, layout}
   const [toast,     setToast]     = useState(null);
   const [users,     setUsers]     = useState([]);
   const [view,      setView]      = useState("calendar");
@@ -2453,8 +3026,32 @@ function WorkSuiteApp() {
           {mod==="jt" && view==="calendar" && (<main className="content"><CalendarView filters={filters} worklogs={worklogs} onDayClick={handleDayClick} onOpenLog={openLogModal}/></main>)}
           {mod==="jt" && view==="day"      && (<main className="content"><DayView date={activeDay} filters={filters} worklogs={worklogs} onDateChange={setActiveDay} onOpenLog={openLogModal} onDeleteWorklog={handleDeleteWorklog}/></main>)}
           {mod==="jt" && view==="tasks"    && (<main className="content"><TasksView filters={filters} onOpenLog={openLogModal} worklogs={worklogs}/></main>)}
-          {mod==="hd" && view==="map"      && (<main className="content"><HDMapView hd={hd} onSeat={sid=>handleHdSeatClick(sid,TODAY)} currentUser={CURRENT_USER}/></main>)}
-          {mod==="hd" && view==="table"    && (<main className="content"><HDTableView hd={hd} onCell={(sid,date)=>handleHdSeatClick(sid,date)} currentUser={CURRENT_USER}/></main>)}
+          {mod==="hd" && view==="map"      && (
+            <main className="content">
+              {!selectedBuilding || !selectedBlueprint
+                ? <BuildingSelector
+                    onSelect={(b,bp)=>{setSelectedBuilding(b);setSelectedBlueprint(bp);}}
+                  />
+                : <HDMapView hd={hd} onSeat={sid=>handleHdSeatClick(sid,TODAY)} currentUser={CURRENT_USER}
+                    building={selectedBuilding} blueprint={selectedBlueprint}
+                    onChangeFloor={()=>{setSelectedBuilding(null);setSelectedBlueprint(null);}}
+                  />
+              }
+            </main>
+          )}
+          {mod==="hd" && view==="table"    && (
+            <main className="content">
+              {!selectedBuilding || !selectedBlueprint
+                ? <BuildingSelector
+                    onSelect={(b,bp)=>{setSelectedBuilding(b);setSelectedBlueprint(bp);}}
+                  />
+                : <HDTableView hd={hd} onCell={(sid,date)=>handleHdSeatClick(sid,date)} currentUser={CURRENT_USER}
+                    building={selectedBuilding} blueprint={selectedBlueprint}
+                    onChangeFloor={()=>{setSelectedBuilding(null);setSelectedBlueprint(null);}}
+                  />
+              }
+            </main>
+          )}
           {view==="admin" && (<AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER}/>)}
         </div>
       </div>
