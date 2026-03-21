@@ -33,8 +33,13 @@ export function LoginPage() {
     try {
       if (remember) localStorage.setItem('ws_email', email);
       else localStorage.removeItem('ws_email');
-      const { error: err } = await supabase.auth.signInWithPassword({ email, password: pwd });
-      if (err) setError(err.message === 'Invalid login credentials' ? 'Invalid email or password' : err.message);
+      const { data, error: err } = await supabase.auth.signInWithPassword({ email, password: pwd });
+      if (err) {
+        setError(err.message === 'Invalid login credentials' ? 'Invalid email or password' : err.message);
+      } else if (data?.session) {
+        // Navigate to root so React Router re-evaluates the protected route
+        window.location.href = '/';
+      }
     } finally { setLoading(false); }
   };
 
