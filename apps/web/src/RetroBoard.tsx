@@ -51,8 +51,8 @@ const NEXT_STATUS = {
   done:["todo","inprogress"],cancelled:["todo"],
 };
 
-const fmtT = s=>`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
-const dateR = d=>new Date(d).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"});
+const fmtT = (s)=>`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+const dateR = (d)=>new Date(d).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"});
 const genId = ()=>Math.random().toString(36).slice(2);
 
 // ════════════════════════════════════════════════════════════════
@@ -135,7 +135,7 @@ function TimerBar({timer,setTimer,running,setRunning,isMod,phaseMins,setPhaseMin
 // ════════════════════════════════════════════════════════════════
 
 function RetroLobby({user,wsUsers,teams,retroName,setRetroName,selectedTeamId,setSelectedTeamId,phaseTimes,setPhaseTimes,votesPerUser,setVotesPerUser,history,onStart}){
-  const upd=(ph,v)=>setPhaseTimes(p=>({...p,[ph]:Math.max(1,v)}));
+  const upd=(ph,v)=>setPhaseTimes((p)=>({...p,[ph]:Math.max(1,v)}));
   const remaining=MAX_TITLE-retroName.length;
   const myTeams=user.role==="admin"?teams:teams.filter(t=>t.members?.some(m=>m.user_id===user.id));
   const selTeam=teams.find(t=>t.id===selectedTeamId);
@@ -255,7 +255,7 @@ function RetroCreating({isMod,myCards,setMyCards,timer,setTimer,running,setRunni
             <div style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:12,padding:"16px 20px",marginBottom:12}}>
               <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:13,color:"var(--tx)",margin:"0 0 11px"}}>Nueva tarjeta</h3>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
-                {RC.map(c=>(
+                {RC.map((c)=>(
                   <button key={c.id} onClick={()=>setCat(c.id)} style={{padding:"7px 10px",borderRadius:7,border:`1px solid ${cat===c.id?c.color:"var(--bd)"}`,background:cat===c.id?c.dim:"transparent",color:cat===c.id?c.color:"var(--tx3)",cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",gap:4,fontFamily:"inherit"}}>
                     {c.emoji} {c.label}
                   </button>
@@ -307,16 +307,16 @@ function RetroGrouping({isMod,cards,setCards,timer,setTimer,running,setRunning,p
   const dRef=useRef(null);
   const merged=useRef(false);
 
-  const moveToCol=(id,nc)=>setCards(p=>p.map(c=>c.id===id?{...c,category:nc}:c));
+  const moveToCol=(id,nc)=>setCards((p)=>p.map(c=>c.id===id?{...c,category:nc}:c));
   const mergeInto=(sId,tId)=>{
     if(sId===tId)return;
-    setCards(prev=>{
+    setCards((prev)=>{
       const s=prev.find(c=>c.id===sId);if(!s)return prev;
       return prev.filter(c=>c.id!==sId).map(c=>c.id===tId?{...c,merged:[...c.merged,{...s}]}:c);
     });
   };
   const unmerge=(pId,cId)=>{
-    setCards(prev=>{
+    setCards((prev)=>{
       const par=prev.find(c=>c.id===pId);if(!par)return prev;
       const ch=par.merged.find(c=>c.id===cId);if(!ch)return prev;
       return[...prev.filter(c=>c.id!==pId),{...par,merged:par.merged.filter(c=>c.id!==cId)},{...ch,category:par.category}];
@@ -354,7 +354,7 @@ function RetroGrouping({isMod,cards,setCards,timer,setTimer,running,setRunning,p
                           <div style={{display:"flex",alignItems:"center",gap:5}}>
                             <span style={{fontSize:11,color:"var(--tx3)",flex:1}}>{card.author}</span>
                             {canSt&&<div onDragOver={e=>{e.preventDefault();e.stopPropagation();}} onDrop={e=>{e.preventDefault();e.stopPropagation();merged.current=true;if(dRef.current)mergeInto(dRef.current,card.id);setOverCol(null);setDragId(null);dRef.current=null;}} style={{background:"rgba(99,102,241,.18)",border:"2px solid rgba(99,102,241,.6)",borderRadius:20,padding:"2px 8px",fontSize:11,color:"#818cf8",fontWeight:600,cursor:"copy"}}>📎 Apilar</div>}
-                            {!canSt&&card.merged?.length>0&&<button onClick={()=>setExpanded(p=>({...p,[card.id]:!p[card.id]}))} style={{background:"rgba(99,102,241,.14)",border:"1px solid rgba(99,102,241,.3)",borderRadius:20,padding:"2px 7px",fontSize:11,color:"#818cf8",cursor:"pointer",fontFamily:"inherit"}}>📎 {card.merged.length} {isExp?"▴":"▾"}</button>}
+                            {!canSt&&card.merged?.length>0&&<button onClick={()=>setExpanded((p)=>({...p,[card.id]:!p[card.id]}))} style={{background:"rgba(99,102,241,.14)",border:"1px solid rgba(99,102,241,.3)",borderRadius:20,padding:"2px 7px",fontSize:11,color:"#818cf8",cursor:"pointer",fontFamily:"inherit"}}>📎 {card.merged.length} {isExp?"▴":"▾"}</button>}
                           </div>
                         </div>
                         {card.merged?.length>0&&isExp&&!canSt&&(
@@ -448,7 +448,7 @@ function RetroDiscussion({isMod,sortedCards,setSortedCards,discussIdx,setDiscuss
   if(!card)return null;
   const cat=RC_MAP[card.category];
   const withAct=sortedCards.filter(c=>c.actionable).length;
-  const upd=(f,v)=>setSortedCards(p=>p.map((c,i)=>i===discussIdx?{...c,[f]:v}:c));
+  const upd=(f,v)=>setSortedCards((p)=>p.map((c,i)=>i===discussIdx?{...c,[f]:v}:c));
   const people=teamMembers?.length?teamMembers.map(m=>m.name||m.email||""):[];
 
   return(
@@ -492,7 +492,7 @@ function RetroDiscussion({isMod,sortedCards,setSortedCards,discussIdx,setDiscuss
                 </div>
               </div>
               <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                {RPRI.map(p=>(
+                {RPRI.map((p)=>(
                   <button key={p.id} onClick={()=>upd("priority",p.id)}
                     style={{padding:"3px 10px",borderRadius:20,border:`1px solid ${(card.priority||"medium")===p.id?p.color:"var(--bd)"}`,background:(card.priority||"medium")===p.id?p.bg:"transparent",color:(card.priority||"medium")===p.id?p.color:"var(--tx3)",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit"}}>
                     {p.label}
@@ -556,7 +556,7 @@ function RetroSummary({sortedCards,retroName,onExit,onAddToKanban}){
         <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:20,color:"var(--tx)",margin:0}}>{retroName||"Retrospectiva"}</h2>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10,marginBottom:22}}>
-        {[{l:"Tarjetas",v:sortedCards.length,c:"#818cf8"},{l:"Con accionable",v:withAct.length,c:"var(--green)"},{l:"Sin accionable",v:without.length,c:"var(--red)"},{l:"Votos",v:sortedCards.reduce((a,c)=>a+c.votes,0),c:"#fbbf24"}].map(s=>(
+        {[{l:"Tarjetas",v:sortedCards.length,c:"#818cf8"},{l:"Con accionable",v:withAct.length,c:"var(--green)"},{l:"Sin accionable",v:without.length,c:"var(--red)"},{l:"Votos",v:sortedCards.reduce((a,c)=>a+c.votes,0),c:"#fbbf24"}].map((s)=>(
           <div key={s.l} style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:11,padding:"11px",textAlign:"center"}}>
             <div style={{fontSize:20,fontWeight:700,fontFamily:"'Sora',sans-serif",color:s.c}}>{s.v}</div>
             <div style={{fontSize:10,color:"var(--tx3)",marginTop:2}}>{s.l}</div>
@@ -574,7 +574,7 @@ function RetroSummary({sortedCards,retroName,onExit,onAddToKanban}){
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
             {withAct.map((card,i)=>(
               <label key={i} style={{display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",padding:"7px 10px",borderRadius:8,background:selected[i]?"rgba(99,102,241,.12)":"transparent",border:`1px solid ${selected[i]?"rgba(99,102,241,.4)":"var(--bd)"}`}}>
-                <input type="checkbox" checked={!!selected[i]} onChange={()=>setSelected(p=>({...p,[i]:!p[i]}))} style={{marginTop:2,accentColor:"#6366f1"}}/>
+                <input type="checkbox" checked={!!selected[i]} onChange={()=>setSelected((p)=>({...p,[i]:!p[i]}))} style={{marginTop:2,accentColor:"#6366f1"}}/>
                 <div>
                   <p style={{fontSize:12,color:"var(--tx)",margin:"0 0 2px",fontWeight:500}}>{card.actionable}</p>
                   <span style={{fontSize:11,color:"var(--tx3)"}}>{card.assignee||"Sin asignar"} · {card.dueDate||"—"}</span>
@@ -643,25 +643,30 @@ function RetroFlow({currentUser,wsUsers,teams,history,onFinish,onSaveSession,onA
   },[myTeams.length]);
 
   useEffect(()=>{
-    const id=setInterval(()=>TIMED.forEach(ph=>{if(running[ph])setTimers(p=>({...p,[ph]:Math.max(0,p[ph]-1)});}),1000);
-    return()=>clearInterval(id);
+    const tick = () => {
+      TIMED.forEach(ph => {
+        if(running[ph]) setTimers((p)=>({...p, [ph]: Math.max(0, p[ph]-1)}));
+      });
+    };
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
   },[running]);
 
-  const goTo=p=>{
+  const goTo=(p)=>{
     if(!isMod&&p!==phase)return;
     if(p==="grouping"&&!boardCards.length)setBoardCards([...myCards]);
-    if(p==="voting"){const bc=boardCards.length?boardCards:[...myCards];setAllCards(bc.map(c=>({...c,votes:0})));setMyVotes({});}
+    if(p==="voting"){const bc=boardCards.length?boardCards:[...myCards];setAllCards(bc.map((c)=>({...c,votes:0})));setMyVotes({});}
     if(p==="discussion"){const base=allCards.length?allCards:[...myCards];setSortedCards([...base].sort((a,b)=>b.votes-a.votes));setDiscussIdx(0);}
     setTimers(prev=>({...prev,[p]:phaseTimes[p]*60}));
     setRunning(prev=>({...prev,[p]:false}));
     setPhase(p);
   };
 
-  const vote=id=>{if(Object.values(myVotes).reduce((a,b)=>a+b,0)>=votesPerUser)return;setMyVotes(p=>({...p,[id]:(p[id]||0)+1}));setAllCards(p=>p.map(c=>c.id===id?{...c,votes:c.votes+1}:c));};
-  const removeVote=id=>{if(!myVotes[id])return;setMyVotes(p=>({...p,[id]:p[id]-1}));setAllCards(p=>p.map(c=>c.id===id?{...c,votes:c.votes-1}:c));};
+  const vote=(id)=>{if(Object.values(myVotes).reduce((a,b)=>a+b,0)>=votesPerUser)return;setMyVotes((p)=>({...p,[id]:(p[id]||0)+1}));setAllCards((p)=>p.map(c=>c.id===id?{...c,votes:c.votes+1}:c));};
+  const removeVote=(id)=>{if(!myVotes[id])return;setMyVotes((p)=>({...p,[id]:p[id]-1}));setAllCards((p)=>p.map(c=>c.id===id?{...c,votes:c.votes-1}:c));};
 
   const handleFinish=()=>{
-    onSaveSession?.({name:retroName,teamId:selectedTeamId,cards:sortedCards,stats:{cards:sortedCards.length,withAction:sortedCards.filter(c=>c.actionable).length,votes:sortedCards.reduce((a,c)=>a+c.votes,0)},actionables:sortedCards.filter(c=>c.actionable).map(c=>({text:c.actionable,assignee:c.assignee,dueDate:c.dueDate,priority:c.priority||"medium",status:"open"}))});
+    onSaveSession?.({name:retroName,teamId:selectedTeamId,cards:sortedCards,stats:{cards:sortedCards.length,withAction:sortedCards.filter(c=>c.actionable).length,votes:sortedCards.reduce((a,c)=>a+c.votes,0)},actionables:sortedCards.filter(c=>c.actionable).map((c)=>({text:c.actionable,assignee:c.assignee,dueDate:c.dueDate,priority:c.priority||"medium",status:"open"}))});
     goTo("summary");
   };
 
@@ -689,10 +694,10 @@ function RetroFlow({currentUser,wsUsers,teams,history,onFinish,onSaveSession,onA
       </div>
       <div style={{flex:1,overflowY:"auto"}}>
         {phase==="lobby"&&<RetroLobby user={currentUser} wsUsers={wsUsers} teams={myTeams} retroName={retroName} setRetroName={setRetroName} selectedTeamId={selectedTeamId} setSelectedTeamId={setSelectedTeamId} phaseTimes={phaseTimes} setPhaseTimes={setPhaseTimes} votesPerUser={votesPerUser} setVotesPerUser={setVotesPerUser} history={history} onStart={()=>goTo("creating")}/>}
-        {phase==="creating"&&<RetroCreating isMod={isMod} myCards={myCards} setMyCards={setMyCards} timer={timers.creating} setTimer={v=>setTimers(p=>({...p,creating:v}))} running={running.creating} setRunning={v=>setRunning(p=>({...p,creating:v}))} phaseMins={phaseTimes.creating} setPhaseMins={v=>setPhaseTimes(p=>({...p,creating:v}))} onFinish={()=>goTo("grouping")} currentUser={currentUser}/>}
-        {phase==="grouping"&&<RetroGrouping isMod={isMod} cards={boardCards} setCards={setBoardCards} timer={timers.grouping} setTimer={v=>setTimers(p=>({...p,grouping:v}))} running={running.grouping} setRunning={v=>setRunning(p=>({...p,grouping:v}))} phaseMins={phaseTimes.grouping} setPhaseMins={v=>setPhaseTimes(p=>({...p,grouping:v}))} onFinish={()=>goTo("voting")}/>}
-        {phase==="voting"&&<RetroVoting isMod={isMod} allCards={allCards} myVotes={myVotes} onVote={vote} onRemove={removeVote} votesPerUser={votesPerUser} timer={timers.voting} setTimer={v=>setTimers(p=>({...p,voting:v}))} running={running.voting} setRunning={v=>setRunning(p=>({...p,voting:v}))} phaseMins={phaseTimes.voting} setPhaseMins={v=>setPhaseTimes(p=>({...p,voting:v}))} onFinish={()=>goTo("discussion")}/>}
-        {phase==="discussion"&&<RetroDiscussion isMod={isMod} sortedCards={sortedCards} setSortedCards={setSortedCards} discussIdx={discussIdx} setDiscussIdx={setDiscussIdx} teamMembers={teamMembers} timer={timers.discussion} setTimer={v=>setTimers(p=>({...p,discussion:v}))} running={running.discussion} setRunning={v=>setRunning(p=>({...p,discussion:v}))} phaseMins={phaseTimes.discussion} setPhaseMins={v=>setPhaseTimes(p=>({...p,discussion:v}))} onFinish={handleFinish}/>}
+        {phase==="creating"&&<RetroCreating isMod={isMod} myCards={myCards} setMyCards={setMyCards} timer={timers.creating} setTimer={v=>setTimers((p)=>({...p,creating:v}))} running={running.creating} setRunning={v=>setRunning((p)=>({...p,creating:v}))} phaseMins={phaseTimes.creating} setPhaseMins={v=>setPhaseTimes((p)=>({...p,creating:v}))} onFinish={()=>goTo("grouping")} currentUser={currentUser}/>}
+        {phase==="grouping"&&<RetroGrouping isMod={isMod} cards={boardCards} setCards={setBoardCards} timer={timers.grouping} setTimer={v=>setTimers((p)=>({...p,grouping:v}))} running={running.grouping} setRunning={v=>setRunning((p)=>({...p,grouping:v}))} phaseMins={phaseTimes.grouping} setPhaseMins={v=>setPhaseTimes((p)=>({...p,grouping:v}))} onFinish={()=>goTo("voting")}/>}
+        {phase==="voting"&&<RetroVoting isMod={isMod} allCards={allCards} myVotes={myVotes} onVote={vote} onRemove={removeVote} votesPerUser={votesPerUser} timer={timers.voting} setTimer={v=>setTimers((p)=>({...p,voting:v}))} running={running.voting} setRunning={v=>setRunning((p)=>({...p,voting:v}))} phaseMins={phaseTimes.voting} setPhaseMins={v=>setPhaseTimes((p)=>({...p,voting:v}))} onFinish={()=>goTo("discussion")}/>}
+        {phase==="discussion"&&<RetroDiscussion isMod={isMod} sortedCards={sortedCards} setSortedCards={setSortedCards} discussIdx={discussIdx} setDiscussIdx={setDiscussIdx} teamMembers={teamMembers} timer={timers.discussion} setTimer={v=>setTimers((p)=>({...p,discussion:v}))} running={running.discussion} setRunning={v=>setRunning((p)=>({...p,discussion:v}))} phaseMins={phaseTimes.discussion} setPhaseMins={v=>setPhaseTimes((p)=>({...p,discussion:v}))} onFinish={handleFinish}/>}
         {phase==="summary"&&<RetroSummary sortedCards={sortedCards} retroName={retroName} onExit={onFinish} onAddToKanban={items=>{onAddToKanban(items,retroName,selectedTeamId);onFinish();}}/>}
       </div>
     </div>
@@ -755,7 +760,7 @@ function RetroHistorial({currentUser,history,teams}){
               {teams.find(t=>t.id===retro.team_id)&&<span style={{fontSize:12,color:teams.find(t=>t.id===retro.team_id)?.color,fontWeight:600}}>{teams.find(t=>t.id===retro.team_id)?.name}</span>}
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:10}}>
-              {[{l:"Tarjetas",v:retro.stats?.cards||0,c:"#818cf8"},{l:"Con accionable",v:retro.stats?.withAction||0,c:"var(--green)"},{l:"Votos",v:retro.stats?.votes||0,c:"#fbbf24"}].map(s=>(
+              {[{l:"Tarjetas",v:retro.stats?.cards||0,c:"#818cf8"},{l:"Con accionable",v:retro.stats?.withAction||0,c:"var(--green)"},{l:"Votos",v:retro.stats?.votes||0,c:"#fbbf24"}].map((s)=>(
                 <div key={s.l} style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:11,padding:"10px",textAlign:"center"}}>
                   <div style={{fontSize:18,fontWeight:700,fontFamily:"'Sora',sans-serif",color:s.c}}>{s.v}</div>
                   <div style={{fontSize:10,color:"var(--tx3)",marginTop:2}}>{s.l}</div>
@@ -801,7 +806,7 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
   // Build base items from history actionables
   const baseItems=history.flatMap(r=>{
     const team=teams.find(t=>t.id===r.team_id);
-    return(r.actionables||[]).map(a=>({...a,retroName:r.name,teamId:r.team_id,teamName:team?.name||"—",id:a.id||genId()}));
+    return(r.actionables||[]).map((a)=>({...a,retroName:r.name,teamId:r.team_id,teamName:team?.name||"—",id:a.id||genId()}));
   });
 
   // Merge edits
@@ -810,7 +815,7 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
     return edit?{...base,...edit}:{...base,status:base.status||"todo"};
   });
 
-  const move=(id,newStatus)=>setItems(prev=>{
+  const move=(id,newStatus)=>setItems((prev)=>{
     const ex=prev.find(x=>x.id===id);
     if(ex)return prev.map(x=>x.id===id?{...x,status:newStatus}:x);
     return[...prev,{id,status:newStatus}];
@@ -822,7 +827,7 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
     return true;
   }).map(item=>{const edit=(items||[]).find(x=>x.id===item.id);return edit?{...item,...edit}:item;});
 
-  const colItems=colId=>vis.filter(x=>(x.status||"todo")===colId).sort((a,b)=>(a.order??999)-(b.order??999));
+  const colItems=colId=>vis.filter((x)=>(x.status||"todo")===colId).sort((a,b)=>(a.order??999)-(b.order??999));
 
   const handleDrop=(targetColId,draggedId)=>{
     move(draggedId,targetColId);
@@ -910,7 +915,7 @@ function RetroDashboard({currentUser,history,teams,setView}){
       <h1 style={{fontFamily:"'Sora',sans-serif",fontSize:18,color:"var(--tx)",marginBottom:4}}>🔁 RetroBoard</h1>
       <p style={{fontSize:13,color:"var(--tx3)",marginBottom:24}}>Gestiona las retrospectivas de tu equipo</p>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:14,marginBottom:24}}>
-        {[{l:"Retros realizadas",v:myHistory.length,c:"#818cf8",icon:"🔁"},{l:"Accionables abiertos",v:openItems,c:"#f87171",icon:"🎯"},{l:"Equipos activos",v:teams.length,c:"#4ade80",icon:"🏷️"}].map(s=>(
+        {[{l:"Retros realizadas",v:myHistory.length,c:"#818cf8",icon:"🔁"},{l:"Accionables abiertos",v:openItems,c:"#f87171",icon:"🎯"},{l:"Equipos activos",v:teams.length,c:"#4ade80",icon:"🏷️"}].map((s)=>(
           <div key={s.l} style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:12,padding:14,textAlign:"center"}}>
             <div style={{fontSize:18,marginBottom:6}}>{s.icon}</div>
             <div style={{fontSize:24,fontWeight:700,fontFamily:"'Sora',sans-serif",color:s.c}}>{s.v}</div>
@@ -992,22 +997,22 @@ export function AdminRetroTeams({wsUsers,teams,setTeams}){
       if(error){setMsg(error.message);return;}
     }
     const newMember={user_id:u.id,role:addRole,name:u.name,email:u.email};
-    setTeams(ts=>ts.map(t=>t.id===selTeam.id?{...t,members:[...(t.members||[]),newMember]}:t));
-    setSelTeam(s=>({...s,members:[...(s.members||[]),newMember]}));
+    setTeams((ts)=>ts.map(t=>t.id===selTeam.id?{...t,members:[...(t.members||[]),newMember]}:t));
+    setSelTeam((s)=>({...s,members:[...(s.members||[]),newMember]}));
     setAddEmail("");setMsg("");
   };
 
   const removeMember=async(userId)=>{
     if(!selTeam)return;
     if(supabase)await supabase.from("retro_team_members").delete().eq("team_id",selTeam.id).eq("user_id",userId);
-    setTeams(ts=>ts.map(t=>t.id===selTeam.id?{...t,members:(t.members||[]).filter(m=>m.user_id!==userId)}:t));
-    setSelTeam(s=>({...s,members:(s.members||[]).filter(m=>m.user_id!==userId)}));
+    setTeams((ts)=>ts.map(t=>t.id===selTeam.id?{...t,members:(t.members||[]).filter(m=>m.user_id!==userId)}:t));
+    setSelTeam((s)=>({...s,members:(s.members||[]).filter(m=>m.user_id!==userId)}));
   };
 
   const deleteTeam=async(id)=>{
     if(!confirm("¿Eliminar equipo? Se perderá el historial asociado."))return;
     if(supabase)await supabase.from("retro_teams").delete().eq("id",id);
-    setTeams(ts=>ts.filter(t=>t.id!==id));
+    setTeams((ts)=>ts.filter(t=>t.id!==id));
     if(selTeam?.id===id)setSelTeam(null);
   };
 
@@ -1020,7 +1025,7 @@ export function AdminRetroTeams({wsUsers,teams,setTeams}){
           <button className="btn-g" onClick={createTeam} style={{fontSize:10,padding:"2px 8px"}}>+</button>
         </div>
         <div style={{flex:1,overflowY:"auto"}}>
-          {teams.map(t=>(
+          {teams.map((t)=>(
             <div key={t.id} style={{display:"flex",alignItems:"center",gap:0,padding:"8px 10px",background:selTeam?.id===t.id?"var(--glow)":"transparent",borderLeft:`2px solid ${selTeam?.id===t.id?t.color:"transparent"}`,borderBottom:"1px solid var(--bd)",cursor:"pointer"}}
               onClick={()=>setSelTeam(t)}>
               <div style={{width:10,height:10,borderRadius:"50%",background:t.color,flexShrink:0,marginRight:8}}/>
@@ -1106,10 +1111,10 @@ export function RetroBoard({currentUser,wsUsers,lang}){
           supabase.from("retro_team_members").select("*"),
           supabase.from("retro_sessions").select("*,retro_actionables(*)").eq("status","closed").order("created_at",{ascending:false}),
         ]);
-        const teamsWithMembers=(teamsData||[]).map(t=>({...t,members:(membersData||[]).filter(m=>m.team_id===t.id).map(m=>{const u=wsUsers.find(x=>x.id===m.user_id);return{...m,name:u?.name,email:u?.email};})}));
+        const teamsWithMembers=(teamsData||[]).map((t)=>({...t,members:(membersData||[]).filter(m=>m.team_id===t.id).map(m=>{const u=wsUsers.find(x=>x.id===m.user_id);return{...m,name:u?.name,email:u?.email};})}));
         setTeams(teamsWithMembers);
         // Map sessions to history format
-        const hist=(sessionsData||[]).map(s=>({id:s.id,name:s.name,date:s.created_at?.slice(0,10),team_id:s.team_id,stats:s.stats||{},actionables:(s.retro_actionables||[]).map(a=>({id:a.id,text:a.text,assignee:a.assignee,dueDate:a.due_date,priority:a.priority,status:a.status}))}));
+        const hist=(sessionsData||[]).map((s)=>({id:s.id,name:s.name,date:s.created_at?.slice(0,10),team_id:s.team_id,stats:s.stats||{},actionables:(s.retro_actionables||[]).map((a)=>({id:a.id,text:a.text,assignee:a.assignee,dueDate:a.due_date,priority:a.priority,status:a.status}))}));
         setHistory(hist);
       }
       setLoading(false);
@@ -1118,19 +1123,19 @@ export function RetroBoard({currentUser,wsUsers,lang}){
   },[wsUsers.length]);
 
   const saveSession=async(sessionData)=>{
-    const newSession={id:genId(),name:sessionData.name,date:new Date().toISOString().slice(0,10),team_id:sessionData.teamId,stats:sessionData.stats,actionables:(sessionData.actionables||[]).map(a=>({...a,id:genId()}))};
-    setHistory(h=>[...h,newSession]);
+    const newSession={id:genId(),name:sessionData.name,date:new Date().toISOString().slice(0,10),team_id:sessionData.teamId,stats:sessionData.stats,actionables:(sessionData.actionables||[]).map((a)=>({...a,id:genId()}))};
+    setHistory((h)=>[...h,newSession]);
     if(supabase){
       const{data:sess}=await supabase.from("retro_sessions").insert({name:sessionData.name,team_id:sessionData.teamId,status:"closed",phase:"summary",stats:sessionData.stats,created_by:currentUser.id}).select().single();
       if(sess){
-        const actionRows=(sessionData.actionables||[]).map(a=>({session_id:sess.id,text:a.text,assignee:a.assignee||"",due_date:a.dueDate||null,priority:a.priority||"medium",status:"open",team_id:sessionData.teamId,retro_name:sessionData.name}));
+        const actionRows=(sessionData.actionables||[]).map((a)=>({session_id:sess.id,text:a.text,assignee:a.assignee||"",due_date:a.dueDate||null,priority:a.priority||"medium",status:"open",team_id:sessionData.teamId,retro_name:sessionData.name}));
         if(actionRows.length>0)await supabase.from("retro_actionables").insert(actionRows);
       }
     }
   };
 
   const addToKanban=(items,retroName,teamId)=>{
-    setKanbanItems(prev=>{
+    setKanbanItems((prev)=>{
       const next=[...prev];
       items.forEach((item,i)=>{
         const id=item.id||genId();
