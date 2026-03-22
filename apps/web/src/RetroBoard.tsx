@@ -99,7 +99,7 @@ function TimerBar({timer,setTimer,running,setRunning,isMod,phaseMins,setPhaseMin
   const tc=timer>60?"var(--green)":timer>20?"#fbbf24":"var(--red)";
   const commit=()=>{const n=parseInt(editVal);if(n>0&&n<=120){setPhaseMins(n);setTimer(n*60);}setEditing(false);};
   return(
-    <div style={{position:"sticky",top:48,zIndex:15,background:"var(--sf)",backdropFilter:"blur(10px)",borderBottom:"1px solid var(--bd)",padding:"10px 20px"}}>
+    <div style={{position:"sticky",top:0,zIndex:15,background:"var(--sf)",backdropFilter:"blur(10px)",borderBottom:"1px solid var(--bd)",padding:"10px 20px"}}>
       <div style={{display:"flex",alignItems:"center",gap:14,maxWidth:1200,margin:"0 auto"}}>
         <div style={{fontSize:22,fontFamily:"'Sora',sans-serif",fontWeight:700,color:tc,minWidth:60}}>{fmtT(timer)}</div>
         <div style={{flex:1}}>
@@ -249,7 +249,7 @@ function RetroCreating({isMod,myCards,setMyCards,timer,setTimer,running,setRunni
     <div>
       <TimerBar timer={timer} setTimer={setTimer} running={running} setRunning={setRunning} isMod={isMod} phaseMins={phaseMins} setPhaseMins={setPhaseMins} onNext={onFinish} nextLabel="→ Organizar"
         extra={<span style={{fontSize:11,color:"var(--tx3)"}}>Las tarjetas son privadas hasta que el moderador cierre la fase</span>}/>
-      <div style={{maxWidth:860,margin:"0 auto",padding:"16px 18px 50px"}}>
+      <div style={{maxWidth:860,margin:"0 auto",padding:"24px 18px 60px"}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:16}}>
           <div>
             <div style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:12,padding:"16px 20px",marginBottom:12}}>
@@ -277,7 +277,7 @@ function RetroCreating({isMod,myCards,setMyCards,timer,setTimer,running,setRunni
           </div>
           <div>
             <div style={{fontSize:11,color:"var(--tx3)",marginBottom:7,fontWeight:600}}>Mis tarjetas ({myCards.length})</div>
-            <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:360,overflowY:"auto"}}>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
               {myCards.length===0&&<p style={{color:"var(--tx3)",fontSize:12,textAlign:"center",padding:"26px 0"}}>Aún no has añadido ninguna</p>}
               {myCards.map(card=>{const cc=RC_MAP[card.category];return(
                 <div key={card.id} style={{background:"var(--sf)",border:`1px solid ${cc.border}`,borderLeft:`3px solid ${cc.color}`,borderRadius:8,padding:"8px 10px",display:"flex",gap:7}}>
@@ -327,7 +327,7 @@ function RetroGrouping({isMod,cards,setCards,timer,setTimer,running,setRunning,p
     <div>
       <TimerBar timer={timer} setTimer={setTimer} running={running} setRunning={setRunning} isMod={isMod} phaseMins={phaseMins} setPhaseMins={setPhaseMins} onNext={onFinish} nextLabel="→ Votación"
         extra={<span style={{fontSize:11,color:"var(--tx3)"}}>{cards.length} tarjetas — arrastra para mover · 📎 para apilar</span>}/>
-      <div style={{maxWidth:1160,margin:"0 auto",padding:"16px 18px 50px"}}>
+      <div style={{maxWidth:1160,margin:"0 auto",padding:"24px 18px 50px"}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12,alignItems:"start"}}>
           {RC.map(cat=>{
             const col=cards.filter(c=>c.category===cat.id);
@@ -509,7 +509,7 @@ function RetroDiscussion({isMod,sortedCards,setSortedCards,discussIdx,setDiscuss
           </div>
           <div>
             <div style={{fontSize:11,color:"var(--tx3)",marginBottom:8,fontWeight:600}}>Todas las tarjetas</div>
-            <div style={{display:"flex",flexDirection:"column",gap:4,maxHeight:520,overflowY:"auto"}}>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
               {sortedCards.map((c,i)=>{
                 const cc=RC_MAP[c.category],isA=i===discussIdx;
                 return(
@@ -673,7 +673,7 @@ function RetroFlow({currentUser,wsUsers,teams,history,onFinish,onSaveSession,onA
   const pi=PHASES.indexOf(phase);
 
   return(
-    <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
+    <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"auto"}}>
       {/* Retro header with stepper */}
       <div style={{background:"var(--sf)",borderBottom:"1px solid var(--bd)",padding:"0 16px",display:"flex",alignItems:"center",gap:10,height:44,flexShrink:0}}>
         <span style={{fontSize:13,fontWeight:700,color:"var(--tx)",flexShrink:0}}>🔁 {retroName||"Nueva Retro"}</span>
@@ -692,7 +692,7 @@ function RetroFlow({currentUser,wsUsers,teams,history,onFinish,onSaveSession,onA
           ← Salir
         </button>
       </div>
-      <div style={{flex:1,overflowY:"auto"}}>
+      <div>
         {phase==="lobby"&&<RetroLobby user={currentUser} wsUsers={wsUsers} teams={myTeams} retroName={retroName} setRetroName={setRetroName} selectedTeamId={selectedTeamId} setSelectedTeamId={setSelectedTeamId} phaseTimes={phaseTimes} setPhaseTimes={setPhaseTimes} votesPerUser={votesPerUser} setVotesPerUser={setVotesPerUser} history={history} onStart={()=>goTo("creating")}/>}
         {phase==="creating"&&<RetroCreating isMod={isMod} myCards={myCards} setMyCards={setMyCards} timer={timers.creating} setTimer={v=>setTimers((p)=>({...p,creating:v}))} running={running.creating} setRunning={v=>setRunning((p)=>({...p,creating:v}))} phaseMins={phaseTimes.creating} setPhaseMins={v=>setPhaseTimes((p)=>({...p,creating:v}))} onFinish={()=>goTo("grouping")} currentUser={currentUser}/>}
         {phase==="grouping"&&<RetroGrouping isMod={isMod} cards={boardCards} setCards={setBoardCards} timer={timers.grouping} setTimer={v=>setTimers((p)=>({...p,grouping:v}))} running={running.grouping} setRunning={v=>setRunning((p)=>({...p,grouping:v}))} phaseMins={phaseTimes.grouping} setPhaseMins={v=>setPhaseTimes((p)=>({...p,grouping:v}))} onFinish={()=>goTo("voting")}/>}
@@ -835,7 +835,7 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
   };
 
   return(
-    <div style={{padding:"16px 20px",height:"100%",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{padding:"16px 20px",paddingBottom:60}}>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,flexWrap:"wrap"}}>
         <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:17,color:"var(--tx)",margin:0}}>🎯 Tablero de Accionables</h2>
         <div style={{marginLeft:"auto",display:"flex",gap:8,flexWrap:"wrap"}}>
@@ -850,7 +850,7 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
           {(filterTeam||filterPri)&&<RBtn sm v="ghost" onClick={()=>{setFilterTeam("");setFilterPri("");}}>✕ Limpiar</RBtn>}
         </div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(200px,1fr))",gap:14,flex:1,overflowY:"auto",alignItems:"start"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:14,alignItems:"start",marginTop:16}}>
         {KANBAN_COLS.map(col=>{
           const colItms=colItems(col.id);
           const isDragTarget=dragState&&dragState.fromCol!==col.id;
@@ -950,6 +950,28 @@ function RetroDashboard({currentUser,history,teams,setView}){
             <p style={{fontSize:12,color:"var(--tx3)"}}>Crea una nueva sesión y configura el flujo en segundos</p>
           </div>
           <RBtn onClick={()=>setView("nueva")}>Nueva Retro →</RBtn>
+        </div>
+      )}
+      {/* Pending accionables section */}
+      {openItems>0&&(
+        <div style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:12,overflow:"hidden",marginBottom:20}}>
+          <div style={{padding:"12px 20px",borderBottom:"1px solid var(--bd)",display:"flex",alignItems:"center",gap:8}}>
+            <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:14,color:"var(--tx)",margin:0}}>🎯 Accionables pendientes</h3>
+            <span style={{background:"rgba(248,113,113,.1)",color:"var(--red)",borderRadius:20,padding:"2px 8px",fontSize:11,fontWeight:700}}>{openItems} abiertos</span>
+            <RBtn sm v="ghost" style={{marginLeft:"auto"}} onClick={()=>setView("accionables")}>Ver tablero →</RBtn>
+          </div>
+          {myHistory.flatMap(r=>(r.actionables||[]).filter(a=>a.status==="open").map(a=>({...a,retroName:r.name}))).slice(0,5).map((a,i)=>(
+            <div key={i} style={{padding:"10px 20px",borderBottom:"1px solid var(--bd)",display:"flex",alignItems:"center",gap:12}}>
+              <span style={{color:"#f87171",fontSize:16}}>○</span>
+              <div style={{flex:1}}>
+                <p style={{fontSize:12,color:"var(--tx)",margin:"0 0 2px",fontWeight:500}}>{a.text}</p>
+                <span style={{fontSize:11,color:"var(--tx3)"}}>{a.retroName}</span>
+              </div>
+              {a.assignee&&<span style={{fontSize:11,color:"var(--tx3)",background:"var(--sf2)",borderRadius:20,padding:"2px 8px"}}>👤 {a.assignee}</span>}
+              {a.dueDate&&<span style={{fontSize:11,color:"var(--tx3)",background:"var(--sf2)",borderRadius:20,padding:"2px 8px"}}>📅 {a.dueDate}</span>}
+              {a.priority&&<RPriBadge priority={a.priority}/>}
+            </div>
+          ))}
         </div>
       )}
       {teams.length===0&&(
@@ -1166,7 +1188,7 @@ export function RetroBoard({currentUser,wsUsers,lang}){
   );
 
   return(
-    <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
+    <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"auto"}}>
       {/* RetroBoard sub-nav */}
       <nav style={{display:"flex",gap:2,padding:"0 12px",borderBottom:"1px solid var(--bd)",background:"var(--sf)",height:38,alignItems:"center",flexShrink:0}}>
         {NAV.map(item=>(
@@ -1177,7 +1199,7 @@ export function RetroBoard({currentUser,wsUsers,lang}){
           </button>
         ))}
       </nav>
-      <div style={{flex:1,overflow:"auto"}}>
+      <div>
         {view==="dashboard"&&<RetroDashboard currentUser={currentUser} history={history} teams={teams} setView={setView}/>}
         {view==="historial"&&<RetroHistorial currentUser={currentUser} history={history} teams={teams}/>}
         {view==="accionables"&&<RetroAccionables currentUser={currentUser} items={kanbanItems} setItems={setKanbanItems} history={history} teams={teams}/>}
