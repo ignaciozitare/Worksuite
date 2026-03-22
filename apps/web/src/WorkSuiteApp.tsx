@@ -3584,11 +3584,13 @@ body{font-family:'Inter',system-ui,sans-serif;font-size:13px;line-height:1.5;-we
 .avatar{width:28px;height:28px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;border:1px solid var(--bd2);flex-shrink:0;}
 .u-name{font-size:12px;font-weight:500;color:var(--tx2);}
 .o-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);}
-.sw-group{display:flex;border:1px solid var(--bd2);border-radius:var(--r);overflow:hidden;}
-.sw-btn{font-size:10px;font-weight:700;padding:4px 10px;background:transparent;border:none;color:var(--tx3);cursor:pointer;transition:var(--ease);letter-spacing:.03em;white-space:nowrap;}
-.sw-btn:hover{color:var(--tx2);background:var(--sf3);}
-.sw-btn.active{background:var(--ac);color:#fff;}
-.sw-btn.active-green{background:var(--green);color:#fff;}
+.sw-group{display:flex;gap:2px;border:1px solid var(--bd2);border-radius:var(--r2);overflow:hidden;padding:2px;}
+.sw-group.mod-group{background:var(--sf2);gap:3px;border:1px solid var(--bd);}
+.sw-btn{font-size:11px;font-weight:600;padding:5px 12px;background:transparent;border:none;color:var(--tx3);cursor:pointer;transition:var(--ease);letter-spacing:.02em;white-space:nowrap;border-radius:6px;}
+.sw-btn:hover{color:var(--tx2);background:rgba(255,255,255,.06);}
+.sw-btn.active{background:rgba(99,102,241,.18);color:#818cf8;box-shadow:inset 0 0 0 1px rgba(99,102,241,.4);}
+.sw-btn.active-green{background:rgba(74,222,128,.15);color:var(--green);box-shadow:inset 0 0 0 1px rgba(74,222,128,.35);}
+.sw-btn.active-retro{background:rgba(167,139,250,.15);color:#a78bfa;box-shadow:inset 0 0 0 1px rgba(167,139,250,.35);}
 .sw-btn.active-theme{background:var(--sf3);color:var(--tx);}
 .r-tag{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:3px;}
 .r-admin{background:rgba(245,166,35,.12);color:var(--amber);border:1px solid rgba(245,166,35,.3);}
@@ -4144,12 +4146,12 @@ function WorkSuiteApp() {
             <div className="logo-dot"/>
             <span style={{color:"var(--ac2)",fontWeight:700}}>Work</span><span style={{color:"var(--tx2)",fontWeight:300}}>Suite</span>
           </div>
-          <div className="sw-group">
-            {(CURRENT_USER.modules||["jt","hd"]).includes("jt") && (
-              <button className={`sw-btn ${mod==="jt"?"active":""}`} onClick={()=>{ setMod("jt"); setView("calendar"); }}>{t("moduleSwitchJira")}</button>
+          <div className="sw-group mod-group">
+            {(CURRENT_USER.modules||["jt","hd","retro"]).includes("jt") && (
+              <button className={`sw-btn ${mod==="jt"?"active":""}`} onClick={()=>{ setMod("jt"); setView("calendar"); }}>📋 {t("moduleSwitchJira")}</button>
             )}
-            {(CURRENT_USER.modules||["jt","hd"]).includes("hd") && (
-              <button className={`sw-btn ${mod==="hd"?"active-green":""}`} onClick={()=>{ setMod("hd"); setView("map"); }}>{t("moduleSwitchHD")}</button>
+            {(CURRENT_USER.modules||["jt","hd","retro"]).includes("hd") && (
+              <button className={`sw-btn ${mod==="hd"?"active-green":""}`} onClick={()=>{ setMod("hd"); setView("map"); }}>🪑 {t("moduleSwitchHD")}</button>
             )}
             {(CURRENT_USER.modules||["jt","hd","retro"]).includes("retro") && (
               <button className={`sw-btn ${mod==="retro"?"active-retro":""}`} onClick={()=>{ setMod("retro"); setView("retro"); }}>🔁 RetroBoard</button>
