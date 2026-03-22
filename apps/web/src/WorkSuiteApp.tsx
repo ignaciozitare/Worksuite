@@ -62,8 +62,9 @@ function worklogsArrayToMap(rows) {
 
 const DeskType = Object.freeze({ NONE:"none", HOTDESK:"hotdesk", FIXED:"fixed" });
 const MODULES = [
-  { id:"jt", label:"Jira Tracker", color:"var(--ac2)"   },
-  { id:"hd", label:"HotDesk",      color:"var(--green)"  },
+  { id:"jt",    label:"Jira Tracker", color:"var(--ac2)"   },
+  { id:"hd",    label:"HotDesk",      color:"var(--green)" },
+  { id:"retro", label:"RetroBoard",   color:"#818cf8"      },
 ];
 const SeatStatus = Object.freeze({ FREE:"free", OCCUPIED:"occupied", FIXED:"fixed" });
 
@@ -989,7 +990,9 @@ function BlueprintMiniMap({ blueprint, hd, seatId }) {
       const{x,y,w,h}=i;
       if(i.type==='zone'){ctx.fillStyle=dk?'rgba(40,30,80,.15)':'rgba(238,242,255,.5)';ctx.strokeStyle='rgba(129,140,248,.3)';ctx.lineWidth=1/s;ctx.setLineDash([4/s,3/s]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);}
       else if(i.type==='room'){ctx.fillStyle=dk?'rgba(15,30,70,.3)':'rgba(219,234,254,.4)';ctx.strokeStyle='rgba(59,130,246,.3)';ctx.lineWidth=1/s;ctx.setLineDash([]);rr(x,y,w,h,4);ctx.fill();ctx.stroke();}
-      else if(i.type==='wall'){ctx.fillStyle=dk?'rgba(60,60,70,.4)':'rgba(140,140,140,.2)';ctx.strokeStyle='rgba(100,100,110,.3)';ctx.lineWidth=1/s;ctx.setLineDash([]);rr(x,y,w,h,2);ctx.fill();ctx.stroke();}
+      else if(i.type==='wall'){ctx.strokeStyle=dk?'rgba(120,120,120,.5)':'rgba(100,100,110,.4)';ctx.lineWidth=3/s;ctx.setLineDash([]);ctx.lineCap='round';if(i.pts&&i.pts.length>=2){ctx.beginPath();ctx.moveTo(i.pts[0].x,i.pts[0].y);i.pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();}else{rr(x,y,w,h,2);ctx.stroke();}ctx.lineCap='butt';}
+      else if(i.type==='door'){ctx.strokeStyle='rgba(249,115,22,.5)';ctx.lineWidth=1/s;ctx.setLineDash([2/s,2/s]);ctx.beginPath();ctx.arc(x,y,Math.min(w,h)*.7,0,Math.PI/2);ctx.stroke();ctx.setLineDash([]);}
+      else if(i.type==='window'){ctx.strokeStyle='rgba(96,165,250,.5)';ctx.lineWidth=1.5/s;ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(x,y+h/2);ctx.lineTo(x+w,y+h/2);ctx.stroke();}
       else if(i.type==='desk'||i.type==='circle'){
         ctx.fillStyle=dk?'rgba(3,15,6,.3)':'rgba(240,253,244,.4)';
         ctx.strokeStyle='rgba(34,197,94,.2)';ctx.lineWidth=1/s;ctx.setLineDash([3/s,3/s]);
@@ -1876,7 +1879,7 @@ function AdminUsers({ users, setUsers, currentUser }) {
   const toggleRole   = id => setUsers(us=>us.map(u=>u.id===id?{...u,role:u.role==="admin"?"user":"admin"}:u));
   const toggleAccess = id => setUsers(us=>us.map(u=>u.id===id?{...u,active:!u.active}:u));
   const changeDeskType = (id, dt) => setUsers(us=>us.map(u=>u.id===id?{...u,deskType:dt}:u));
-  const toggleModule = (id, modId) => setUsers(us=>us.map(u=>{ if (u.id!==id) return u; const mods = u.modules||["jt","hd"]; return {...u, modules: mods.includes(modId) ? mods.filter(m=>m!==modId) : [...mods, modId]}; }));
+  const toggleModule = (id, modId) => setUsers(us=>us.map(u=>{ if (u.id!==id) return u; const mods = u.modules||["jt","hd","retro"]; return {...u, modules: mods.includes(modId) ? mods.filter(m=>m!==modId) : [...mods, modId]}; }));
   const handleAdd    = u  => setUsers(us=>[...us,u]);
   const handleImport = us => setUsers(prev=>[...prev,...us]);
   const DESK_COLORS = { [DeskType.NONE]:"var(--tx3)", [DeskType.HOTDESK]:"var(--ac2)", [DeskType.FIXED]:"var(--red)" };
@@ -1898,7 +1901,7 @@ function AdminUsers({ users, setUsers, currentUser }) {
               <td style={{fontFamily:"var(--mono)",fontSize:11,color:"var(--tx3)"}}>{u.email}</td>
               <td><span className={`r-tag ${u.role==="admin"?"r-admin":"r-user"}`}>{u.role==="admin"?t("roleAdmin"):t("roleUser")}</span></td>
               <td><div style={{display:"flex",gap:3}}>{[DeskType.NONE, DeskType.HOTDESK, DeskType.FIXED].map(dt=>(<button key={dt} onClick={()=>changeDeskType(u.id,dt)} style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:3,border:`1px solid ${u.deskType===dt?DESK_COLORS[dt]:"var(--bd)"}`,background:u.deskType===dt?`${DESK_COLORS[dt]}15`:"transparent",color:u.deskType===dt?DESK_COLORS[dt]:"var(--tx3)",cursor:"pointer"}}>{DESK_LABELS[dt]}</button>))}</div></td>
-              <td><div style={{display:"flex",gap:3,flexWrap:"wrap"}}>{MODULES.map(m=>{const hasMod=(u.modules||["jt","hd"]).includes(m.id);return(<button key={m.id} onClick={()=>toggleModule(u.id,m.id)} style={{fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:3,border:`1px solid ${hasMod?m.color:"var(--bd)"}`,background:hasMod?`${m.color}18`:"transparent",color:hasMod?m.color:"var(--tx3)",cursor:"pointer",textDecoration:hasMod?"none":"line-through"}}>{m.id.toUpperCase()}</button>);})}</div></td>
+              <td><div style={{display:"flex",gap:3,flexWrap:"wrap"}}>{MODULES.map(m=>{const hasMod=(u.modules||["jt","hd","retro"]).includes(m.id);return(<button key={m.id} onClick={()=>toggleModule(u.id,m.id)} style={{fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:3,border:`1px solid ${hasMod?m.color:"var(--bd)"}`,background:hasMod?`${m.color}18`:"transparent",color:hasMod?m.color:"var(--tx3)",cursor:"pointer",textDecoration:hasMod?"none":"line-through"}}>{m.id.toUpperCase()}</button>);})}</div></td>
               <td><span style={{fontSize:11,fontWeight:500,color:u.active?"var(--green)":"var(--red)"}}>{u.active?t("statusActive"):t("statusBlocked")}</span></td>
               <td>
                 <button className="act act-adm" onClick={()=>toggleRole(u.id)}>{u.role==="admin"?t("removeAdmin"):t("makeAdmin")}</button>
@@ -2147,8 +2150,12 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
     if(!items.length) return {minX:0,minY:0,maxX:800,maxY:600};
     let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
     items.forEach(i=>{
-      if(i.x<minX) minX=i.x; if(i.y<minY) minY=i.y;
-      if(i.x+i.w>maxX) maxX=i.x+i.w; if(i.y+i.h>maxY) maxY=i.y+i.h;
+      if(i.pts&&i.pts.length){
+        i.pts.forEach(p=>{ if(p.x<minX)minX=p.x; if(p.y<minY)minY=p.y; if(p.x>maxX)maxX=p.x; if(p.y>maxY)maxY=p.y; });
+      } else {
+        if(i.x<minX) minX=i.x; if(i.y<minY) minY=i.y;
+        if(i.x+i.w>maxX) maxX=i.x+i.w; if(i.y+i.h>maxY) maxY=i.y+i.h;
+      }
     });
     return {minX:minX-20,minY:minY-20,maxX:maxX+20,maxY:maxY+20};
   }, [blueprint?.id]);
@@ -2219,14 +2226,79 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
 
     function rr(x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();}
 
-    // Draw items (background first: zones, walls, rooms)
-    ['zone','wall','room'].forEach(type=>{
-      items.filter(i=>i.type===type).forEach(i=>{
-        const{x,y,w,h}=i;
-        if(type==='zone'){ctx.fillStyle=dk?'rgba(40,30,80,.2)':'rgba(238,242,255,.6)';ctx.strokeStyle='#818cf8';ctx.lineWidth=1;ctx.setLineDash([6,4]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=dk?'rgba(165,180,252,.85)':'#4338ca';ctx.font='700 20px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,y+h*0.22);}
-        else if(type==='wall'){ctx.fillStyle=dk?'rgba(70,70,70,.5)':'rgba(140,140,140,.3)';ctx.strokeStyle=dk?'#666':'#aaa';ctx.lineWidth=1;ctx.setLineDash([]);rr(x,y,w,h,2);ctx.fill();ctx.stroke();}
-        else if(type==='room'){ctx.fillStyle=dk?'rgba(15,30,70,.5)':'rgba(219,234,254,.6)';ctx.strokeStyle='#3b82f6';ctx.lineWidth=1;ctx.setLineDash([]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();ctx.fillStyle=dk?'#93c5fd':'#1e40af';ctx.font='600 20px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(i.label||'Room',x+w/2,y+h*0.22);}
-      });
+    // Draw items (background first: zones, walls, rooms, doors, windows)
+    // Zones
+    items.filter(i=>i.type==='zone').forEach(i=>{
+      const{x,y,w,h}=i;
+      ctx.fillStyle=dk?'rgba(40,30,80,.2)':'rgba(238,242,255,.6)';ctx.strokeStyle='#818cf8';ctx.lineWidth=1;ctx.setLineDash([6,4]);
+      rr(x,y,w,h,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=dk?'rgba(165,180,252,.85)':'#4338ca';ctx.font='700 20px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText((i.label||'Zone').toUpperCase(),x+w/2,y+h*0.22);
+    });
+    // Rooms
+    items.filter(i=>i.type==='room').forEach(i=>{
+      const{x,y,w,h}=i;
+      ctx.fillStyle=dk?'rgba(15,30,70,.5)':'rgba(219,234,254,.6)';ctx.strokeStyle='#3b82f6';ctx.lineWidth=1;ctx.setLineDash([]);
+      rr(x,y,w,h,5);ctx.fill();ctx.stroke();
+      ctx.fillStyle=dk?'#93c5fd':'#1e40af';ctx.font='600 20px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(i.label||'Room',x+w/2,y+h*0.22);
+    });
+    // Walls — polyline (pts[]) OR rect fallback
+    items.filter(i=>i.type==='wall').forEach(i=>{
+      ctx.strokeStyle=dk?'#777':'#999';ctx.lineWidth=4;ctx.setLineDash([]);ctx.lineCap='round';ctx.lineJoin='round';
+      if(i.pts&&i.pts.length>=2){
+        ctx.beginPath();ctx.moveTo(i.pts[0].x,i.pts[0].y);
+        i.pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+        ctx.stroke();
+      } else {
+        ctx.fillStyle=dk?'rgba(70,70,70,.5)':'rgba(140,140,140,.3)';
+        rr(i.x,i.y,i.w,i.h,2);ctx.fill();ctx.stroke();
+      }
+      ctx.lineCap='butt';ctx.lineJoin='miter';
+    });
+    // Doors — architectural symbol: vano line + leaf + arc sweep
+    items.filter(i=>i.type==='door').forEach(i=>{
+      const{x,y,w,h}=i;
+      const ang=(i.angle||0)*Math.PI/180;
+      const isDouble=i.double;
+      ctx.save();
+      ctx.translate(x+w/2,y+h/2);ctx.rotate(ang);
+      ctx.strokeStyle=dk?'#f97316':'#ea580c';ctx.lineWidth=1.5;ctx.setLineDash([]);
+      const hw=w/2,hh=h/2;
+      if(isDouble){
+        // Double door: two leaves
+        ctx.beginPath();ctx.moveTo(-hw,-hh);ctx.lineTo(-hw,hh);ctx.moveTo(hw,-hh);ctx.lineTo(hw,hh);ctx.stroke();
+        ctx.setLineDash([2,2]);
+        ctx.beginPath();ctx.moveTo(-hw,-hh);ctx.arc(-hw,-hh,hw,0,Math.PI/2);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(hw,-hh);ctx.arc(hw,-hh,hw,Math.PI,Math.PI/2,true);ctx.stroke();
+      } else {
+        // Single door: vano + leaf + arc
+        ctx.beginPath();ctx.moveTo(-hw,-hh);ctx.lineTo(-hw,hh);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(-hw,-hh);ctx.lineTo(hw,-hh);ctx.stroke();
+        ctx.setLineDash([2,2]);
+        ctx.beginPath();ctx.arc(-hw,-hh,w,0,Math.PI/2);ctx.stroke();
+      }
+      ctx.restore();
+    });
+    // Windows — two parallel lines with ticks
+    items.filter(i=>i.type==='window').forEach(i=>{
+      const{x,y,w,h}=i;
+      const ang=(i.angle||0)*Math.PI/180;
+      ctx.save();
+      ctx.translate(x+w/2,y+h/2);ctx.rotate(ang);
+      ctx.strokeStyle=dk?'#60a5fa':'#2563eb';ctx.lineWidth=1.5;ctx.setLineDash([]);
+      const hw=w/2,hh=h/2,t=3;
+      // Frame lines
+      ctx.beginPath();ctx.moveTo(-hw,-hh);ctx.lineTo(hw,-hh);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-hw,hh);ctx.lineTo(hw,hh);ctx.stroke();
+      // Glass panes (inner lines)
+      ctx.lineWidth=0.8;
+      ctx.beginPath();ctx.moveTo(-hw,-hh+t);ctx.lineTo(hw,-hh+t);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-hw,hh-t);ctx.lineTo(hw,hh-t);ctx.stroke();
+      // End ticks
+      ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(-hw,-hh);ctx.lineTo(-hw,hh);ctx.moveTo(hw,-hh);ctx.lineTo(hw,hh);ctx.stroke();
+      ctx.restore();
     });
 
     // Draw clusters (border + zone label)
@@ -3807,8 +3879,8 @@ function WorkSuiteApp() {
     role:     authUser.role,
     deskType: authUser.desk_type || 'hotdesk',
     active:   authUser.active !== false,
-    modules:  authUser.modules || ["jt","hd"],
-  } : { id: '', name: 'Loading...', email: '', avatar: '..', role: 'user', deskType: 'hotdesk', active: true, modules: ["jt","hd"] };
+    modules:  authUser.modules || ["jt","hd","retro"],
+  } : { id: '', name: 'Loading...', email: '', avatar: '..', role: 'user', deskType: 'hotdesk', active: true, modules: ["jt","hd","retro"] };
 
   useEffect(() => {
     if (!authUser) { setLoadingData(false); return; }
@@ -3832,7 +3904,7 @@ function WorkSuiteApp() {
           id: u.id, name: u.name, email: u.email,
           avatar: u.avatar || u.name.slice(0,2).toUpperCase(),
           role: u.role, deskType: u.desk_type, active: u.active,
-          modules: u.modules || ["jt","hd"],
+          modules: u.modules || ["jt","hd","retro"],
         })));
 
         const fixed = {};
