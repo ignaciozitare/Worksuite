@@ -991,8 +991,24 @@ function BlueprintMiniMap({ blueprint, hd, seatId }) {
       if(i.type==='zone'){ctx.fillStyle=dk?'rgba(40,30,80,.15)':'rgba(238,242,255,.5)';ctx.strokeStyle='rgba(129,140,248,.3)';ctx.lineWidth=1/s;ctx.setLineDash([4/s,3/s]);rr(x,y,w,h,5);ctx.fill();ctx.stroke();ctx.setLineDash([]);}
       else if(i.type==='room'){ctx.fillStyle=dk?'rgba(15,30,70,.3)':'rgba(219,234,254,.4)';ctx.strokeStyle='rgba(59,130,246,.3)';ctx.lineWidth=1/s;ctx.setLineDash([]);rr(x,y,w,h,4);ctx.fill();ctx.stroke();}
       else if(i.type==='wall'){ctx.strokeStyle=dk?'rgba(120,120,120,.5)':'rgba(100,100,110,.4)';ctx.lineWidth=3/s;ctx.setLineDash([]);ctx.lineCap='round';if(i.pts&&i.pts.length>=2){ctx.beginPath();ctx.moveTo(i.pts[0].x,i.pts[0].y);i.pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();}else{rr(x,y,w,h,2);ctx.stroke();}ctx.lineCap='butt';}
-      else if(i.type==='door'){ctx.strokeStyle='rgba(249,115,22,.5)';ctx.lineWidth=1/s;ctx.setLineDash([2/s,2/s]);ctx.beginPath();ctx.arc(x,y,Math.min(w,h)*.7,0,Math.PI/2);ctx.stroke();ctx.setLineDash([]);}
-      else if(i.type==='window'){ctx.strokeStyle='rgba(96,165,250,.5)';ctx.lineWidth=1.5/s;ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(x,y+h/2);ctx.lineTo(x+w,y+h/2);ctx.stroke();}
+      else if(i.type==='door'){
+        const ang=(i.angle||0)*Math.PI/180,sw=(i.w||48);
+        ctx.save();ctx.translate(x,y);ctx.rotate(ang);
+        ctx.strokeStyle='rgba(249,115,22,.6)';ctx.lineWidth=1.5/s;ctx.setLineDash([]);ctx.lineCap='round';
+        ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(sw,0);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-sw);ctx.stroke();
+        ctx.lineWidth=0.6/s;ctx.setLineDash([3/s,3/s]);
+        ctx.beginPath();ctx.arc(0,0,sw,0,-Math.PI/2,true);ctx.stroke();
+        ctx.setLineDash([]);ctx.lineCap='butt';ctx.restore();
+      }
+      else if(i.type==='window'){
+        const ang=(i.angle||0)*Math.PI/180,sw=(i.w||48),th=6;
+        ctx.save();ctx.translate(x,y);ctx.rotate(ang);
+        ctx.strokeStyle='rgba(56,189,248,.6)';ctx.lineWidth=1.5/s;ctx.setLineDash([]);
+        ctx.beginPath();ctx.moveTo(0,-th/2);ctx.lineTo(sw,-th/2);ctx.moveTo(0,th/2);ctx.lineTo(sw,th/2);ctx.stroke();
+        ctx.lineWidth=1/s;ctx.beginPath();ctx.moveTo(0,-th/2);ctx.lineTo(0,th/2);ctx.moveTo(sw,-th/2);ctx.lineTo(sw,th/2);ctx.stroke();
+        ctx.restore();
+      }
       else if(i.type==='desk'||i.type==='circle'){
         ctx.fillStyle=dk?'rgba(3,15,6,.3)':'rgba(240,253,244,.4)';
         ctx.strokeStyle='rgba(34,197,94,.2)';ctx.lineWidth=1/s;ctx.setLineDash([3/s,3/s]);
@@ -2152,6 +2168,11 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
     items.forEach(i=>{
       if(i.pts&&i.pts.length){
         i.pts.forEach(p=>{ if(p.x<minX)minX=p.x; if(p.y<minY)minY=p.y; if(p.x>maxX)maxX=p.x; if(p.y>maxY)maxY=p.y; });
+      } else if(i.type==='door'||i.type==='window'){
+        // Door/window pivot at (x,y), extends sw in rotated space — use loose bounds
+        const sw=i.w||48;
+        if(i.x-sw<minX)minX=i.x-sw; if(i.y-sw<minY)minY=i.y-sw;
+        if(i.x+sw>maxX)maxX=i.x+sw; if(i.y+sw>maxY)maxY=i.y+sw;
       } else {
         if(i.x<minX) minX=i.x; if(i.y<minY) minY=i.y;
         if(i.x+i.w>maxX) maxX=i.x+i.w; if(i.y+i.h>maxY) maxY=i.y+i.h;
@@ -2256,48 +2277,48 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
       }
       ctx.lineCap='butt';ctx.lineJoin='miter';
     });
-    // Doors — architectural symbol: vano line + leaf + arc sweep
+    // Doors — exact same drawing as blueprint editor
+    // Editor: ctx.translate(x,y); ctx.rotate(ang*PI/180); sw=i.w
     items.filter(i=>i.type==='door').forEach(i=>{
-      const{x,y,w,h}=i;
+      const{x,y}=i;
       const ang=(i.angle||0)*Math.PI/180;
-      const isDouble=i.double;
+      const sw=i.w||48;
       ctx.save();
-      ctx.translate(x+w/2,y+h/2);ctx.rotate(ang);
-      ctx.strokeStyle=dk?'#f97316':'#ea580c';ctx.lineWidth=1.5;ctx.setLineDash([]);
-      const hw=w/2,hh=h/2;
-      if(isDouble){
-        // Double door: two leaves
-        ctx.beginPath();ctx.moveTo(-hw,-hh);ctx.lineTo(-hw,hh);ctx.moveTo(hw,-hh);ctx.lineTo(hw,hh);ctx.stroke();
-        ctx.setLineDash([2,2]);
-        ctx.beginPath();ctx.moveTo(-hw,-hh);ctx.arc(-hw,-hh,hw,0,Math.PI/2);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(hw,-hh);ctx.arc(hw,-hh,hw,Math.PI,Math.PI/2,true);ctx.stroke();
-      } else {
-        // Single door: vano + leaf + arc
-        ctx.beginPath();ctx.moveTo(-hw,-hh);ctx.lineTo(-hw,hh);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(-hw,-hh);ctx.lineTo(hw,-hh);ctx.stroke();
-        ctx.setLineDash([2,2]);
-        ctx.beginPath();ctx.arc(-hw,-hh,w,0,Math.PI/2);ctx.stroke();
+      ctx.translate(x,y);ctx.rotate(ang);
+      ctx.strokeStyle='#fb923c';ctx.lineWidth=1.5;ctx.setLineDash([]);ctx.lineCap='round';
+      // Wall gap line (horizontal base)
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(sw,0);ctx.stroke();
+      // Door leaf (vertical)
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-sw);ctx.stroke();
+      // Sweep arc
+      ctx.lineWidth=0.8;ctx.setLineDash([3,3]);
+      ctx.beginPath();ctx.arc(0,0,sw,0,-Math.PI/2,true);ctx.stroke();
+      if(i.double){
+        ctx.setLineDash([]);ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(sw,0);ctx.lineTo(sw,-sw);ctx.stroke();
+        ctx.lineWidth=0.8;ctx.setLineDash([3,3]);
+        ctx.beginPath();ctx.arc(sw,0,sw,Math.PI,-Math.PI/2,false);ctx.stroke();
       }
+      ctx.setLineDash([]);ctx.lineCap='butt';
       ctx.restore();
     });
-    // Windows — two parallel lines with ticks
+    // Windows — exact same drawing as blueprint editor
+    // Editor: ctx.translate(x,y); ctx.rotate(ang*PI/180); sw=i.w, th=6 (fixed)
     items.filter(i=>i.type==='window').forEach(i=>{
-      const{x,y,w,h}=i;
+      const{x,y}=i;
       const ang=(i.angle||0)*Math.PI/180;
+      const sw=i.w||48,th=6;
       ctx.save();
-      ctx.translate(x+w/2,y+h/2);ctx.rotate(ang);
-      ctx.strokeStyle=dk?'#60a5fa':'#2563eb';ctx.lineWidth=1.5;ctx.setLineDash([]);
-      const hw=w/2,hh=h/2,t=3;
-      // Frame lines
-      ctx.beginPath();ctx.moveTo(-hw,-hh);ctx.lineTo(hw,-hh);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(-hw,hh);ctx.lineTo(hw,hh);ctx.stroke();
-      // Glass panes (inner lines)
-      ctx.lineWidth=0.8;
-      ctx.beginPath();ctx.moveTo(-hw,-hh+t);ctx.lineTo(hw,-hh+t);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(-hw,hh-t);ctx.lineTo(hw,hh-t);ctx.stroke();
+      ctx.translate(x,y);ctx.rotate(ang);
+      ctx.strokeStyle='#38bdf8';ctx.lineWidth=1.5;ctx.setLineDash([]);
+      // Two parallel lines
+      ctx.beginPath();ctx.moveTo(0,-th/2);ctx.lineTo(sw,-th/2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(0,th/2);ctx.lineTo(sw,th/2);ctx.stroke();
       // End ticks
-      ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.moveTo(-hw,-hh);ctx.lineTo(-hw,hh);ctx.moveTo(hw,-hh);ctx.lineTo(hw,hh);ctx.stroke();
+      ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(0,-th/2);ctx.lineTo(0,th/2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(sw,-th/2);ctx.lineTo(sw,th/2);ctx.stroke();
+      if(i.double){const m=sw/2;ctx.beginPath();ctx.moveTo(m,-th/2);ctx.lineTo(m,th/2);ctx.stroke();}
       ctx.restore();
     });
 
@@ -2759,7 +2780,25 @@ function BlueprintCanvas({ items: initItems, onChange }) {
 
   useEffect(()=>{
     const cvs=canvasRef.current;const cw=cwRef.current;if(!cvs||!cw)return;
-    function resize(){cvs.width=cw.clientWidth;cvs.height=Math.max(cw.clientHeight,300);draw();}
+    function fitItems(){
+      if(!S.items.length){S.cam={cx:0,cy:0,s:1};draw();return;}
+      let mnX=Infinity,mnY=Infinity,mxX=-Infinity,mxY=-Infinity;
+      S.items.forEach(i=>{
+        if(i.pts&&i.pts.length){i.pts.forEach(p=>{if(p.x<mnX)mnX=p.x;if(p.y<mnY)mnY=p.y;if(p.x>mxX)mxX=p.x;if(p.y>mxY)mxY=p.y;});}
+        else{if(i.x<mnX)mnX=i.x;if(i.y<mnY)mnY=i.y;if(i.x+i.w>mxX)mxX=i.x+i.w;if(i.y+i.h>mxY)mxY=i.y+i.h;}
+      });
+      const W=cvs.width,H=cvs.height,P=60;
+      const bW=mxX-mnX,bH=mxY-mnY;
+      if(bW<=0||bH<=0)return;
+      const s=Math.min((W-P*2)/bW,(H-P*2)/bH,2);
+      S.cam={cx:(W-bW*s)/2-mnX*s,cy:(H-bH*s)/2-mnY*s,s};
+      draw();
+    }
+    let _fitted=false;
+    function resize(){
+      cvs.width=cw.clientWidth;cvs.height=Math.max(cw.clientHeight,300);
+      if(!_fitted){_fitted=true;fitItems();}else{draw();}
+    }
     const ro=new ResizeObserver(resize);ro.observe(cw);
     resize();
     function wheelH(e){
