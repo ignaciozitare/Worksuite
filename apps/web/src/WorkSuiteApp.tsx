@@ -9,6 +9,7 @@ import React, {
 import { createPortal } from "react-dom";
 import { supabase } from './shared/lib/api';
 import { RetroBoard, AdminRetroTeams } from './RetroBoard';
+import { DeployPlanner } from './modules/deploy-planner';
 import { useAuth } from './shared/hooks/useAuth';
 
 // ── API helpers ────────────────────────────────────────────────────────────
@@ -62,9 +63,10 @@ function worklogsArrayToMap(rows) {
 
 const DeskType = Object.freeze({ NONE:"none", HOTDESK:"hotdesk", FIXED:"fixed" });
 const MODULES = [
-  { id:"jt",    label:"Jira Tracker", color:"var(--ac2)"   },
-  { id:"hd",    label:"HotDesk",      color:"var(--green)" },
-  { id:"retro", label:"RetroBoard",   color:"#818cf8"      },
+  { id:"jt",     label:"Jira Tracker",  color:"var(--ac2)"   },
+  { id:"hd",     label:"HotDesk",       color:"var(--green)" },
+  { id:"retro",  label:"RetroBoard",    color:"#818cf8"      },
+  { id:"deploy", label:"Deploy Planner",color:"#f59e0b"      },
 ];
 const SeatStatus = Object.freeze({ FREE:"free", OCCUPIED:"occupied", FIXED:"fixed" });
 
@@ -1898,7 +1900,7 @@ function AdminUsers({ users, setUsers, currentUser }) {
   const toggleRole   = id => setUsers(us=>us.map(u=>u.id===id?{...u,role:u.role==="admin"?"user":"admin"}:u));
   const toggleAccess = id => setUsers(us=>us.map(u=>u.id===id?{...u,active:!u.active}:u));
   const changeDeskType = (id, dt) => setUsers(us=>us.map(u=>u.id===id?{...u,deskType:dt}:u));
-  const toggleModule = (id, modId) => setUsers(us=>us.map(u=>{ if (u.id!==id) return u; const mods = u.modules||["jt","hd","retro"]; return {...u, modules: mods.includes(modId) ? mods.filter(m=>m!==modId) : [...mods, modId]}; }));
+  const toggleModule = (id, modId) => setUsers(us=>us.map(u=>{ if (u.id!==id) return u; const mods = u.modules||["jt","hd","retro","deploy"]; return {...u, modules: mods.includes(modId) ? mods.filter(m=>m!==modId) : [...mods, modId]}; }));
   const handleAdd    = u  => setUsers(us=>[...us,u]);
   const handleImport = us => setUsers(prev=>[...prev,...us]);
   const DESK_COLORS = { [DeskType.NONE]:"var(--tx3)", [DeskType.HOTDESK]:"var(--ac2)", [DeskType.FIXED]:"var(--red)" };
@@ -1920,7 +1922,7 @@ function AdminUsers({ users, setUsers, currentUser }) {
               <td style={{fontFamily:"var(--mono)",fontSize:11,color:"var(--tx3)"}}>{u.email}</td>
               <td><span className={`r-tag ${u.role==="admin"?"r-admin":"r-user"}`}>{u.role==="admin"?t("roleAdmin"):t("roleUser")}</span></td>
               <td><div style={{display:"flex",gap:3}}>{[DeskType.NONE, DeskType.HOTDESK, DeskType.FIXED].map(dt=>(<button key={dt} onClick={()=>changeDeskType(u.id,dt)} style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:3,border:`1px solid ${u.deskType===dt?DESK_COLORS[dt]:"var(--bd)"}`,background:u.deskType===dt?`${DESK_COLORS[dt]}15`:"transparent",color:u.deskType===dt?DESK_COLORS[dt]:"var(--tx3)",cursor:"pointer"}}>{DESK_LABELS[dt]}</button>))}</div></td>
-              <td><div style={{display:"flex",gap:3,flexWrap:"wrap"}}>{MODULES.map(m=>{const hasMod=(u.modules||["jt","hd","retro"]).includes(m.id);return(<button key={m.id} onClick={()=>toggleModule(u.id,m.id)} style={{fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:3,border:`1px solid ${hasMod?m.color:"var(--bd)"}`,background:hasMod?`${m.color}18`:"transparent",color:hasMod?m.color:"var(--tx3)",cursor:"pointer",textDecoration:hasMod?"none":"line-through"}}>{m.id.toUpperCase()}</button>);})}</div></td>
+              <td><div style={{display:"flex",gap:3,flexWrap:"wrap"}}>{MODULES.map(m=>{const hasMod=(u.modules||["jt","hd","retro","deploy"]).includes(m.id);return(<button key={m.id} onClick={()=>toggleModule(u.id,m.id)} style={{fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:3,border:`1px solid ${hasMod?m.color:"var(--bd)"}`,background:hasMod?`${m.color}18`:"transparent",color:hasMod?m.color:"var(--tx3)",cursor:"pointer",textDecoration:hasMod?"none":"line-through"}}>{m.id.toUpperCase()}</button>);})}</div></td>
               <td><span style={{fontSize:11,fontWeight:500,color:u.active?"var(--green)":"var(--red)"}}>{u.active?t("statusActive"):t("statusBlocked")}</span></td>
               <td>
                 <button className="act act-adm" onClick={()=>toggleRole(u.id)}>{u.role==="admin"?t("removeAdmin"):t("makeAdmin")}</button>
@@ -3646,7 +3648,7 @@ body{font-family:'Inter',system-ui,sans-serif;font-size:13px;line-height:1.5;-we
 .sw-btn:hover{color:var(--tx2);background:rgba(255,255,255,.06);}
 .sw-btn.active{background:rgba(99,102,241,.18);color:#818cf8;box-shadow:inset 0 0 0 1px rgba(99,102,241,.4);}
 .sw-btn.active-green{background:rgba(74,222,128,.15);color:var(--green);box-shadow:inset 0 0 0 1px rgba(74,222,128,.35);}
-.sw-btn.active-retro{background:rgba(167,139,250,.15);color:#a78bfa;box-shadow:inset 0 0 0 1px rgba(167,139,250,.35);}
+.sw-btn.active-retro{background:rgba(167,139,250,.15);color:#a78bfa;box-shadow:inset 0 0 0 1px rgba(167,139,250,.35);}.sw-btn.active-deploy{background:rgba(245,158,11,.15);color:#f59e0b;box-shadow:inset 0 0 0 1px rgba(245,158,11,.35);}
 .sw-btn.active-theme{background:var(--sf3);color:var(--tx);}
 .r-tag{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:3px;}
 .r-admin{background:rgba(245,166,35,.12);color:var(--amber);border:1px solid rgba(245,166,35,.3);}
@@ -3937,8 +3939,8 @@ function WorkSuiteApp() {
     role:     authUser.role,
     deskType: authUser.desk_type || 'hotdesk',
     active:   authUser.active !== false,
-    modules:  authUser.modules || ["jt","hd","retro"],
-  } : { id: '', name: 'Loading...', email: '', avatar: '..', role: 'user', deskType: 'hotdesk', active: true, modules: ["jt","hd","retro"] };
+    modules:  authUser.modules || ["jt","hd","retro","deploy"],
+  } : { id: '', name: 'Loading...', email: '', avatar: '..', role: 'user', deskType: 'hotdesk', active: true, modules: ["jt","hd","retro","deploy"] };
 
   useEffect(() => {
     if (!authUser) { setLoadingData(false); return; }
@@ -3962,7 +3964,7 @@ function WorkSuiteApp() {
           id: u.id, name: u.name, email: u.email,
           avatar: u.avatar || u.name.slice(0,2).toUpperCase(),
           role: u.role, deskType: u.desk_type, active: u.active,
-          modules: u.modules || ["jt","hd","retro"],
+          modules: u.modules || ["jt","hd","retro","deploy"],
         })));
 
         const fixed = {};
@@ -4209,8 +4211,11 @@ function WorkSuiteApp() {
             {(CURRENT_USER.modules||["jt","hd","retro"]).includes("hd") && (
               <button className={`sw-btn ${mod==="hd"?"active-green":""}`} onClick={()=>{ setMod("hd"); setView("map"); }}>🪑 {t("moduleSwitchHD")}</button>
             )}
-            {(CURRENT_USER.modules||["jt","hd","retro"]).includes("retro") && (
+            {(CURRENT_USER.modules||["jt","hd","retro","deploy"]).includes("retro") && (
               <button className={`sw-btn ${mod==="retro"?"active-retro":""}`} onClick={()=>{ setMod("retro"); setView("retro"); }}>🔁 RetroBoard</button>
+            )}
+            {(CURRENT_USER.modules||["jt","hd","retro","deploy"]).includes("deploy") && (
+              <button className={`sw-btn ${mod==="deploy"?"active-deploy":""}`} onClick={()=>{ setMod("deploy"); setView("deploy"); }}>🚀 Deploy Planner</button>
             )}
           </div>
           <div className="top-right">
@@ -4249,7 +4254,7 @@ function WorkSuiteApp() {
           </div>
         </header>
 
-        {mod !== "retro" && <nav className="nav-bar">
+        {mod !== "retro" && mod !== "deploy" && <nav className="nav-bar">
           {currentNavItems.map(item=>(
             <button key={item.id}
               className={`n-btn ${view===item.id?(mod==="hd"?"active-hd":"active"):""}`}
@@ -4293,6 +4298,11 @@ function WorkSuiteApp() {
           {mod==="retro" && view!=="admin" && (
             <main className="content" style={{padding:0,overflow:"hidden",display:"flex",flexDirection:"column",height:"100%"}}>
               <RetroBoard currentUser={CURRENT_USER} wsUsers={users} lang={lang}/>
+            </main>
+          )}
+          {mod==="deploy" && view!=="admin" && (
+            <main className="content" style={{padding:0,overflow:"auto"}}>
+              <DeployPlanner currentUser={CURRENT_USER}/>
             </main>
           )}
           {view==="admin" && (<AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER}/>)}
