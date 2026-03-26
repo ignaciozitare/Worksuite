@@ -1,29 +1,25 @@
 {
-  "name": "@worksuite/web",
+  "name": "worksuite",
   "version": "0.0.1",
   "private": true,
-  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "dev":     "vite",
-    "build":   "vite build",
-    "preview": "vite preview",
-    "test":    "vitest run",
-    "test:watch": "vitest"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.43.0",
-    "@tanstack/react-query": "^5.35.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.23.1"
+    "dev:web":  "npm -w apps/web run dev",
+    "dev:api":  "npm -w apps/api run dev",
+    "build:web": "npm -w apps/web run build",
+    "build:api": "npm -w apps/api run build",
+    "build:packages": "npm -w packages/shared-types run build && npm -w packages/i18n run build && npm -w packages/ui run build && npm -w packages/jira-client run build",
+    "build": "npm run build:packages && npm run build:web && npm run build:api",
+    "typecheck": "tsc --build --verbose",
+    "lint": "eslint packages apps --ext .ts,.tsx"
   },
   "devDependencies": {
-    "@types/react": "^18.3.2",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.2.1",
-    "@vitest/coverage-v8": "^1.5.0",
-    "typescript": "^5.4.5",
-    "vite": "^5.2.10",
-    "vitest": "^1.5.0"
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
