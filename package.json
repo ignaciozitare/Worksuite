@@ -1,21 +1,25 @@
 {
   "name": "worksuite",
+  "version": "0.0.1",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "dev":        "concurrently \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
-    "build":      "npm run build -w packages/shared-types && npm run build -w apps/api && npm run build -w apps/web",
-    "test":       "npm run test -w apps/api && npm run test -w apps/web",
-    "test:watch": "npm run test:watch -w apps/api",
-    "lint":       "eslint apps/*/src packages/*/src --ext .ts,.tsx",
-    "typecheck":  "tsc -b apps/api apps/web packages/shared-types"
+    "dev:web":  "npm -w apps/web run dev",
+    "dev:api":  "npm -w apps/api run dev",
+    "build:web": "npm -w apps/web run build",
+    "build:api": "npm -w apps/api run build",
+    "build:packages": "npm -w packages/shared-types run build && npm -w packages/i18n run build && npm -w packages/ui run build && npm -w packages/jira-client run build",
+    "build": "npm run build:packages && npm run build:web && npm run build:api",
+    "typecheck": "tsc --build --verbose",
+    "lint": "eslint packages apps --ext .ts,.tsx"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "eslint": "^8.57.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
-    "prettier": "^3.2.5",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
