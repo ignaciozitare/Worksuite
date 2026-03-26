@@ -9,7 +9,7 @@ import React, {
 import { createPortal } from "react-dom";
 import { supabase } from './shared/lib/api';
 import { RetroBoard, AdminRetroTeams } from './RetroBoard';
-import { DeployPlanner } from './modules/deploy-planner';
+// DeployPlanner is defined inline below to avoid @worksuite/ui dependency
 import { useAuth } from './shared/hooks/useAuth';
 
 // ── API helpers ────────────────────────────────────────────────────────────
@@ -3630,7 +3630,7 @@ const buildCSS = () => `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{--body:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--r:5px;--r2:8px;--ease:all .15s ease;--bg:#0d0d10;--sf:#141418;--sf2:#1b1b22;--sf3:#21212c;--bd:#2a2a38;--bd2:#383850;--ac:#4f6ef7;--ac2:#7b93ff;--glow:rgba(79,110,247,.12);--green:#3ecf8e;--amber:#f5a623;--red:#e05252;--purple:#b57cf6;--tx:#e4e4ef;--tx2:#8888a8;--tx3:#50506a;--shadow:0 8px 30px rgba(0,0,0,.55);--seat-free:#3ecf8e;--seat-occ:#4f6ef7;--seat-fixed:#e05252;color-scheme:dark;}
 [data-theme="dark"]{--bg:#0d0d10;--sf:#141418;--sf2:#1b1b22;--sf3:#21212c;--bd:#2a2a38;--bd2:#383850;--ac:#4f6ef7;--ac2:#7b93ff;--glow:rgba(79,110,247,.12);--green:#3ecf8e;--amber:#f5a623;--red:#e05252;--purple:#b57cf6;--tx:#e4e4ef;--tx2:#8888a8;--tx3:#50506a;--shadow:0 8px 30px rgba(0,0,0,.55);--seat-free:#3ecf8e;--seat-occ:#4f6ef7;--seat-fixed:#e05252;color-scheme:dark;}
-[data-theme="light"]{--bg:#f0f0f6;--sf:#ffffff;--sf2:#f5f5fb;--sf3:#eaeaf2;--bd:#dcdce8;--bd2:#c4c4d8;--ac:#4f6ef7;--ac2:#2d4fd0;--glow:rgba(79,110,247,.07);--green:#0f9060;--amber:#b86800;--red:#c02828;--purple:#7030b0;--tx:#181826;--tx2:#4a4a70;--tx3:#9494b8;--shadow:0 8px 30px rgba(0,0,0,.1);--seat-free:#0f9060;--seat-occ:#4f6ef7;--seat-fixed:#c02828;color-scheme:light;}
+[data-theme="light"]{--bg:#e2e2ea;--sf:#f0f0f7;--sf2:#e8e8f0;--sf3:#deded8;--bd:#dcdce8;--bd2:#c4c4d8;--ac:#4f6ef7;--ac2:#2d4fd0;--glow:rgba(79,110,247,.07);--green:#0f9060;--amber:#b86800;--red:#c02828;--purple:#7030b0;--tx:#181826;--tx2:#4a4a70;--tx3:#9494b8;--shadow:0 8px 30px rgba(0,0,0,.1);--seat-free:#0f9060;--seat-occ:#4f6ef7;--seat-fixed:#c02828;color-scheme:light;}
 html,body,#root{background:#0d0d10;color:#e4e4ef;margin:0;padding:0;}
 body{font-family:'Inter',system-ui,sans-serif;font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;}
 ::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px;}
@@ -3696,7 +3696,7 @@ textarea.fi{resize:vertical;min-height:52px;font-family:var(--mono);font-size:11
 .cdh{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);text-align:center;padding:6px 0;}
 .cc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);min-height:80px;padding:6px;cursor:pointer;transition:var(--ease);display:flex;flex-direction:column;gap:2px;position:relative;overflow:hidden;}
 .cc:hover{border-color:var(--bd2);background:var(--sf2);}
-.cc:hover .cadd{opacity:1;}
+.cc:hover .cadd{opacity:1;transform:scale(1.1);background:var(--ac);color:#fff;border-color:var(--ac);}
 .cc.today::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ac);}
 .cc.today{border-color:rgba(79,110,247,.35);}
 .cc.other{background:transparent !important;border-color:transparent !important;pointer-events:none;}
@@ -3705,7 +3705,7 @@ textarea.fi{resize:vertical;min-height:52px;font-family:var(--mono);font-size:11
 .ctop{display:flex;align-items:flex-start;justify-content:space-between;}
 .cday{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--tx3);}
 .cc.today .cday{color:var(--ac2);}
-.cadd{opacity:0;font-size:12px;color:var(--ac2);background:var(--glow);border:1px solid rgba(79,110,247,.25);border-radius:3px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;transition:opacity .15s;cursor:pointer;flex-shrink:0;}
+.cadd{opacity:0.5;font-size:15px;font-weight:700;color:var(--ac2);background:var(--glow);border:1px solid rgba(79,110,247,.3);border-radius:4px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;transition:all .15s;cursor:pointer;flex-shrink:0;line-height:1;}
 .chrs{font-family:var(--mono);font-size:17px;font-weight:600;line-height:1.1;color:var(--tx);}
 .chrs span{font-size:10px;font-weight:400;color:var(--tx3);}
 .cdots{display:flex;flex-direction:column;gap:1px;margin-top:auto;}
@@ -3902,6 +3902,224 @@ tr.hd-row-today > td.hd-td{background:rgba(139,92,246,.12) !important;border-top
 // ══════════════════════════════════════════════════════════════════
 // ROOT COMPONENT
 // ══════════════════════════════════════════════════════════════════
+
+
+// ══════════════════════════════════════════════════════════════════
+// DEPLOY PLANNER — Self-contained (no external UI deps)
+// ══════════════════════════════════════════════════════════════════
+
+function DeployPlanner({ currentUser }) {
+  const [deployments, setDeployments] = React.useState([]);
+  const [loading, setLoading]         = React.useState(true);
+  const [showNew, setShowNew]         = React.useState(false);
+  const [form, setForm]               = React.useState({ name:'', version:'', environment:'staging', notes:'' });
+  const [saving, setSaving]           = React.useState(false);
+
+  React.useEffect(() => {
+    loadDeployments();
+  }, []);
+
+  async function loadDeployments() {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('deployments')
+        .select('*')
+        .order('planned_at', { ascending: false });
+      if (!error) setDeployments(data || []);
+    } catch(e) { console.error(e); }
+    finally { setLoading(false); }
+  }
+
+  async function handleCreate(e) {
+    e.preventDefault();
+    if (!form.name.trim() || !form.version.trim()) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('deployments').insert({
+        name:        form.name,
+        version:     form.version,
+        environment: form.environment,
+        status:      'planned',
+        jira_issues: [],
+        planned_at:  new Date().toISOString(),
+        created_by:  currentUser.id,
+        notes:       form.notes || null,
+      });
+      if (!error) {
+        setForm({ name:'', version:'', environment:'staging', notes:'' });
+        setShowNew(false);
+        loadDeployments();
+      }
+    } finally { setSaving(false); }
+  }
+
+  async function changeStatus(id, status) {
+    const patch = { status };
+    if (status === 'deployed') patch.deployed_at = new Date().toISOString();
+    await supabase.from('deployments').update(patch).eq('id', id);
+    setDeployments(prev => prev.map(d => d.id === id ? { ...d, ...patch } : d));
+  }
+
+  const STATUS_CFG = {
+    'planned':     { label:'Planificado',  color:'var(--tx3)',  bg:'var(--sf2)',                    icon:'○' },
+    'in-progress': { label:'En progreso',  color:'#f59e0b',     bg:'rgba(245,158,11,.12)',           icon:'▶' },
+    'deployed':    { label:'Desplegado',   color:'var(--green)', bg:'rgba(62,207,142,.12)',          icon:'✓' },
+    'rolled-back': { label:'Revertido',    color:'var(--red)',   bg:'rgba(224,82,82,.12)',            icon:'↩' },
+    'cancelled':   { label:'Cancelado',    color:'var(--tx3)',  bg:'var(--sf2)',                    icon:'✕' },
+  };
+  const ENV_CFG = {
+    development: { label:'Dev',     color:'var(--tx3)'  },
+    staging:     { label:'Staging', color:'#f59e0b'     },
+    production:  { label:'Prod',    color:'var(--green)'},
+  };
+  const NEXT = {
+    'planned':     ['in-progress','cancelled'],
+    'in-progress': ['deployed','rolled-back'],
+    'deployed':    [],
+    'rolled-back': ['planned'],
+    'cancelled':   ['planned'],
+  };
+
+  const planned    = deployments.filter(d=>d.status==='planned').length;
+  const inProgress = deployments.filter(d=>d.status==='in-progress').length;
+  const deployed   = deployments.filter(d=>d.status==='deployed').length;
+
+  return (
+    <div style={{padding:24,maxWidth:960,margin:'0 auto'}}>
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:24}}>
+        <div>
+          <h1 style={{fontFamily:"'Sora',sans-serif",fontSize:20,color:'var(--tx)',marginBottom:4,fontWeight:700}}>🚀 Deploy Planner</h1>
+          <p style={{fontSize:13,color:'var(--tx3)'}}>Planifica y gestiona despliegues vinculados a issues de Jira</p>
+        </div>
+        <button onClick={()=>setShowNew(s=>!s)} style={{marginLeft:'auto',background:'var(--ac)',color:'#fff',border:'none',borderRadius:8,padding:'8px 16px',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+          {showNew ? '✕ Cancelar' : '+ Nuevo despliegue'}
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:14,marginBottom:24}}>
+        {[
+          {label:'Planificados',  value:planned,              color:'var(--tx3)', icon:'📋'},
+          {label:'En progreso',   value:inProgress,           color:'#f59e0b',    icon:'⚙️'},
+          {label:'Desplegados',   value:deployed,             color:'var(--green)',icon:'✓'},
+          {label:'Total',         value:deployments.length,   color:'var(--ac)',   icon:'🔢'},
+        ].map(s=>(
+          <div key={s.label} style={{background:'var(--sf)',border:'1px solid var(--bd)',borderRadius:12,padding:14,textAlign:'center'}}>
+            <div style={{fontSize:18,marginBottom:6}}>{s.icon}</div>
+            <div style={{fontSize:26,fontWeight:700,fontFamily:"'Sora',sans-serif",color:s.color}}>{s.value}</div>
+            <div style={{fontSize:11,color:'var(--tx3)',marginTop:3}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* New deployment form */}
+      {showNew&&(
+        <div style={{background:'var(--sf)',border:'1px solid var(--bd)',borderRadius:12,padding:'18px 20px',marginBottom:24}}>
+          <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:14,color:'var(--tx)',marginBottom:16,fontWeight:700}}>Nuevo despliegue</h3>
+          <form onSubmit={handleCreate}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+              <div>
+                <label style={{fontSize:11,color:'var(--tx3)',display:'block',marginBottom:4}}>Nombre *</label>
+                <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Sprint 42 — API refactor" required
+                  style={{width:'100%',background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:7,padding:'8px 10px',color:'var(--tx)',fontSize:13,fontFamily:'inherit',outline:'none'}}/>
+              </div>
+              <div>
+                <label style={{fontSize:11,color:'var(--tx3)',display:'block',marginBottom:4}}>Versión *</label>
+                <input value={form.version} onChange={e=>setForm(f=>({...f,version:e.target.value}))} placeholder="v2.4.0" required
+                  style={{width:'100%',background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:7,padding:'8px 10px',color:'var(--tx)',fontSize:13,fontFamily:'inherit',outline:'none'}}/>
+              </div>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 2fr',gap:12,marginBottom:12}}>
+              <div>
+                <label style={{fontSize:11,color:'var(--tx3)',display:'block',marginBottom:4}}>Entorno</label>
+                <select value={form.environment} onChange={e=>setForm(f=>({...f,environment:e.target.value}))}
+                  style={{width:'100%',background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:7,padding:'8px 10px',color:'var(--tx)',fontSize:13,fontFamily:'inherit'}}>
+                  <option value="development">Desarrollo</option>
+                  <option value="staging">Staging</option>
+                  <option value="production">Producción</option>
+                </select>
+              </div>
+              <div>
+                <label style={{fontSize:11,color:'var(--tx3)',display:'block',marginBottom:4}}>Notas</label>
+                <input value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Descripción opcional"
+                  style={{width:'100%',background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:7,padding:'8px 10px',color:'var(--tx)',fontSize:13,fontFamily:'inherit',outline:'none'}}/>
+              </div>
+            </div>
+            <div style={{display:'flex',justifyContent:'flex-end',gap:10}}>
+              <button type="button" onClick={()=>setShowNew(false)} style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:8,padding:'7px 16px',color:'var(--tx2)',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+              <button type="submit" disabled={saving} style={{background:'var(--ac)',border:'none',borderRadius:8,padding:'7px 16px',color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',opacity:saving?0.6:1}}>
+                {saving ? 'Guardando…' : 'Crear despliegue'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Deployments list */}
+      <div style={{background:'var(--sf)',border:'1px solid var(--bd)',borderRadius:12,overflow:'hidden'}}>
+        <div style={{padding:'12px 20px',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',gap:8}}>
+          <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:14,color:'var(--tx)',margin:0}}>📅 Historial de despliegues</h2>
+        </div>
+        {loading&&<div style={{padding:40,textAlign:'center',color:'var(--tx3)',fontSize:13}}>Cargando…</div>}
+        {!loading&&deployments.length===0&&(
+          <div style={{padding:40,textAlign:'center',color:'var(--tx3)'}}>
+            <div style={{fontSize:32,marginBottom:8}}>🚀</div>
+            <p style={{fontSize:14,marginBottom:4}}>No hay despliegues todavía</p>
+            <p style={{fontSize:12}}>Crea el primero con el botón de arriba</p>
+          </div>
+        )}
+        {deployments.map((d,i)=>{
+          const st = STATUS_CFG[d.status] || STATUS_CFG['planned'];
+          const env = ENV_CFG[d.environment] || {label:d.environment,color:'var(--tx3)'};
+          const nexts = NEXT[d.status] || [];
+          return(
+            <div key={d.id} style={{padding:'14px 20px',borderBottom:i<deployments.length-1?'1px solid var(--bd)':'none',display:'flex',alignItems:'flex-start',gap:16}}>
+              {/* Status dot */}
+              <div style={{width:28,height:28,borderRadius:'50%',background:st.bg,border:`1px solid ${st.color}40`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:st.color,fontWeight:700,flexShrink:0,marginTop:2}}>
+                {st.icon}
+              </div>
+              {/* Content */}
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:4}}>
+                  <span style={{fontSize:14,fontWeight:600,color:'var(--tx)'}}>{d.name}</span>
+                  <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:20,background:st.bg,color:st.color,border:`1px solid ${st.color}40`}}>{st.icon} {st.label}</span>
+                  <span style={{fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:20,background:'var(--sf2)',color:env.color}}>{d.version} · {env.label}</span>
+                  <span style={{fontSize:11,color:'var(--tx3)',marginLeft:'auto'}}>
+                    {new Date(d.planned_at).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'})}
+                  </span>
+                </div>
+                {d.notes&&<p style={{fontSize:12,color:'var(--tx3)',marginBottom:4,marginTop:0}}>{d.notes}</p>}
+                {(d.jira_issues?.length>0)&&(
+                  <p style={{fontSize:11,color:'var(--tx3)',margin:'4px 0 0'}}>🔗 {d.jira_issues.join(', ')}</p>
+                )}
+                {nexts.length>0&&(
+                  <div style={{display:'flex',gap:6,marginTop:8}}>
+                    {nexts.map(next=>{
+                      const nc=STATUS_CFG[next];
+                      return(
+                        <button key={next} onClick={()=>changeStatus(d.id,next)}
+                          style={{background:nc.bg,border:`1px solid ${nc.color}40`,borderRadius:6,padding:'3px 10px',fontSize:11,color:nc.color,cursor:'pointer',fontFamily:'inherit',fontWeight:600}}>
+                          → {nc.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Jira notice */}
+      <div style={{marginTop:16,padding:'14px 18px',background:'rgba(245,158,11,.08)',border:'1px solid rgba(245,158,11,.25)',borderRadius:10,fontSize:12,color:'#f59e0b'}}>
+        🔗 La vinculación con issues de Jira se añadirá en la próxima iteración — usará el mismo token configurado en Jira Tracker.
+      </div>
+    </div>
+  );
+}
 
 function WorkSuiteApp() {
   const { user: authUser, logout } = useAuth();

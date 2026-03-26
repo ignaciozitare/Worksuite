@@ -1136,7 +1136,7 @@ export function RetroBoard({currentUser,wsUsers,lang}){
         const teamsWithMembers=(teamsData||[]).map((t)=>({...t,members:(membersData||[]).filter(m=>m.team_id===t.id).map(m=>{const u=wsUsers.find(x=>x.id===m.user_id);return{...m,name:u?.name,email:u?.email};})}));
         setTeams(teamsWithMembers);
         // Map sessions to history format
-        const hist=(sessionsData||[]).map((s)=>({id:s.id,name:s.name,date:s.created_at?.slice(0,10),team_id:s.team_id,stats:s.stats||{},actionables:(s.retro_actionables||[]).map((a)=>({id:a.id,text:a.text,assignee:a.assignee,dueDate:a.due_date,priority:a.priority,status:a.status}))}));
+        const hist=(sessionsData||[]).map((s)=>({id:s.id,name:s.name,date:s.created_at?.slice(0,10),team_id:s.team_id,stats:s.stats||{},actionables:(s.retro_actionables||[]).map((a)=>({id:a.id,text:a.text,assignee:a.assignee,dueDate:a.due_date,priority:a.priority,status:(a.status==="open"||!a.status?"todo":a.status)}))}));
         setHistory(hist);
       }
       setLoading(false);
@@ -1150,7 +1150,7 @@ export function RetroBoard({currentUser,wsUsers,lang}){
     if(supabase){
       const{data:sess}=await supabase.from("retro_sessions").insert({name:sessionData.name,team_id:sessionData.teamId,status:"closed",phase:"summary",stats:sessionData.stats,created_by:currentUser.id}).select().single();
       if(sess){
-        const actionRows=(sessionData.actionables||[]).map((a)=>({session_id:sess.id,text:a.text,assignee:a.assignee||"",due_date:a.dueDate||null,priority:a.priority||"medium",status:"open",team_id:sessionData.teamId,retro_name:sessionData.name}));
+        const actionRows=(sessionData.actionables||[]).map((a)=>({session_id:sess.id,text:a.text,assignee:a.assignee||"",due_date:a.dueDate||null,priority:a.priority||"medium",status:"todo",team_id:sessionData.teamId,retro_name:sessionData.name}));
         if(actionRows.length>0)await supabase.from("retro_actionables").insert(actionRows);
       }
     }
