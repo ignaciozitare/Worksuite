@@ -118,6 +118,50 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
     return reply.send({ ok: true });
   });
 
+  // ── GET /jira/search?jql=...&maxResults=... ────────────────────────────────
+  // Used by Deploy Planner to fetch tickets by JQL (e.g. status="Ready to Production")
+  app.get<{ Querystring: { jql: string; maxResults?: string } }>(
+    '/search',
+    async (req, reply) => {
+      const userId = (req.user as { sub: string }).sub;
+      const { jql, maxResults = '100' } = req.query;
+      if (!jql) return reply.status(400).send({ ok: false, error: 'jql required' });
+      try {
+        const adapter = await adapterForUser(supabase, userId);
+        const base = (adapter as unknown as { base: string }).base;
+        const auth = (adapter as unknown as { auth: string }).auth;
+        const url  = `${base}/rest/api/3/search?jql=${encodeURIComponent(jql)}&maxResults=${maxResults}&fields=summary,assignee,priority,issuetype,labels,customfield_10014,status`;
+        const res  = await fetch(url, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' } });
+        if (!res.ok) return reply.status(res.status).send({ ok: false, error: `Jira ${res.status}` });
+        const data = await res.json();
+        return reply.send({ ok: true, ...data });
+      } catch (err: unknown) {
+        const status = (err as { statusCode?: number }).statusCode ?? 502;
+        return reply.status(status).send({ ok: false, error: String(err) });
+      }
+    }
+  );
+
+  // ── GET /jira/statuses ─────────────────────────────────────────────────────
+  // Returns all statuses defined in the Jira instance (used by Admin → Deploy Config)
+  app.get('/statuses', async (req: FastifyRequest, reply: FastifyReply) => {
+    const userId = (req.user as { sub: string }).sub;
+    try {
+      const adapter = await adapterForUser(supabase, userId);
+      const base = (adapter as unknown as { base: string }).base;
+      const auth = (adapter as unknown as { auth: string }).auth;
+      const res  = await fetch(`${base}/rest/api/3/status`, {
+        headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' }
+      });
+      if (!res.ok) return reply.status(res.status).send({ ok: false, error: `Jira ${res.status}` });
+      const data = await res.json() as Array<{ id: string; name: string; statusCategory: { name: string } }>;
+      return reply.send({ ok: true, statuses: data.map(s => ({ id: s.id, name: s.name, category: s.statusCategory?.name })) });
+    } catch (err: unknown) {
+      const status = (err as { statusCode?: number }).statusCode ?? 502;
+      return reply.status(status).send({ ok: false, error: String(err) });
+    }
+  });
+
   // ── GET /jira/projects ────────────────────────────────────────────────────
   app.get('/projects', async (req: FastifyRequest, reply: FastifyReply) => {
     const userId = (req.user as { sub: string }).sub;
