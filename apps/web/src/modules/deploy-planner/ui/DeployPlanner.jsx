@@ -114,6 +114,7 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
     <div className="anim-in"
       onDragOver={e=>e.preventDefault()}
       onDrop={e=>{e.preventDefault(); onDrop(rel.id); }}
+      onClick={()=>onOpen(rel.id)}
       style={{
         width:320,
         background:"var(--dp-sf,#0b0f18)",
@@ -123,8 +124,11 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
         padding:"14px 16px",
         flexShrink:0,
         boxShadow:`0 0 0 1px ${cfg.color}18, 0 4px 20px ${cfg.color}10`,
-        transition:"box-shadow .2s",
+        transition:"box-shadow .2s, transform .1s",
+        cursor:"pointer",
       }}
+      onMouseEnter={e=>e.currentTarget.style.transform="translateY(-1px)"}
+      onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}
     >
       {/* Version number — editable, doble click edita / click simple abre detalle */}
       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
@@ -161,6 +165,7 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
       <div style={{marginBottom:10}}>
         <select value={rel.status||"Planned"}
           onChange={e=>onUpd(rel.id,{status:e.target.value})}
+          onClick={e=>e.stopPropagation()}
           style={{background:cfg.bg_color,border:`1px solid ${cfg.border}`,borderRadius:5,padding:"4px 10px",fontSize:10,color:cfg.color,cursor:"pointer",outline:"none",fontWeight:700,fontFamily:"inherit"}}>
           {Object.entries(statusCfg).map(([name])=><option key={name} value={name}>{name}</option>)}
         </select>
@@ -196,20 +201,31 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
         {relTickets.map(t=>{
           const PCOLOR={Highest:"#ef4444",High:"#f97316",Medium:"#3b82f6",Low:"#6b7280"};
           const pColor = PCOLOR[t.priority]||"#334155";
+          const noRepo = !t.repos || t.repos.length===0;
           return (
             <div key={t.key} draggable
               onDragStart={()=>setDrag({key:t.key,fromId:rel.id})}
               onDragEnd={()=>setDrag(null)}
-              style={{display:"flex",alignItems:"center",gap:6,padding:"5px 8px",background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderLeft:`2px solid ${pColor}`,borderRadius:4,cursor:"grab",fontSize:10}}>
+              onClick={e=>e.stopPropagation()}
+              title={noRepo?"⚠ Sin repositorio — asigna Components en Jira":t.summary}
+              style={{display:"flex",alignItems:"center",gap:6,padding:"5px 8px",background:"var(--dp-sf2,#07090f)",border:noRepo?"1px solid rgba(239,68,68,.5)":"1px solid var(--dp-bd,#1e293b)",borderLeft:`2px solid ${noRepo?"#ef4444":pColor}`,borderRadius:4,cursor:"grab",fontSize:10}}>
+              {noRepo&&<span style={{color:"#ef4444",fontSize:10,flexShrink:0}}>⚠</span>}
               <span style={{color:"#38bdf8",fontWeight:700,flexShrink:0}}>{t.key}</span>
-              <span style={{color:"var(--dp-tx3,#64748b)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.summary.slice(0,28)}{t.summary.length>28?"…":""}</span>
+              <span style={{color:noRepo?"#ef4444":"var(--dp-tx3,#64748b)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.summary.slice(0,28)}{t.summary.length>28?"…":""}</span>
               <span style={{color:"var(--dp-tx3,#334155)",flexShrink:0,fontSize:9}}>{t.assignee?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"—"}</span>
-              <button onClick={()=>onUpd(rel.id,{ticket_ids:(rel.ticket_ids||[]).filter(x=>x!==t.key)})}
+              <button onClick={e=>{e.stopPropagation();onUpd(rel.id,{ticket_ids:(rel.ticket_ids||[]).filter(x=>x!==t.key)});}}
                 style={{background:"none",border:"none",color:"var(--dp-tx3,#334155)",cursor:"pointer",fontSize:12,lineHeight:1,flexShrink:0}}>×</button>
             </div>
           );
         })}
       </div>
+
+      {/* Warning: tickets sin repo */}
+      {relTickets.some(t=>!t.repos||t.repos.length===0)&&(
+        <div style={{fontSize:9,color:"#ef4444",marginBottom:6,padding:"3px 6px",background:"rgba(239,68,68,.06)",borderRadius:3,border:"1px solid rgba(239,68,68,.2)"}}>
+          ⚠ {relTickets.filter(t=>!t.repos||t.repos.length===0).length} ticket{relTickets.filter(t=>!t.repos||t.repos.length===0).length>1?"s":""} sin repositorio — asigna Components en Jira
+        </div>
+      )}
 
       {/* Add ticket */}
       {addingTicket ? (
@@ -230,7 +246,7 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
           ))}
         </div>
       ):(
-        <button onClick={()=>setAddingTicket(true)}
+        <button onClick={e=>{e.stopPropagation();setAddingTicket(true);}}
           style={{width:"100%",background:"transparent",border:"1px dashed var(--dp-bd,#1e293b)",borderRadius:4,padding:"5px",fontSize:10,color:"var(--dp-tx3,#334155)",cursor:"pointer",marginBottom:10,transition:"border-color .15s"}}
           onMouseEnter={e=>e.currentTarget.style.borderColor=cfg.color}
           onMouseLeave={e=>e.currentTarget.style.borderColor="var(--dp-bd,#1e293b)"}>+ ticket</button>
@@ -334,6 +350,36 @@ function ReleaseDetail({ rel, tickets, statusCfg, onBack, onUpdRelease, isLight 
 
       {/* Repo cards */}
       <div style={{display:"flex",gap:14,flexWrap:"wrap",alignItems:"flex-start",marginBottom:28}}>
+        {/* Empty state — tickets not loaded from Jira yet */}
+        {allRepos.length===0 && (
+          <div style={{width:"100%",padding:"32px 24px",background:"var(--dp-sf,#0b0f18)",border:"1px dashed var(--dp-bd,#1e293b)",borderRadius:8,textAlign:"center"}}>
+            {(rel.ticket_ids||[]).length===0 ? (
+              <>
+                <div style={{fontSize:20,marginBottom:8}}>📋</div>
+                <div style={{fontSize:13,color:"var(--dp-tx2,#94a3b8)",marginBottom:4}}>Sin tickets asignados</div>
+                <div style={{fontSize:11,color:"var(--dp-tx3,#475569)"}}>Ve a Planning y arrastra tickets a esta release</div>
+              </>
+            ) : (
+              <>
+                <div style={{fontSize:20,marginBottom:8}}>🔄</div>
+                <div style={{fontSize:13,color:"var(--dp-tx2,#94a3b8)",marginBottom:4}}>{(rel.ticket_ids||[]).length} tickets asignados — sin datos de repo</div>
+                <div style={{fontSize:11,color:"var(--dp-tx3,#475569)"}}>
+                  Los tickets necesitan el campo <strong style={{color:"var(--dp-tx2,#94a3b8)"}}>Components</strong> en Jira para agruparse por repositorio.<br/>
+                  Revisa que los tickets tienen componentes asignados en Jira.
+                </div>
+                <div style={{marginTop:12,display:"flex",flexDirection:"column",gap:6}}>
+                  {(rel.ticket_ids||[]).map(k=>(
+                    <div key={k} style={{display:"inline-flex",alignItems:"center",gap:8,padding:"6px 12px",background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:6,fontSize:11,color:"var(--dp-tx2,#94a3b8)"}}>
+                      <span style={{color:"#38bdf8",fontWeight:700}}>{k}</span>
+                      <span style={{fontSize:9,color:"var(--dp-tx3,#475569)"}}>sin componente</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {allRepos.map(repo=>{
           const rTickets=byRepo[repo]||[];
           const ready=rTickets.filter(t=>MERGE_READY.includes(getStatus(t.key))).length;
