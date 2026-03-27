@@ -2461,6 +2461,32 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
   const occCount  = allSeats.filter(s=>hd.reservations.find(r=>r.seatId===s.id&&r.date===TODAY)).length;
   const fixCount  = allSeats.filter(s=>hd.fixed[s.id]).length;
 
+  // Zoom helpers that operate on the canvas scale/offset state
+  const zoomBy = (delta) => {
+    const cvs = canvasRef.current;
+    if (!cvs) return;
+    const cx = cvs.width / 2, cy = cvs.height / 2;
+    const ns = Math.max(0.15, Math.min(4, scale + delta));
+    const ratio = ns / scale;
+    setScale(ns);
+    setOffset(o => ({ x: cx - (cx - o.x) * ratio, y: cy - (cy - o.y) * ratio }));
+  };
+  const fitToView = () => {
+    const cvs = canvasRef.current;
+    if (!cvs || !allSeats.length) { setScale(1); setOffset({x:0,y:0}); return; }
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    allSeats.forEach(s => {
+      if(s.x<minX)minX=s.x; if(s.y<minY)minY=s.y;
+      if(s.x+52>maxX)maxX=s.x+52; if(s.y+52>maxY)maxY=s.y+52;
+    });
+    const W=cvs.width, H=cvs.height, PAD=40;
+    const bW=maxX-minX, bH=maxY-minY;
+    if(bW<=0||bH<=0) return;
+    const s = Math.min((W-PAD*2)/bW, (H-PAD*2)/bH, 1.5);
+    setScale(s);
+    setOffset({ x:(W-bW*s)/2-minX*s, y:(H-bH*s)/2-minY*s });
+  };
+
   return (
     <div className="hd-map-wrap">
       <div className="hd-map-header">
@@ -2476,7 +2502,22 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
           ))}
         </div>
       </div>
-      <div className="hd-card" ref={cwRef} style={{position:'relative',height:'calc(100vh - 220px)',minHeight:400,padding:0,overflow:'hidden'}}>
+
+      {/* Zoom controls */}
+      <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+        <button onClick={()=>zoomBy(0.15)}
+          style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:6,width:28,height:28,fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx2)',lineHeight:1}}>+</button>
+        <button onClick={()=>zoomBy(-0.15)}
+          style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:6,width:28,height:28,fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx2)',lineHeight:1}}>−</button>
+        <button onClick={fitToView} title="Ajustar mapa completo"
+          style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:6,padding:'0 10px',height:28,fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',gap:4,color:'var(--tx2)',fontFamily:'inherit',fontWeight:600}}>
+          ⊡ Fit
+        </button>
+        <span style={{fontSize:11,color:'var(--tx3)',marginLeft:2}}>{Math.round(scale*100)}%</span>
+        <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>Rueda del ratón · Arrastra para mover</span>
+      </div>
+
+      <div className="hd-card" ref={cwRef} style={{position:'relative',height:'calc(100vh - 260px)',minHeight:400,padding:0,overflow:'hidden'}}>
         <canvas ref={canvasRef} style={{display:'block',width:'100%',height:'100%',
           cursor: hoveredSeat ? 'pointer' : 'default'}}
           onMouseMove={e=>{
@@ -3645,116 +3686,215 @@ function AdminRetroTeamsShell({ users }) {
 // ══════════════════════════════════════════════════════════════════
 
 function AdminDeployConfig() {
-  const [statuses, setStatuses] = React.useState([]);
-  const [jiraStatuses, setJiraStatuses] = React.useState("");
-  const [saving, setSaving] = React.useState(false);
-  const [saved, setSaved] = React.useState(false);
-  const [newStatus, setNewStatus] = React.useState({name:"",color:"#6b7280",bg_color:"rgba(107,114,128,.12)",border:"#1f2937",is_final:false});
+  const [statuses, setStatuses]   = React.useState([]);
+  const [editing, setEditing]     = React.useState(null); // {id, name, color, is_final}
+  const [jiraList, setJiraList]   = React.useState([]); // [{name, id?}]
+  const [fetchingJ, setFetchingJ] = React.useState(false);
+  const [savingJ, setSavingJ]     = React.useState(false);
+  const [savedJ, setSavedJ]       = React.useState(false);
+  const [newStatus, setNewStatus] = React.useState({name:"",color:"#6b7280",is_final:false});
+  const [dragging, setDragging]   = React.useState(null); // index being dragged
+  const [dragOver, setDragOver]   = React.useState(null);
 
+  // ── Load ─────────────────────────────────────────────────────────────────
   React.useEffect(() => {
     supabase.from("dp_release_statuses").select("*").order("ord").then(({data}) => {
       if(data) setStatuses(data);
     });
-    // Load jira statuses config
-    supabase.from("sso_config").select("*").limit(1).then(({data}) => {
-      if(data?.[0]?.deploy_jira_statuses) setJiraStatuses(data[0].deploy_jira_statuses);
-      else setJiraStatuses("Ready to Production");
+    supabase.from("sso_config").select("deploy_jira_statuses").limit(1).single().then(({data}) => {
+      const raw = data?.deploy_jira_statuses || "Ready to Production";
+      setJiraList(raw.split(",").map(s=>s.trim()).filter(Boolean).map((n,i)=>({id:i, name:n})));
     });
   }, []);
 
-  const addStatus = async () => {
+  // ── Release statuses CRUD ─────────────────────────────────────────────────
+  const addRelStatus = async () => {
     if(!newStatus.name.trim()) return;
+    const hex = newStatus.color;
+    const bg  = hex + "20";
+    const brd = hex + "66";
     const {data} = await supabase.from("dp_release_statuses")
-      .insert({...newStatus, ord: statuses.length}).select().single();
-    if(data) { setStatuses(s=>[...s,data]); setNewStatus({name:"",color:"#6b7280",bg_color:"rgba(107,114,128,.12)",border:"#1f2937",is_final:false}); }
+      .insert({name:newStatus.name, color:hex, bg_color:bg, border:brd, is_final:newStatus.is_final, ord:statuses.length})
+      .select().single();
+    if(data) { setStatuses(s=>[...s,data]); setNewStatus({name:"",color:"#6b7280",is_final:false}); }
   };
 
-  const deleteStatus = async (id) => {
+  const saveRelStatus = async (st) => {
+    const hex = st.color;
+    const patch = {name:st.name, color:hex, bg_color:hex+"20", border:hex+"66", is_final:st.is_final};
+    await supabase.from("dp_release_statuses").update(patch).eq("id",st.id);
+    setStatuses(s=>s.map(x=>x.id===st.id?{...x,...patch}:x));
+    setEditing(null);
+  };
+
+  const delRelStatus = async (id) => {
     await supabase.from("dp_release_statuses").delete().eq("id",id);
     setStatuses(s=>s.filter(x=>x.id!==id));
   };
 
-  const toggleFinal = async (st) => {
-    const updated = {...st, is_final:!st.is_final};
-    await supabase.from("dp_release_statuses").update({is_final:updated.is_final}).eq("id",st.id);
-    setStatuses(s=>s.map(x=>x.id===st.id?updated:x));
+  // Drag-to-reorder
+  const onDragEnd = async () => {
+    if(dragging===null||dragOver===null||dragging===dragOver) { setDragging(null);setDragOver(null);return; }
+    const reordered = [...statuses];
+    const [moved] = reordered.splice(dragging, 1);
+    reordered.splice(dragOver, 0, moved);
+    const updated = reordered.map((s,i)=>({...s, ord:i}));
+    setStatuses(updated);
+    setDragging(null); setDragOver(null);
+    // Persist new ord values
+    await Promise.all(updated.map(s => supabase.from("dp_release_statuses").update({ord:s.ord}).eq("id",s.id)));
   };
 
-  const saveJiraStatuses = async () => {
-    setSaving(true);
-    await supabase.from("sso_config").update({deploy_jira_statuses:jiraStatuses}).eq("id",(await supabase.from("sso_config").select("id").limit(1).single()).data?.id);
-    setSaving(false); setSaved(true); setTimeout(()=>setSaved(false),2000);
+  // ── Jira statuses list ────────────────────────────────────────────────────
+  const addJiraStatus = (name) => {
+    if(!name.trim() || jiraList.some(j=>j.name===name.trim())) return;
+    setJiraList(l=>[...l, {id:Date.now(), name:name.trim()}]);
   };
+  const delJiraStatus = (id) => setJiraList(l=>l.filter(j=>j.id!==id));
+  const editJiraStatus = (id, name) => setJiraList(l=>l.map(j=>j.id===id?{...j,name}:j));
+
+  const saveJiraStatuses = async () => {
+    setSavingJ(true);
+    const str = jiraList.map(j=>j.name).join(",");
+    const {data:cfg} = await supabase.from("sso_config").select("id").limit(1).single();
+    if(cfg) await supabase.from("sso_config").update({deploy_jira_statuses:str}).eq("id",cfg.id);
+    setSavingJ(false); setSavedJ(true); setTimeout(()=>setSavedJ(false),2000);
+  };
+
+  const fetchAllJiraStatuses = async () => {
+    setFetchingJ(true);
+    try {
+      const {data:{session}} = await supabase.auth.getSession();
+      const API_BASE = (import.meta.env.VITE_API_URL||"http://localhost:3001").replace(/\/$/,"");
+      const res = await fetch(`${API_BASE}/jira/statuses`, {
+        headers:{"Authorization":`Bearer ${session?.access_token}`}
+      });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const names = (data.statuses||data||[]).map(s=>s.name||s).filter(Boolean);
+      // Add any that aren't already in the list
+      const existing = new Set(jiraList.map(j=>j.name));
+      const toAdd = names.filter(n=>!existing.has(n)).map((n,i)=>({id:Date.now()+i,name:n}));
+      setJiraList(l=>[...l,...toAdd]);
+    } catch(e) { alert(`Error al obtener estados de Jira: ${e.message}`); }
+    setFetchingJ(false);
+  };
+
+  const [newJiraName, setNewJiraName] = React.useState("");
 
   return (
     <div style={{maxWidth:700}}>
       <div className="sec-t">🚀 Deploy Planner</div>
-      <div className="sec-sub">Configura los estados de releases y los estados de Jira que se muestran en el Deploy Planner.</div>
+      <div className="sec-sub">Configura los estados de releases y los estados de Jira que se importan.</div>
 
-      {/* Jira ticket statuses to pull */}
+      {/* ── Jira statuses ─────────────────────────────────────── */}
       <div className="a-card" style={{marginBottom:16}}>
-        <div className="a-ct">Estados de Jira que se importan</div>
-        <div style={{fontSize:12,color:"var(--tx3)",marginBottom:10}}>
-          Los tickets con estos estados en Jira aparecerán en el Deploy Planner cuando hagas "Conectar Jira".<br/>
-          Puedes poner múltiples estados separados por coma: <code style={{color:"var(--ac2)"}}>Ready to Production, Ready for Deploy</code>
-        </div>
-        <div style={{display:"flex",gap:10,alignItems:"flex-end"}}>
-          <div style={{flex:1}}>
-            <input
-              value={jiraStatuses}
-              onChange={e=>setJiraStatuses(e.target.value)}
-              placeholder="Ready to Production"
-              style={{width:"100%",background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,padding:"8px 12px",color:"var(--tx)",fontSize:13,fontFamily:"inherit",outline:"none"}}
-            />
-          </div>
-          <button onClick={saveJiraStatuses} disabled={saving}
-            style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:6,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>
-            {saving?"Guardando…":saved?"✓ Guardado":"Guardar"}
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
+          <div className="a-ct" style={{margin:0,flex:1}}>Estados de Jira que se importan</div>
+          <button onClick={fetchAllJiraStatuses} disabled={fetchingJ}
+            style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"5px 12px",fontSize:11,color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
+            {fetchingJ?"⟳ Obteniendo…":"↓ Traer todos de Jira"}
           </button>
+          <button onClick={saveJiraStatuses} disabled={savingJ}
+            style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:5,padding:"5px 12px",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+            {savingJ?"Guardando…":savedJ?"✓ Guardado":"Guardar"}
+          </button>
+        </div>
+        <div style={{fontSize:11,color:"var(--tx3)",marginBottom:12}}>
+          Los tickets con estos estados aparecerán en el Deploy Planner al conectar Jira.
+        </div>
+
+        {/* List */}
+        <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:10}}>
+          {jiraList.map(j=>(
+            <div key={j.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",background:"var(--sf2)",borderRadius:6,border:"1px solid var(--bd)"}}>
+              <span style={{fontSize:11,color:"var(--tx3)"}}>●</span>
+              <input value={j.name} onChange={e=>editJiraStatus(j.id,e.target.value)}
+                style={{flex:1,background:"none",border:"none",outline:"none",fontSize:12,color:"var(--tx)",fontFamily:"inherit"}}/>
+              <button onClick={()=>delJiraStatus(j.id)}
+                style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14,lineHeight:1}}>×</button>
+            </div>
+          ))}
+          {jiraList.length===0&&<div style={{fontSize:11,color:"var(--tx3)",padding:"8px 0"}}>Sin estados configurados</div>}
+        </div>
+
+        {/* Add */}
+        <div style={{display:"flex",gap:6}}>
+          <input value={newJiraName} onChange={e=>setNewJiraName(e.target.value)}
+            onKeyDown={e=>{if(e.key==="Enter"){addJiraStatus(newJiraName);setNewJiraName("");}}}
+            placeholder="Nombre del estado en Jira…"
+            style={{flex:1,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",outline:"none"}}/>
+          <button onClick={()=>{addJiraStatus(newJiraName);setNewJiraName("");}}
+            style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 12px",fontSize:12,color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit"}}>+ Añadir</button>
         </div>
       </div>
 
-      {/* Release statuses */}
+      {/* ── Release statuses ──────────────────────────────────── */}
       <div className="a-card">
         <div className="a-ct">Estados de Release</div>
-        <div style={{fontSize:12,color:"var(--tx3)",marginBottom:14}}>
-          Define los estados por los que pasan las releases. Los estados marcados como "final" aparecen en History.
+        <div style={{fontSize:11,color:"var(--tx3)",marginBottom:14}}>
+          Arrastra para reordenar. Los estados "final" van a History.
         </div>
 
-        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
           {statuses.map((st,i)=>(
-            <div key={st.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"var(--sf2)",borderRadius:8,border:"1px solid var(--bd)"}}>
-              <div style={{width:14,height:14,borderRadius:3,background:st.color,flexShrink:0}}/>
-              <span style={{flex:1,fontSize:13,fontWeight:600,color:"var(--tx)"}}>{st.name}</span>
-              <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:st.bg_color,color:st.color,border:`1px solid ${st.border}`}}>{st.name}</span>
-              <label style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--tx3)",cursor:"pointer"}}>
-                <input type="checkbox" checked={st.is_final||false} onChange={()=>toggleFinal(st)}/>
-                Estado final
-              </label>
-              <span style={{fontSize:11,color:"var(--tx3)"}}>ord: {st.ord}</span>
-              <button onClick={()=>deleteStatus(st.id)} style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14}}>×</button>
+            <div key={st.id}
+              draggable
+              onDragStart={()=>setDragging(i)}
+              onDragOver={e=>{e.preventDefault();setDragOver(i);}}
+              onDragEnd={onDragEnd}
+              style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",background:dragOver===i?"var(--glow)":"var(--sf2)",borderRadius:8,border:`1px solid ${dragOver===i?"var(--ac)":"var(--bd)"}`,cursor:"grab",transition:"background .1s"}}>
+              <span style={{color:"var(--tx3)",fontSize:12,cursor:"grab"}}>⠿</span>
+              <div style={{width:14,height:14,borderRadius:3,background:st.color,flexShrink:0,border:`1px solid ${st.color}66`}}/>
+
+              {editing?.id===st.id ? (
+                <>
+                  <input value={editing.name} onChange={e=>setEditing(v=>({...v,name:e.target.value}))}
+                    style={{flex:1,background:"var(--sf)",border:"1px solid var(--ac)",borderRadius:4,padding:"3px 7px",fontSize:12,color:"var(--tx)",fontFamily:"inherit",outline:"none"}}/>
+                  <input type="color" value={editing.color} onChange={e=>setEditing(v=>({...v,color:e.target.value}))}
+                    style={{width:28,height:24,border:"none",background:"none",cursor:"pointer",padding:0}}/>
+                  <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"var(--tx3)",cursor:"pointer",flexShrink:0}}>
+                    <input type="checkbox" checked={editing.is_final} onChange={e=>setEditing(v=>({...v,is_final:e.target.checked}))}/>
+                    Final
+                  </label>
+                  <button onClick={()=>saveRelStatus(editing)}
+                    style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:4,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>✓</button>
+                  <button onClick={()=>setEditing(null)}
+                    style={{background:"none",border:"none",color:"var(--tx3)",cursor:"pointer",fontSize:13}}>×</button>
+                </>
+              ) : (
+                <>
+                  <span style={{flex:1,fontSize:13,fontWeight:600,color:"var(--tx)"}}>{st.name}</span>
+                  <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:st.bg_color,color:st.color,border:`1px solid ${st.border}`,flexShrink:0}}>{st.name}</span>
+                  {st.is_final&&<span style={{fontSize:9,color:"var(--tx3)",background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:10,padding:"1px 6px",flexShrink:0}}>Final</span>}
+                  <button onClick={()=>setEditing({id:st.id,name:st.name,color:st.color,is_final:st.is_final})}
+                    style={{background:"none",border:"none",color:"var(--tx3)",cursor:"pointer",fontSize:13}}>✎</button>
+                  <button onClick={()=>delRelStatus(st.id)}
+                    style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14}}>×</button>
+                </>
+              )}
             </div>
           ))}
         </div>
 
-        {/* Add new status */}
+        {/* Add new release status */}
         <div style={{padding:"12px 14px",background:"var(--sf2)",borderRadius:8,border:"1px dashed var(--bd)"}}>
-          <div style={{fontSize:11,fontWeight:700,color:"var(--tx3)",marginBottom:10,textTransform:"uppercase",letterSpacing:".08em"}}>Nuevo estado</div>
+          <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:8,textTransform:"uppercase",letterSpacing:".08em"}}>Nuevo estado</div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
             <input value={newStatus.name} onChange={e=>setNewStatus(s=>({...s,name:e.target.value}))}
               placeholder="Nombre del estado"
-              style={{flex:2,minWidth:140,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",outline:"none"}}/>
+              style={{flex:2,minWidth:130,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",outline:"none"}}/>
             <div style={{display:"flex",alignItems:"center",gap:5}}>
               <label style={{fontSize:11,color:"var(--tx3)"}}>Color</label>
               <input type="color" value={newStatus.color}
-                onChange={e=>{const c=e.target.value; setNewStatus(s=>({...s,color:c,border:c+"66"}));}}
+                onChange={e=>setNewStatus(s=>({...s,color:e.target.value}))}
                 style={{width:32,height:28,border:"none",background:"none",cursor:"pointer",padding:0}}/>
             </div>
             <label style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--tx3)",cursor:"pointer"}}>
               <input type="checkbox" checked={newStatus.is_final} onChange={e=>setNewStatus(s=>({...s,is_final:e.target.checked}))}/>
               Estado final
             </label>
-            <button onClick={addStatus}
+            <button onClick={addRelStatus}
               style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:5,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
               + Añadir
             </button>
