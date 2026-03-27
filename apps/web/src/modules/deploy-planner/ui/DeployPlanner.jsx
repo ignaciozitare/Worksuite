@@ -92,19 +92,34 @@ async function jiraTransition(issueKey, appStatus) {
 }
 
 /* ─── PLANNING — Release Card ────────────────────────────────── */
-function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag, drag, allReleases }) {
+function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag, drag, allReleases, repoGroups }) {
   const [addingTicket, setAddingTicket] = useState(false);
   const [search, setSearch] = useState("");
   const tMap = Object.fromEntries(tickets.map(t=>[t.key,t]));
 
   const cfg = statusCfg[rel.status] || { color:"#6b7280", bg_color:"rgba(107,114,128,.12)", border:"#1f2937" };
 
-  // Conflict detection
-  const myRepos = (rel.ticket_ids||[]).flatMap(k=>tMap[k]?.repos||[]);
-  const conflicts = [...new Set(allReleases
-    .filter(r=>r.id!==rel.id && r.status!=="Deployed" && r.status!=="Rollback")
-    .flatMap(r=>(r.ticket_ids||[]).flatMap(k=>tMap[k]?.repos||[]).filter(repo=>myRepos.includes(repo)))
-  )];
+  // Conflict detection using repo groups
+  // A conflict exists when: another active release has a repo that belongs to the SAME group as one of our repos
+  const myRepos = [...new Set((rel.ticket_ids||[]).flatMap(k=>tMap[k]?.repos||[]))];
+
+  const conflicts = []; // { repo, groupName, otherRelease }
+  for(const group of repoGroups) {
+    const myGroupRepos = myRepos.filter(r => group.repos.includes(r));
+    if(myGroupRepos.length === 0) continue;
+    for(const other of allReleases) {
+      if(other.id === rel.id) continue;
+      const isActive = other.status !== "Deployed" && other.status !== "Rollback";
+      if(!isActive) continue;
+      const otherRepos = [...new Set((other.ticket_ids||[]).flatMap(k=>tMap[k]?.repos||[]))];
+      const sharedGroupRepos = myGroupRepos.filter(r => otherRepos.includes(r));
+      for(const repo of sharedGroupRepos) {
+        if(!conflicts.find(c=>c.repo===repo)) {
+          conflicts.push({ repo, groupName: group.name, otherRelease: other.release_number||"sin versión" });
+        }
+      }
+    }
+  }
 
   const relTickets = (rel.ticket_ids||[]).map(k=>tMap[k]).filter(Boolean);
   const relRepos   = [...new Set(relTickets.flatMap(t=>t.repos||[]))];
@@ -191,8 +206,14 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
 
       {/* Conflicts */}
       {conflicts.length>0&&(
-        <div style={{background:"rgba(248,113,113,.06)",border:"1px solid #7f1d1d",borderRadius:4,padding:"5px 9px",fontSize:10,color:"#f87171",marginBottom:8}}>
-          ▲ Repos en conflicto: {conflicts.slice(0,2).join(", ")}{conflicts.length>2?` +${conflicts.length-2}`:""}
+        <div style={{background:"rgba(248,113,113,.06)",border:"1px solid #7f1d1d",borderRadius:4,padding:"6px 9px",fontSize:10,color:"#f87171",marginBottom:8}}>
+          <div style={{fontWeight:700,marginBottom:3}}>⚠ Repos en conflicto:</div>
+          {conflicts.map(c=>(
+            <div key={c.repo} style={{marginTop:2,color:"#fca5a5"}}>
+              · <strong>{c.repo}</strong>
+              <span style={{color:"#7f1d1d"}}> — también en {c.otherRelease} ({c.groupName})</span>
+            </div>
+          ))}
         </div>
       )}
 
@@ -263,7 +284,7 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
 }
 
 /* ─── RELEASE DETAIL — repo cards ────────────────────────────── */
-function ReleaseDetail({ rel, tickets, statusCfg, onBack, onUpdRelease, isLight }) {
+function ReleaseDetail({ rel, tickets, statusCfg, repoGroups, allReleases, onBack, onUpdRelease, isLight }) {
   const [ticketStatuses, setTicketStatuses] = useState(rel.ticket_statuses||{});
   const [syncing, setSyncing] = useState({});
   const [closing, setClosing] = useState(false);
@@ -271,11 +292,30 @@ function ReleaseDetail({ rel, tickets, statusCfg, onBack, onUpdRelease, isLight 
 
   // Group tickets by repo
   const relTickets = (rel.ticket_ids||[]).map(k=>tickets.find(t=>t.key===k)).filter(Boolean);
+  const tMap       = Object.fromEntries(tickets.map(t=>[t.key,t]));
   const allRepos   = [...new Set(relTickets.flatMap(t=>t.repos||[]))].sort();
   const byRepo     = {};
   allRepos.forEach(r=>{ byRepo[r]=relTickets.filter(t=>t.repos?.includes(r)); });
 
   const getStatus = (key) => ticketStatuses[key]||"in_progress";
+
+  // Detect which repos are blocked by other active releases (via repo groups)
+  // Blocks "Merged to master" status specifically
+  const mergeBlockers = []; // { repo, groupName, otherRelease, otherStatus }
+  for(const group of (repoGroups||[])) {
+    const myGroupRepos = allRepos.filter(r => group.repos.includes(r));
+    if(myGroupRepos.length === 0) continue;
+    for(const other of (allReleases||[])) {
+      if(other.id === rel.id) continue;
+      if(other.status === "Deployed" || other.status === "Rollback") continue;
+      const otherRepos = [...new Set((other.ticket_ids||[]).flatMap(k=>tMap[k]?.repos||[]))];
+      for(const repo of myGroupRepos) {
+        if(otherRepos.includes(repo) && !mergeBlockers.find(b=>b.repo===repo)) {
+          mergeBlockers.push({ repo, groupName:group.name, otherRelease:other.release_number||"sin versión", otherStatus:other.status||"Planned" });
+        }
+      }
+    }
+  }
 
   const handleStatusChange = async (key, newStatus) => {
     // Optimistic update
@@ -438,8 +478,10 @@ function ReleaseDetail({ rel, tickets, statusCfg, onBack, onUpdRelease, isLight 
       {/* Close Release */}
       <div style={{background:"var(--dp-sf,#0b0f18)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:8,padding:"18px 20px"}}>
         <SLabel style={{marginBottom:12}}>Cerrar Release</SLabel>
+
+        {/* Tickets pendientes */}
         {!allReady&&(
-          <div style={{padding:"8px 12px",background:"rgba(248,113,113,.06)",border:"1px solid #7f1d1d",borderRadius:6,fontSize:10,color:"#f87171",marginBottom:12}}>
+          <div style={{padding:"8px 12px",background:"rgba(248,113,113,.06)",border:"1px solid #7f1d1d",borderRadius:6,fontSize:10,color:"#f87171",marginBottom:10}}>
             <div style={{fontWeight:700,marginBottom:4}}>⚠ Hay tickets pendientes en:</div>
             {allRepos.filter(r=>(byRepo[r]||[]).some(t=>!MERGE_READY.includes(getStatus(t.key)))).map(r=>{
               const pending=(byRepo[r]||[]).filter(t=>!MERGE_READY.includes(getStatus(t.key))).length;
@@ -447,11 +489,37 @@ function ReleaseDetail({ rel, tickets, statusCfg, onBack, onUpdRelease, isLight 
             })}
           </div>
         )}
+
+        {/* Merge blocker — otras releases activas comparten repos del mismo grupo */}
+        {mergeBlockers.length>0&&(
+          <div style={{padding:"8px 12px",background:"rgba(251,191,36,.06)",border:"1px solid #92400e",borderRadius:6,fontSize:10,color:"#fbbf24",marginBottom:10}}>
+            <div style={{fontWeight:700,marginBottom:4}}>🔒 Merge a master bloqueado por conflicto de repos:</div>
+            {mergeBlockers.map(b=>(
+              <div key={b.repo} style={{marginTop:3}}>
+                · <strong style={{color:"#fcd34d"}}>{b.repo}</strong>
+                <span style={{color:"#92400e"}}> también en <strong style={{color:"#fbbf24"}}>{b.otherRelease}</strong> ({b.otherStatus}) — grupo "{b.groupName}"</span>
+              </div>
+            ))}
+            <div style={{marginTop:6,color:"#92400e",fontSize:9}}>
+              Puedes cambiar a Staging o Deployed, pero no a "Merged to master" hasta que las otras releases del grupo estén cerradas.
+            </div>
+          </div>
+        )}
+
         <div style={{display:"flex",gap:10,alignItems:"center"}}>
           <select value={targetStatus} onChange={e=>setTargetStatus(e.target.value)}
             style={{flex:1,background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:6,padding:"8px 12px",fontSize:11,color:"var(--dp-tx2,#94a3b8)",outline:"none",fontFamily:"inherit"}}>
             <option value="">Selecciona estado final…</option>
-            {Object.entries(statusCfg).map(([name,c])=><option key={name} value={name}>{name}</option>)}
+            {Object.entries(statusCfg).map(([name,c])=>{
+              // Block "Merged to master" if there are merge blockers
+              const isMergeStatus = name.toLowerCase().includes("merge");
+              const isBlocked     = isMergeStatus && mergeBlockers.length > 0;
+              return (
+                <option key={name} value={isBlocked?"":name} disabled={isBlocked}>
+                  {isBlocked?"🔒 ":""}{name}{isBlocked?" (bloqueado)":""}
+                </option>
+              );
+            })}
           </select>
           <button onClick={handleCloseRelease} disabled={!targetStatus||closing}
             style={{background:targetStatus&&!closing?"linear-gradient(135deg,#1d4ed8,#0ea5e9)":"var(--dp-sf2,#0b0f18)",border:`1px solid ${targetStatus?"#3b82f6":"var(--dp-bd,#1e293b)"}`,borderRadius:6,padding:"8px 20px",fontSize:11,fontWeight:700,color:targetStatus&&!closing?"#fff":"var(--dp-tx3,#334155)",cursor:targetStatus&&!closing?"pointer":"not-allowed",transition:"all .2s",fontFamily:"inherit"}}>
@@ -806,13 +874,14 @@ function Metrics({ releases, tickets, statusCfg }) {
 /* ─── ROOT ───────────────────────────────────────────────────── */
 export function DeployPlanner({ currentUser }) {
   const [tab, setTab]           = useState("planning");
-  const [detail, setDetail]     = useState(null);
-  const [releases, setReleases] = useState([]);
-  const [tickets, setTickets]   = useState([]);
+  const [detail, setDetail]       = useState(null);
+  const [releases, setReleases]   = useState([]);
+  const [tickets, setTickets]     = useState([]);
   const [statusCfg, setStatusCfg] = useState({});
-  const [loading, setLoading]   = useState(true);
+  const [repoGroups, setRepoGroups] = useState([]);
+  const [loading, setLoading]     = useState(true);
   const [fetchingJira, setFetchingJira] = useState(false);
-  const [drag, setDrag]         = useState(null);
+  const [drag, setDrag]           = useState(null);
 
   // Light mode — read from html element class, watch for changes
   const [isLight, setIsLight] = useState(document.documentElement.classList.contains("light"));
@@ -828,11 +897,13 @@ export function DeployPlanner({ currentUser }) {
 
   async function load() {
     setLoading(true);
-    const [{ data:rels }, { data:statuses }, { data:ssoData }] = await Promise.all([
+    const [{ data:rels }, { data:statuses }, { data:ssoData }, { data:groups }] = await Promise.all([
       supabase.from("dp_releases").select("*").order("start_date",{ascending:true}),
       supabase.from("dp_release_statuses").select("*").order("ord",{ascending:true}),
       supabase.from("sso_config").select("deploy_jira_statuses").limit(1).single(),
+      supabase.from("dp_repo_groups").select("*").order("name"),
     ]);
+    setRepoGroups(groups||[]);
     setReleases(rels||[]);
     const cfg = {};
     (statuses||[]).forEach(s=>{ cfg[s.name]={ color:s.color, bg_color:s.bg_color, border:s.border, is_final:s.is_final, ord:s.ord }; });
@@ -998,6 +1069,8 @@ export function DeployPlanner({ currentUser }) {
             rel={detailRel}
             tickets={tickets}
             statusCfg={statusCfg}
+            repoGroups={repoGroups}
+            allReleases={releases}
             isLight={isLight}
             onBack={()=>setDetail(null)}
             onUpdRelease={patch=>upd(detail,patch)}
@@ -1021,7 +1094,7 @@ export function DeployPlanner({ currentUser }) {
                     <ReleaseCard key={rel.id} rel={rel} statusCfg={statusCfg} tickets={tickets}
                       onOpen={setDetail} onUpd={upd} onDelete={delRelease}
                       onDrop={handleDrop} setDrag={setDrag} drag={drag}
-                      allReleases={releases}/>
+                      allReleases={releases} repoGroups={repoGroups}/>
                   ))}
                   <div onClick={addRelease}
                     style={{width:290,minHeight:140,background:"transparent",border:"2px dashed var(--dp-bd,#1e293b)",borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",color:"var(--dp-tx3,#334155)",fontSize:12,transition:"border-color .15s"}}
