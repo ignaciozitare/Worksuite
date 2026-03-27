@@ -312,18 +312,18 @@ export function AdminEnvPolicy({ supabase }) {
   const [saved,   setSaved]   = useState(false);
 
   useEffect(() => {
-    supabase.from("env_policy").select("*").limit(1).single()
+    supabase.from("env_deploy_policy").select("*").limit(1).single()
       .then(({ data }) => { if (data?.value) setPolicy(v => ({ ...v, ...data.value })); })
       .finally(() => setLoading(false));
   }, []);
 
   async function save() {
     setSaving(true);
-    const { data: existing } = await supabase.from("env_policy").select("id").limit(1).single();
+    const { data: existing } = await supabase.from("env_deploy_policy").select("id").limit(1).single();
     if (existing?.id) {
-      await supabase.from("env_policy").update({ value: policy, updated_at: new Date().toISOString() }).eq("id", existing.id);
+      await supabase.from("env_deploy_policy").update({ value: policy, updated_at: new Date().toISOString() }).eq("id", existing.id);
     } else {
-      await supabase.from("env_policy").insert({ name: "global", value: policy });
+      await supabase.from("env_deploy_policy").insert({ value: policy });
     }
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
   }
