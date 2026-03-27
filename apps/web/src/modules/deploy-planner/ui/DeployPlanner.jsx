@@ -803,47 +803,69 @@ export function DeployPlanner({ currentUser }) {
     fetchJiraTickets(ssoData?.deploy_jira_statuses);
   }
 
-  // Supabase Edge Function URL — no depende del backend de Vercel
-  const JIRA_FN = "https://enclhswdbwbgxbjykdtj.supabase.co/functions/v1/jira-search";
-
   async function fetchJiraTickets(rawStatuses) {
     setFetchingJira(true);
     try {
-      // If called without args (manual refresh), read from DB
+      // Si no hay args (refresh manual), leer de DB
       if(rawStatuses === undefined) {
         const { data:sso } = await supabase.from("sso_config").select("deploy_jira_statuses").limit(1).single();
         rawStatuses = sso?.deploy_jira_statuses;
       }
-      const statusList = (rawStatuses || "Ready to Production").split(",").map(s=>s.trim()).filter(Boolean);
-      const jqlStatus  = statusList.length===1
-        ? `status="${statusList[0]}"`
-        : `status in (${statusList.map(s=>'"'+s+'"').join(",")})`;
-      const jql = `${jqlStatus} ORDER BY updated DESC`;
+      const targetStatuses = (rawStatuses || "Ready to Production")
+        .split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
 
       const headers = await authHeaders();
-      const res = await fetch(`${JIRA_FN}?jql=${encodeURIComponent(jql)}&maxResults=100`, { headers });
-      let data;
-      try { data = await res.json(); } catch { data = {}; }
-      if(!res.ok) throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
 
-      const newTickets = (data.issues||[]).map(i=>{
-        const components = (i.fields?.components||[]).map(c=>c.name).filter(Boolean);
-        const cf10014    = (i.fields?.customfield_10014||"").split(",").map(s=>s.trim()).filter(Boolean);
-        const labels     = (i.fields?.labels||[]).filter(Boolean);
-        const repos      = components.length ? components : cf10014.length ? cf10014 : labels;
+      // Paso 1: obtener proyectos (mismo endpoint que JiraTracker)
+      const projRes = await fetch(`${API_BASE}/jira/projects`, { headers });
+      if(!projRes.ok) throw new Error(`No se pudieron cargar proyectos: HTTP ${projRes.status}`);
+      const projData = await projRes.json();
+      const projects = (projData.data || []).map(p => p.key || p.id).filter(Boolean);
+
+      if(projects.length === 0) throw new Error("No hay proyectos Jira configurados");
+
+      // Paso 2: cargar issues de cada proyecto (mismo endpoint que JiraTracker)
+      const allIssues = [];
+      await Promise.all(projects.map(async (project) => {
+        try {
+          const res = await fetch(`${API_BASE}/jira/issues?project=${project}`, { headers });
+          if(!res.ok) return;
+          const data = await res.json();
+          allIssues.push(...(data.data || []));
+        } catch { /* proyecto sin acceso, ignorar */ }
+      }));
+
+      // Paso 3: filtrar por los estados configurados en Admin → Deploy Planner
+      const filtered = allIssues.filter(i => {
+        const issueStatus = (i.status || i.fields?.status?.name || "").toLowerCase();
+        return targetStatuses.some(s => issueStatus.includes(s) || s.includes(issueStatus));
+      });
+
+      const newTickets = filtered.map(i => {
+        // Soporte tanto para respuesta directa como para fields wrapper
+        const fields    = i.fields || i;
+        const components = (fields.components||[]).map(c=>c.name||c).filter(Boolean);
+        const cf10014   = (fields.customfield_10014||"").split(",").map(s=>s.trim()).filter(Boolean);
+        const labels    = (fields.labels||[]).filter(Boolean);
+        const repos     = components.length ? components : cf10014.length ? cf10014 : labels;
         return {
-          key:      i.key,
-          summary:  i.fields?.summary||"",
-          assignee: i.fields?.assignee?.displayName||"—",
-          priority: i.fields?.priority?.name||"Medium",
-          type:     i.fields?.issuetype?.name||"Task",
-          status:   i.fields?.status?.name||"",
+          key:      i.key || i.id,
+          summary:  fields.summary || i.summary || "",
+          assignee: fields.assignee?.displayName || i.assignee || "—",
+          priority: fields.priority?.name || i.priority || "Medium",
+          type:     fields.issuetype?.name || i.type || "Task",
+          status:   fields.status?.name || i.status || "",
           repos,
         };
       });
+
       setTickets(newTickets);
+
+      if(newTickets.length === 0) {
+        console.warn(`Jira: ${allIssues.length} issues cargados de ${projects.length} proyectos, ninguno coincide con estados: "${rawStatuses}"`);
+      }
     } catch(e) {
-      console.warn("Jira auto-fetch:", e.message);
+      console.warn("Jira fetch error:", e.message);
     }
     setFetchingJira(false);
   }
