@@ -213,4 +213,68 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
       }
     },
   );
+
+  // ─── POST /jira/issue/:key/transition ─────────────────────────────────────
+  // Usado por Deploy Planner para sincronizar el estado de tickets con Jira.
+  app.post<{ Params: { key: string }; Body: { targetStatus: string } }>(
+    '/issue/:key/transition',
+    async (req, reply) => {
+      const userId = (req.user as { sub: string }).sub;
+      const { key } = req.params;
+      const { targetStatus } = req.body;
+
+      if (!key || !targetStatus) {
+        return reply.status(400).send({ ok: false, error: 'key and targetStatus required' });
+      }
+
+      try {
+        const { client } = await resolveJiraClient(userId, supabase);
+
+        // 1. Obtener transiciones disponibles para el issue
+        const transRes = await (client as unknown as { request: (method: string, path: string) => Promise<unknown> });
+        // Llamada directa a Jira con fetch usando las credenciales del cliente
+        const baseUrl = (client as unknown as { base: string }).base;
+        const auth    = (client as unknown as { auth: string }).auth;
+
+        const listRes = await fetch(`${baseUrl}/rest/api/3/issue/${key}/transitions`, {
+          headers: { 'Authorization': `Basic ${auth}`, 'Accept': 'application/json' },
+        });
+
+        if (!listRes.ok) {
+          return reply.status(listRes.status).send({ ok: false, error: `Jira error listing transitions: ${listRes.status}` });
+        }
+
+        const { transitions } = await listRes.json() as { transitions: Array<{ id: string; name: string; to: { name: string } }> };
+
+        // 2. Buscar la transición que coincida con targetStatus (case-insensitive, coincidencia parcial)
+        const match =
+          transitions.find(t => t.name.toLowerCase() === targetStatus.toLowerCase()) ||
+          transitions.find(t => t.to?.name?.toLowerCase() === targetStatus.toLowerCase()) ||
+          transitions.find(t => t.name.toLowerCase().includes(targetStatus.toLowerCase()));
+
+        if (!match) {
+          return reply.status(422).send({
+            ok: false,
+            error: `Transición "${targetStatus}" no encontrada. Disponibles: ${transitions.map(t => t.name).join(', ')}`,
+          });
+        }
+
+        // 3. Aplicar la transición
+        const applyRes = await fetch(`${baseUrl}/rest/api/3/issue/${key}/transitions`, {
+          method: 'POST',
+          headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transition: { id: match.id } }),
+        });
+
+        if (!applyRes.ok && applyRes.status !== 204) {
+          return reply.status(applyRes.status).send({ ok: false, error: `Jira transition error: ${applyRes.status}` });
+        }
+
+        return reply.send({ ok: true, appliedTransition: match.name, issueKey: key });
+      } catch (err: unknown) {
+        const status = (err as { statusCode?: number }).statusCode ?? 502;
+        return reply.status(status).send({ ok: false, error: String(err) });
+      }
+    },
+  );
 }
