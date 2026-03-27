@@ -3846,6 +3846,30 @@ function AdminDeployConfig() {
 
   const [newJiraName, setNewJiraName] = React.useState("");
 
+  // ── Version config ───────────────────────────────────────────────────────
+  const [verCfg, setVerCfg]           = React.useState(null);
+  const [verCfgSaving, setVerCfgSaving] = React.useState(false);
+  const [verCfgSaved, setVerCfgSaved]   = React.useState(false);
+
+  React.useEffect(() => {
+    supabase.from("dp_version_config").select("*").limit(1).single().then(({data}) => {
+      if(data) setVerCfg(data);
+      else setVerCfg({ prefix:"v", segments:[{name:"major",value:1},{name:"minor",value:0},{name:"patch",value:0}], separator:"." });
+    });
+  }, []);
+
+  const saveVerCfg = async () => {
+    if(!verCfg) return;
+    setVerCfgSaving(true);
+    const {data:existing} = await supabase.from("dp_version_config").select("id").limit(1).single();
+    if(existing?.id) {
+      await supabase.from("dp_version_config").update({prefix:verCfg.prefix,segments:verCfg.segments,separator:verCfg.separator}).eq("id",existing.id);
+    } else {
+      await supabase.from("dp_version_config").insert({prefix:verCfg.prefix,segments:verCfg.segments,separator:verCfg.separator});
+    }
+    setVerCfgSaving(false); setVerCfgSaved(true); setTimeout(()=>setVerCfgSaved(false),2000);
+  };
+
   // ── Repo groups ──────────────────────────────────────────────────────────
   const [repoGroups, setRepoGroups]       = React.useState([]);
   const [newGroupName, setNewGroupName]   = React.useState("");
@@ -4010,6 +4034,68 @@ function AdminDeployConfig() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* ── Version config ───────────────────────────────────── */}
+      <div className="a-card" style={{marginTop:16}}>
+        <div className="a-ct">Generador de números de versión</div>
+        <div style={{fontSize:11,color:"var(--tx3)",marginBottom:14}}>
+          Define el formato y el punto de partida para los números de versión de las releases.
+        </div>
+        {verCfg && (
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
+              <div>
+                <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:4,letterSpacing:".06em",textTransform:"uppercase"}}>Prefijo</div>
+                <input value={verCfg.prefix||""} onChange={e=>setVerCfg(v=>({...v,prefix:e.target.value}))}
+                  placeholder="v" maxLength={5}
+                  style={{width:60,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:13,fontFamily:"monospace",outline:"none",textAlign:"center"}}/>
+              </div>
+              <div>
+                <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:4,letterSpacing:".06em",textTransform:"uppercase"}}>Separador</div>
+                <input value={verCfg.separator||"."} onChange={e=>setVerCfg(v=>({...v,separator:e.target.value}))}
+                  placeholder="." maxLength={2}
+                  style={{width:44,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:13,fontFamily:"monospace",outline:"none",textAlign:"center"}}/>
+              </div>
+              <div style={{padding:"0 4px",fontSize:11,color:"var(--tx3)"}}>
+                Vista previa: <strong style={{color:"var(--tx)",fontFamily:"monospace"}}>
+                  {(verCfg.prefix||"v")}{(verCfg.segments||[]).map(s=>s.value).join(verCfg.separator||".")}
+                </strong>
+              </div>
+            </div>
+
+            {/* Segments */}
+            <div>
+              <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:8,letterSpacing:".06em",textTransform:"uppercase"}}>Segmentos</div>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {(verCfg.segments||[]).map((seg,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:"var(--sf2)",borderRadius:7,border:"1px solid var(--bd)"}}>
+                    <input value={seg.name} onChange={e=>{const segs=[...(verCfg.segments||[])];segs[i]={...segs[i],name:e.target.value};setVerCfg(v=>({...v,segments:segs}));}}
+                      style={{flex:1,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"4px 8px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",outline:"none"}}
+                      placeholder="nombre (ej: major)"/>
+                    <div style={{display:"flex",alignItems:"center",gap:5}}>
+                      <span style={{fontSize:11,color:"var(--tx3)"}}>Inicio:</span>
+                      <input type="number" min="0" value={seg.value}
+                        onChange={e=>{const segs=[...(verCfg.segments||[])];segs[i]={...segs[i],value:parseInt(e.target.value)||0};setVerCfg(v=>({...v,segments:segs}));}}
+                        style={{width:64,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"4px 8px",color:"var(--tx)",fontSize:12,fontFamily:"monospace",outline:"none",textAlign:"center"}}/>
+                    </div>
+                    <button onClick={()=>{const segs=(verCfg.segments||[]).filter((_,j)=>j!==i);setVerCfg(v=>({...v,segments:segs}));}}
+                      style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14,lineHeight:1}}>×</button>
+                  </div>
+                ))}
+              </div>
+              <button onClick={()=>setVerCfg(v=>({...v,segments:[...(v.segments||[]),{name:"nuevo",value:0}]}))}
+                style={{marginTop:8,background:"var(--sf2)",border:"1px dashed var(--bd)",borderRadius:5,padding:"6px 14px",fontSize:11,color:"var(--tx3)",cursor:"pointer",fontFamily:"inherit"}}>
+                + Añadir segmento
+              </button>
+            </div>
+
+            <button onClick={saveVerCfg} disabled={verCfgSaving}
+              style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:6,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",alignSelf:"flex-start"}}>
+              {verCfgSaving?"Guardando…":verCfgSaved?"✓ Guardado":"Guardar configuración"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Repo groups ───────────────────────────────────────── */}
