@@ -9,7 +9,7 @@ import React, {
 import { createPortal } from "react-dom";
 import { supabase } from './shared/lib/api';
 import { RetroBoard, AdminRetroTeams } from './RetroBoard';
-import { DeployPlanner } from './modules/deploy-planner';
+import { DeployPlanner } from './modules/deploy-planner/ui/DeployPlanner.jsx';
 import { useAuth } from './shared/hooks/useAuth';
 
 // ── API helpers ────────────────────────────────────────────────────────────
