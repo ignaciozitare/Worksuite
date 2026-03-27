@@ -2283,24 +2283,76 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
     return seats;
   }, [blueprint?.id]);
 
+  // Use refs to access current scale/offset inside event handlers (avoids stale closure)
+  const scaleRef  = useRef(scale);
+  const offsetRef = useRef(offset);
+  useEffect(() => { scaleRef.current  = scale;  }, [scale]);
+  useEffect(() => { offsetRef.current = offset; }, [offset]);
+
   useEffect(() => {
-    const cw = cwRef.current;
-    if(!cw) return;
+    const cw  = cwRef.current;
+    const cvs = canvasRef.current;
+    if(!cw || !cvs) return;
+
     function resize() {
-      const cvs = canvasRef.current;
-      if(!cvs) return;
       const W = cw.clientWidth, H = cw.clientHeight;
       cvs.width = W; cvs.height = H;
-      // Compute scale to fit bbox
       const bW = bbox.maxX-bbox.minX, bH = bbox.maxY-bbox.minY;
-      const s = Math.min((W-40)/bW, (H-40)/bH, 1.5);
+      if(bW<=0||bH<=0) return;
+      const s  = Math.min((W-40)/bW, (H-40)/bH, 1.5);
       const ox = (W - bW*s)/2 - bbox.minX*s;
       const oy = (H - bH*s)/2 - bbox.minY*s;
       setScale(s); setOffset({x:ox, y:oy});
     }
     resize();
     const ro = new ResizeObserver(resize); ro.observe(cw);
-    return ()=>ro.disconnect();
+
+    // Wheel zoom — centered on cursor position
+    function onWheel(e) {
+      e.preventDefault();
+      const rect = cvs.getBoundingClientRect();
+      const mx   = e.clientX - rect.left;
+      const my   = e.clientY - rect.top;
+      const cur  = scaleRef.current;
+      const ns   = Math.max(0.15, Math.min(4, cur + (e.deltaY < 0 ? 0.12 : -0.12)));
+      const ratio = ns / cur;
+      const ox    = offsetRef.current.x;
+      const oy    = offsetRef.current.y;
+      setScale(ns);
+      setOffset({ x: mx - (mx - ox) * ratio, y: my - (my - oy) * ratio });
+    }
+    cvs.addEventListener('wheel', onWheel, { passive: false });
+
+    // Pan — mouse drag (left button) or middle button
+    let panActive = false, px0 = 0, py0 = 0, ox0 = 0, oy0 = 0;
+    function onMouseDown(e) {
+      if(e.button !== 0 && e.button !== 1) return;
+      if(e.button === 1) e.preventDefault();
+      panActive = true;
+      px0 = e.clientX; py0 = e.clientY;
+      ox0 = offsetRef.current.x; oy0 = offsetRef.current.y;
+      cvs.style.cursor = 'grabbing';
+    }
+    function onMouseMove(e) {
+      if(!panActive) return;
+      setOffset({ x: ox0 + (e.clientX - px0), y: oy0 + (e.clientY - py0) });
+    }
+    function onMouseUp() {
+      if(!panActive) return;
+      panActive = false;
+      cvs.style.cursor = 'default';
+    }
+    cvs.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+
+    return () => {
+      ro.disconnect();
+      cvs.removeEventListener('wheel', onWheel);
+      cvs.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
   }, [bbox]);
 
   // Draw
@@ -2473,18 +2525,13 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
   };
   const fitToView = () => {
     const cvs = canvasRef.current;
-    if (!cvs || !allSeats.length) { setScale(1); setOffset({x:0,y:0}); return; }
-    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
-    allSeats.forEach(s => {
-      if(s.x<minX)minX=s.x; if(s.y<minY)minY=s.y;
-      if(s.x+52>maxX)maxX=s.x+52; if(s.y+52>maxY)maxY=s.y+52;
-    });
-    const W=cvs.width, H=cvs.height, PAD=40;
-    const bW=maxX-minX, bH=maxY-minY;
-    if(bW<=0||bH<=0) return;
+    if (!cvs) return;
+    const W  = cvs.width, H = cvs.height, PAD = 40;
+    const bW = bbox.maxX-bbox.minX, bH = bbox.maxY-bbox.minY;
+    if(bW<=0||bH<=0) { setScale(1); setOffset({x:0,y:0}); return; }
     const s = Math.min((W-PAD*2)/bW, (H-PAD*2)/bH, 1.5);
     setScale(s);
-    setOffset({ x:(W-bW*s)/2-minX*s, y:(H-bH*s)/2-minY*s });
+    setOffset({ x:(W-bW*s)/2-bbox.minX*s, y:(H-bH*s)/2-bbox.minY*s });
   };
 
   return (
