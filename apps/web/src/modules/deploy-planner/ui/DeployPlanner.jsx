@@ -50,6 +50,12 @@ async function authHeaders() {
   return session?.access_token ? { "Authorization":`Bearer ${session.access_token}`, "Content-Type":"application/json" } : { "Content-Type":"application/json" };
 }
 
+// Two date ranges overlap if: start1 <= end2 AND start2 <= end1
+const datesOverlap = (s1, e1, s2, e2) => {
+  if(!s1||!e1||!s2||!e2) return true; // if dates missing, assume overlap (conservative)
+  return s1 <= e2 && s2 <= e1;
+};
+
 const SLabel = ({children, style={}}) => (
   <div style={{fontSize:9,fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"var(--dp-tx3,#334155)",...style}}>{children}</div>
 );
@@ -111,6 +117,8 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
       if(other.id === rel.id) continue;
       const isActive = other.status !== "Deployed" && other.status !== "Rollback";
       if(!isActive) continue;
+      // Only conflict if date ranges overlap
+      if(!datesOverlap(rel.start_date, rel.end_date, other.start_date, other.end_date)) continue;
       const otherRepos = [...new Set((other.ticket_ids||[]).flatMap(k=>tMap[k]?.repos||[]))];
       const sharedGroupRepos = myGroupRepos.filter(r => otherRepos.includes(r));
       for(const repo of sharedGroupRepos) {
@@ -308,6 +316,8 @@ function ReleaseDetail({ rel, tickets, statusCfg, repoGroups, allReleases, onBac
     for(const other of (allReleases||[])) {
       if(other.id === rel.id) continue;
       if(other.status === "Deployed" || other.status === "Rollback") continue;
+      // Only block if date ranges overlap
+      if(!datesOverlap(rel.start_date, rel.end_date, other.start_date, other.end_date)) continue;
       const otherRepos = [...new Set((other.ticket_ids||[]).flatMap(k=>tMap[k]?.repos||[]))];
       for(const repo of myGroupRepos) {
         if(otherRepos.includes(repo) && !mergeBlockers.find(b=>b.repo===repo)) {
