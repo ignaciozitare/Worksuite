@@ -10,6 +10,7 @@ import { createPortal } from "react-dom";
 import { supabase } from './shared/lib/api';
 import { RetroBoard, AdminRetroTeams } from './RetroBoard';
 import { DeployPlanner } from './modules/deploy-planner';
+import EnvTracker, { AdminEnvEnvironments, AdminEnvRepositories, AdminEnvPolicy } from './EnvTracker';
 import { useAuth } from './shared/hooks/useAuth';
 
 // ── API helpers ────────────────────────────────────────────────────────────
@@ -67,6 +68,7 @@ const MODULES = [
   { id:"hd",     label:"HotDesk",       color:"var(--green)" },
   { id:"retro",  label:"RetroBoard",    color:"#818cf8"      },
   { id:"deploy", label:"Deploy Planner",color:"#f59e0b"      },
+  { id:"envtracker", label:"Environments",  color:"#22d3ee"      },
 ];
 const SeatStatus = Object.freeze({ FREE:"free", OCCUPIED:"occupied", FIXED:"fixed" });
 
@@ -4036,46 +4038,53 @@ function AdminDeployConfig() {
         </div>
       </div>
 
-      {/* ── Version config ───────────────────────────────────── */}
+      {/* ── Version config ─────────────────────────────────────── */}
       <div className="a-card" style={{marginTop:16}}>
-        <div className="a-ct">Generador de números de versión</div>
+        <div className="a-ct">Generador de versiones</div>
         <div style={{fontSize:11,color:"var(--tx3)",marginBottom:14}}>
-          Define el formato y el punto de partida para los números de versión de las releases.
+          Define el prefijo, separador y los segmentos (major/minor/patch o los que necesites).
+          Los valores son el punto de partida cuando no hay releases. Después el picker
+          lee el último número real y calcula el siguiente correctamente.
         </div>
         {verCfg && (
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            {/* Prefix + Separator */}
             <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
               <div>
                 <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:4,letterSpacing:".06em",textTransform:"uppercase"}}>Prefijo</div>
                 <input value={verCfg.prefix||""} onChange={e=>setVerCfg(v=>({...v,prefix:e.target.value}))}
-                  placeholder="v" maxLength={5}
-                  style={{width:60,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:13,fontFamily:"monospace",outline:"none",textAlign:"center"}}/>
+                  placeholder="v" maxLength={8}
+                  style={{width:72,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:14,fontFamily:"monospace",outline:"none",textAlign:"center"}}/>
               </div>
               <div>
                 <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:4,letterSpacing:".06em",textTransform:"uppercase"}}>Separador</div>
                 <input value={verCfg.separator||"."} onChange={e=>setVerCfg(v=>({...v,separator:e.target.value}))}
                   placeholder="." maxLength={2}
-                  style={{width:44,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:13,fontFamily:"monospace",outline:"none",textAlign:"center"}}/>
+                  style={{width:44,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:14,fontFamily:"monospace",outline:"none",textAlign:"center"}}/>
               </div>
-              <div style={{padding:"0 4px",fontSize:11,color:"var(--tx3)"}}>
-                Vista previa: <strong style={{color:"var(--tx)",fontFamily:"monospace"}}>
-                  {(verCfg.prefix||"v")}{(verCfg.segments||[]).map(s=>s.value).join(verCfg.separator||".")}
+              <div style={{padding:"0 4px",fontSize:11,color:"var(--tx3)",marginBottom:4}}>
+                Formato: <strong style={{color:"var(--tx)",fontFamily:"monospace"}}>
+                  {(verCfg.prefix||"v")}{(verCfg.segments||[]).map(s=>s.value??0).join(verCfg.separator||".")}
                 </strong>
+                <div style={{fontSize:10,color:"var(--tx3)",marginTop:2}}>
+                  Cuando hagas la primera release desde el picker verás major{verCfg.separator||"."}minor{verCfg.separator||"."}patch como opciones de bump.
+                </div>
               </div>
             </div>
 
             {/* Segments */}
             <div>
-              <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:8,letterSpacing:".06em",textTransform:"uppercase"}}>Segmentos</div>
+              <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:8,letterSpacing:".06em",textTransform:"uppercase"}}>Segmentos (valores iniciales)</div>
               <div style={{display:"flex",flexDirection:"column",gap:6}}>
                 {(verCfg.segments||[]).map((seg,i)=>(
                   <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:"var(--sf2)",borderRadius:7,border:"1px solid var(--bd)"}}>
-                    <input value={seg.name} onChange={e=>{const segs=[...(verCfg.segments||[])];segs[i]={...segs[i],name:e.target.value};setVerCfg(v=>({...v,segments:segs}));}}
+                    <input value={seg.name}
+                      onChange={e=>{const segs=[...(verCfg.segments||[])];segs[i]={...segs[i],name:e.target.value};setVerCfg(v=>({...v,segments:segs}));}}
                       style={{flex:1,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"4px 8px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",outline:"none"}}
                       placeholder="nombre (ej: major)"/>
                     <div style={{display:"flex",alignItems:"center",gap:5}}>
                       <span style={{fontSize:11,color:"var(--tx3)"}}>Inicio:</span>
-                      <input type="number" min="0" value={seg.value}
+                      <input type="number" min="0" value={seg.value??0}
                         onChange={e=>{const segs=[...(verCfg.segments||[])];segs[i]={...segs[i],value:parseInt(e.target.value)||0};setVerCfg(v=>({...v,segments:segs}));}}
                         style={{width:64,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"4px 8px",color:"var(--tx)",fontSize:12,fontFamily:"monospace",outline:"none",textAlign:"center"}}/>
                     </div>
@@ -4098,6 +4107,7 @@ function AdminDeployConfig() {
         )}
       </div>
 
+      {/* ── Repo groups ───────────────────────────────────────── */}
       {/* ── Repo groups ───────────────────────────────────────── */}
       <div className="a-card" style={{marginTop:16}}>
         <div className="a-ct">Grupos de repositorios con dependencias</div>
@@ -4190,6 +4200,34 @@ function AdminDeployConfig() {
   );
 }
 
+// ── Admin Environments Section ────────────────────────────────────────────────
+function AdminEnvTrackerSection() {
+  const [sub, setSub] = React.useState("environments");
+  const SUB = [
+    { id:"environments", label:"Entornos",    icon:"🖥️" },
+    { id:"repositories", label:"Repositorios",icon:"📦" },
+    { id:"policy",       label:"Política",    icon:"📋" },
+  ];
+  return (
+    <div>
+      <div className="sec-t">🖥️ Environments</div>
+      <div className="sec-sub" style={{marginBottom:16}}>Gestiona entornos de despliegue, repositorios y política de reservas.</div>
+      <div style={{display:"flex",gap:4,marginBottom:20,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:10,padding:4,alignSelf:"flex-start",width:"fit-content"}}>
+        {SUB.map(s=>(
+          <button key={s.id} onClick={()=>setSub(s.id)} style={{background:sub===s.id?"var(--ac)":"transparent",color:sub===s.id?"#fff":"var(--tx3)",border:"none",borderRadius:7,cursor:"pointer",fontWeight:sub===s.id?600:400,fontSize:12,padding:"5px 14px",transition:"all 0.15s",fontFamily:"inherit"}}>
+            {s.icon} {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="a-card">
+        {sub==="environments" && <AdminEnvEnvironments supabase={supabase}/>}
+        {sub==="repositories" && <AdminEnvRepositories supabase={supabase}/>}
+        {sub==="policy"       && <AdminEnvPolicy       supabase={supabase}/>}
+      </div>
+    </div>
+  );
+}
+
 function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   const { t } = useApp();
   const isAdmin = currentUser.role === 'admin';
@@ -4217,6 +4255,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
     { id:"blueprint",  icon:"🗺", label:"Blueprint" },
     { id:"retroteams", icon:"🔁", label:"Retro Teams" },
     { id:"deploy",     icon:"🚀", label:"Deploy Planner" },
+    { id:"envtracker", icon:"🖥️", label:"Environments" },
   ];
   return (
     <div className="admin-wrap">
@@ -4232,6 +4271,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
         {mod==="blueprint" && <AdminBlueprint/>}
         {mod==="retroteams" && <AdminRetroTeamsShell users={users}/>}
         {mod==="deploy"     && <AdminDeployConfig/>}
+        {mod==="envtracker" && <AdminEnvTrackerSection/>}
       </div>
     </div>
   );
@@ -4919,6 +4959,11 @@ function WorkSuiteApp() {
           {mod==="deploy" && view!=="admin" && (
             <main className="content" style={{padding:0,overflow:"auto"}}>
               <DeployPlanner currentUser={CURRENT_USER}/>
+            </main>
+          )}
+          {mod==="envtracker" && view!=="admin" && (
+            <main className="content" style={{padding:0,overflow:"hidden",display:"flex",flexDirection:"column",height:"100%"}}>
+              <EnvTracker supabase={supabase} currentUser={CURRENT_USER} wsUsers={users}/>
             </main>
           )}
           {view==="admin" && (<AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER}/>)}
