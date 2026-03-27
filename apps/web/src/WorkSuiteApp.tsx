@@ -3765,17 +3765,34 @@ function AdminDeployConfig() {
     setFetchingJ(true);
     try {
       const {data:{session}} = await supabase.auth.getSession();
-      const JIRA_FN = "https://enclhswdbwbgxbjykdtj.supabase.co/functions/v1/jira-search";
-      const res = await fetch(`${JIRA_FN}?mode=statuses`, {
-        headers:{"Authorization":`Bearer ${session?.access_token}`}
-      });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const names = (data.statuses||data||[]).map(s=>s.name||s).filter(Boolean);
-      // Add any that aren't already in the list
+      const API = (import.meta.env.VITE_API_URL||"http://localhost:3001").replace(/\/$/,"");
+      const hdrs = {"Authorization":`Bearer ${session?.access_token}`};
+
+      // Obtener proyectos (mismo endpoint que JiraTracker)
+      const projRes = await fetch(`${API}/jira/projects`, { headers: hdrs });
+      if(!projRes.ok) throw new Error(`Proyectos: HTTP ${projRes.status}`);
+      const projData = await projRes.json();
+      const projects = (projData.data||[]).map(p=>p.key||p.id).filter(Boolean).slice(0,5);
+
+      // Recoger estados únicos de issues de los primeros proyectos
+      const statusSet = new Set();
+      await Promise.all(projects.map(async proj => {
+        try {
+          const r = await fetch(`${API}/jira/issues?project=${proj}`, { headers: hdrs });
+          if(!r.ok) return;
+          const d = await r.json();
+          (d.data||[]).forEach(i => {
+            const st = i.status || i.fields?.status?.name;
+            if(st) statusSet.add(st);
+          });
+        } catch {}
+      }));
+
+      const names = [...statusSet].filter(Boolean);
       const existing = new Set(jiraList.map(j=>j.name));
       const toAdd = names.filter(n=>!existing.has(n)).map((n,i)=>({id:Date.now()+i,name:n}));
-      setJiraList(l=>[...l,...toAdd]);
+      if(toAdd.length > 0) setJiraList(l=>[...l,...toAdd]);
+      else alert("No se encontraron estados nuevos. Revisa que tienes proyectos Jira configurados.");
     } catch(e) { alert(`Error al obtener estados de Jira: ${e.message}`); }
     setFetchingJ(false);
   };
