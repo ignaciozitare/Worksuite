@@ -3765,8 +3765,8 @@ function AdminDeployConfig() {
     setFetchingJ(true);
     try {
       const {data:{session}} = await supabase.auth.getSession();
-      const API_BASE = (import.meta.env.VITE_API_URL||"http://localhost:3001").replace(/\/$/,"");
-      const res = await fetch(`${API_BASE}/jira/statuses`, {
+      const JIRA_FN = "https://enclhswdbwbgxbjykdtj.supabase.co/functions/v1/jira-search";
+      const res = await fetch(`${JIRA_FN}?mode=statuses`, {
         headers:{"Authorization":`Bearer ${session?.access_token}`}
       });
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
