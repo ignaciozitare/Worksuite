@@ -782,16 +782,15 @@ export function DeployPlanner({ currentUser }) {
 
   async function load() {
     setLoading(true);
-    const [{ data:rels }, { data:statuses }] = await Promise.all([
+    const [{ data:rels }, { data:statuses }, { data:ssoData }] = await Promise.all([
       supabase.from("dp_releases").select("*").order("start_date",{ascending:true}),
       supabase.from("dp_release_statuses").select("*").order("ord",{ascending:true}),
+      supabase.from("sso_config").select("deploy_jira_statuses").limit(1).single(),
     ]);
     setReleases(rels||[]);
-    // Build statusCfg map
     const cfg = {};
     (statuses||[]).forEach(s=>{ cfg[s.name]={ color:s.color, bg_color:s.bg_color, border:s.border, is_final:s.is_final, ord:s.ord }; });
     if(Object.keys(cfg).length===0) {
-      // Fallback defaults
       cfg["Planned"]          = { color:"#6b7280", bg_color:"rgba(107,114,128,.12)", border:"#1f2937", is_final:false };
       cfg["Staging"]          = { color:"#f59e0b", bg_color:"rgba(245,158,11,.12)",  border:"#78350f", is_final:false };
       cfg["Merged to master"] = { color:"#a78bfa", bg_color:"rgba(167,139,250,.12)", border:"#4c1d95", is_final:false };
@@ -800,41 +799,29 @@ export function DeployPlanner({ currentUser }) {
     }
     setStatusCfg(cfg);
     setLoading(false);
+    // Auto-cargar tickets de Jira usando la conexión ya existente
+    fetchJiraTickets(ssoData?.deploy_jira_statuses);
   }
 
-  async function loadJiraTickets() {
+  async function fetchJiraTickets(rawStatuses) {
     setFetchingJira(true);
     try {
-      // Read configured Jira statuses from sso_config
-      const { data:cfg } = await supabase.from("sso_config").select("deploy_jira_statuses").limit(1).single();
-      const rawStatuses = cfg?.deploy_jira_statuses || "Ready to Production";
-      const statusList = rawStatuses.split(",").map(s=>s.trim()).filter(Boolean);
-      const jqlStatus = statusList.length===1
+      // If called without args (manual refresh), read from DB
+      if(rawStatuses === undefined) {
+        const { data:sso } = await supabase.from("sso_config").select("deploy_jira_statuses").limit(1).single();
+        rawStatuses = sso?.deploy_jira_statuses;
+      }
+      const statusList = (rawStatuses || "Ready to Production").split(",").map(s=>s.trim()).filter(Boolean);
+      const jqlStatus  = statusList.length===1
         ? `status="${statusList[0]}"`
         : `status in (${statusList.map(s=>'"'+s+'"').join(",")})`;
       const jql = `${jqlStatus} ORDER BY updated DESC`;
-
       const headers = await authHeaders();
       const res = await fetch(`${API_BASE}/jira/search?jql=${encodeURIComponent(jql)}&maxResults=100`, { headers });
-
       let data;
       try { data = await res.json(); } catch { data = {}; }
-
-      if(!res.ok) {
-        const msg = data?.error || data?.message || `HTTP ${res.status}`;
-        throw new Error(msg);
-      }
-
-      const issues = data.issues||[];
-
-      if(issues.length===0) {
-        alert(`Jira respondió OK pero no hay tickets con estado: "${rawStatuses}"\n\nVerifica en Admin → Deploy Planner que el nombre del estado coincide exactamente con el de tu Jira.`);
-        setFetchingJira(false);
-        return;
-      }
-
-      const newTickets = issues.map(i=>{
-        // Map repos: try components (native field) first, then customfield_10014, then labels
+      if(!res.ok) throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
+      const newTickets = (data.issues||[]).map(i=>{
         const components = (i.fields?.components||[]).map(c=>c.name).filter(Boolean);
         const cf10014    = (i.fields?.customfield_10014||"").split(",").map(s=>s.trim()).filter(Boolean);
         const labels     = (i.fields?.labels||[]).filter(Boolean);
@@ -849,12 +836,10 @@ export function DeployPlanner({ currentUser }) {
           repos,
         };
       });
-
       setTickets(newTickets);
-      setTab("planning");
     } catch(e) {
-      console.error(e);
-      alert(`Error al conectar con Jira:\n${e.message}\n\nAsegúrate de que el routes.ts actualizado está desplegado en la API.`);
+      console.warn("Jira auto-fetch:", e.message);
+      // Fallo silencioso al cargar — el botón ↻ permite reintentar
     }
     setFetchingJira(false);
   }
@@ -922,10 +907,12 @@ export function DeployPlanner({ currentUser }) {
           </button>
         ))}
         <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
-          {tickets.length>0&&<span style={{fontSize:10,color:"var(--dp-tx3,#334155)"}}>{tickets.length} tickets</span>}
-          <button onClick={loadJiraTickets} disabled={fetchingJira}
-            style={{background:"transparent",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:5,padding:"5px 12px",color:fetchingJira?"var(--dp-tx3,#334155)":"var(--dp-tx2,#64748b)",fontSize:10,cursor:"pointer",fontFamily:"inherit"}}>
-            {fetchingJira?<><span className="spin">⟳</span> Cargando…</>:"Conectar Jira →"}
+          <span style={{fontSize:10,color:"var(--dp-tx3,#334155)"}}>
+            {fetchingJira ? <><span className="spin" style={{marginRight:4}}>⟳</span>Sincronizando Jira…</> : `${tickets.length} tickets de Jira`}
+          </span>
+          <button onClick={()=>fetchJiraTickets()} disabled={fetchingJira} title="Recargar tickets de Jira"
+            style={{background:"transparent",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:5,width:28,height:28,color:"var(--dp-tx2,#64748b)",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            ↻
           </button>
         </div>
       </nav>
