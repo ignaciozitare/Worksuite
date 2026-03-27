@@ -194,18 +194,51 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
   });
 
   // ── GET /jira/issues?project=X ────────────────────────────────────────────
+  // Calls Jira API directly to include 'components' field (needed by Deploy Planner)
   app.get<{ Querystring: { project: string } }>(
     '/issues',
     { schema: { querystring: { type: 'object', required: ['project'], properties: { project: { type: 'string' } } } } },
     async (req, reply) => {
-      const userId = (req.user as { sub: string }).sub;
       try {
-        const adapter = await adapterForUser(supabase, userId);
-        const issues = await adapter.getIssues(req.query.project);
+        const conn = await getAdminConnection(supabase);
+        if (!conn) return reply.status(404).send({ ok: false, error: 'Jira no configurado' });
+
+        const auth   = Buffer.from(`${conn.email}:${conn.api_token}`).toString('base64');
+        const base   = conn.base_url.replace(/\/$/, '');
+        const fields = 'summary,assignee,priority,issuetype,labels,customfield_10014,status,components,parent';
+        const jql    = encodeURIComponent(`project="${req.query.project}" ORDER BY updated DESC`);
+        const url    = `${base}/rest/api/3/search?jql=${jql}&maxResults=200&fields=${fields}`;
+
+        const res  = await fetch(url, { headers: { 'Authorization': `Basic ${auth}`, 'Accept': 'application/json' } });
+        if (!res.ok) {
+          const body = await res.text();
+          return reply.status(res.status).send({ ok: false, error: `Jira ${res.status}: ${body.slice(0, 200)}` });
+        }
+
+        const data = await res.json() as { issues?: Array<Record<string, unknown>> };
+        // Normalise to flat format expected by frontend
+        const issues = (data.issues || []).map((i: Record<string, unknown>) => {
+          const f = (i.fields || {}) as Record<string, unknown>;
+          return {
+            id:        i.key,
+            key:       i.key,
+            summary:   (f.summary as string) || '',
+            status:    ((f.status as Record<string, unknown>)?.name as string) || '',
+            assignee:  ((f.assignee as Record<string, unknown>)?.displayName as string) || '—',
+            priority:  ((f.priority as Record<string, unknown>)?.name as string) || 'Medium',
+            type:      ((f.issuetype as Record<string, unknown>)?.name as string) || 'Task',
+            components: ((f.components as Array<Record<string, unknown>>) || []).map(c => c.name as string).filter(Boolean),
+            labels:    (f.labels as string[]) || [],
+            customfield_10014: (f.customfield_10014 as string) || '',
+            // keep raw fields for any other consumer
+            fields: f,
+          };
+        });
+
         return reply.send({ ok: true, data: issues });
       } catch (err: unknown) {
-        const status = (err as { statusCode?: number }).statusCode ?? 502;
-        return reply.status(status).send({ ok: false, error: { code: 'JIRA_ERROR', message: String(err) } });
+        app.log.error(err, 'jira/issues error');
+        return reply.status(502).send({ ok: false, error: String(err) });
       }
     },
   );
