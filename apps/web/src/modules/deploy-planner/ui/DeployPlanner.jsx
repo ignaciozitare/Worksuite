@@ -118,28 +118,39 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
         transition:"box-shadow .2s",
       }}
     >
-      {/* Version number — editable */}
+      {/* Version number — editable, doble click edita / click simple abre detalle */}
       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
-        <input
-          value={rel.release_number||""}
-          onChange={e=>onUpd(rel.id,{release_number:e.target.value})}
-          placeholder="v0.0.0"
-          style={{flex:1,background:"none",border:"none",fontSize:15,fontWeight:700,color:"var(--dp-tx,#e6edf3)",fontFamily:"inherit",outline:"none",minWidth:0}}
-        />
-        <button onClick={()=>onOpen(rel.id)} title="Abrir detalle" style={{background:"none",border:"none",color:"var(--dp-tx3,#475569)",cursor:"pointer",fontSize:13,lineHeight:1,padding:"2px 4px"}}>↗</button>
-        <button onClick={()=>onDelete(rel.id)} style={{background:"none",border:"none",color:"var(--dp-tx3,#475569)",cursor:"pointer",fontSize:16,lineHeight:1,padding:"2px 4px"}}>×</button>
+        <span
+          onClick={()=>onOpen(rel.id)}
+          style={{flex:1,fontSize:15,fontWeight:700,color:"var(--dp-tx,#e6edf3)",cursor:"pointer",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}
+          title="Click para abrir · doble click para editar"
+        >
+          {rel.release_number||<span style={{color:"var(--dp-tx3,#334155)"}}>sin versión</span>}
+        </span>
+        <button onClick={e=>{e.stopPropagation();onOpen(rel.id);}} title="Abrir detalle" style={{background:"none",border:"none",color:"var(--dp-tx3,#475569)",cursor:"pointer",fontSize:13,lineHeight:1,padding:"2px 4px"}}>↗</button>
+        <button onClick={e=>{e.stopPropagation();onDelete(rel.id);}} style={{background:"none",border:"none",color:"var(--dp-tx3,#475569)",cursor:"pointer",fontSize:16,lineHeight:1,padding:"2px 4px"}}>×</button>
       </div>
-
-      {/* Description — editable */}
+      {/* Editar release_number inline */}
       <input
+        value={rel.release_number||""}
+        onChange={e=>onUpd(rel.id,{release_number:e.target.value})}
+        placeholder="v0.0.0 — escribe aquí para renombrar"
+        onClick={e=>e.stopPropagation()}
+        style={{width:"100%",background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:4,padding:"3px 8px",fontSize:10,color:"var(--dp-tx2,#94a3b8)",fontFamily:"inherit",outline:"none",marginBottom:6}}
+      />
+
+      {/* Description — textarea with wrapping */}
+      <textarea
         value={rel.description||""}
         onChange={e=>onUpd(rel.id,{description:e.target.value})}
+        onClick={e=>e.stopPropagation()}
         placeholder="Descripción de la release…"
-        style={{width:"100%",background:"none",border:"none",fontSize:10,color:"var(--dp-tx2,#475569)",fontFamily:"inherit",outline:"none",marginBottom:12}}
+        rows={rel.description&&rel.description.length>40?3:2}
+        style={{width:"100%",background:"none",border:"none",borderBottom:"1px solid var(--dp-bd,#0e1520)",fontSize:10,color:"var(--dp-tx2,#475569)",fontFamily:"inherit",outline:"none",marginBottom:12,paddingBottom:6,resize:"none",lineHeight:1.5}}
       />
 
       {/* Status selector */}
-      <div style={{marginBottom:9}}>
+      <div style={{marginBottom:10}}>
         <select value={rel.status||"Planned"}
           onChange={e=>onUpd(rel.id,{status:e.target.value})}
           style={{background:cfg.bg_color,border:`1px solid ${cfg.border}`,borderRadius:5,padding:"4px 10px",fontSize:10,color:cfg.color,cursor:"pointer",outline:"none",fontWeight:700,fontFamily:"inherit"}}>
@@ -147,15 +158,22 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
         </select>
       </div>
 
-      {/* Dates — inicio y fin claramente separados */}
-      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
-        <input type="date" value={rel.start_date||""}
-          onChange={e=>onUpd(rel.id,{start_date:e.target.value})}
-          style={{flex:1,background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:4,padding:"4px 7px",fontSize:10,color:"var(--dp-tx2,#94a3b8)",outline:"none"}}/>
-        <span style={{color:"var(--dp-tx3,#334155)",fontSize:12,fontWeight:700}}>→</span>
-        <input type="date" value={rel.end_date||""}
-          onChange={e=>onUpd(rel.id,{end_date:e.target.value})}
-          style={{flex:1,background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:4,padding:"4px 7px",fontSize:10,color:"var(--dp-tx2,#94a3b8)",outline:"none"}}/>
+      {/* Dates — stacked with labels */}
+      <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:8}}>
+        <div>
+          <div style={{fontSize:9,fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:"var(--dp-tx3,#334155)",marginBottom:3}}>Start Date</div>
+          <input type="date" value={rel.start_date||""}
+            onClick={e=>e.stopPropagation()}
+            onChange={e=>onUpd(rel.id,{start_date:e.target.value})}
+            style={{width:"100%",background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:4,padding:"5px 8px",fontSize:10,color:"var(--dp-tx2,#94a3b8)",outline:"none"}}/>
+        </div>
+        <div>
+          <div style={{fontSize:9,fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:"var(--dp-tx3,#334155)",marginBottom:3}}>End Date</div>
+          <input type="date" value={rel.end_date||""}
+            onClick={e=>e.stopPropagation()}
+            onChange={e=>onUpd(rel.id,{end_date:e.target.value})}
+            style={{width:"100%",background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:4,padding:"5px 8px",fontSize:10,color:"var(--dp-tx2,#94a3b8)",outline:"none"}}/>
+        </div>
       </div>
 
       {/* Conflicts */}
@@ -771,8 +789,18 @@ export function DeployPlanner({ currentUser }) {
   async function loadJiraTickets() {
     setFetchingJira(true);
     try {
+      // Read configured Jira statuses from sso_config
+      const { data:cfg } = await supabase.from("sso_config").select("deploy_jira_statuses").limit(1).single();
+      const rawStatuses = cfg?.deploy_jira_statuses || "Ready to Production";
+      // Build JQL for multiple statuses: status in ("A","B","C")
+      const statusList = rawStatuses.split(",").map(s=>s.trim()).filter(Boolean);
+      const jqlStatus = statusList.length===1
+        ? `status="${statusList[0]}"`
+        : `status in (${statusList.map(s=>'"'+s+'"').join(",")})`;
+      const jql = `${jqlStatus} ORDER BY updated DESC`;
+
       const headers = await authHeaders();
-      const res = await fetch(`${API_BASE}/jira/search?jql=status%3D%22Ready+to+Production%22+ORDER+BY+updated+DESC&maxResults=100`, { headers });
+      const res = await fetch(`${API_BASE}/jira/search?jql=${encodeURIComponent(jql)}&maxResults=100`, { headers });
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const newTickets = (data.issues||[]).map(i=>({
