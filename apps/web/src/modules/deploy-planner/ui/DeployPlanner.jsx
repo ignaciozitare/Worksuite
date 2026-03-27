@@ -803,6 +803,9 @@ export function DeployPlanner({ currentUser }) {
     fetchJiraTickets(ssoData?.deploy_jira_statuses);
   }
 
+  // Supabase Edge Function URL — no depende del backend de Vercel
+  const JIRA_FN = "https://enclhswdbwbgxbjykdtj.supabase.co/functions/v1/jira-search";
+
   async function fetchJiraTickets(rawStatuses) {
     setFetchingJira(true);
     try {
@@ -816,11 +819,13 @@ export function DeployPlanner({ currentUser }) {
         ? `status="${statusList[0]}"`
         : `status in (${statusList.map(s=>'"'+s+'"').join(",")})`;
       const jql = `${jqlStatus} ORDER BY updated DESC`;
+
       const headers = await authHeaders();
-      const res = await fetch(`${API_BASE}/jira/search?jql=${encodeURIComponent(jql)}&maxResults=100`, { headers });
+      const res = await fetch(`${JIRA_FN}?jql=${encodeURIComponent(jql)}&maxResults=100`, { headers });
       let data;
       try { data = await res.json(); } catch { data = {}; }
       if(!res.ok) throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
+
       const newTickets = (data.issues||[]).map(i=>{
         const components = (i.fields?.components||[]).map(c=>c.name).filter(Boolean);
         const cf10014    = (i.fields?.customfield_10014||"").split(",").map(s=>s.trim()).filter(Boolean);
@@ -839,7 +844,6 @@ export function DeployPlanner({ currentUser }) {
       setTickets(newTickets);
     } catch(e) {
       console.warn("Jira auto-fetch:", e.message);
-      // Fallo silencioso al cargar — el botón ↻ permite reintentar
     }
     setFetchingJira(false);
   }
