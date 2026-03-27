@@ -3799,6 +3799,52 @@ function AdminDeployConfig() {
 
   const [newJiraName, setNewJiraName] = React.useState("");
 
+  // ── Repo groups ──────────────────────────────────────────────────────────
+  const [repoGroups, setRepoGroups]       = React.useState([]);
+  const [newGroupName, setNewGroupName]   = React.useState("");
+  const [expandedGroup, setExpandedGroup] = React.useState(null); // group id
+  const [newRepoName, setNewRepoName]     = React.useState("");
+
+  React.useEffect(() => {
+    supabase.from("dp_repo_groups").select("*").order("name").then(({data}) => {
+      if(data) setRepoGroups(data);
+    });
+  }, []);
+
+  const addGroup = async () => {
+    if(!newGroupName.trim()) return;
+    const {data} = await supabase.from("dp_repo_groups").insert({name:newGroupName.trim(), repos:[]}).select().single();
+    if(data) { setRepoGroups(g=>[...g,data]); setNewGroupName(""); setExpandedGroup(data.id); }
+  };
+
+  const deleteGroup = async (id) => {
+    await supabase.from("dp_repo_groups").delete().eq("id",id);
+    setRepoGroups(g=>g.filter(x=>x.id!==id));
+  };
+
+  const addRepoToGroup = async (groupId, repoName) => {
+    if(!repoName.trim()) return;
+    const group = repoGroups.find(g=>g.id===groupId);
+    if(!group || group.repos.includes(repoName.trim())) return;
+    const updated = [...group.repos, repoName.trim()];
+    await supabase.from("dp_repo_groups").update({repos:updated}).eq("id",groupId);
+    setRepoGroups(gs=>gs.map(g=>g.id===groupId?{...g,repos:updated}:g));
+    setNewRepoName("");
+  };
+
+  const removeRepoFromGroup = async (groupId, repoName) => {
+    const group = repoGroups.find(g=>g.id===groupId);
+    if(!group) return;
+    const updated = group.repos.filter(r=>r!==repoName);
+    await supabase.from("dp_repo_groups").update({repos:updated}).eq("id",groupId);
+    setRepoGroups(gs=>gs.map(g=>g.id===groupId?{...g,repos:updated}:g));
+  };
+
+  const renameGroup = async (groupId, name) => {
+    await supabase.from("dp_repo_groups").update({name}).eq("id",groupId);
+    setRepoGroups(gs=>gs.map(g=>g.id===groupId?{...g,name}:g));
+  };
+
   return (
     <div style={{maxWidth:700}}>
       <div className="sec-t">🚀 Deploy Planner</div>
@@ -3918,6 +3964,95 @@ function AdminDeployConfig() {
           </div>
         </div>
       </div>
+
+      {/* ── Repo groups ───────────────────────────────────────── */}
+      <div className="a-card" style={{marginTop:16}}>
+        <div className="a-ct">Grupos de repositorios con dependencias</div>
+        <div style={{fontSize:11,color:"var(--tx3)",marginBottom:14}}>
+          Define grupos de repos que comparten pipeline. Si dos releases activas tienen repos del mismo grupo,
+          el merge a master quedará bloqueado hasta que ambas estén cerradas.
+        </div>
+
+        {/* Existing groups */}
+        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
+          {repoGroups.map(group=>(
+            <div key={group.id} style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:8,overflow:"hidden"}}>
+              {/* Group header */}
+              <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderBottom:expandedGroup===group.id?"1px solid var(--bd)":"none"}}>
+                <button onClick={()=>setExpandedGroup(expandedGroup===group.id?null:group.id)}
+                  style={{background:"none",border:"none",color:"var(--tx3)",cursor:"pointer",fontSize:11,flexShrink:0,padding:0}}>
+                  {expandedGroup===group.id?"▼":"▶"}
+                </button>
+                <input
+                  value={group.name}
+                  onChange={e=>renameGroup(group.id,e.target.value)}
+                  style={{flex:1,background:"none",border:"none",outline:"none",fontSize:13,fontWeight:600,color:"var(--tx)",fontFamily:"inherit"}}
+                />
+                <div style={{display:"flex",gap:5,alignItems:"center"}}>
+                  {group.repos.slice(0,3).map(r=>(
+                    <span key={r} style={{fontSize:9,padding:"2px 7px",borderRadius:10,background:"var(--glow)",border:"1px solid var(--bd)",color:"var(--tx3)"}}>{r}</span>
+                  ))}
+                  {group.repos.length>3&&<span style={{fontSize:9,color:"var(--tx3)"}}>+{group.repos.length-3}</span>}
+                  <span style={{fontSize:10,color:"var(--tx3)",marginLeft:4}}>{group.repos.length} repos</span>
+                  <button onClick={()=>deleteGroup(group.id)}
+                    style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14,marginLeft:4}}>×</button>
+                </div>
+              </div>
+
+              {/* Group repos (expanded) */}
+              {expandedGroup===group.id&&(
+                <div style={{padding:"12px 14px"}}>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
+                    {group.repos.length===0&&(
+                      <span style={{fontSize:11,color:"var(--tx3)"}}>Sin repositorios — añade el primero abajo</span>
+                    )}
+                    {group.repos.map(repo=>(
+                      <div key={repo} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:20,fontSize:11,color:"var(--tx2)"}}>
+                        <span>⬡</span>
+                        <span>{repo}</span>
+                        <button onClick={()=>removeRepoFromGroup(group.id,repo)}
+                          style={{background:"none",border:"none",color:"var(--tx3)",cursor:"pointer",fontSize:12,lineHeight:1,padding:0}}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{display:"flex",gap:6}}>
+                    <input
+                      placeholder="Nombre del repo (ej: backend-api)…"
+                      value={expandedGroup===group.id?newRepoName:""}
+                      onChange={e=>setNewRepoName(e.target.value)}
+                      onKeyDown={e=>{if(e.key==="Enter"){addRepoToGroup(group.id,newRepoName);}}}
+                      style={{flex:1,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:11,fontFamily:"inherit",outline:"none"}}
+                    />
+                    <button onClick={()=>addRepoToGroup(group.id,newRepoName)}
+                      style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 12px",fontSize:11,color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit"}}>
+                      + Añadir repo
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          {repoGroups.length===0&&(
+            <div style={{fontSize:11,color:"var(--tx3)",padding:"8px 0"}}>Sin grupos configurados</div>
+          )}
+        </div>
+
+        {/* Add new group */}
+        <div style={{display:"flex",gap:8}}>
+          <input
+            value={newGroupName}
+            onChange={e=>setNewGroupName(e.target.value)}
+            onKeyDown={e=>{if(e.key==="Enter")addGroup();}}
+            placeholder="Nombre del grupo (ej: Backend monorepo)…"
+            style={{flex:1,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"8px 12px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",outline:"none"}}
+          />
+          <button onClick={addGroup}
+            style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:5,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>
+            + Nuevo grupo
+          </button>
+        </div>
+      </div>
+
     </div>
   );
 }
