@@ -9,7 +9,7 @@ import React, {
 import { createPortal } from "react-dom";
 import { supabase } from './shared/lib/api';
 import { RetroBoard, AdminRetroTeams } from './RetroBoard';
-import { DeployPlanner } from './modules/deploy-planner/ui/DeployPlanner.jsx';
+import { DeployPlanner } from './modules/deploy-planner';
 import { useAuth } from './shared/hooks/useAuth';
 
 // ── API helpers ────────────────────────────────────────────────────────────
@@ -1107,9 +1107,46 @@ function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser, blueprint }) {
 
 function HDMapView({ hd, onSeat, currentUser }) {
   const { t } = useApp();
+  const [zoom, setZoom] = React.useState(1);
+  const [pan, setPan] = React.useState({x:0,y:0});
+  const [panning, setPanning] = React.useState(false);
+  const [panStart, setPanStart] = React.useState({x:0,y:0,px:0,py:0});
+  const containerRef = React.useRef(null);
+
+  const MIN_ZOOM = 0.4, MAX_ZOOM = 3;
+  const clamp = v => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v));
+
   const freeCount = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations) === SeatStatus.FREE).length;
   const occCount  = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations) === SeatStatus.OCCUPIED).length;
   const fixCount  = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations) === SeatStatus.FIXED).length;
+
+  // Wheel zoom
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = e => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      setZoom(z => clamp(Math.round((z + delta) * 100) / 100));
+    };
+    el.addEventListener("wheel", handler, {passive:false});
+    return () => el.removeEventListener("wheel", handler);
+  }, []);
+
+  // Pan with mouse drag on the map background (not on seats)
+  const onMouseDown = e => {
+    if(e.button !== 0) return;
+    setPanning(true);
+    setPanStart({x:e.clientX, y:e.clientY, px:pan.x, py:pan.y});
+  };
+  const onMouseMove = e => {
+    if(!panning) return;
+    setPan({x:panStart.px+(e.clientX-panStart.x), y:panStart.py+(e.clientY-panStart.y)});
+  };
+  const onMouseUp = () => setPanning(false);
+
+  const fitMap = () => { setZoom(1); setPan({x:0,y:0}); };
+
   return (
     <div className="hd-map-wrap">
       <div className="hd-map-header">
@@ -1125,7 +1162,33 @@ function HDMapView({ hd, onSeat, currentUser }) {
           ))}
         </div>
       </div>
-      <div className="hd-card"><OfficeSVG hd={hd} onSeat={onSeat} currentUser={currentUser}/></div>
+
+      {/* Zoom controls */}
+      <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",marginBottom:6}}>
+        <button onClick={()=>setZoom(z=>clamp(Math.round((z+0.1)*100)/100))}
+          style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,width:28,height:28,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--tx2)",fontFamily:"inherit"}}>+</button>
+        <button onClick={()=>setZoom(z=>clamp(Math.round((z-0.1)*100)/100))}
+          style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,width:28,height:28,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--tx2)",fontFamily:"inherit"}}>−</button>
+        <button onClick={fitMap} title="Ajustar mapa completo"
+          style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,padding:"0 10px",height:28,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:4,color:"var(--tx2)",fontFamily:"inherit",fontWeight:600}}>
+          ⊡ Fit
+        </button>
+        <span style={{fontSize:11,color:"var(--tx3)",marginLeft:2}}>{Math.round(zoom*100)}%</span>
+        <span style={{fontSize:10,color:"var(--tx3)",marginLeft:"auto"}}>Rueda del ratón para zoom · Arrastra para mover</span>
+      </div>
+
+      {/* Map container with zoom + pan */}
+      <div ref={containerRef}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+        style={{overflow:"hidden",borderRadius:10,border:"1px solid var(--bd)",cursor:panning?"grabbing":"grab",background:"var(--sf2)",userSelect:"none"}}
+      >
+        <div style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`,transformOrigin:"top left",transition:panning?"none":"transform .15s ease"}}>
+          <OfficeSVG hd={hd} onSeat={onSeat} currentUser={currentUser}/>
+        </div>
+      </div>
       <div className="hd-sub">Click on a seat to reserve · <span style={{color:"var(--amber)"}}>● your reservation</span></div>
     </div>
   );
@@ -3576,6 +3639,132 @@ function AdminRetroTeamsShell({ users }) {
 }
 
 
+
+// ══════════════════════════════════════════════════════════════════
+// ADMIN — Deploy Planner Config
+// ══════════════════════════════════════════════════════════════════
+
+function AdminDeployConfig() {
+  const [statuses, setStatuses] = React.useState([]);
+  const [jiraStatuses, setJiraStatuses] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  const [saved, setSaved] = React.useState(false);
+  const [newStatus, setNewStatus] = React.useState({name:"",color:"#6b7280",bg_color:"rgba(107,114,128,.12)",border:"#1f2937",is_final:false});
+
+  React.useEffect(() => {
+    supabase.from("dp_release_statuses").select("*").order("ord").then(({data}) => {
+      if(data) setStatuses(data);
+    });
+    // Load jira statuses config
+    supabase.from("sso_config").select("*").limit(1).then(({data}) => {
+      if(data?.[0]?.deploy_jira_statuses) setJiraStatuses(data[0].deploy_jira_statuses);
+      else setJiraStatuses("Ready to Production");
+    });
+  }, []);
+
+  const addStatus = async () => {
+    if(!newStatus.name.trim()) return;
+    const {data} = await supabase.from("dp_release_statuses")
+      .insert({...newStatus, ord: statuses.length}).select().single();
+    if(data) { setStatuses(s=>[...s,data]); setNewStatus({name:"",color:"#6b7280",bg_color:"rgba(107,114,128,.12)",border:"#1f2937",is_final:false}); }
+  };
+
+  const deleteStatus = async (id) => {
+    await supabase.from("dp_release_statuses").delete().eq("id",id);
+    setStatuses(s=>s.filter(x=>x.id!==id));
+  };
+
+  const toggleFinal = async (st) => {
+    const updated = {...st, is_final:!st.is_final};
+    await supabase.from("dp_release_statuses").update({is_final:updated.is_final}).eq("id",st.id);
+    setStatuses(s=>s.map(x=>x.id===st.id?updated:x));
+  };
+
+  const saveJiraStatuses = async () => {
+    setSaving(true);
+    await supabase.from("sso_config").update({deploy_jira_statuses:jiraStatuses}).eq("id",(await supabase.from("sso_config").select("id").limit(1).single()).data?.id);
+    setSaving(false); setSaved(true); setTimeout(()=>setSaved(false),2000);
+  };
+
+  return (
+    <div style={{maxWidth:700}}>
+      <div className="sec-t">🚀 Deploy Planner</div>
+      <div className="sec-sub">Configura los estados de releases y los estados de Jira que se muestran en el Deploy Planner.</div>
+
+      {/* Jira ticket statuses to pull */}
+      <div className="a-card" style={{marginBottom:16}}>
+        <div className="a-ct">Estados de Jira que se importan</div>
+        <div style={{fontSize:12,color:"var(--tx3)",marginBottom:10}}>
+          Los tickets con estos estados en Jira aparecerán en el Deploy Planner cuando hagas "Conectar Jira".<br/>
+          Puedes poner múltiples estados separados por coma: <code style={{color:"var(--ac2)"}}>Ready to Production, Ready for Deploy</code>
+        </div>
+        <div style={{display:"flex",gap:10,alignItems:"flex-end"}}>
+          <div style={{flex:1}}>
+            <input
+              value={jiraStatuses}
+              onChange={e=>setJiraStatuses(e.target.value)}
+              placeholder="Ready to Production"
+              style={{width:"100%",background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,padding:"8px 12px",color:"var(--tx)",fontSize:13,fontFamily:"inherit",outline:"none"}}
+            />
+          </div>
+          <button onClick={saveJiraStatuses} disabled={saving}
+            style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:6,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>
+            {saving?"Guardando…":saved?"✓ Guardado":"Guardar"}
+          </button>
+        </div>
+      </div>
+
+      {/* Release statuses */}
+      <div className="a-card">
+        <div className="a-ct">Estados de Release</div>
+        <div style={{fontSize:12,color:"var(--tx3)",marginBottom:14}}>
+          Define los estados por los que pasan las releases. Los estados marcados como "final" aparecen en History.
+        </div>
+
+        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+          {statuses.map((st,i)=>(
+            <div key={st.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"var(--sf2)",borderRadius:8,border:"1px solid var(--bd)"}}>
+              <div style={{width:14,height:14,borderRadius:3,background:st.color,flexShrink:0}}/>
+              <span style={{flex:1,fontSize:13,fontWeight:600,color:"var(--tx)"}}>{st.name}</span>
+              <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:st.bg_color,color:st.color,border:`1px solid ${st.border}`}}>{st.name}</span>
+              <label style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--tx3)",cursor:"pointer"}}>
+                <input type="checkbox" checked={st.is_final||false} onChange={()=>toggleFinal(st)}/>
+                Estado final
+              </label>
+              <span style={{fontSize:11,color:"var(--tx3)"}}>ord: {st.ord}</span>
+              <button onClick={()=>deleteStatus(st.id)} style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14}}>×</button>
+            </div>
+          ))}
+        </div>
+
+        {/* Add new status */}
+        <div style={{padding:"12px 14px",background:"var(--sf2)",borderRadius:8,border:"1px dashed var(--bd)"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--tx3)",marginBottom:10,textTransform:"uppercase",letterSpacing:".08em"}}>Nuevo estado</div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+            <input value={newStatus.name} onChange={e=>setNewStatus(s=>({...s,name:e.target.value}))}
+              placeholder="Nombre del estado"
+              style={{flex:2,minWidth:140,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",outline:"none"}}/>
+            <div style={{display:"flex",alignItems:"center",gap:5}}>
+              <label style={{fontSize:11,color:"var(--tx3)"}}>Color</label>
+              <input type="color" value={newStatus.color}
+                onChange={e=>{const c=e.target.value; setNewStatus(s=>({...s,color:c,border:c+"66"}));}}
+                style={{width:32,height:28,border:"none",background:"none",cursor:"pointer",padding:0}}/>
+            </div>
+            <label style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--tx3)",cursor:"pointer"}}>
+              <input type="checkbox" checked={newStatus.is_final} onChange={e=>setNewStatus(s=>({...s,is_final:e.target.checked}))}/>
+              Estado final
+            </label>
+            <button onClick={addStatus}
+              style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:5,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+              + Añadir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   const { t } = useApp();
   const isAdmin = currentUser.role === 'admin';
@@ -3602,6 +3791,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
     { id:"hotdesk",    icon:"🪑", label:t("adminHotDesk"),hd:true },
     { id:"blueprint",  icon:"🗺", label:"Blueprint" },
     { id:"retroteams", icon:"🔁", label:"Retro Teams" },
+    { id:"deploy",     icon:"🚀", label:"Deploy Planner" },
   ];
   return (
     <div className="admin-wrap">
@@ -3616,6 +3806,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
         {mod==="roles"     && <AdminRoles/>}
         {mod==="blueprint" && <AdminBlueprint/>}
         {mod==="retroteams" && <AdminRetroTeamsShell users={users}/>}
+        {mod==="deploy"     && <AdminDeployConfig/>}
       </div>
     </div>
   );
