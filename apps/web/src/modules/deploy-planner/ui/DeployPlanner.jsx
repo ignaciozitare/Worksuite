@@ -8,18 +8,26 @@ const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 .dp *{box-sizing:border-box;margin:0;padding:0;}
 .dp{font-family:'JetBrains Mono',monospace;background:var(--dp-bg,#07090f);color:var(--dp-tx,#c9d1d9);height:100%;overflow:auto;}
-.dp button,.dp select,.dp input{font-family:'JetBrains Mono',monospace;}
+.dp button,.dp select,.dp input,.dp textarea{font-family:'JetBrains Mono',monospace;}
 .dp input[type=date]::-webkit-calendar-picker-indicator{filter:var(--dp-date-filter,invert(.4) sepia(1) hue-rotate(180deg));}
 .dp ::-webkit-scrollbar{width:4px;height:4px;}
 .dp ::-webkit-scrollbar-track{background:var(--dp-bg,#07090f);}
 .dp ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:2px;}
 .dp select option{background:var(--dp-sf,#0b0f18);}
-/* Light mode override */
-.dp.light{
-  --dp-bg:#f1f5f9; --dp-sf:#ffffff; --dp-sf2:#f8fafc; --dp-tx:#0f172a;
-  --dp-tx2:#475569; --dp-tx3:#94a3b8; --dp-bd:#e2e8f0; --dp-bd2:#cbd5e1;
-  --dp-date-filter:invert(.6);
+/* Dark (default) */
+.dp{
+  --dp-bg:#07090f; --dp-sf:#0b0f18; --dp-sf2:#07090f;
+  --dp-tx:#c9d1d9; --dp-tx2:#94a3b8; --dp-tx3:#334155;
+  --dp-bd:#1e293b; --dp-date-filter:invert(.4) sepia(1) hue-rotate(180deg);
 }
+/* Light mode — activated when .light class is on html or on .dp */
+.light .dp, .dp.light{
+  --dp-bg:#f1f5f9; --dp-sf:#ffffff; --dp-sf2:#f8fafc;
+  --dp-tx:#0f172a; --dp-tx2:#475569; --dp-tx3:#64748b;
+  --dp-bd:#e2e8f0; --dp-date-filter:none;
+}
+.light .dp ::-webkit-scrollbar-thumb, .dp.light ::-webkit-scrollbar-thumb{background:#cbd5e1;}
+.light .dp select option, .dp.light select option{background:#ffffff;}
 @keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .anim-in{animation:slideIn .2s ease forwards;}
@@ -752,15 +760,23 @@ function Metrics({ releases, tickets, statusCfg }) {
 /* ─── ROOT ───────────────────────────────────────────────────── */
 export function DeployPlanner({ currentUser }) {
   const [tab, setTab]           = useState("planning");
-  const [detail, setDetail]     = useState(null); // releaseId or null
+  const [detail, setDetail]     = useState(null);
   const [releases, setReleases] = useState([]);
   const [tickets, setTickets]   = useState([]);
-  const [statusCfg, setStatusCfg] = useState({}); // { "Planned":{ color,bg_color,border,is_final }, ... }
+  const [statusCfg, setStatusCfg] = useState({});
   const [loading, setLoading]   = useState(true);
   const [fetchingJira, setFetchingJira] = useState(false);
   const [drag, setDrag]         = useState(null);
 
-  const isLight = document.documentElement.classList.contains("light");
+  // Light mode — read from html element class, watch for changes
+  const [isLight, setIsLight] = useState(document.documentElement.classList.contains("light"));
+  useEffect(() => {
+    const obs = new MutationObserver(() => {
+      setIsLight(document.documentElement.classList.contains("light"));
+    });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => { load(); }, []);
 
