@@ -1093,7 +1093,7 @@ export function RetroBoard({currentUser,wsUsers,lang}){
       {/* Nav */}
       <div style={{display:"flex",alignItems:"center",gap:6,padding:"10px 18px",background:"var(--sf)",borderBottom:"1px solid var(--bd)",flexShrink:0}}>
         <span style={{fontSize:14,fontWeight:700,color:"var(--tx)",marginRight:8}}>🔁 RetroBoard</span>
-        {[{id:"board",label:"Tablero"},{id:"historial",label:"Historial"},{id:"accionables",label:`Accionables${kanbanItems.length>0?` (${kanbanItems.length})`:""`}`,}].map(v=>(
+        {[{id:"board",label:"Tablero"},{id:"historial",label:"Historial"},{id:"accionables",label:"Accionables"+(kanbanItems.length>0?" ("+kanbanItems.length+")":""),}].map(v=>(
           <button key={v.id} onClick={()=>setView(v.id)}
             style={{padding:"5px 12px",borderRadius:20,border:`1px solid ${view===v.id?"rgba(99,102,241,.4)":"var(--bd)"}`,background:view===v.id?"rgba(99,102,241,.15)":"transparent",color:view===v.id?"#818cf8":"var(--tx3)",cursor:"pointer",fontSize:12,fontWeight:view===v.id?600:400,fontFamily:"inherit"}}>
             {v.label}
