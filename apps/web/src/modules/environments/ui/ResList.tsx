@@ -43,5 +43,3 @@ export function ResList({ress, envs, repos, users, currentUser, onResClick, onNe
   );
 }
 
-
-export { ResList };
