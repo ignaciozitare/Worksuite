@@ -98,9 +98,97 @@ async function jiraTransition(issueKey, appStatus) {
 }
 
 /* ─── PLANNING — Release Card ────────────────────────────────── */
-function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag, drag, allReleases, repoGroups }) {
+
+/* ─── VERSION PICKER ─────────────────────────────────────────────────────── */
+function VersionPicker({ versionCfg, allReleaseNumbers, onSelect, onClose }) {
+  const cfg = versionCfg || { prefix:"v", segments:[{name:"major",value:1},{name:"minor",value:0},{name:"patch",value:0}], separator:"." };
+
+  // Find the highest existing version to compute "next"
+  const parseVersion = (str) => {
+    if(!str) return null;
+    const clean = str.replace(cfg.prefix||"v","");
+    const parts  = clean.split(cfg.separator||".").map(n=>parseInt(n,10)).filter(n=>!isNaN(n));
+    return parts;
+  };
+
+  const maxVer = allReleaseNumbers.reduce((max, numStr) => {
+    const parts = parseVersion(numStr);
+    if(!parts || parts.length !== cfg.segments.length) return max;
+    for(let i=0; i<parts.length; i++) {
+      if(parts[i] > (max[i]||0)) return parts;
+      if(parts[i] < (max[i]||0)) return max;
+    }
+    return max;
+  }, cfg.segments.map(s=>s.value));
+
+  const [bumps, setBumps] = useState(
+    cfg.segments.map((s,i) => i === cfg.segments.length-1) // default: bump last segment
+  );
+
+  const toggleBump = (i) => {
+    setBumps(prev => {
+      const next = [...prev];
+      next[i] = !next[i];
+      // If bumping a higher segment, reset all lower segments
+      if(next[i]) {
+        for(let j=i+1; j<next.length; j++) next[j] = false;
+      }
+      return next;
+    });
+  };
+
+  // Compute preview
+  const preview = maxVer.map((val, i) => {
+    if(bumps[i]) return val + 1;
+    // If a higher segment is bumped, reset this one to 0
+    const higherBumped = bumps.slice(0,i).some(Boolean);
+    return higherBumped ? 0 : val;
+  });
+  const previewStr = (cfg.prefix||"v") + preview.join(cfg.separator||".");
+
+  return (
+    <div onClick={e=>e.stopPropagation()}
+      style={{position:"absolute",top:"100%",left:0,zIndex:50,background:"var(--dp-sf,#0b0f18)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:8,padding:"14px 16px",width:260,marginTop:4,boxShadow:"0 8px 24px rgba(0,0,0,.4)"}}>
+      <div style={{fontSize:10,fontWeight:700,color:"var(--dp-tx3,#475569)",letterSpacing:".08em",textTransform:"uppercase",marginBottom:10}}>Generar número de versión</div>
+
+      {/* Segment bump selectors */}
+      <div style={{display:"flex",gap:6,marginBottom:12}}>
+        {cfg.segments.map((seg, i) => (
+          <button key={seg.name} onClick={()=>toggleBump(i)}
+            style={{flex:1,padding:"6px 0",borderRadius:5,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${bumps[i]?"#38bdf8":"var(--dp-bd,#1e293b)"}`,background:bumps[i]?"rgba(56,189,248,.15)":"transparent",color:bumps[i]?"#38bdf8":"var(--dp-tx3,#64748b)",transition:"all .12s"}}>
+            {seg.name}<br/>
+            <span style={{fontSize:8,fontWeight:400,opacity:.7}}>
+              {bumps[i]?`${maxVer[i]} → ${maxVer[i]+1}`:
+               bumps.slice(0,i).some(Boolean)?"reset a 0":`mantener ${maxVer[i]}`}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Preview */}
+      <div style={{textAlign:"center",padding:"10px",background:"var(--dp-sf2,#07090f)",borderRadius:6,marginBottom:10,border:"1px solid var(--dp-bd,#1e293b)"}}>
+        <div style={{fontSize:9,color:"var(--dp-tx3,#475569)",marginBottom:3}}>Vista previa</div>
+        <div style={{fontSize:18,fontWeight:700,color:"#38bdf8",fontFamily:"monospace"}}>{previewStr}</div>
+      </div>
+
+      <div style={{display:"flex",gap:6}}>
+        <button onClick={()=>onSelect(previewStr)}
+          style={{flex:1,background:"linear-gradient(135deg,#1d4ed8,#0ea5e9)",border:"none",borderRadius:5,padding:"7px",fontSize:11,fontWeight:700,color:"#fff",cursor:"pointer",fontFamily:"inherit"}}>
+          Usar {previewStr}
+        </button>
+        <button onClick={onClose}
+          style={{background:"transparent",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:5,padding:"7px 10px",fontSize:11,color:"var(--dp-tx3,#64748b)",cursor:"pointer",fontFamily:"inherit"}}>
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag, drag, allReleases, repoGroups, versionCfg, allReleaseNumbers }) {
   const [addingTicket, setAddingTicket] = useState(false);
   const [search, setSearch] = useState("");
+  const [showVersionPicker, setShowVersionPicker] = useState(false);
   const tMap = Object.fromEntries(tickets.map(t=>[t.key,t]));
 
   const cfg = statusCfg[rel.status] || { color:"#6b7280", bg_color:"rgba(107,114,128,.12)", border:"#1f2937" };
@@ -153,26 +241,43 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
       onMouseEnter={e=>e.currentTarget.style.transform="translateY(-1px)"}
       onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}
     >
-      {/* Version number — editable, doble click edita / click simple abre detalle */}
+      {/* Release number: click title opens detail, edit via input */}
       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
         <span
           onClick={()=>onOpen(rel.id)}
           style={{flex:1,fontSize:15,fontWeight:700,color:"var(--dp-tx,#e6edf3)",cursor:"pointer",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}
-          title="Click para abrir · doble click para editar"
         >
           {rel.release_number||<span style={{color:"var(--dp-tx3,#334155)"}}>sin versión</span>}
         </span>
         <button onClick={e=>{e.stopPropagation();onOpen(rel.id);}} title="Abrir detalle" style={{background:"none",border:"none",color:"var(--dp-tx3,#475569)",cursor:"pointer",fontSize:13,lineHeight:1,padding:"2px 4px"}}>↗</button>
         <button onClick={e=>{e.stopPropagation();onDelete(rel.id);}} style={{background:"none",border:"none",color:"var(--dp-tx3,#475569)",cursor:"pointer",fontSize:16,lineHeight:1,padding:"2px 4px"}}>×</button>
       </div>
-      {/* Editar release_number inline */}
-      <input
-        value={rel.release_number||""}
-        onChange={e=>onUpd(rel.id,{release_number:e.target.value})}
-        placeholder="v0.0.0 — escribe aquí para renombrar"
-        onClick={e=>e.stopPropagation()}
-        style={{width:"100%",background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:4,padding:"3px 8px",fontSize:10,color:"var(--dp-tx2,#94a3b8)",fontFamily:"inherit",outline:"none",marginBottom:6}}
-      />
+
+      {/* Version number input + generator */}
+      <div style={{position:"relative",marginBottom:6}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",gap:4}}>
+          <input
+            value={rel.release_number||""}
+            onChange={e=>onUpd(rel.id,{release_number:e.target.value})}
+            placeholder="v1.0.0"
+            style={{flex:1,background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:"4px 0 0 4px",padding:"4px 8px",fontSize:11,color:"var(--dp-tx,#e6edf3)",fontFamily:"monospace",outline:"none"}}
+          />
+          <button
+            onClick={e=>{e.stopPropagation();setShowVersionPicker(v=>!v);}}
+            title="Generar número de versión"
+            style={{background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderLeft:"none",borderRadius:"0 4px 4px 0",padding:"0 8px",fontSize:12,color:"var(--dp-tx3,#64748b)",cursor:"pointer",lineHeight:1}}>
+            ⚙
+          </button>
+        </div>
+        {showVersionPicker && versionCfg && (
+          <VersionPicker
+            versionCfg={versionCfg}
+            allReleaseNumbers={allReleaseNumbers||[]}
+            onSelect={v=>{onUpd(rel.id,{release_number:v});setShowVersionPicker(false);}}
+            onClose={()=>setShowVersionPicker(false)}
+          />
+        )}
+      </div>
 
       {/* Description — textarea with wrapping */}
       <textarea
@@ -888,8 +993,9 @@ export function DeployPlanner({ currentUser }) {
   const [releases, setReleases]   = useState([]);
   const [tickets, setTickets]     = useState([]);
   const [statusCfg, setStatusCfg] = useState({});
-  const [repoGroups, setRepoGroups] = useState([]);
-  const [loading, setLoading]     = useState(true);
+  const [repoGroups, setRepoGroups]   = useState([]);
+  const [versionCfg, setVersionCfg]   = useState(null);
+  const [loading, setLoading]         = useState(true);
   const [fetchingJira, setFetchingJira] = useState(false);
   const [drag, setDrag]           = useState(null);
 
@@ -907,13 +1013,15 @@ export function DeployPlanner({ currentUser }) {
 
   async function load() {
     setLoading(true);
-    const [{ data:rels }, { data:statuses }, { data:ssoData }, { data:groups }] = await Promise.all([
+    const [{ data:rels }, { data:statuses }, { data:ssoData }, { data:groups }, { data:verCfg }] = await Promise.all([
       supabase.from("dp_releases").select("*").order("start_date",{ascending:true}),
       supabase.from("dp_release_statuses").select("*").order("ord",{ascending:true}),
       supabase.from("sso_config").select("deploy_jira_statuses").limit(1).single(),
       supabase.from("dp_repo_groups").select("*").order("name"),
+      supabase.from("dp_version_config").select("*").limit(1).single(),
     ]);
     setRepoGroups(groups||[]);
+    setVersionCfg(verCfg || { prefix:"v", segments:[{name:"major",value:1},{name:"minor",value:0},{name:"patch",value:0}], separator:"." });
     setReleases(rels||[]);
     const cfg = {};
     (statuses||[]).forEach(s=>{ cfg[s.name]={ color:s.color, bg_color:s.bg_color, border:s.border, is_final:s.is_final, ord:s.ord }; });
@@ -1104,7 +1212,8 @@ export function DeployPlanner({ currentUser }) {
                     <ReleaseCard key={rel.id} rel={rel} statusCfg={statusCfg} tickets={tickets}
                       onOpen={setDetail} onUpd={upd} onDelete={delRelease}
                       onDrop={handleDrop} setDrag={setDrag} drag={drag}
-                      allReleases={releases} repoGroups={repoGroups}/>
+                      allReleases={releases} repoGroups={repoGroups}
+                      versionCfg={versionCfg} allReleaseNumbers={(releases||[]).map(r=>r.release_number).filter(Boolean)}/>
                   ))}
                   <div onClick={addRelease}
                     style={{width:290,minHeight:140,background:"transparent",border:"2px dashed var(--dp-bd,#1e293b)",borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",color:"var(--dp-tx3,#334155)",fontSize:12,transition:"border-color .15s"}}
