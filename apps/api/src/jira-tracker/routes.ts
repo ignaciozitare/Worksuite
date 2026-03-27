@@ -119,46 +119,64 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
   });
 
   // ── GET /jira/search?jql=...&maxResults=... ────────────────────────────────
-  // Used by Deploy Planner to fetch tickets by JQL (e.g. status="Ready to Production")
+  // Usado por Deploy Planner para traer tickets por JQL
   app.get<{ Querystring: { jql: string; maxResults?: string } }>(
     '/search',
     async (req, reply) => {
-      const userId = (req.user as { sub: string }).sub;
       const { jql, maxResults = '100' } = req.query;
       if (!jql) return reply.status(400).send({ ok: false, error: 'jql required' });
+
       try {
-        const adapter = await adapterForUser(supabase, userId);
-        const base = (adapter as unknown as { base: string }).base;
-        const auth = (adapter as unknown as { auth: string }).auth;
-        const url  = `${base}/rest/api/3/search?jql=${encodeURIComponent(jql)}&maxResults=${maxResults}&fields=summary,assignee,priority,issuetype,labels,customfield_10014,status`;
-        const res  = await fetch(url, { headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' } });
-        if (!res.ok) return reply.status(res.status).send({ ok: false, error: `Jira ${res.status}` });
+        // Use the admin connection (shared across the org)
+        const conn = await getAdminConnection(supabase);
+        if (!conn) return reply.status(404).send({ ok: false, error: 'Jira no configurado. Ve a Admin → SSO y conecta Jira.' });
+
+        const auth = Buffer.from(`${conn.email}:${conn.api_token}`).toString('base64');
+        const base = conn.base_url.replace(/\/$/, '');
+        const url  = `${base}/rest/api/3/search?jql=${encodeURIComponent(jql)}&maxResults=${maxResults}&fields=summary,assignee,priority,issuetype,labels,customfield_10014,status,components`;
+
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Basic ${auth}`, 'Accept': 'application/json' }
+        });
+
+        if (!res.ok) {
+          const body = await res.text();
+          app.log.error({ status: res.status, body }, 'Jira search error');
+          return reply.status(res.status).send({ ok: false, error: `Jira ${res.status}: ${body.slice(0, 200)}` });
+        }
+
         const data = await res.json();
         return reply.send({ ok: true, ...data });
       } catch (err: unknown) {
-        const status = (err as { statusCode?: number }).statusCode ?? 502;
-        return reply.status(status).send({ ok: false, error: String(err) });
+        app.log.error(err, 'jira/search error');
+        return reply.status(502).send({ ok: false, error: String(err) });
       }
     }
   );
 
   // ── GET /jira/statuses ─────────────────────────────────────────────────────
-  // Returns all statuses defined in the Jira instance (used by Admin → Deploy Config)
-  app.get('/statuses', async (req: FastifyRequest, reply: FastifyReply) => {
-    const userId = (req.user as { sub: string }).sub;
+  // Devuelve todos los estados de la instancia Jira (para Admin → Deploy Config)
+  app.get('/statuses', async (_req: FastifyRequest, reply: FastifyReply) => {
     try {
-      const adapter = await adapterForUser(supabase, userId);
-      const base = (adapter as unknown as { base: string }).base;
-      const auth = (adapter as unknown as { auth: string }).auth;
-      const res  = await fetch(`${base}/rest/api/3/status`, {
-        headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' }
+      const conn = await getAdminConnection(supabase);
+      if (!conn) return reply.status(404).send({ ok: false, error: 'Jira no configurado.' });
+
+      const auth = Buffer.from(`${conn.email}:${conn.api_token}`).toString('base64');
+      const base = conn.base_url.replace(/\/$/, '');
+
+      const res = await fetch(`${base}/rest/api/3/status`, {
+        headers: { 'Authorization': `Basic ${auth}`, 'Accept': 'application/json' }
       });
+
       if (!res.ok) return reply.status(res.status).send({ ok: false, error: `Jira ${res.status}` });
+
       const data = await res.json() as Array<{ id: string; name: string; statusCategory: { name: string } }>;
-      return reply.send({ ok: true, statuses: data.map(s => ({ id: s.id, name: s.name, category: s.statusCategory?.name })) });
+      return reply.send({
+        ok: true,
+        statuses: data.map(s => ({ id: s.id, name: s.name, category: s.statusCategory?.name }))
+      });
     } catch (err: unknown) {
-      const status = (err as { statusCode?: number }).statusCode ?? 502;
-      return reply.status(status).send({ ok: false, error: String(err) });
+      return reply.status(502).send({ ok: false, error: String(err) });
     }
   });
 
