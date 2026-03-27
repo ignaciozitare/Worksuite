@@ -808,7 +808,6 @@ export function DeployPlanner({ currentUser }) {
       // Read configured Jira statuses from sso_config
       const { data:cfg } = await supabase.from("sso_config").select("deploy_jira_statuses").limit(1).single();
       const rawStatuses = cfg?.deploy_jira_statuses || "Ready to Production";
-      // Build JQL for multiple statuses: status in ("A","B","C")
       const statusList = rawStatuses.split(",").map(s=>s.trim()).filter(Boolean);
       const jqlStatus = statusList.length===1
         ? `status="${statusList[0]}"`
@@ -817,21 +816,46 @@ export function DeployPlanner({ currentUser }) {
 
       const headers = await authHeaders();
       const res = await fetch(`${API_BASE}/jira/search?jql=${encodeURIComponent(jql)}&maxResults=100`, { headers });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const newTickets = (data.issues||[]).map(i=>({
-        key:      i.key,
-        summary:  i.fields?.summary||"",
-        assignee: i.fields?.assignee?.displayName||"—",
-        priority: i.fields?.priority?.name||"Medium",
-        type:     i.fields?.issuetype?.name||"Task",
-        repos:    [
-          ...(i.fields?.customfield_10014||"").split(",").map(s=>s.trim()).filter(Boolean),
-          ...(i.fields?.labels||[]).filter(Boolean),
-        ].filter(s=>s.length),
-      }));
+
+      let data;
+      try { data = await res.json(); } catch { data = {}; }
+
+      if(!res.ok) {
+        const msg = data?.error || data?.message || `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+
+      const issues = data.issues||[];
+
+      if(issues.length===0) {
+        alert(`Jira respondió OK pero no hay tickets con estado: "${rawStatuses}"\n\nVerifica en Admin → Deploy Planner que el nombre del estado coincide exactamente con el de tu Jira.`);
+        setFetchingJira(false);
+        return;
+      }
+
+      const newTickets = issues.map(i=>{
+        // Map repos: try components (native field) first, then customfield_10014, then labels
+        const components = (i.fields?.components||[]).map(c=>c.name).filter(Boolean);
+        const cf10014    = (i.fields?.customfield_10014||"").split(",").map(s=>s.trim()).filter(Boolean);
+        const labels     = (i.fields?.labels||[]).filter(Boolean);
+        const repos      = components.length ? components : cf10014.length ? cf10014 : labels;
+        return {
+          key:      i.key,
+          summary:  i.fields?.summary||"",
+          assignee: i.fields?.assignee?.displayName||"—",
+          priority: i.fields?.priority?.name||"Medium",
+          type:     i.fields?.issuetype?.name||"Task",
+          status:   i.fields?.status?.name||"",
+          repos,
+        };
+      });
+
       setTickets(newTickets);
-    } catch(e) { console.error(e); alert(`Error Jira: ${e.message}`); }
+      setTab("planning");
+    } catch(e) {
+      console.error(e);
+      alert(`Error al conectar con Jira:\n${e.message}\n\nAsegúrate de que el routes.ts actualizado está desplegado en la API.`);
+    }
     setFetchingJira(false);
   }
 
