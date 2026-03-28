@@ -10,7 +10,7 @@ import { createPortal } from "react-dom";
 import { supabase } from './shared/lib/api';
 import { RetroBoard, AdminRetroTeams } from './RetroBoard';
 import { DeployPlanner } from './modules/deploy-planner';
-import EnvTracker, { AdminEnvEnvironments, AdminEnvRepositories, AdminEnvPolicy } from './EnvTracker';
+import { EnvironmentsView, AdminEnvEnvironments, AdminEnvRepositories, AdminEnvPolicy } from './modules/environments';
 import { useAuth } from './shared/hooks/useAuth';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
@@ -1632,7 +1632,7 @@ function WorkSuiteApp() {
           {/* FIX #1: Environments module */}
           {mod==="envtracker"&&view!=="admin"&&(
             <main className="content" style={{padding:0,overflow:"hidden",display:"flex",flexDirection:"column",height:"100%"}}>
-              <EnvTracker supabase={supabase} currentUser={CURRENT_USER} wsUsers={users}/>
+              <EnvironmentsView currentUser={CURRENT_USER} wsUsers={users}/>
             </main>
           )}
           {view==="admin"&&(
