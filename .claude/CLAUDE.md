@@ -1,4 +1,4 @@
-# Global Working Rules
+#  Project Working Rules
 
 ## Design Principles
 - Apply SOLID principles when they improve clarity, maintainability, and extensibility.
