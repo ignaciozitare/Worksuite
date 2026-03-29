@@ -75,6 +75,35 @@ When ready:
 - `docs/specs/hotdesk.md` — HotDesk domain spec  
 - `docs/adr/` — Architecture decisions
 
+## Restore `main` from an older Vercel deployment
+
+If you promoted an old deployment in Vercel and want GitHub `main` to match that exact version:
+
+1. Find the deployment's commit SHA in Vercel:
+   - Open the deployment URL in Vercel
+   - Go to **Source** / **Git Commit** details
+   - Copy the full SHA (example: `abc123...`)
+2. In your local clone, fetch `main` and create a safety backup branch:
+   ```bash
+   git fetch origin
+   git checkout main
+   git pull origin main
+   git branch backup/main-before-rollback-$(date +%Y%m%d)
+   ```
+3. Move `main` to the deployment commit:
+   ```bash
+   git reset --hard <DEPLOYMENT_COMMIT_SHA>
+   ```
+4. Force-push with lease (safer than plain `--force`):
+   ```bash
+   git push --force-with-lease origin main
+   ```
+5. Verify:
+   - GitHub `main` now points to the same commit
+   - Vercel new production deployment should be created from that commit
+
+> Tip: if the deployment was not linked to a Git commit (rare/manual deploy), export/download source from that deployment first and commit it manually, then push to `main`.
+
 ## Testing approach
 
 - **Domain tests:** Pure unit tests, no I/O, no mocks needed
