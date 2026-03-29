@@ -1,3 +1,4 @@
+
 export type EnvironmentId = string;
 
 export interface Environment {
@@ -20,4 +21,17 @@ export function environmentFromRow(row: Record<string, unknown>): Environment {
     is_locked:               row.is_locked as boolean ?? false,
     max_reservation_duration: row.max_reservation_duration as number | null,
   };
+=======
+export type EnvCategory = 'DEV' | 'PRE' | 'STAGING';
+
+export interface Environment {
+  id:                     string;
+  name:                   string;
+  category:               EnvCategory;
+  isLocked:               boolean;
+  isArchived:             boolean;
+  maxReservationDuration: number;   // hours
+  color:                  string | null;
+  url:                    string | null;
+
 }

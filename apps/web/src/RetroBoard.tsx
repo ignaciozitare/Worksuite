@@ -1,8 +1,7 @@
 // @ts-nocheck
 // RetroBoard — WorkSuite Module v1.0
-// Integrated from RetroBoard standalone (v9) → WorkSuite
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from './shared/lib/api';
 
 // ════════════════════════════════════════════════════════════════
@@ -46,10 +45,6 @@ const KANBAN_COLS = [
   {id:"done",       label:"Hecho",       color:"#4ade80",bg:"rgba(74,222,128,.1)"  },
   {id:"cancelled",  label:"Cancelado",   color:"#f87171",bg:"rgba(248,113,113,.1)" },
 ];
-const NEXT_STATUS = {
-  todo:["inprogress","done","cancelled"],inprogress:["done","cancelled","todo"],
-  done:["todo","inprogress"],cancelled:["todo"],
-};
 
 const fmtT = (s)=>`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
 const dateR = (d)=>new Date(d).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"});
@@ -72,11 +67,6 @@ function RBtn({children,onClick,v="primary",sm,full,disabled,style={}}){
       {children}
     </button>
   );
-}
-
-function RAvatar({name,initials,size=30,color="#6366f1"}){
-  const init=initials||(name||"?").slice(0,2).toUpperCase();
-  return<div style={{width:size,height:size,borderRadius:"50%",background:color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*.34,fontWeight:700,color:"#fff",flexShrink:0}}>{init}</div>;
 }
 
 function RPriBadge({priority}){
@@ -138,7 +128,6 @@ function RetroLobby({user,wsUsers,teams,retroName,setRetroName,selectedTeamId,se
   const upd=(ph,v)=>setPhaseTimes((p)=>({...p,[ph]:Math.max(1,v)}));
   const remaining=MAX_TITLE-retroName.length;
   const myTeams=user.role==="admin"?teams:teams.filter(t=>t.members?.some(m=>m.user_id===user.id));
-  const selTeam=teams.find(t=>t.id===selectedTeamId);
   const lastRetro=history.filter(r=>r.team_id===selectedTeamId).slice(-1)[0];
 
   return(
@@ -148,17 +137,13 @@ function RetroLobby({user,wsUsers,teams,retroName,setRetroName,selectedTeamId,se
         <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:18,color:"var(--tx)",marginBottom:4}}>Configuración de la retro</h2>
         <p style={{fontSize:13,color:"var(--tx3)"}}>Configura la sesión antes de que el equipo entre</p>
       </div>
-
-      {/* Team selector */}
       {myTeams.length>0&&(
         <div style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:12,padding:"14px 18px",marginBottom:12}}>
           <label style={{display:"block",fontSize:12,color:"var(--tx2)",fontWeight:600,marginBottom:8}}>🏷️ Equipo</label>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {myTeams.map(te=>(
               <button key={te.id} onClick={()=>setSelectedTeamId(te.id)}
-                style={{padding:"7px 16px",borderRadius:20,border:`1px solid ${selectedTeamId===te.id?te.color:"var(--bd)"}`,
-                  background:selectedTeamId===te.id?`${te.color}18`:"transparent",
-                  color:selectedTeamId===te.id?te.color:"var(--tx3)",cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:"inherit"}}>
+                style={{padding:"7px 16px",borderRadius:20,border:`1px solid ${selectedTeamId===te.id?te.color:"var(--bd)"}`,background:selectedTeamId===te.id?`${te.color}18`:"transparent",color:selectedTeamId===te.id?te.color:"var(--tx3)",cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:"inherit"}}>
                 {te.name}
               </button>
             ))}
@@ -170,8 +155,6 @@ function RetroLobby({user,wsUsers,teams,retroName,setRetroName,selectedTeamId,se
           ⚠ No perteneces a ningún equipo de retro. Pide a un admin que te añada en Admin → Retro Teams.
         </div>
       )}
-
-      {/* Accionables pendientes del último retro */}
       {lastRetro&&lastRetro.actionables?.filter(a=>a.status==="open").length>0&&(
         <div style={{background:"rgba(248,113,113,.06)",border:"1px solid rgba(248,113,113,.2)",borderRadius:10,padding:"12px 16px",marginBottom:12}}>
           <div style={{fontSize:12,color:"#f87171",fontWeight:600,marginBottom:6}}>🎯 Accionables abiertos del retro anterior</div>
@@ -182,8 +165,6 @@ function RetroLobby({user,wsUsers,teams,retroName,setRetroName,selectedTeamId,se
           ))}
         </div>
       )}
-
-      {/* Retro name */}
       <div style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:12,padding:"14px 18px",marginBottom:12}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:7}}>
           <label style={{fontSize:12,color:"var(--tx2)",fontWeight:600}}>Nombre de la retrospectiva</label>
@@ -193,16 +174,12 @@ function RetroLobby({user,wsUsers,teams,retroName,setRetroName,selectedTeamId,se
           placeholder="Ej: Retro Sprint 42"
           style={{width:"100%",background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:8,padding:"10px 13px",color:"var(--tx)",fontSize:14,fontFamily:"'Sora',sans-serif",fontWeight:600,outline:"none"}}/>
       </div>
-
-      {/* Phase times */}
       <div style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:12,padding:"12px 18px",marginBottom:12}}>
         <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:12,color:"var(--tx)",margin:"0 0 12px"}}>Tiempo por fase (minutos)</h3>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           {TIMED.map(ph=>(
             <div key={ph} style={{background:"var(--sf2)",borderRadius:8,padding:"9px 12px"}}>
-              <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"var(--tx3)",marginBottom:7}}>
-                {PM[ph].icon} {PM[ph].label}
-              </label>
+              <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"var(--tx3)",marginBottom:7}}>{PM[ph].icon} {PM[ph].label}</label>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <button onClick={()=>upd(ph,phaseTimes[ph]-1)} style={{width:24,height:24,borderRadius:5,border:"1px solid var(--bd)",background:"transparent",color:"var(--tx2)",cursor:"pointer",fontSize:14,fontFamily:"inherit"}}>−</button>
                 <span style={{fontSize:18,fontWeight:700,color:"var(--tx)",fontFamily:"'Sora',sans-serif",minWidth:24,textAlign:"center"}}>{phaseTimes[ph]}</span>
@@ -212,8 +189,6 @@ function RetroLobby({user,wsUsers,teams,retroName,setRetroName,selectedTeamId,se
           ))}
         </div>
       </div>
-
-      {/* Votes */}
       <div style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:12,padding:"12px 18px",marginBottom:20,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <p style={{fontSize:12,color:"var(--tx2)",fontWeight:600}}>🗳 Votos por participante</p>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -222,7 +197,6 @@ function RetroLobby({user,wsUsers,teams,retroName,setRetroName,selectedTeamId,se
           <button onClick={()=>setVotesPerUser(v=>Math.min(20,v+1))} style={{width:28,height:28,borderRadius:7,border:"1px solid var(--bd)",background:"transparent",color:"var(--tx2)",cursor:"pointer",fontSize:15,fontFamily:"inherit"}}>+</button>
         </div>
       </div>
-
       <RBtn full onClick={()=>selectedTeamId&&retroName.trim()&&onStart()} disabled={!selectedTeamId||!retroName.trim()} style={{padding:"13px",fontSize:15}}>
         🚀 Comenzar Retrospectiva
       </RBtn>
@@ -238,13 +212,11 @@ function RetroLobby({user,wsUsers,teams,retroName,setRetroName,selectedTeamId,se
 function RetroCreating({isMod,myCards,setMyCards,timer,setTimer,running,setRunning,phaseMins,setPhaseMins,onFinish,currentUser}){
   const [text,setText]=useState("");
   const [cat,setCat]=useState("good");
-
   const add=()=>{
     if(!text.trim())return;
     setMyCards(p=>[...p,{id:genId(),text:text.trim(),category:cat,author:currentUser.name,authorId:currentUser.id,votes:0,actionable:"",assignee:"",dueDate:"",priority:"medium",merged:[]}]);
     setText("");
   };
-
   return(
     <div>
       <TimerBar timer={timer} setTimer={setTimer} running={running} setRunning={setRunning} isMod={isMod} phaseMins={phaseMins} setPhaseMins={setPhaseMins} onNext={onFinish} nextLabel="→ Organizar"
@@ -297,7 +269,7 @@ function RetroCreating({isMod,myCards,setMyCards,timer,setTimer,running,setRunni
 }
 
 // ════════════════════════════════════════════════════════════════
-// PHASE: GROUPING (Kanban)
+// PHASE: GROUPING
 // ════════════════════════════════════════════════════════════════
 
 function RetroGrouping({isMod,cards,setCards,timer,setTimer,running,setRunning,phaseMins,setPhaseMins,onFinish}){
@@ -388,8 +360,7 @@ function RetroVoting({isMod,allCards,myVotes,onVote,onRemove,votesPerUser,timer,
   const used=Object.values(myVotes).reduce((a,b)=>a+b,0),rem=votesPerUser-used;
   return(
     <div>
-      <TimerBar timer={timer} setTimer={setTimer} running={running} setRunning={setRunning} isMod={isMod} phaseMins={phaseMins} setPhaseMins={setPhaseMins} onNext={onFinish} nextLabel="Cerrar →">
-      </TimerBar>
+      <TimerBar timer={timer} setTimer={setTimer} running={running} setRunning={setRunning} isMod={isMod} phaseMins={phaseMins} setPhaseMins={setPhaseMins} onNext={onFinish} nextLabel="Cerrar →"/>
       <div style={{maxWidth:1060,margin:"0 auto",padding:"16px 18px 50px"}}>
         <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:14,justifyContent:"center"}}>
           <span style={{fontSize:12,color:"var(--tx3)"}}>Votos restantes:</span>
@@ -541,13 +512,11 @@ function RetroSummary({sortedCards,retroName,onExit,onAddToKanban}){
   const [selected,setSelected]=useState({});
   const withAct=sortedCards.filter(c=>c.actionable);
   const without=sortedCards.filter(c=>!c.actionable);
-
   const doCopy=()=>{
     const text=withAct.map(c=>`• ${c.actionable}\n  ${c.assignee||"Sin asignar"} · ${c.dueDate||"—"}`).join("\n\n");
     navigator.clipboard?.writeText(text).catch(()=>{});
     setCopied(true);setTimeout(()=>setCopied(false),2000);
   };
-
   return(
     <div style={{maxWidth:720,margin:"0 auto",padding:"16px 18px 60px"}}>
       <div style={{textAlign:"center",marginBottom:22}}>
@@ -563,11 +532,9 @@ function RetroSummary({sortedCards,retroName,onExit,onAddToKanban}){
           </div>
         ))}
       </div>
-
       <div style={{display:"flex",gap:8,marginBottom:16}}>
         <RBtn v={copied?"success":"ghost"} full onClick={doCopy}>{copied?"✓ Copiado":"📋 Copiar accionables"}</RBtn>
       </div>
-
       {withAct.length>0&&(
         <div style={{background:"var(--sf)",border:"1px solid rgba(129,140,248,.25)",borderRadius:10,padding:"12px 14px",marginBottom:16}}>
           <p style={{fontSize:12,color:"#818cf8",fontWeight:600,marginBottom:10}}>🎯 Añadir al tablero de Accionables</p>
@@ -589,7 +556,6 @@ function RetroSummary({sortedCards,retroName,onExit,onAddToKanban}){
           )}
         </div>
       )}
-
       <div style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:13,overflow:"hidden",marginBottom:14}}>
         <div style={{padding:"12px 20px",borderBottom:"1px solid var(--bd)",display:"flex",alignItems:"center",gap:8}}>
           <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:13,color:"var(--tx)",margin:0}}>🎯 Accionables</h3>
@@ -643,13 +609,12 @@ function RetroFlow({currentUser,wsUsers,teams,history,onFinish,onSaveSession,onA
   },[myTeams.length]);
 
   useEffect(()=>{
-    const tick = () => {
-      TIMED.forEach(ph => {
-        if(running[ph]) setTimers((p)=>({...p, [ph]: Math.max(0, p[ph]-1)}));
+    const id=setInterval(()=>{
+      TIMED.forEach(ph=>{
+        if(running[ph])setTimers((p)=>({...p,[ph]:Math.max(0,p[ph]-1)}));
       });
-    };
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
+    },1000);
+    return()=>clearInterval(id);
   },[running]);
 
   const goTo=(p)=>{
@@ -671,10 +636,8 @@ function RetroFlow({currentUser,wsUsers,teams,history,onFinish,onSaveSession,onA
   };
 
   const pi=PHASES.indexOf(phase);
-
   return(
     <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"auto"}}>
-      {/* Retro header with stepper */}
       <div style={{background:"var(--sf)",borderBottom:"1px solid var(--bd)",padding:"0 16px",display:"flex",alignItems:"center",gap:10,height:44,flexShrink:0}}>
         <span style={{fontSize:13,fontWeight:700,color:"var(--tx)",flexShrink:0}}>🔁 {retroName||"Nueva Retro"}</span>
         <nav style={{flex:1,display:"flex",justifyContent:"center",alignItems:"center",gap:1,overflow:"hidden"}}>
@@ -712,7 +675,6 @@ function RetroHistorial({currentUser,history,teams}){
   const myHistory=currentUser.role==="admin"?history:history.filter(r=>teams.some(t=>t.id===r.team_id&&t.members?.some(m=>m.user_id===currentUser.id)));
   const [selId,setSelId]=useState(myHistory[myHistory.length-1]?.id||null);
   const retro=myHistory.find(r=>r.id===selId);
-
   const byTeam={};
   [...myHistory].reverse().forEach(r=>{
     const t=teams.find(x=>x.id===r.team_id);
@@ -720,10 +682,8 @@ function RetroHistorial({currentUser,history,teams}){
     if(!byTeam[key])byTeam[key]={team:t,retros:[]};
     byTeam[key].retros.push(r);
   });
-
   return(
     <div style={{display:"flex",height:"100%",overflow:"hidden"}}>
-      {/* Sidebar */}
       <div style={{width:"clamp(180px,28%,240px)",flexShrink:0,borderRight:"1px solid var(--bd)",overflowY:"auto",padding:"12px 6px"}}>
         <p style={{fontSize:11,color:"var(--tx3)",fontWeight:600,marginBottom:10,padding:"0 8px"}}>RETROSPECTIVAS</p>
         {Object.values(byTeam).map(({team,retros})=>(
@@ -749,8 +709,6 @@ function RetroHistorial({currentUser,history,teams}){
         ))}
         {myHistory.length===0&&<p style={{color:"var(--tx3)",fontSize:12,padding:"12px 8px"}}>Sin retrospectivas</p>}
       </div>
-
-      {/* Detail */}
       {retro?(
         <div style={{flex:1,overflowY:"auto",padding:24}}>
           <div style={{marginBottom:20}}>
@@ -795,7 +753,7 @@ function RetroHistorial({currentUser,history,teams}){
 }
 
 // ════════════════════════════════════════════════════════════════
-// ACCIONABLES KANBAN
+// ACCIONABLES KANBAN — con persistencia a Supabase (FIX Issue #2)
 // ════════════════════════════════════════════════════════════════
 
 function RetroAccionables({currentUser,items,setItems,history,teams}){
@@ -803,36 +761,47 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
   const [filterPri,setFilterPri]=useState("");
   const [dragState,setDragState]=useState(null);
 
-  // Build base items from history actionables
+  // ── CARGA INICIAL desde Supabase ──────────────────────────────
+  useEffect(()=>{
+    supabase.from("retro_actionables").select("id,status")
+      .then(({data})=>{
+        if(data?.length){
+          setItems(data.map(d=>({id:d.id,status:d.status})));
+        }
+      });
+  },[]);
+
   const baseItems=history.flatMap(r=>{
     const team=teams.find(t=>t.id===r.team_id);
     return(r.actionables||[]).map((a)=>({...a,retroName:r.name,teamId:r.team_id,teamName:team?.name||"—",id:a.id||genId()}));
   });
 
-  // Merge edits
   const merged=baseItems.map(base=>{
     const edit=(items||[]).find(x=>x.id===base.id);
     return edit?{...base,...edit}:{...base,status:base.status||"todo"};
   });
 
-  const move=(id,newStatus)=>setItems((prev)=>{
-    const ex=prev.find(x=>x.id===id);
-    if(ex)return prev.map(x=>x.id===id?{...x,status:newStatus}:x);
-    return[...prev,{id,status:newStatus}];
-  });
+  // ── MOVE con persistencia a Supabase ─────────────────────────
+  const move=async(id,newStatus)=>{
+    // Actualizar React state inmediatamente (optimista)
+    setItems((prev)=>{
+      const ex=prev.find(x=>x.id===id);
+      if(ex)return prev.map(x=>x.id===id?{...x,status:newStatus}:x);
+      return[...prev,{id,status:newStatus}];
+    });
+    // Persistir a Supabase
+    await supabase.from("retro_actionables")
+      .upsert({id,status:newStatus,updated_at:new Date().toISOString()},{onConflict:"id"});
+  };
 
   const vis=merged.filter(item=>{
     if(filterTeam&&item.teamId!==filterTeam)return false;
     if(filterPri&&(item.priority||"medium")!==filterPri)return false;
     return true;
-  }).map(item=>{const edit=(items||[]).find(x=>x.id===item.id);return edit?{...item,...edit}:item;});
+  });
 
-  const colItems=colId=>vis.filter((x)=>(x.status||"todo")===colId).sort((a,b)=>(a.order??999)-(b.order??999));
-
-  const handleDrop=(targetColId,draggedId)=>{
-    move(draggedId,targetColId);
-    setDragState(null);
-  };
+  const colItems=colId=>vis.filter((x)=>(x.status||"todo")===colId);
+  const handleDrop=(targetColId,draggedId)=>{move(draggedId,targetColId);setDragState(null);};
 
   return(
     <div style={{padding:"16px 20px",paddingBottom:60}}>
@@ -858,125 +827,74 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
             <div key={col.id}
               onDragOver={e=>{e.preventDefault();e.dataTransfer.dropEffect="move";}}
               onDrop={e=>{e.preventDefault();if(dragState)handleDrop(col.id,dragState.id);}}
-              style={{background:isDragTarget?`${col.color}08`:"var(--sf2)",border:`2px solid ${isDragTarget?col.color:col.color+"22"}`,borderTop:`3px solid ${col.color}`,borderRadius:12,padding:"12px 10px",minHeight:220,display:"flex",flexDirection:"column",transition:"border-color .15s"}}>
-              <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:12}}>
-                <span style={{fontSize:12,fontWeight:700,color:col.color}}>{col.label}</span>
-                <span style={{marginLeft:"auto",background:col.bg,color:col.color,borderRadius:20,padding:"1px 8px",fontSize:11,fontWeight:700}}>{colItms.length}</span>
+              style={{
+                background:isDragTarget?`${col.bg}`:"var(--sf)",
+                border:`1px solid ${isDragTarget?col.color:"var(--bd)"}`,
+                borderTop:`3px solid ${col.color}`,
+                borderRadius:11,
+                padding:"10px 8px",
+                minHeight:200,
+                transition:"all .14s"
+              }}>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
+                <span style={{fontSize:12,fontWeight:700,color:col.color,fontFamily:"'Sora',sans-serif"}}>{col.label}</span>
+                <div style={{marginLeft:"auto",background:col.bg,color:col.color,borderRadius:20,padding:"1px 7px",fontSize:11,fontWeight:700,border:`1px solid ${col.color}44`}}>{colItms.length}</div>
               </div>
               {colItms.length===0&&(
-                <div style={{border:`2px dashed ${isDragTarget?col.color:col.color+"40"}`,borderRadius:8,padding:"20px 8px",textAlign:"center",fontSize:12,color:isDragTarget?col.color:"var(--tx3)",flex:1}}>
-                  {isDragTarget?"Soltar aquí →":"Sin tareas"}
+                <div style={{border:`2px dashed ${isDragTarget?col.color:"var(--bd)"}`,borderRadius:8,padding:"16px 6px",textAlign:"center",fontSize:11,color:isDragTarget?col.color:"var(--tx3)"}}>
+                  {isDragTarget?"⬇ Soltar aquí":"Sin accionables"}
                 </div>
               )}
-              <div style={{display:"flex",flexDirection:"column",gap:6,flex:1}}>
-                {colItms.map(item=>(
-                  <div key={item.id} draggable onDragStart={e=>{e.dataTransfer.effectAllowed="move";setTimeout(()=>setDragState({id:item.id,fromCol:col.id}),0);}} onDragEnd={()=>setDragState(null)}
-                    style={{background:"var(--sf)",border:`1px solid var(--bd)`,borderLeft:`3px solid ${col.color}`,borderRadius:10,padding:"10px 12px",cursor:"grab",opacity:dragState?.id===item.id?.3:1,userSelect:"none"}}>
-                    <p style={{fontSize:12,color:"var(--tx)",lineHeight:1.45,margin:"0 0 7px",fontWeight:500}}>{item.text}</p>
-                    <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",marginBottom:5}}>
-                      <RPriBadge priority={item.priority||"medium"}/>
-                      {item.teamName&&<span style={{fontSize:10,color:"var(--tx3)",background:"var(--sf2)",borderRadius:20,padding:"1px 7px"}}>{item.teamName}</span>}
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:"var(--tx3)"}}>
-                      {item.assignee&&<span>👤 {item.assignee}</span>}
-                      {item.dueDate&&<span>📅 {item.dueDate}</span>}
-                      <div style={{marginLeft:"auto",display:"flex",gap:4}}>
-                        {NEXT_STATUS[item.status||"todo"]?.map(next=>{const nc=KANBAN_COLS.find(c=>c.id===next);return(
-                          <button key={next} onClick={()=>move(item.id,next)} title={nc.label}
-                            style={{width:20,height:20,borderRadius:"50%",border:`1px solid ${nc.color}60`,background:nc.bg,color:nc.color,cursor:"pointer",fontSize:10,fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>
-                            {next==="done"?"✓":next==="cancelled"?"✕":next==="inprogress"?"▶":"↩"}
+              <div style={{display:"flex",flexDirection:"column",gap:7}}>
+                {colItms.map(item=>{
+                  const isDragging=dragState?.id===item.id;
+                  return(
+                    <div key={item.id}
+                      draggable
+                      onDragStart={()=>setDragState({id:item.id,fromCol:col.id})}
+                      onDragEnd={()=>setDragState(null)}
+                      style={{
+                        background:"var(--sf2)",
+                        border:"1px solid var(--bd)",
+                        borderRadius:9,
+                        padding:"10px 11px",
+                        cursor:"grab",
+                        opacity:isDragging?.3:1,
+                        userSelect:"none",
+                        transition:"opacity .15s"
+                      }}>
+                      <div style={{display:"flex",alignItems:"flex-start",gap:7,marginBottom:6}}>
+                        <RPriBadge priority={item.priority||"medium"}/>
+                        <span style={{fontSize:10,color:"var(--tx3)",marginLeft:"auto",flexShrink:0}}>{item.teamName}</span>
+                      </div>
+                      <p style={{fontSize:12,color:"var(--tx)",margin:"0 0 5px",lineHeight:1.4,fontWeight:500}}>{item.actionable||item.text}</p>
+                      {item.text&&item.actionable&&<p style={{fontSize:11,color:"var(--tx3)",margin:"0 0 5px",lineHeight:1.35}}>{item.text}</p>}
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                        {item.assignee&&<span style={{fontSize:10,color:"var(--tx3)"}}>👤 {item.assignee}</span>}
+                        {item.dueDate&&<span style={{fontSize:10,color:"var(--tx3)"}}>📅 {item.dueDate}</span>}
+                      </div>
+                      {/* Botones de cambio de estado rápido */}
+                      <div style={{display:"flex",gap:4,marginTop:8,flexWrap:"wrap"}}>
+                        {KANBAN_COLS.filter(c=>c.id!==col.id).map(nc=>(
+                          <button key={nc.id} onClick={()=>move(item.id,nc.id)}
+                            style={{padding:"2px 7px",borderRadius:20,border:`1px solid ${nc.color}44`,background:nc.bg,color:nc.color,cursor:"pointer",fontSize:9,fontWeight:700,fontFamily:"inherit"}}>
+                            → {nc.label}
                           </button>
-                        );})}
+                        ))}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           );
         })}
       </div>
-    </div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════
-// RETRO DASHBOARD
-// ════════════════════════════════════════════════════════════════
-
-function RetroDashboard({currentUser,history,teams,setView}){
-  const myHistory=currentUser.role==="admin"?history:history.filter(r=>teams.some(t=>t.id===r.team_id&&t.members?.some(m=>m.user_id===currentUser.id)));
-  const lastRetro=myHistory[myHistory.length-1];
-  const openItems=myHistory.flatMap(r=>r.actionables||[]).filter(a=>a.status==="open").length;
-  const canMod=["admin","owner"].includes(currentUser.role)||teams.some(t=>t.members?.some(m=>m.user_id===currentUser.id&&(m.role==="owner"||m.role==="temporal")));
-
-  return(
-    <div style={{padding:24,maxWidth:900}}>
-      <h1 style={{fontFamily:"'Sora',sans-serif",fontSize:18,color:"var(--tx)",marginBottom:4}}>🔁 RetroBoard</h1>
-      <p style={{fontSize:13,color:"var(--tx3)",marginBottom:24}}>Gestiona las retrospectivas de tu equipo</p>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:14,marginBottom:24}}>
-        {[{l:"Retros realizadas",v:myHistory.length,c:"#818cf8",icon:"🔁"},{l:"Accionables abiertos",v:openItems,c:"#f87171",icon:"🎯"},{l:"Equipos activos",v:teams.length,c:"#4ade80",icon:"🏷️"}].map((s)=>(
-          <div key={s.l} style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:12,padding:14,textAlign:"center"}}>
-            <div style={{fontSize:18,marginBottom:6}}>{s.icon}</div>
-            <div style={{fontSize:24,fontWeight:700,fontFamily:"'Sora',sans-serif",color:s.c}}>{s.v}</div>
-            <div style={{fontSize:11,color:"var(--tx3)",marginTop:3}}>{s.l}</div>
-          </div>
-        ))}
-      </div>
-      {lastRetro&&(
-        <div style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:12,padding:"18px 20px",marginBottom:20}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-            <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:14,color:"var(--tx)"}}>Última retrospectiva</h3>
-            <RBtn sm v="ghost" onClick={()=>setView("historial")}>Ver historial →</RBtn>
-          </div>
-          <p style={{fontSize:14,color:"var(--tx)",fontWeight:600,marginBottom:4}}>{lastRetro.name}</p>
-          <p style={{fontSize:12,color:"var(--tx3)",marginBottom:12}}>{lastRetro.date?dateR(lastRetro.date):""} · {lastRetro.stats?.cards||0} tarjetas · {lastRetro.stats?.withAction||0} accionables</p>
-          <div style={{display:"flex",flexDirection:"column",gap:5}}>
-            {(lastRetro.actionables||[]).slice(0,4).map((a,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 10px",background:"var(--sf2)",borderRadius:8}}>
-                <span style={{color:a.status==="done"?"var(--green)":"#f87171"}}>{a.status==="done"?"✓":"○"}</span>
-                <span style={{fontSize:12,color:a.status==="done"?"var(--tx3)":"var(--tx)",flex:1,textDecoration:a.status==="done"?"line-through":"none"}}>{a.text}</span>
-                <span style={{fontSize:11,color:"var(--tx3)"}}>{a.assignee}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {canMod&&(
-        <div style={{padding:"18px 20px",background:"rgba(99,102,241,.08)",border:"1px solid rgba(99,102,241,.25)",borderRadius:12,display:"flex",alignItems:"center",gap:14}}>
-          <span style={{fontSize:28}}>🚀</span>
-          <div style={{flex:1}}>
-            <p style={{fontSize:14,color:"var(--tx)",fontWeight:600,marginBottom:2}}>¿Listo para la próxima retro?</p>
-            <p style={{fontSize:12,color:"var(--tx3)"}}>Crea una nueva sesión y configura el flujo en segundos</p>
-          </div>
-          <RBtn onClick={()=>setView("nueva")}>Nueva Retro →</RBtn>
-        </div>
-      )}
-      {/* Pending accionables section */}
-      {openItems>0&&(
-        <div style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:12,overflow:"hidden",marginBottom:20}}>
-          <div style={{padding:"12px 20px",borderBottom:"1px solid var(--bd)",display:"flex",alignItems:"center",gap:8}}>
-            <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:14,color:"var(--tx)",margin:0}}>🎯 Accionables pendientes</h3>
-            <span style={{background:"rgba(248,113,113,.1)",color:"var(--red)",borderRadius:20,padding:"2px 8px",fontSize:11,fontWeight:700}}>{openItems} abiertos</span>
-            <RBtn sm v="ghost" style={{marginLeft:"auto"}} onClick={()=>setView("accionables")}>Ver tablero →</RBtn>
-          </div>
-          {myHistory.flatMap(r=>(r.actionables||[]).filter(a=>a.status==="open").map(a=>({...a,retroName:r.name}))).slice(0,5).map((a,i)=>(
-            <div key={i} style={{padding:"10px 20px",borderBottom:"1px solid var(--bd)",display:"flex",alignItems:"center",gap:12}}>
-              <span style={{color:"#f87171",fontSize:16}}>○</span>
-              <div style={{flex:1}}>
-                <p style={{fontSize:12,color:"var(--tx)",margin:"0 0 2px",fontWeight:500}}>{a.text}</p>
-                <span style={{fontSize:11,color:"var(--tx3)"}}>{a.retroName}</span>
-              </div>
-              {a.assignee&&<span style={{fontSize:11,color:"var(--tx3)",background:"var(--sf2)",borderRadius:20,padding:"2px 8px"}}>👤 {a.assignee}</span>}
-              {a.dueDate&&<span style={{fontSize:11,color:"var(--tx3)",background:"var(--sf2)",borderRadius:20,padding:"2px 8px"}}>📅 {a.dueDate}</span>}
-              {a.priority&&<RPriBadge priority={a.priority}/>}
-            </div>
-          ))}
-        </div>
-      )}
-      {teams.length===0&&(
-        <div style={{padding:"18px 20px",background:"rgba(248,113,113,.06)",border:"1px solid rgba(248,113,113,.2)",borderRadius:12,fontSize:13,color:"#f87171"}}>
-          ⚠ No perteneces a ningún equipo de retro. Pide a un admin que cree un equipo y te añada en Admin → Retro Teams.
+      {vis.length===0&&(
+        <div style={{textAlign:"center",padding:"40px 0",color:"var(--tx3)"}}>
+          <div style={{fontSize:24,marginBottom:8}}>🎯</div>
+          <div style={{fontSize:13}}>Sin accionables todavía</div>
+          <div style={{fontSize:11,marginTop:4}}>Completa una retrospectiva para ver los accionables aquí</div>
         </div>
       )}
     </div>
@@ -984,127 +902,145 @@ function RetroDashboard({currentUser,history,teams,setView}){
 }
 
 // ════════════════════════════════════════════════════════════════
-// ADMIN: RETRO TEAMS MANAGER
+// ADMIN: RETRO TEAMS
 // ════════════════════════════════════════════════════════════════
 
 export function AdminRetroTeams({wsUsers,teams,setTeams}){
-  const [selTeam,setSelTeam]=useState(null);
-  const [newName,setNewName]=useState("");
-  const [addEmail,setAddEmail]=useState("");
-  const [addRole,setAddRole]=useState("member");
+  const [sel,setSel]=useState(null);
+  const [form,setForm]=useState({name:"",color:"#6366f1"});
+  const [saving,setSaving]=useState(false);
   const [msg,setMsg]=useState("");
 
-  const TEAM_COLORS=["#818cf8","#a78bfa","#f472b6","#34d399","#60a5fa","#fb923c","#fbbf24","#4ade80"];
+  const selTeam=teams.find(t=>t.id===sel);
 
   const createTeam=async()=>{
-    if(!newName.trim())return;
-    const color=TEAM_COLORS[teams.length%TEAM_COLORS.length];
-    if(supabase){
-      const{data,error}=await supabase.from("retro_teams").insert({name:newName.trim(),color}).select().single();
-      if(!error&&data){setTeams(t=>[...t,{...data,members:[]}]);setNewName("");}
-      else setMsg(error?.message||"Error");
-    }else{
-      const t={id:genId(),name:newName.trim(),color,members:[]};
-      setTeams(prev=>[...prev,t]);setNewName("");
-    }
-  };
-
-  const addMember=async()=>{
-    if(!selTeam||!addEmail.trim())return;
-    const u=wsUsers.find(x=>x.email?.toLowerCase()===addEmail.trim().toLowerCase());
-    if(!u){setMsg(`Usuario no encontrado: ${addEmail}`);return;}
-    if(selTeam.members?.some(m=>m.user_id===u.id)){setMsg(`${u.name} ya es miembro`);return;}
-    if(supabase){
-      const{error}=await supabase.from("retro_team_members").insert({team_id:selTeam.id,user_id:u.id,role:addRole});
-      if(error){setMsg(error.message);return;}
-    }
-    const newMember={user_id:u.id,role:addRole,name:u.name,email:u.email};
-    setTeams((ts)=>ts.map(t=>t.id===selTeam.id?{...t,members:[...(t.members||[]),newMember]}:t));
-    setSelTeam((s)=>({...s,members:[...(s.members||[]),newMember]}));
-    setAddEmail("");setMsg("");
-  };
-
-  const removeMember=async(userId)=>{
-    if(!selTeam)return;
-    if(supabase)await supabase.from("retro_team_members").delete().eq("team_id",selTeam.id).eq("user_id",userId);
-    setTeams((ts)=>ts.map(t=>t.id===selTeam.id?{...t,members:(t.members||[]).filter(m=>m.user_id!==userId)}:t));
-    setSelTeam((s)=>({...s,members:(s.members||[]).filter(m=>m.user_id!==userId)}));
+    if(!form.name.trim())return;
+    setSaving(true);
+    const{data,error}=await supabase.from("retro_teams").insert({name:form.name.trim(),color:form.color}).select().single();
+    if(!error&&data){setTeams(t=>[...t,{...data,members:[]}]);setSel(data.id);setForm({name:"",color:"#6366f1"});}
+    else setMsg(error?.message||"Error");
+    setSaving(false);
   };
 
   const deleteTeam=async(id)=>{
-    if(!confirm("¿Eliminar equipo? Se perderá el historial asociado."))return;
-    if(supabase)await supabase.from("retro_teams").delete().eq("id",id);
-    setTeams((ts)=>ts.filter(t=>t.id!==id));
-    if(selTeam?.id===id)setSelTeam(null);
+    if(!confirm("¿Eliminar este equipo?"))return;
+    await supabase.from("retro_teams").delete().eq("id",id);
+    setTeams(t=>t.filter(x=>x.id!==id));
+    if(sel===id)setSel(null);
   };
+
+  const addMember=async(userId,role="member")=>{
+    if(!selTeam)return;
+    const u=wsUsers.find(x=>x.id===userId);
+    if(!u)return;
+    const{data,error}=await supabase.from("retro_team_members").insert({team_id:selTeam.id,user_id:userId,role}).select().single();
+    if(!error&&data){
+      setTeams(ts=>ts.map(t=>t.id===selTeam.id?{...t,members:[...t.members,{...data,name:u.name,email:u.email}]}:t));
+    }
+  };
+
+  const removeMember=async(memberId)=>{
+    if(!selTeam)return;
+    await supabase.from("retro_team_members").delete().eq("id",memberId);
+    setTeams(ts=>ts.map(t=>t.id===selTeam.id?{...t,members:t.members.filter(m=>m.id!==memberId)}:t));
+  };
+
+  const updateRole=async(memberId,role)=>{
+    await supabase.from("retro_team_members").update({role}).eq("id",memberId);
+    setTeams(ts=>ts.map(t=>t.id===selTeam?.id?{...t,members:t.members.map(m=>m.id===memberId?{...m,role}:m)}:t));
+  };
+
+  const nonMembers=wsUsers.filter(u=>!selTeam?.members?.some(m=>m.user_id===u.id));
 
   return(
     <div style={{display:"flex",gap:0,height:"100%",flex:1,minHeight:0}}>
-      {/* Team list */}
-      <div style={{width:220,borderRight:"1px solid var(--bd)",display:"flex",flexDirection:"column",background:"var(--sf)",overflow:"hidden",flexShrink:0}}>
-        <div style={{padding:"8px 10px",borderBottom:"1px solid var(--bd)",display:"flex",alignItems:"center",gap:6}}>
-          <input className="a-inp" placeholder="Nombre del equipo" value={newName} onChange={e=>setNewName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&createTeam()} style={{flex:1,fontSize:11,padding:"4px 7px"}}/>
-          <button className="btn-g" onClick={createTeam} style={{fontSize:10,padding:"2px 8px"}}>+</button>
+      {/* Sidebar */}
+      <div style={{width:220,borderRight:"1px solid var(--bd)",display:"flex",flexDirection:"column",flexShrink:0}}>
+        <div style={{padding:"10px 12px",borderBottom:"1px solid var(--bd)"}}>
+          <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",textTransform:"uppercase",letterSpacing:".1em",marginBottom:8}}>Equipos</div>
+          <div style={{display:"flex",gap:6,marginBottom:6}}>
+            <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}
+              onKeyDown={e=>{if(e.key==="Enter")createTeam();}}
+              placeholder="Nombre del equipo"
+              style={{flex:1,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,padding:"5px 8px",color:"var(--tx)",fontSize:11,fontFamily:"inherit",outline:"none"}}/>
+            <input type="color" value={form.color} onChange={e=>setForm(f=>({...f,color:e.target.value}))}
+              style={{width:28,height:28,border:"none",background:"none",cursor:"pointer",padding:0,flexShrink:0}}/>
+          </div>
+          <button onClick={createTeam} disabled={saving||!form.name.trim()}
+            style={{width:"100%",background:"var(--ac)",color:"#fff",border:"none",borderRadius:6,padding:"5px",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",opacity:saving||!form.name.trim()?.5:1}}>
+            {saving?"...":"+ Crear equipo"}
+          </button>
+          {msg&&<div style={{fontSize:10,color:"var(--red)",marginTop:4}}>{msg}</div>}
         </div>
         <div style={{flex:1,overflowY:"auto"}}>
-          {teams.map((t)=>(
-            <div key={t.id} style={{display:"flex",alignItems:"center",gap:0,padding:"8px 10px",background:selTeam?.id===t.id?"var(--glow)":"transparent",borderLeft:`2px solid ${selTeam?.id===t.id?t.color:"transparent"}`,borderBottom:"1px solid var(--bd)",cursor:"pointer"}}
-              onClick={()=>setSelTeam(t)}>
-              <div style={{width:10,height:10,borderRadius:"50%",background:t.color,flexShrink:0,marginRight:8}}/>
-              <span style={{flex:1,fontSize:12,fontWeight:600,color:selTeam?.id===t.id?"var(--tx)":"var(--tx2)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.name}</span>
-              <span style={{fontSize:10,color:"var(--tx3)",marginRight:6}}>{(t.members||[]).length}</span>
-              <button onClick={e=>{e.stopPropagation();deleteTeam(t.id);}} style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:"var(--tx3)",padding:"1px 3px"}}>×</button>
+          {teams.map(team=>(
+            <div key={team.id} style={{display:"flex",alignItems:"center",padding:"8px 12px",cursor:"pointer",background:sel===team.id?"var(--glow)":"transparent",borderLeft:`2px solid ${sel===team.id?team.color:"transparent"}`,borderBottom:"1px solid var(--bd)"}}
+              onClick={()=>setSel(team.id)}>
+              <div style={{width:8,height:8,borderRadius:"50%",background:team.color,flexShrink:0,marginRight:8}}/>
+              <div style={{flex:1,fontSize:12,fontWeight:sel===team.id?600:400,color:sel===team.id?team.color:"var(--tx2)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{team.name}</div>
+              <span style={{fontSize:10,color:"var(--tx3)"}}>{team.members?.length||0}</span>
+              <button onClick={e=>{e.stopPropagation();deleteTeam(team.id);}} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,color:"var(--tx3)",padding:"0 3px",marginLeft:4}}>×</button>
             </div>
           ))}
-          {teams.length===0&&<div style={{padding:"14px 10px",fontSize:11,color:"var(--tx3)"}}>Sin equipos — crea uno arriba</div>}
+          {teams.length===0&&<div style={{padding:"14px 12px",fontSize:11,color:"var(--tx3)"}}>Sin equipos</div>}
         </div>
-        {msg&&<div style={{padding:"6px 10px",fontSize:11,color:"var(--red)",borderTop:"1px solid var(--bd)"}}>{msg}</div>}
       </div>
 
-      {/* Team detail */}
+      {/* Right panel */}
       {selTeam?(
         <div style={{flex:1,padding:20,overflowY:"auto"}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-            <div style={{width:14,height:14,borderRadius:"50%",background:selTeam.color}}/>
-            <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:15,color:"var(--tx)",margin:0}}>{selTeam.name}</h3>
-            <span style={{fontSize:11,color:"var(--tx3)"}}>{(selTeam.members||[]).length} miembros</span>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
+            <div style={{width:12,height:12,borderRadius:"50%",background:selTeam.color}}/>
+            <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:16,color:"var(--tx)",margin:0}}>{selTeam.name}</h3>
+            <span style={{fontSize:11,color:"var(--tx3)"}}>{selTeam.members?.length||0} miembros</span>
           </div>
+
           {/* Members */}
-          <div style={{marginBottom:16}}>
-            {(selTeam.members||[]).map(m=>{
-              const u=wsUsers.find(x=>x.id===m.user_id);
-              return(
-                <div key={m.user_id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",background:"var(--sf2)",borderRadius:9,marginBottom:6}}>
-                  <RAvatar initials={(u?.name||m.name||"?").slice(0,2).toUpperCase()} size={28} color={selTeam.color}/>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:12,fontWeight:600,color:"var(--tx)"}}>{u?.name||m.name||"—"}</div>
-                    <div style={{fontSize:11,color:"var(--tx3)"}}>{u?.email||m.email}</div>
+          <div style={{marginBottom:20}}>
+            <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",textTransform:"uppercase",letterSpacing:".1em",marginBottom:10}}>Miembros</div>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {(selTeam.members||[]).map(m=>(
+                <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:8}}>
+                  <div style={{width:28,height:28,borderRadius:"50%",background:"var(--ac)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0}}>
+                    {(m.name||"?").slice(0,2).toUpperCase()}
                   </div>
-                  <RRoleBadge role={m.role}/>
-                  <button onClick={()=>removeMember(m.user_id)} style={{background:"none",border:"none",color:"var(--tx3)",cursor:"pointer",fontSize:13,padding:"2px 4px"}}>×</button>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:12,fontWeight:600,color:"var(--tx)"}}>{m.name||m.email}</div>
+                  </div>
+                  <select value={m.role||"member"} onChange={e=>updateRole(m.id,e.target.value)}
+                    style={{background:"var(--sf3)",border:"1px solid var(--bd)",borderRadius:5,padding:"3px 7px",fontSize:11,color:"var(--tx)",fontFamily:"inherit"}}>
+                    <option value="member">Participante</option>
+                    <option value="owner">Mod. Owner</option>
+                    <option value="temporal">Mod. Temporal</option>
+                  </select>
+                  <button onClick={()=>removeMember(m.id)} style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14}}>×</button>
                 </div>
-              );
-            })}
-            {(selTeam.members||[]).length===0&&<p style={{fontSize:12,color:"var(--tx3)"}}>Sin miembros</p>}
-          </div>
-          {/* Add member */}
-          <div style={{background:"var(--sf2)",borderRadius:10,padding:"12px 14px",border:"1px solid var(--bd)"}}>
-            <p style={{fontSize:11,fontWeight:600,color:"var(--tx3)",marginBottom:10}}>Añadir miembro</p>
-            <div style={{display:"flex",gap:8,marginBottom:8}}>
-              <input className="a-inp" placeholder="email@empresa.com" value={addEmail} onChange={e=>setAddEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addMember()} style={{flex:1,fontSize:11,padding:"5px 8px"}}/>
-              <select value={addRole} onChange={e=>setAddRole(e.target.value)} className="a-inp" style={{width:130,fontSize:11,padding:"5px 8px"}}>
-                <option value="member">Participante</option>
-                <option value="temporal">Mod. Temporal</option>
-                <option value="owner">Mod. Owner</option>
-              </select>
-              <button className="b-sub" onClick={addMember} style={{padding:"5px 12px",fontSize:11}}>Añadir</button>
+              ))}
+              {(!selTeam.members||selTeam.members.length===0)&&<div style={{fontSize:12,color:"var(--tx3)",textAlign:"center",padding:"12px 0"}}>Sin miembros</div>}
             </div>
-            <p style={{fontSize:10,color:"var(--tx3)"}}>El usuario debe existir en WorkSuite. Introduce su email exacto.</p>
           </div>
+
+          {/* Add members */}
+          {nonMembers.length>0&&(
+            <div>
+              <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",textTransform:"uppercase",letterSpacing:".1em",marginBottom:10}}>Añadir miembros</div>
+              <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                {nonMembers.map(u=>(
+                  <div key={u.id} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 10px",background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:7}}>
+                    <div style={{flex:1,fontSize:12,color:"var(--tx2)"}}>{u.name||u.email}</div>
+                    <button onClick={()=>addMember(u.id,"member")}
+                      style={{padding:"3px 10px",borderRadius:6,border:"1px solid var(--bd)",background:"var(--sf2)",color:"var(--tx2)",cursor:"pointer",fontSize:11,fontFamily:"inherit"}}>
+                      + Añadir
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ):(
         <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",color:"var(--tx3)",fontSize:13}}>
-          ← Selecciona un equipo para gestionar sus miembros
+          ← Selecciona un equipo para gestionarlo
         </div>
       )}
     </div>
@@ -1112,95 +1048,80 @@ export function AdminRetroTeams({wsUsers,teams,setTeams}){
 }
 
 // ════════════════════════════════════════════════════════════════
-// MAIN RETROBOARD COMPONENT (exported)
+// MAIN EXPORT: RetroBoard
 // ════════════════════════════════════════════════════════════════
 
 export function RetroBoard({currentUser,wsUsers,lang}){
-  const [view,setView]=useState("dashboard");
-  const [inRetro,setInRetro]=useState(false);
-  const [teams,setTeams]=useState([]);
+  const [view,setView]=useState("board"); // "board" | "historial" | "accionables"
+  const [retroActive,setRetroActive]=useState(false);
   const [history,setHistory]=useState([]);
+  const [teams,setTeams]=useState([]);
   const [kanbanItems,setKanbanItems]=useState([]);
-  const [loading,setLoading]=useState(true);
 
-  // Load teams from Supabase
   useEffect(()=>{
-    const load=async()=>{
-      setLoading(true);
-      if(supabase){
-        const[{data:teamsData},{data:membersData},{data:sessionsData}]=await Promise.all([
-          supabase.from("retro_teams").select("*"),
-          supabase.from("retro_team_members").select("*"),
-          supabase.from("retro_sessions").select("*,retro_actionables(*)").eq("status","closed").order("created_at",{ascending:false}),
-        ]);
-        const teamsWithMembers=(teamsData||[]).map((t)=>({...t,members:(membersData||[]).filter(m=>m.team_id===t.id).map(m=>{const u=wsUsers.find(x=>x.id===m.user_id);return{...m,name:u?.name,email:u?.email};})}));
-        setTeams(teamsWithMembers);
-        // Map sessions to history format
-        const hist=(sessionsData||[]).map((s)=>({id:s.id,name:s.name,date:s.created_at?.slice(0,10),team_id:s.team_id,stats:s.stats||{},actionables:(s.retro_actionables||[]).map((a)=>({id:a.id,text:a.text,assignee:a.assignee,dueDate:a.due_date,priority:a.priority,status:(a.status==="open"||!a.status?"todo":a.status)}))}));
-        setHistory(hist);
-      }
-      setLoading(false);
-    };
-    load();
+    if(!supabase)return;
+    Promise.all([
+      supabase.from("retro_sessions").select("*").order("created_at",{ascending:false}),
+      supabase.from("retro_teams").select("*"),
+      supabase.from("retro_team_members").select("*"),
+    ]).then(([{data:sessions},{data:teamsData},{data:members}])=>{
+      setHistory((sessions||[]).map(s=>({...s,date:s.created_at,actionables:s.actionables||[]})));
+      setTeams((teamsData||[]).map(t=>({...t,members:(members||[]).filter(m=>m.team_id===t.id).map(m=>{const u=wsUsers.find(x=>x.id===m.user_id);return{...m,name:u?.name,email:u?.email};})})));
+    });
   },[wsUsers.length]);
 
-  const saveSession=async(sessionData)=>{
-    const newSession={id:genId(),name:sessionData.name,date:new Date().toISOString().slice(0,10),team_id:sessionData.teamId,stats:sessionData.stats,actionables:(sessionData.actionables||[]).map((a)=>({...a,id:genId()}))};
-    setHistory((h)=>[...h,newSession]);
-    if(supabase){
-      const{data:sess}=await supabase.from("retro_sessions").insert({name:sessionData.name,team_id:sessionData.teamId,status:"closed",phase:"summary",stats:sessionData.stats,created_by:currentUser.id}).select().single();
-      if(sess){
-        const actionRows=(sessionData.actionables||[]).map((a)=>({session_id:sess.id,text:a.text,assignee:a.assignee||"",due_date:a.dueDate||null,priority:a.priority||"medium",status:"todo",team_id:sessionData.teamId,retro_name:sessionData.name}));
-        if(actionRows.length>0)await supabase.from("retro_actionables").insert(actionRows);
-      }
-    }
+  const saveSession=async(session)=>{
+    const row={name:session.name,team_id:session.teamId,cards:session.cards,stats:session.stats,actionables:session.actionables};
+    const{data}=await supabase.from("retro_sessions").insert(row).select().single();
+    if(data)setHistory(h=>[{...data,date:data.created_at,actionables:data.actionables||[]},...h]);
   };
 
-  const addToKanban=(items,retroName,teamId)=>{
-    setKanbanItems((prev)=>{
-      const next=[...prev];
-      items.forEach((item,i)=>{
-        const id=item.id||genId();
-        const idx=next.findIndex(x=>x.id===id);
-        if(idx>=0)next[idx]={...next[idx],status:"inprogress"};
-        else next.push({id,text:item.actionable||item.text,status:"inprogress",assignee:item.assignee,dueDate:item.dueDate,priority:item.priority||"medium",retroName,teamId});
-      });
-      return next;
+  const addToKanban=(items)=>{
+    setKanbanItems(prev=>{
+      const newItems=items.map(i=>({...i,id:i.id||genId(),status:"todo"}));
+      return[...prev,...newItems.filter(ni=>!prev.some(p=>p.id===ni.id))];
     });
+    setView("accionables");
   };
 
-  const canCreateRetro=["admin","owner"].includes(currentUser.role)||teams.some(t=>t.members?.some(m=>m.user_id===currentUser.id&&(m.role==="owner"||m.role==="temporal")));
-
-  const NAV=[
-    {id:"dashboard",icon:"🏠",label:"Dashboard"},
-    ...(canCreateRetro?[{id:"nueva",icon:"🚀",label:"Nueva Retro"}]:[]),
-    {id:"historial",icon:"📚",label:"Historial"},
-    {id:"accionables",icon:"🎯",label:"Accionables"},
-  ];
-
-  if(loading)return<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:"var(--tx3)",fontSize:13}}>Cargando RetroBoard…</div>;
-
-  if(inRetro)return(
-    <RetroFlow currentUser={currentUser} wsUsers={wsUsers} teams={teams} history={history}
-      onFinish={()=>{setInRetro(false);setView("dashboard");}}
-      onSaveSession={saveSession}
-      onAddToKanban={addToKanban}/>
-  );
+  if(retroActive){
+    return<RetroFlow currentUser={currentUser} wsUsers={wsUsers} teams={teams} history={history} onFinish={()=>setRetroActive(false)} onSaveSession={saveSession} onAddToKanban={addToKanban}/>;
+  }
 
   return(
-    <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"auto"}}>
-      {/* RetroBoard sub-nav */}
-      <nav style={{display:"flex",gap:2,padding:"0 12px",borderBottom:"1px solid var(--bd)",background:"var(--sf)",height:38,alignItems:"center",flexShrink:0}}>
-        {NAV.map(item=>(
-          <button key={item.id}
-            onClick={()=>item.id==="nueva"?setInRetro(true):setView(item.id)}
-            style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:6,border:"none",background:view===item.id&&item.id!=="nueva"?"rgba(99,102,241,.12)":"transparent",color:view===item.id&&item.id!=="nueva"?"#818cf8":"var(--tx3)",cursor:"pointer",fontSize:12,fontWeight:view===item.id&&item.id!=="nueva"?600:400,fontFamily:"inherit",transition:"all .12s"}}>
-            {item.icon} {item.label}
+    <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden",background:"var(--bg)"}}>
+      {/* Nav */}
+      <div style={{display:"flex",alignItems:"center",gap:6,padding:"10px 18px",background:"var(--sf)",borderBottom:"1px solid var(--bd)",flexShrink:0}}>
+        <span style={{fontSize:14,fontWeight:700,color:"var(--tx)",marginRight:8}}>🔁 RetroBoard</span>
+        {[{id:"board",label:"Tablero"},{id:"historial",label:"Historial"},{id:"accionables",label:"Accionables"+(kanbanItems.length>0?" ("+kanbanItems.length+")":""),}].map(v=>(
+          <button key={v.id} onClick={()=>setView(v.id)}
+            style={{padding:"5px 12px",borderRadius:20,border:`1px solid ${view===v.id?"rgba(99,102,241,.4)":"var(--bd)"}`,background:view===v.id?"rgba(99,102,241,.15)":"transparent",color:view===v.id?"#818cf8":"var(--tx3)",cursor:"pointer",fontSize:12,fontWeight:view===v.id?600:400,fontFamily:"inherit"}}>
+            {v.label}
           </button>
         ))}
-      </nav>
-      <div>
-        {view==="dashboard"&&<RetroDashboard currentUser={currentUser} history={history} teams={teams} setView={setView}/>}
+        <div style={{marginLeft:"auto"}}>
+          <RBtn onClick={()=>setRetroActive(true)}>🚀 Nueva Retro</RBtn>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{flex:1,overflow:"auto"}}>
+        {view==="board"&&(
+          <div style={{padding:24,textAlign:"center"}}>
+            <div style={{fontSize:40,marginBottom:12}}>🔁</div>
+            <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:18,color:"var(--tx)",marginBottom:8}}>Retrospectivas del equipo</h2>
+            <p style={{fontSize:13,color:"var(--tx3)",marginBottom:20}}>Organiza retrospectivas estructuradas: crear tarjetas, votar, definir accionables.</p>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12,maxWidth:600,margin:"0 auto 24px"}}>
+              {[{l:"Retros",v:history.length,c:"#818cf8"},{l:"Equipos",v:teams.length,c:teams[0]?.color||"var(--ac)"},{l:"Accionables",v:history.reduce((a,r)=>a+(r.actionables?.length||0),0),c:"var(--green)"}].map(s=>(
+                <div key={s.l} style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:12,padding:14,textAlign:"center"}}>
+                  <div style={{fontSize:24,fontWeight:700,color:s.c,fontFamily:"'Sora',sans-serif"}}>{s.v}</div>
+                  <div style={{fontSize:11,color:"var(--tx3)",marginTop:4}}>{s.l}</div>
+                </div>
+              ))}
+            </div>
+            <RBtn onClick={()=>setRetroActive(true)} style={{padding:"12px 28px",fontSize:14}}>🚀 Iniciar nueva retrospectiva</RBtn>
+          </div>
+        )}
         {view==="historial"&&<RetroHistorial currentUser={currentUser} history={history} teams={teams}/>}
         {view==="accionables"&&<RetroAccionables currentUser={currentUser} items={kanbanItems} setItems={setKanbanItems} history={history} teams={teams}/>}
       </div>
