@@ -21,6 +21,9 @@ import { ReservationService } from './modules/hotdesk/domain/services/Reservatio
 import { makeAvatar, isValidEmail, daysInMonth, firstMonday, isoFromYMD, fmtMonthYear } from './shared/lib/utils';
 import { PasswordStrength } from './shared/ui/PasswordStrength';
 import { MiniCalendar } from './shared/ui/MiniCalendar';
+import { TODAY, MONTHS_EN, MONTHS_ES, DAYS_EN, DAYS_ES } from './shared/lib/constants';
+import { SEATS } from './modules/hotdesk/domain/entities/seats';
+import { MOCK_USERS, MOCK_ISSUES_FALLBACK, MOCK_PROJECTS_FALLBACK, MOCK_WORKLOGS, INITIAL_HD_STATE } from './shared/lib/fallbackData';
 
 // ── API helpers ────────────────────────────────────────────────────────────
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
@@ -238,44 +241,8 @@ const StorageAdapter = {
   save(state)   { _memStore["state"] = state; },
 };
 
-// ══════════════════════════════════════════════════════════════════
-// MOCK DATA — fallback cuando Jira no está configurado
-// ══════════════════════════════════════════════════════════════════
-
-const MOCK_USERS = [
-  { id:"u1", name:"Elena Martínez", email:"elena@co.com",   avatar:"EM", role:"admin", deskType:DeskType.FIXED,    active:true,  modules:["jt","hd"] },
-  { id:"u2", name:"Carlos Ruiz",    email:"carlos@co.com",  avatar:"CR", role:"user",  deskType:DeskType.HOTDESK,  active:true,  modules:["jt","hd"] },
-  { id:"u3", name:"Ana López",      email:"ana@co.com",     avatar:"AL", role:"user",  deskType:DeskType.HOTDESK,  active:true,  modules:["jt","hd"] },
-  { id:"u4", name:"Marco Silva",    email:"marco@co.com",   avatar:"MS", role:"user",  deskType:DeskType.FIXED,    active:true,  modules:["jt","hd"] },
-  { id:"u5", name:"Sofía Chen",     email:"sofia@co.com",   avatar:"SC", role:"user",  deskType:DeskType.HOTDESK,  active:false, modules:["jt"]      },
-];
-
-const SEATS = [
-  {id:"A1",x:60,y:90},{id:"A2",x:124,y:90},{id:"A3",x:188,y:90},
-  {id:"A4",x:60,y:160},{id:"A5",x:124,y:160},{id:"A6",x:188,y:160},
-  {id:"B1",x:288,y:90},{id:"B2",x:352,y:90},{id:"B3",x:416,y:90},
-  {id:"B4",x:288,y:160},{id:"B5",x:352,y:160},{id:"B6",x:416,y:160},
-  {id:"C1",x:60,y:300},{id:"C2",x:130,y:300},{id:"C3",x:200,y:300},
-  {id:"C4",x:270,y:300},{id:"C5",x:340,y:300},{id:"C6",x:410,y:300},
-];
-
-const TODAY = new Date().toISOString().slice(0,10);
+// Mock data, SEATS, TODAY, MONTHS/DAYS → imported from shared/lib/ and modules/
 const MOCK_TODAY = TODAY;
-
-const MOCK_ISSUES_FALLBACK = [
-  { id:1, key:"DEMO-1", summary:"Configure your Jira connection in Admin → Settings", type:"Task", status:"To Do", priority:"High", project:"DEMO", assignee:"", epic:"—", epicName:"—", hours:0, labels:[] },
-];
-
-const MOCK_PROJECTS_FALLBACK = [
-  {key:"DEMO", name:"Demo — Configure Jira in Settings"},
-];
-
-const MOCK_WORKLOGS = {};
-
-const INITIAL_HD_STATE = {
-  fixed: {},
-  reservations: [],
-};
 
 // ══════════════════════════════════════════════════════════════════
 // CONTEXT
@@ -288,10 +255,7 @@ const useApp = () => useContext(AppCtx);
 // UTILITY HELPERS
 // ══════════════════════════════════════════════════════════════════
 
-const MONTHS_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const MONTHS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-const DAYS_EN   = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-const DAYS_ES   = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+// MONTHS_EN/ES, DAYS_EN/ES → imported from shared/lib/constants
 
 function buildCalGrid(year, month) {
   const first = new Date(year,month,1), last = new Date(year,month+1,0);
