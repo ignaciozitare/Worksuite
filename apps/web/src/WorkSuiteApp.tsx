@@ -1101,6 +1101,201 @@ function AdminRetroTeamsShell({ users }) {
   return <AdminRetroTeams wsUsers={users} teams={teams} setTeams={setTeams}/>;
 }
 
+function AdminHotDeskSection({ hd, setHd, users, currentUser }) {
+  const [sub, setSub] = React.useState("mapa");
+  const [buildings, setBuildings] = React.useState([]);
+  const [blueprints, setBlueprintsData] = React.useState([]);
+  const [selBuilding, setSelBuilding] = React.useState(null);
+  const [selBlueprint, setSelBlueprint] = React.useState(null);
+  const [fixedList, setFixedList] = React.useState([]);
+  const [newBuildingName, setNewBuildingName] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    supabase.from("buildings").select("*").order("name").then(({data}) => {
+      if (!data) return;
+      setBuildings(data);
+      if (data[0] && !selBuilding) setSelBuilding(data[0]);
+    });
+    supabase.from("fixed_assignments").select("*").then(({data}) => {
+      if (data) setFixedList(data);
+    });
+  }, []);
+
+  React.useEffect(() => {
+    if (!selBuilding) { setBlueprintsData([]); return; }
+    supabase.from("blueprints").select("id,floor_name,floor_order,layout")
+      .eq("building_id", selBuilding.id).order("floor_order")
+      .then(({data}) => {
+        if (!data) return;
+        setBlueprintsData(data);
+        if (data[0] && (!selBlueprint || selBlueprint.building_id !== selBuilding.id))
+          setSelBlueprint(data[0]);
+      });
+  }, [selBuilding?.id]);
+
+  const addBuilding = async () => {
+    if (!newBuildingName.trim()) return;
+    const {data} = await supabase.from("buildings")
+      .insert({name: newBuildingName.trim(), active: true}).select().single();
+    if (data) { setBuildings(b => [...b, data]); setNewBuildingName(""); }
+  };
+
+  const toggleActive = async (b) => {
+    await supabase.from("buildings").update({active: !b.active}).eq("id", b.id);
+    setBuildings(bs => bs.map(x => x.id === b.id ? {...x, active: !x.active} : x));
+  };
+
+  const releaseFixed = async (seatId) => {
+    setSaving(true);
+    await supabase.from("fixed_assignments").delete().eq("seat_id", seatId);
+    setFixedList(f => f.filter(x => x.seat_id !== seatId));
+    setHd(h => { const {[seatId]: _, ...rest} = h.fixed; return {...h, fixed: rest}; });
+    setSaving(false);
+  };
+
+  const assignFixed = async (seatId, userId) => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+    setSaving(true);
+    await supabase.from("fixed_assignments").upsert(
+      {seat_id: seatId, user_id: userId, user_name: user.name},
+      {onConflict: "seat_id"}
+    );
+    setFixedList(f => {
+      const ex = f.find(x => x.seat_id === seatId);
+      if (ex) return f.map(x => x.seat_id === seatId ? {...x, user_id: userId, user_name: user.name} : x);
+      return [...f, {seat_id: seatId, user_id: userId, user_name: user.name}];
+    });
+    setHd(h => ({...h, fixed: {...h.fixed, [seatId]: user.name}}));
+    setSaving(false);
+  };
+
+  const SUB = [
+    {id: "mapa",      label: "Mapa",       icon: "🗺️"},
+    {id: "fijos",     label: "Puestos fijos", icon: "📌"},
+    {id: "edificios", label: "Edificios",   icon: "🏢"},
+  ];
+
+  return (
+    <div>
+      <div className="sec-t">🪑 {`HotDesk — ${selBuilding?.name || ""}`}</div>
+      <div style={{display:"flex",gap:4,marginBottom:16,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:10,padding:4,width:"fit-content"}}>
+        {SUB.map(s => (
+          <button key={s.id} onClick={() => setSub(s.id)}
+            style={{background:sub===s.id?"var(--ac)":"transparent",color:sub===s.id?"#fff":"var(--tx3)",
+              border:"none",borderRadius:7,cursor:"pointer",fontWeight:sub===s.id?600:400,
+              fontSize:12,padding:"5px 14px",fontFamily:"inherit"}}>
+            {s.icon} {s.label}
+          </button>
+        ))}
+        {saving && <span style={{fontSize:11,color:"var(--tx3)",alignSelf:"center",paddingLeft:8}}>Guardando…</span>}
+      </div>
+
+      {/* ── Selector edificio/planta ── */}
+      <div style={{display:"flex",gap:8,marginBottom:16,alignItems:"center"}}>
+        <select value={selBuilding?.id || ""} onChange={e => {
+          const b = buildings.find(x => x.id === e.target.value);
+          if (b) { setSelBuilding(b); setSelBlueprint(null); }
+        }} style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:"var(--r)",
+          padding:"5px 10px",fontSize:12,color:"var(--tx)",outline:"none",cursor:"pointer",fontFamily:"inherit"}}>
+          {buildings.map(b => <option key={b.id} value={b.id}>{b.name}{!b.active?" (inactivo)":""}</option>)}
+        </select>
+        <select value={selBlueprint?.id || ""} onChange={e => {
+          const bp = blueprints.find(x => x.id === e.target.value);
+          if (bp) setSelBlueprint(bp);
+        }} disabled={!selBuilding || blueprints.length === 0}
+          style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:"var(--r)",
+            padding:"5px 10px",fontSize:12,color:"var(--tx)",outline:"none",cursor:"pointer",fontFamily:"inherit",
+            opacity:!selBuilding||blueprints.length===0?.5:1}}>
+          <option value="">— Planta —</option>
+          {blueprints.map(bp => <option key={bp.id} value={bp.id}>{bp.floor_name}</option>)}
+        </select>
+      </div>
+
+      {/* ── Tab: Mapa ── */}
+      {sub === "mapa" && (
+        <div className="a-card" style={{padding:16}}>
+          {selBlueprint
+            ? <BlueprintHDMap blueprint={selBlueprint} hd={hd} onSeat={null} currentUser={currentUser}/>
+            : <div style={{textAlign:"center",padding:"40px 0",color:"var(--tx3)",fontSize:13}}>
+                Selecciona un edificio y planta para ver el mapa
+              </div>
+          }
+        </div>
+      )}
+
+      {/* ── Tab: Puestos fijos ── */}
+      {sub === "fijos" && (
+        <div className="a-card" style={{padding:0,overflow:"hidden"}}>
+          <div style={{padding:"12px 16px",borderBottom:"1px solid var(--bd)",fontSize:12,color:"var(--tx2)"}}>
+            {fixedList.length} puesto{fixedList.length !== 1 ? "s" : ""} fijo{fixedList.length !== 1 ? "s" : ""} asignado{fixedList.length !== 1 ? "s" : ""}
+          </div>
+          {fixedList.length === 0 && (
+            <div style={{padding:"24px 16px",color:"var(--tx3)",fontSize:12,textAlign:"center"}}>
+              Sin puestos fijos. Usa el Mapa para asignar desde la vista del plano.
+            </div>
+          )}
+          {fixedList.map(fa => {
+            const user = users.find(u => u.id === fa.user_id);
+            return (
+              <div key={fa.seat_id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",borderBottom:"1px solid var(--bd)"}}>
+                <span style={{fontFamily:"var(--mono)",fontSize:11,color:"var(--ac2)",minWidth:48}}>{fa.seat_id}</span>
+                <div style={{width:24,height:24,borderRadius:"50%",background:"var(--ac)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>
+                  {(user?.avatar || fa.user_name?.slice(0,2) || "?").slice(0,2).toUpperCase()}
+                </div>
+                <span style={{flex:1,fontSize:12,color:"var(--tx)"}}>{fa.user_name}</span>
+                <span style={{fontSize:10,color:"var(--tx3)",fontFamily:"var(--mono)"}}>{user?.email || ""}</span>
+                <button onClick={() => releaseFixed(fa.seat_id)}
+                  style={{background:"none",border:"1px solid rgba(224,82,82,.3)",borderRadius:"var(--r)",
+                    color:"var(--red)",cursor:"pointer",fontSize:11,padding:"3px 10px",fontFamily:"inherit"}}>
+                  Liberar
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Tab: Edificios ── */}
+      {sub === "edificios" && (
+        <div>
+          <div className="a-card" style={{padding:0,overflow:"hidden",marginBottom:12}}>
+            {buildings.map(b => (
+              <div key={b.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",borderBottom:"1px solid var(--bd)"}}>
+                <span style={{flex:1,fontSize:13,fontWeight:500,color:b.active?"var(--tx)":"var(--tx3)",
+                  textDecoration:b.active?"none":"line-through"}}>{b.name}</span>
+                <span style={{fontSize:10,color:"var(--tx3)",fontFamily:"var(--mono)"}}>{b.id.slice(0,8)}…</span>
+                <button onClick={() => toggleActive(b)}
+                  style={{background:"none",border:`1px solid ${b.active?"rgba(224,82,82,.3)":"rgba(62,207,142,.3)"}`,
+                    borderRadius:"var(--r)",color:b.active?"var(--red)":"var(--green)",
+                    cursor:"pointer",fontSize:11,padding:"3px 10px",fontFamily:"inherit"}}>
+                  {b.active ? "Desactivar" : "Activar"}
+                </button>
+              </div>
+            ))}
+            {buildings.length === 0 && (
+              <div style={{padding:"20px 16px",color:"var(--tx3)",fontSize:12,textAlign:"center"}}>Sin edificios</div>
+            )}
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <input value={newBuildingName} onChange={e => setNewBuildingName(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") addBuilding(); }}
+              placeholder="Nombre del edificio…"
+              style={{flex:1,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:"var(--r)",
+                padding:"8px 12px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",outline:"none"}}/>
+            <button onClick={addBuilding}
+              style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:"var(--r)",
+                padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+              + Añadir
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   const { t } = useApp();
   const isAdmin = currentUser.role === 'admin';
@@ -1125,6 +1320,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
       <div className="admin-content">
         {mod==="settings"&&<AdminSettings/>}
         {mod==="users"&&<AdminUsers users={users} setUsers={setUsers} currentUser={currentUser}/>}
+        {mod==="hotdesk"&&<AdminHotDeskSection hd={hd} setHd={setHd} users={users} currentUser={currentUser}/>}
         {mod==="retroteams"&&<AdminRetroTeamsShell users={users}/>}
         {mod==="deploy"&&<AdminDeployConfig/>}
         {mod==="envtracker"&&<AdminEnvTrackerSection/>}
