@@ -75,34 +75,37 @@ When ready:
 - `docs/specs/hotdesk.md` — HotDesk domain spec  
 - `docs/adr/` — Architecture decisions
 
-## Restore `main` from an older Vercel deployment
+## Fix production rollback: make GitHub `main` match a promoted Vercel deployment
 
-If you promoted an old deployment in Vercel and want GitHub `main` to match that exact version:
+For this deployment URL:
 
-1. Find the deployment's commit SHA in Vercel:
-   - Open the deployment URL in Vercel
-   - Go to **Source** / **Git Commit** details
-   - Copy the full SHA (example: `abc123...`)
-2. In your local clone, fetch `main` and create a safety backup branch:
-   ```bash
-   git fetch origin
-   git checkout main
-   git pull origin main
-   git branch backup/main-before-rollback-$(date +%Y%m%d)
-   ```
-3. Move `main` to the deployment commit:
-   ```bash
-   git reset --hard <DEPLOYMENT_COMMIT_SHA>
-   ```
-4. Force-push with lease (safer than plain `--force`):
-   ```bash
-   git push --force-with-lease origin main
-   ```
-5. Verify:
-   - GitHub `main` now points to the same commit
-   - Vercel new production deployment should be created from that commit
+`https://vercel.com/ignaciozitare-9429s-projects/worksuite/9GVxFjjpnKGxLbvebmB92m5xh9Yu`
 
-> Tip: if the deployment was not linked to a Git commit (rare/manual deploy), export/download source from that deployment first and commit it manually, then push to `main`.
+the direct solution is to move `main` to the **same commit SHA** used by that deployment, then push that SHA to GitHub.
+
+### Exact commands to run
+
+1. In Vercel, open the deployment above and copy the **Git Commit SHA** shown in the deployment details.
+2. Run:
+
+```bash
+git fetch origin
+git checkout main
+git pull origin main
+git branch backup/main-before-vercel-rollback-$(date +%Y%m%d)
+git reset --hard <SHA_FROM_VERCEL_DEPLOYMENT>
+git push --force-with-lease origin main
+```
+
+### Why this solves your request
+
+- `git reset --hard <SHA>` makes local `main` exactly that old version.
+- `git push --force-with-lease origin main` makes remote GitHub `main` point to the same commit.
+- After push, GitHub `main` and your promoted Vercel version are aligned.
+
+### Important edge case
+
+If that deployment was created without a linked Git commit (manual upload/build artifact), there is no SHA to reset to. In that case, download/rebuild that source, commit it to `main`, and push normally.
 
 ## Testing approach
 
