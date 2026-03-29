@@ -1,11 +1,13 @@
 import type { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from 'fastify';
 import type { IJiraConnectionRepository } from '../../domain/jira/IJiraConnectionRepository.js';
 import type { IUserRepository } from '../../domain/user/IUserRepository.js';
+import type { IWorklogRepository } from '../../domain/worklog/IWorklogRepository.js';
 import { JiraCloudAdapter } from '../jira/JiraCloudAdapter.js';
 
 interface JiraRoutesOptions extends FastifyPluginOptions {
   jiraConnectionRepo: IJiraConnectionRepository;
   userRepo:           IUserRepository;
+  worklogRepo:        IWorklogRepository;
 }
 
 async function adapterForUser(repo: IJiraConnectionRepository, userId: string): Promise<JiraCloudAdapter> {
@@ -38,7 +40,7 @@ const syncBodySchema = {
 } as const;
 
 export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions): Promise<void> {
-  const { jiraConnectionRepo, userRepo } = opts;
+  const { jiraConnectionRepo, userRepo, worklogRepo } = opts;
 
   app.addHook('preHandler', app.authenticate);
 
@@ -158,6 +160,13 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
           startedAt,
           finalComment || undefined,
         );
+
+        // Marcar worklog como sincronizado en la base de datos
+        try {
+          await worklogRepo.markSyncedToJira(worklogId, result.id);
+        } catch (dbErr) {
+          app.log.warn({ dbErr, worklogId }, 'Jira sync OK pero fallo update en DB');
+        }
 
         return reply.send({ ok: true, data: result });
       } catch (err: unknown) {

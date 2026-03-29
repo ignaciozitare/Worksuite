@@ -115,7 +115,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(authRoutes,    { prefix: '/auth',     authService, userRepo });
   await app.register(worklogRoutes, { prefix: '/worklogs', worklogRepo });
   await app.register(hotdeskRoutes, { prefix: '/hotdesk',  hotdeskRepo });
-  await app.register(jiraRoutes,    { prefix: '/jira',     jiraConnectionRepo, userRepo });
+  await app.register(jiraRoutes,    { prefix: '/jira',     jiraConnectionRepo, userRepo, worklogRepo });
 
   app.get('/health', async () => ({ ok: true, ts: new Date().toISOString() }));
 

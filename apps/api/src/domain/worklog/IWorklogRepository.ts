@@ -12,4 +12,5 @@ export interface IWorklogRepository {
   delete(worklogId: string, authorId: string): Promise<void>;
   findByFilters(filters: WorklogFilters): Promise<Worklog[]>;
   findById(id: string): Promise<Worklog | null>;
+  markSyncedToJira(worklogId: string, jiraWorklogId: string): Promise<void>;
 }
