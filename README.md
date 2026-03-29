@@ -75,6 +75,38 @@ When ready:
 - `docs/specs/hotdesk.md` — HotDesk domain spec  
 - `docs/adr/` — Architecture decisions
 
+## Fix production rollback: make GitHub `main` match a promoted Vercel deployment
+
+For this deployment URL:
+
+`https://vercel.com/ignaciozitare-9429s-projects/worksuite/9GVxFjjpnKGxLbvebmB92m5xh9Yu`
+
+the direct solution is to move `main` to the **same commit SHA** used by that deployment, then push that SHA to GitHub.
+
+### Exact commands to run
+
+1. In Vercel, open the deployment above and copy the **Git Commit SHA** shown in the deployment details.
+2. Run:
+
+```bash
+git fetch origin
+git checkout main
+git pull origin main
+git branch backup/main-before-vercel-rollback-$(date +%Y%m%d)
+git reset --hard <SHA_FROM_VERCEL_DEPLOYMENT>
+git push --force-with-lease origin main
+```
+
+### Why this solves your request
+
+- `git reset --hard <SHA>` makes local `main` exactly that old version.
+- `git push --force-with-lease origin main` makes remote GitHub `main` point to the same commit.
+- After push, GitHub `main` and your promoted Vercel version are aligned.
+
+### Important edge case
+
+If that deployment was created without a linked Git commit (manual upload/build artifact), there is no SHA to reset to. In that case, download/rebuild that source, commit it to `main`, and push normally.
+
 ## Testing approach
 
 - **Domain tests:** Pure unit tests, no I/O, no mocks needed
