@@ -13,6 +13,11 @@ import { RetroBoard, AdminRetroTeams } from './RetroBoard';
 import { DeployPlanner } from './modules/deploy-planner';
 import EnvTracker, { AdminEnvEnvironments, AdminEnvRepositories, AdminEnvPolicy } from './EnvTracker';
 import { useAuth } from './shared/hooks/useAuth';
+import { TimeParser } from './modules/jira-tracker/domain/services/TimeParser';
+import { WorklogService } from './modules/jira-tracker/domain/services/WorklogService';
+import { CsvService } from './modules/jira-tracker/domain/services/CsvService';
+import { DeskType, SeatStatusEnum as SeatStatus } from './modules/hotdesk/domain/entities/constants';
+import { ReservationService } from './modules/hotdesk/domain/services/ReservationService';
 
 // ── API helpers ────────────────────────────────────────────────────────────
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
@@ -60,10 +65,9 @@ function worklogsArrayToMap(rows) {
 }
 
 
-// DOMAIN LAYER
+// DOMAIN LAYER — services imported from modules
 // ══════════════════════════════════════════════════════════════════
 
-const DeskType = Object.freeze({ NONE:"none", HOTDESK:"hotdesk", FIXED:"fixed" });
 const MODULES = [
   { id:"jt",     label:"Jira Tracker",  color:"var(--ac2)"   },
   { id:"hd",     label:"HotDesk",       color:"var(--green)" },
@@ -71,88 +75,6 @@ const MODULES = [
   { id:"deploy", label:"Deploy Planner",color:"#f59e0b"      },
   { id:"envtracker", label:"Environments",  color:"#22d3ee"      },
 ];
-const SeatStatus = Object.freeze({ FREE:"free", OCCUPIED:"occupied", FIXED:"fixed" });
-
-const TimeParser = {
-  parse(raw) {
-    const s = (raw||"").trim().toLowerCase();
-    const hm = s.match(/^(\d+(?:\.\d+)?)\s*h\s*(?:(\d+)\s*m)?$/);
-    if (hm) return Math.round((parseFloat(hm[1]) + (hm[2] ? parseInt(hm[2])/60 : 0)) * 3600);
-    const onlyM = s.match(/^(\d+)\s*m$/); if (onlyM) return parseInt(onlyM[1]) * 60;
-    const onlyH = s.match(/^(\d+(?:\.\d+)?)$/); if (onlyH) return Math.round(parseFloat(onlyH[1]) * 3600);
-    return 0;
-  },
-  format(secs) {
-    const h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60);
-    if (!h) return `${m}m`; if (!m) return `${h}h`; return `${h}h ${m}m`;
-  },
-  toHours: secs => Math.round((secs/3600)*100)/100,
-};
-
-const WorklogService = {
-  filterByRange(allWorklogs, from, to, authorId) {
-    const result = {};
-    for (const [date, wls] of Object.entries(allWorklogs)) {
-      if (date < from || date > to) continue;
-      const filtered = authorId ? wls.filter(w => w.authorId === authorId) : wls;
-      if (filtered.length) result[date] = filtered;
-    }
-    return result;
-  },
-  groupByEpic(worklogs) {
-    const map = new Map();
-    for (const wl of worklogs) {
-      if (!map.has(wl.epic)) map.set(wl.epic, { key:wl.epic, name:wl.epicName, items:[] });
-      map.get(wl.epic).items.push(wl);
-    }
-    return Array.from(map.values());
-  },
-};
-
-const ReservationService = {
-  statusOf(seat, date, fixed, reservations) {
-    if (fixed[seat]) return SeatStatus.FIXED;
-    return reservations.find(r => r.seatId===seat && r.date===date)
-      ? SeatStatus.OCCUPIED : SeatStatus.FREE;
-  },
-  resOf(seat, date, reservations) {
-    return reservations.find(r => r.seatId===seat && r.date===date) || null;
-  },
-  isWeekend(iso) { const d = new Date(iso+"T00:00:00").getDay(); return d===0||d===6; },
-};
-
-const CsvService = {
-  parseUsers(raw, existingEmails) {
-    const lines = raw.trim().split(/\r?\n/).filter(Boolean);
-    if (!lines.length) return { rows:[], errorCount:0 };
-    const startIdx = lines[0].toLowerCase().includes("name") ? 1 : 0;
-    const rows = lines.slice(startIdx).map((line, i) => {
-      const [name="", email="", role="user"] = line.split(",").map(c=>c.trim().replace(/^"|"$/g,""));
-      const errors = [];
-      if (!name) errors.push("Name required");
-      if (!email) errors.push("Email required");
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push("Invalid email");
-      else if (existingEmails.includes(email.toLowerCase())) errors.push("Already exists");
-      const normalRole = ["admin","user"].includes(role.toLowerCase()) ? role.toLowerCase() : "user";
-      return { idx:startIdx+i+1, name, email, role:normalRole, errors, valid:!errors.length };
-    });
-    return { rows, errorCount: rows.filter(r=>!r.valid).length };
-  },
-  exportWorklogs(worklogs, from, to, authorId, spaceKeys) {
-    const filtered = WorklogService.filterByRange(worklogs, from, to, authorId||null);
-    const rows = [["Date","Issue","Summary","Epic","EpicName","Type","Project","Author","Start","Time","Hours","Description"]];
-    for (const [date, wls] of Object.entries(filtered)) {
-      for (const w of wls) {
-        if (spaceKeys.length && !spaceKeys.includes(w.project)) continue;
-        rows.push([date,w.issue,`"${w.summary}"`,w.epic,`"${w.epicName}"`,w.type,w.project,w.author,w.started,w.time,(w.seconds/3600).toFixed(2),`"${w.description||""}"`]);
-      }
-    }
-    const csv = rows.map(r=>r.join(",")).join("\n");
-    const blob = new Blob(["\uFEFF"+csv], {type:"text/csv;charset=utf-8;"});
-    const url = URL.createObjectURL(blob), a = document.createElement("a");
-    a.href=url; a.download=`worklogs_${from}_${to}.csv`; a.click(); URL.revokeObjectURL(url);
-  },
-};
 
 // ══════════════════════════════════════════════════════════════════
 // INFRASTRUCTURE — i18n Adapter
