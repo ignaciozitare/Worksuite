@@ -6,6 +6,7 @@ import React, {
   createContext, useContext, useRef, useEffect,
   Component
 } from "react";
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { createPortal } from "react-dom";
 import { supabase } from './shared/lib/api';
 import { RetroBoard, AdminRetroTeams } from './RetroBoard';
@@ -4564,7 +4565,18 @@ function WorkSuiteApp() {
 
   const [lang,  setLang]  = useState("en");
   const [theme, setTheme] = useState("dark");
-  const [mod,   setMod]   = useState("jt");
+
+  // ── Routing — derive mod/view from URL ────────────────────────
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { view: urlView } = useParams();
+
+  const mod = location.pathname.startsWith('/hotdesk')      ? 'hd'
+            : location.pathname.startsWith('/retro')        ? 'retro'
+            : location.pathname.startsWith('/deploy')       ? 'deploy'
+            : location.pathname.startsWith('/envtracker')   ? 'envtracker'
+            : location.pathname.startsWith('/admin')        ? 'admin'
+            : 'jt';
   const [loadingData, setLoadingData] = useState(true);
   const [activeDay, setActiveDay] = useState(TODAY);
   const [filters,   setFilters]   = useState({
@@ -4580,7 +4592,11 @@ function WorkSuiteApp() {
   const [selectedBlueprint, setSelectedBlueprint] = useState(null); // {id, floor_name, layout}
   const [toast,     setToast]     = useState(null);
   const [users,     setUsers]     = useState([]);
-  const [view,      setView]      = useState("calendar");
+  const view = mod === 'admin'      ? 'admin'
+             : mod === 'retro'      ? 'retro'
+             : mod === 'deploy'     ? 'deploy'
+             : mod === 'envtracker' ? 'envtracker'
+             : (urlView || 'calendar');
   const [sbOpen,    setSbOpen]    = useState(false);
 
   // ── Estado de issues y proyectos de Jira ──────────────────────
@@ -4758,7 +4774,7 @@ function WorkSuiteApp() {
   }, []);
 
   const handleExport = f => CsvService.exportWorklogs(worklogs, f.from, f.to, f.authorId || null, f.spaceKeys);
-  const handleDayClick = d => { setActiveDay(d); setView('day'); };
+  const handleDayClick = d => { setActiveDay(d); navigate('/jira-tracker/day'); };
 
   const loadJiraIssues = useCallback(async (projectKey) => {
     try {
@@ -4862,16 +4878,16 @@ function WorkSuiteApp() {
           </div>
           <div className="sw-group mod-group">
             {(CURRENT_USER.modules||["jt","hd","retro"]).includes("jt") && (
-              <button className={`sw-btn ${mod==="jt"?"active":""}`} onClick={()=>{ setMod("jt"); setView("calendar"); }}>📋 {t("moduleSwitchJira")}</button>
+              <button className={`sw-btn ${mod==="jt"?"active":""}`} onClick={()=> navigate('/jira-tracker/calendar')}>📋 {t("moduleSwitchJira")}</button>
             )}
             {(CURRENT_USER.modules||["jt","hd","retro"]).includes("hd") && (
-              <button className={`sw-btn ${mod==="hd"?"active-green":""}`} onClick={()=>{ setMod("hd"); setView("map"); }}>🪑 {t("moduleSwitchHD")}</button>
+              <button className={`sw-btn ${mod==="hd"?"active-green":""}`} onClick={()=> navigate('/hotdesk/map')}>🪑 {t("moduleSwitchHD")}</button>
             )}
             {(CURRENT_USER.modules||["jt","hd","retro","deploy"]).includes("retro") && (
-              <button className={`sw-btn ${mod==="retro"?"active-retro":""}`} onClick={()=>{ setMod("retro"); setView("retro"); }}>🔁 RetroBoard</button>
+              <button className={`sw-btn ${mod==="retro"?"active-retro":""}`} onClick={()=> navigate('/retro')}>🔁 RetroBoard</button>
             )}
             {(CURRENT_USER.modules||["jt","hd","retro","deploy"]).includes("deploy") && (
-              <button className={`sw-btn ${mod==="deploy"?"active-deploy":""}`} onClick={()=>{ setMod("deploy"); setView("deploy"); }}>🚀 Deploy Planner</button>
+              <button className={`sw-btn ${mod==="deploy"?"active-deploy":""}`} onClick={()=> navigate('/deploy')}>🚀 Deploy Planner</button>
             )}
           </div>
           <div className="top-right">
@@ -4887,7 +4903,7 @@ function WorkSuiteApp() {
             <div className="avatar">{CURRENT_USER.avatar}</div>
             <span className="u-name">{CURRENT_USER.name}</span>
             <span className={`r-tag ${CURRENT_USER.role==="admin"?"r-admin":"r-user"}`}>{CURRENT_USER.role==="admin"?t("roleAdmin"):t("roleUser")}</span>
-            <button onClick={()=>setView("admin")}
+            <button onClick={()=> navigate('/admin')}
                 style={{
                   background: view==="admin" ? "var(--ac)" : "rgba(79,110,247,.15)",
                   border: `1px solid ${view==="admin" ? "var(--ac)" : "rgba(79,110,247,.4)"}`,
@@ -4914,7 +4930,7 @@ function WorkSuiteApp() {
           {currentNavItems.map(item=>(
             <button key={item.id}
               className={`n-btn ${view===item.id?(mod==="hd"?"active-hd":"active"):""}`}
-              onClick={()=>setView(item.id)}>
+              onClick={()=> navigate(mod==='jt' ? `/jira-tracker/${item.id}` : `/hotdesk/${item.id}`)}>
               {item.label}
             </button>
           ))}
