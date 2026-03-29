@@ -41,6 +41,14 @@ export class SupabaseWorklogRepo implements IWorklogRepository {
     return (data ?? []).map((row) => this.toEntity(row));
   }
 
+  async markSyncedToJira(worklogId: string, jiraWorklogId: string): Promise<void> {
+    const { error } = await this.db
+      .from('worklogs')
+      .update({ synced_to_jira: true, jira_worklog_id: jiraWorklogId })
+      .eq('id', worklogId);
+    if (error) throw new Error(`Failed to mark worklog as synced: ${error.message}`);
+  }
+
   async findById(id: string): Promise<Worklog | null> {
     const { data, error } = await this.db.from('worklogs').select('*').eq('id', id).single();
     if (error || !data) return null;

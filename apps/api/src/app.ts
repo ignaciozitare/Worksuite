@@ -11,8 +11,11 @@ import { authRoutes }    from './infrastructure/http/authRoutes.js';
 import { worklogRoutes } from './infrastructure/http/worklogRoutes.js';
 import { hotdeskRoutes } from './infrastructure/http/hotdeskRoutes.js';
 import { jiraRoutes }    from './infrastructure/http/jiraRoutes.js';
-import { SupabaseWorklogRepo } from './infrastructure/supabase/SupabaseWorklogRepo.js';
-import { SupabaseHotDeskRepo } from './infrastructure/supabase/SupabaseHotDeskRepo.js';
+import { SupabaseWorklogRepo }        from './infrastructure/supabase/SupabaseWorklogRepo.js';
+import { SupabaseHotDeskRepo }        from './infrastructure/supabase/SupabaseHotDeskRepo.js';
+import { SupabaseUserRepo }           from './infrastructure/supabase/SupabaseUserRepo.js';
+import { SupabaseAuthService }        from './infrastructure/supabase/SupabaseAuthService.js';
+import { SupabaseJiraConnectionRepo } from './infrastructure/supabase/SupabaseJiraConnectionRepo.js';
 
 const {
   SUPABASE_URL,
@@ -25,9 +28,12 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !JWT_SECRET) {
   throw new Error('Missing required env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET');
 }
 
-const supabase    = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-const worklogRepo = new SupabaseWorklogRepo(supabase);
-const hotdeskRepo = new SupabaseHotDeskRepo(supabase);
+const supabase         = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const worklogRepo      = new SupabaseWorklogRepo(supabase);
+const hotdeskRepo      = new SupabaseHotDeskRepo(supabase);
+const userRepo         = new SupabaseUserRepo(supabase);
+const authService      = new SupabaseAuthService(supabase);
+const jiraConnectionRepo = new SupabaseJiraConnectionRepo(supabase);
 
 let _app: FastifyInstance | null = null;
 
@@ -95,12 +101,8 @@ export async function buildApp(): Promise<FastifyInstance> {
       return;
     }
 
-    // Obtener perfil (rol y nombre) con service_role — bypasea RLS
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role, name')
-      .eq('id', payload.sub)
-      .single();
+    // Obtener perfil (rol y nombre) via port — sin acoplamiento a Supabase
+    const profile = await userRepo.findById(payload.sub);
 
     (request as any).user = {
       sub:   payload.sub,
@@ -110,10 +112,10 @@ export async function buildApp(): Promise<FastifyInstance> {
     };
   });
 
-  await app.register(authRoutes,    { prefix: '/auth',     supabase });
+  await app.register(authRoutes,    { prefix: '/auth',     authService, userRepo });
   await app.register(worklogRoutes, { prefix: '/worklogs', worklogRepo });
   await app.register(hotdeskRoutes, { prefix: '/hotdesk',  hotdeskRepo });
-  await app.register(jiraRoutes,    { prefix: '/jira',     supabase });
+  await app.register(jiraRoutes,    { prefix: '/jira',     jiraConnectionRepo, userRepo, worklogRepo });
 
   app.get('/health', async () => ({ ok: true, ts: new Date().toISOString() }));
 

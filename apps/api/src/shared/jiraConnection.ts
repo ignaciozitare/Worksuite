@@ -1,17 +1,6 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { JiraClient, type JiraClientConfig } from '@worksuite/jira-client';
-
-interface UserRow {
-  jira_api_token: string | null;
-  email:          string;
-}
-
-interface ConnectionRow {
-  base_url:  string;
-  email:     string;
-  api_token: string;
-  user_id:   string;
-}
+import type { IJiraConnectionRepository } from '../domain/jira/IJiraConnectionRepository.js';
+import type { IUserRepository } from '../domain/user/IUserRepository.js';
 
 /**
  * resolveJiraClient — shared across jira-tracker AND deploy-planner.
@@ -23,21 +12,14 @@ interface ConnectionRow {
  */
 export async function resolveJiraClient(
   userId: string,
-  supabase: SupabaseClient,
+  jiraConnectionRepo: IJiraConnectionRepository,
+  userRepo: IUserRepository,
 ): Promise<{ client: JiraClient; commentPrefix: string }> {
-  const { data: userRow } = await supabase
-    .from('users')
-    .select('jira_api_token, email')
-    .eq('id', userId)
-    .single<UserRow>();
+  const userProfile = await userRepo.findById(userId);
 
-  if (userRow?.jira_api_token) {
+  if (userProfile?.jira_api_token) {
     // Option A: personal token — get base_url from admin connection
-    const { data: adminConn } = await supabase
-      .from('jira_connections')
-      .select('base_url, email')
-      .limit(1)
-      .single<ConnectionRow>();
+    const adminConn = await jiraConnectionRepo.findAny();
 
     if (!adminConn) throw Object.assign(
       new Error('Jira not configured — admin must set up a connection in Settings'),
@@ -46,20 +28,16 @@ export async function resolveJiraClient(
 
     const config: JiraClientConfig = {
       baseUrl:  adminConn.base_url,
-      email:    userRow.email,
-      apiToken: userRow.jira_api_token,
+      email:    userProfile.email,
+      apiToken: userProfile.jira_api_token,
     };
     return { client: new JiraClient(config), commentPrefix: '' };
   }
 
-  // Option B / C: use user's own connection or admin connection
-  const { data: conn, error } = await supabase
-    .from('jira_connections')
-    .select('base_url, email, api_token, user_id')
-    .eq('user_id', userId)
-    .maybeSingle<ConnectionRow>();
+  // Option B: use user's own connection
+  const conn = await jiraConnectionRepo.findByUserId(userId);
 
-  if (!error && conn) {
+  if (conn) {
     const config: JiraClientConfig = {
       baseUrl:  conn.base_url,
       email:    conn.email,
@@ -68,23 +46,13 @@ export async function resolveJiraClient(
     return { client: new JiraClient(config), commentPrefix: '' };
   }
 
-  // Fallback: admin connection with prefix
-  const { data: adminConn } = await supabase
-    .from('jira_connections')
-    .select('base_url, email, api_token')
-    .limit(1)
-    .single<ConnectionRow>();
+  // Option C: fallback to admin connection with prefix
+  const adminConn = await jiraConnectionRepo.findAny();
 
   if (!adminConn) throw Object.assign(
     new Error('Jira not configured'),
     { statusCode: 404 },
   );
-
-  const { data: emailRow } = await supabase
-    .from('users')
-    .select('email')
-    .eq('id', userId)
-    .single<{ email: string }>();
 
   const config: JiraClientConfig = {
     baseUrl:  adminConn.base_url,
@@ -94,6 +62,6 @@ export async function resolveJiraClient(
 
   return {
     client:        new JiraClient(config),
-    commentPrefix: `[Logged by: ${emailRow?.email ?? userId}] `,
+    commentPrefix: `[Logged by: ${userProfile?.email ?? userId}] `,
   };
 }
