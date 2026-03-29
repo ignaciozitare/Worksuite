@@ -1101,154 +1101,231 @@ function AdminRetroTeamsShell({ users }) {
   return <AdminRetroTeams wsUsers={users} teams={teams} setTeams={setTeams}/>;
 }
 
-function AdminHotDeskSection({ hd, setHd, users, currentUser }) {
-  const [sub, setSub] = React.useState("mapa");
-  const [buildings, setBuildings] = React.useState([]);
-  const [blueprints, setBlueprintsData] = React.useState([]);
-  const [selBuilding, setSelBuilding] = React.useState(null);
-  const [selBlueprint, setSelBlueprint] = React.useState(null);
-  const [fixedList, setFixedList] = React.useState([]);
-  const [newBuildingName, setNewBuildingName] = React.useState("");
+// @ts-nocheck
+// AdminHotDeskSection — Blueprint Editor + Building management + Fixed seats
+// Reconstruido para WorkSuiteApp.tsx
+// Layout item types: desk | room | zone | wall | door
+// Se inserta ANTES de: function AdminShell(
+
+function AdminHotDeskSection({ hd, setHd, users }) {
+  const [sub, setSub] = React.useState("blueprints");
+
+  // ── STATE GLOBAL ────────────────────────────────────────────────────────
+  const [buildings,  setBuildings]  = React.useState([]);
+  const [blueprints, setBlueprints] = React.useState([]);
+  const [selBuild,   setSelBuild]   = React.useState(null);
+  const [selBp,      setSelBp]      = React.useState(null);
+  const [fixedList,  setFixedList]  = React.useState([]);
+  const [newBuildName, setNewBuildName] = React.useState("");
+  const [newFloorName, setNewFloorName] = React.useState("");
   const [saving, setSaving] = React.useState(false);
+  const [flash,  setFlash]  = React.useState("");
+
+  const showFlash = (msg) => { setFlash(msg); setTimeout(() => setFlash(""), 2500); };
 
   React.useEffect(() => {
-    supabase.from("buildings").select("*").order("name").then(({data}) => {
-      if (!data) return;
-      setBuildings(data);
-      if (data[0] && !selBuilding) setSelBuilding(data[0]);
-    });
-    supabase.from("fixed_assignments").select("*").then(({data}) => {
-      if (data) setFixedList(data);
-    });
+    supabase.from("buildings").select("*").order("name")
+      .then(({ data }) => {
+        if (!data) return;
+        setBuildings(data);
+        if (data[0]) setSelBuild(data[0]);
+      });
+    supabase.from("fixed_assignments").select("*")
+      .then(({ data }) => { if (data) setFixedList(data); });
   }, []);
 
   React.useEffect(() => {
-    if (!selBuilding) { setBlueprintsData([]); return; }
-    supabase.from("blueprints").select("id,floor_name,floor_order,layout")
-      .eq("building_id", selBuilding.id).order("floor_order")
-      .then(({data}) => {
+    if (!selBuild) { setBlueprints([]); setSelBp(null); return; }
+    supabase.from("blueprints").select("*")
+      .eq("building_id", selBuild.id).order("floor_order")
+      .then(({ data }) => {
         if (!data) return;
-        setBlueprintsData(data);
-        if (data[0] && (!selBlueprint || selBlueprint.building_id !== selBuilding.id))
-          setSelBlueprint(data[0]);
+        setBlueprints(data);
+        setSelBp(data[0] || null);
       });
-  }, [selBuilding?.id]);
+  }, [selBuild?.id]);
 
+  // ── BUILDING CRUD ────────────────────────────────────────────────────────
   const addBuilding = async () => {
-    if (!newBuildingName.trim()) return;
-    const {data} = await supabase.from("buildings")
-      .insert({name: newBuildingName.trim(), active: true}).select().single();
-    if (data) { setBuildings(b => [...b, data]); setNewBuildingName(""); }
+    if (!newBuildName.trim()) return;
+    const { data } = await supabase.from("buildings")
+      .insert({ name: newBuildName.trim(), active: true }).select().single();
+    if (data) { setBuildings(b => [...b, data]); setNewBuildName(""); setSelBuild(data); showFlash("Edificio creado"); }
+  };
+  const toggleBuildActive = async (b) => {
+    await supabase.from("buildings").update({ active: !b.active }).eq("id", b.id);
+    setBuildings(bs => bs.map(x => x.id === b.id ? { ...x, active: !x.active } : x));
+  };
+  const renameBuild = async (id, name) => {
+    setBuildings(bs => bs.map(x => x.id === id ? { ...x, name } : x));
+    await supabase.from("buildings").update({ name }).eq("id", id);
   };
 
-  const toggleActive = async (b) => {
-    await supabase.from("buildings").update({active: !b.active}).eq("id", b.id);
-    setBuildings(bs => bs.map(x => x.id === b.id ? {...x, active: !x.active} : x));
+  // ── BLUEPRINT CRUD ───────────────────────────────────────────────────────
+  const addBlueprint = async () => {
+    if (!selBuild || !newFloorName.trim()) return;
+    const { data } = await supabase.from("blueprints").insert({
+      building_id: selBuild.id,
+      floor_name:  newFloorName.trim(),
+      floor_order: blueprints.length,
+      layout:      [],
+    }).select().single();
+    if (data) { setBlueprints(b => [...b, data]); setSelBp(data); setNewFloorName(""); showFlash("Planta creada"); }
   };
-
-  const releaseFixed = async (seatId) => {
+  const deleteBlueprint = async (id) => {
+    if (!window.confirm("¿Eliminar este plano?")) return;
+    await supabase.from("blueprints").delete().eq("id", id);
+    setBlueprints(b => b.filter(x => x.id !== id));
+    if (selBp?.id === id) setSelBp(blueprints.find(x => x.id !== id) || null);
+    showFlash("Plano eliminado");
+  };
+  const saveLayout = async (layout) => {
+    if (!selBp) return;
     setSaving(true);
+    await supabase.from("blueprints").update({ layout }).eq("id", selBp.id);
+    setSelBp(bp => ({ ...bp, layout }));
+    setBlueprints(bs => bs.map(b => b.id === selBp.id ? { ...b, layout } : b));
+    setSaving(false);
+    showFlash("Guardado ✓");
+  };
+
+  // ── FIXED SEATS ──────────────────────────────────────────────────────────
+  const releaseFixed = async (seatId) => {
     await supabase.from("fixed_assignments").delete().eq("seat_id", seatId);
     setFixedList(f => f.filter(x => x.seat_id !== seatId));
-    setHd(h => { const {[seatId]: _, ...rest} = h.fixed; return {...h, fixed: rest}; });
-    setSaving(false);
-  };
-
-  const assignFixed = async (seatId, userId) => {
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
-    setSaving(true);
-    await supabase.from("fixed_assignments").upsert(
-      {seat_id: seatId, user_id: userId, user_name: user.name},
-      {onConflict: "seat_id"}
-    );
-    setFixedList(f => {
-      const ex = f.find(x => x.seat_id === seatId);
-      if (ex) return f.map(x => x.seat_id === seatId ? {...x, user_id: userId, user_name: user.name} : x);
-      return [...f, {seat_id: seatId, user_id: userId, user_name: user.name}];
-    });
-    setHd(h => ({...h, fixed: {...h.fixed, [seatId]: user.name}}));
-    setSaving(false);
+    setHd(h => { const { [seatId]: _, ...rest } = h.fixed; return { ...h, fixed: rest }; });
   };
 
   const SUB = [
-    {id: "mapa",      label: "Mapa",       icon: "🗺️"},
-    {id: "fijos",     label: "Puestos fijos", icon: "📌"},
-    {id: "edificios", label: "Edificios",   icon: "🏢"},
+    { id: "blueprints", label: "🗺️ Blueprints" },
+    { id: "edificios",  label: "🏢 Edificios"  },
+    { id: "fijos",      label: "📌 Puestos fijos" },
   ];
+
+  const sInp = {
+    background: "var(--sf2)", border: "1px solid var(--bd)", borderRadius: "var(--r)",
+    padding: "7px 10px", fontSize: 12, color: "var(--tx)", outline: "none", fontFamily: "inherit",
+  };
 
   return (
     <div>
-      <div className="sec-t">🪑 {`HotDesk — ${selBuilding?.name || ""}`}</div>
-      <div style={{display:"flex",gap:4,marginBottom:16,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:10,padding:4,width:"fit-content"}}>
+      <div className="sec-t">🪑 HotDesk — Admin</div>
+      {flash && <div style={{ marginBottom: 10, padding: "6px 12px", background: "rgba(62,207,142,.1)", border: "1px solid rgba(62,207,142,.3)", borderRadius: "var(--r)", fontSize: 12, color: "var(--green)" }}>{flash}</div>}
+
+      {/* Sub-nav */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "var(--sf2)", border: "1px solid var(--bd)", borderRadius: 10, padding: 4, width: "fit-content" }}>
         {SUB.map(s => (
-          <button key={s.id} onClick={() => setSub(s.id)}
-            style={{background:sub===s.id?"var(--ac)":"transparent",color:sub===s.id?"#fff":"var(--tx3)",
-              border:"none",borderRadius:7,cursor:"pointer",fontWeight:sub===s.id?600:400,
-              fontSize:12,padding:"5px 14px",fontFamily:"inherit"}}>
-            {s.icon} {s.label}
-          </button>
+          <button key={s.id} onClick={() => setSub(s.id)} style={{
+            background: sub === s.id ? "var(--ac)" : "transparent", color: sub === s.id ? "#fff" : "var(--tx3)",
+            border: "none", borderRadius: 7, cursor: "pointer", fontWeight: sub === s.id ? 600 : 400,
+            fontSize: 12, padding: "5px 14px", fontFamily: "inherit",
+          }}>{s.label}</button>
         ))}
-        {saving && <span style={{fontSize:11,color:"var(--tx3)",alignSelf:"center",paddingLeft:8}}>Guardando…</span>}
       </div>
 
-      {/* ── Selector edificio/planta ── */}
-      <div style={{display:"flex",gap:8,marginBottom:16,alignItems:"center"}}>
-        <select value={selBuilding?.id || ""} onChange={e => {
-          const b = buildings.find(x => x.id === e.target.value);
-          if (b) { setSelBuilding(b); setSelBlueprint(null); }
-        }} style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:"var(--r)",
-          padding:"5px 10px",fontSize:12,color:"var(--tx)",outline:"none",cursor:"pointer",fontFamily:"inherit"}}>
-          {buildings.map(b => <option key={b.id} value={b.id}>{b.name}{!b.active?" (inactivo)":""}</option>)}
-        </select>
-        <select value={selBlueprint?.id || ""} onChange={e => {
-          const bp = blueprints.find(x => x.id === e.target.value);
-          if (bp) setSelBlueprint(bp);
-        }} disabled={!selBuilding || blueprints.length === 0}
-          style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:"var(--r)",
-            padding:"5px 10px",fontSize:12,color:"var(--tx)",outline:"none",cursor:"pointer",fontFamily:"inherit",
-            opacity:!selBuilding||blueprints.length===0?.5:1}}>
-          <option value="">— Planta —</option>
-          {blueprints.map(bp => <option key={bp.id} value={bp.id}>{bp.floor_name}</option>)}
-        </select>
-      </div>
+      {/* ═══ TAB: BLUEPRINTS ════════════════════════════════════════════ */}
+      {sub === "blueprints" && (
+        <div>
+          {/* Selector edificio + planta */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+            <select value={selBuild?.id || ""} onChange={e => { const b = buildings.find(x => x.id === e.target.value); if (b) setSelBuild(b); }}
+              style={sInp}>
+              <option value="">— Edificio —</option>
+              {buildings.map(b => <option key={b.id} value={b.id}>{b.name}{!b.active ? " (inactivo)" : ""}</option>)}
+            </select>
+            <select value={selBp?.id || ""} onChange={e => { const bp = blueprints.find(x => x.id === e.target.value); setSelBp(bp || null); }}
+              disabled={!selBuild || blueprints.length === 0} style={sInp}>
+              <option value="">— Planta —</option>
+              {blueprints.map(bp => <option key={bp.id} value={bp.id}>{bp.floor_name}</option>)}
+            </select>
+            {selBp && (
+              <button onClick={() => deleteBlueprint(selBp.id)}
+                style={{ ...sInp, cursor: "pointer", color: "var(--red)", borderColor: "rgba(224,82,82,.3)", padding: "7px 12px" }}>
+                🗑 Eliminar plano
+              </button>
+            )}
+            {saving && <span style={{ fontSize: 11, color: "var(--tx3)" }}>Guardando…</span>}
+          </div>
 
-      {/* ── Tab: Mapa ── */}
-      {sub === "mapa" && (
-        <div className="a-card" style={{padding:16}}>
-          {selBlueprint
-            ? <BlueprintHDMap blueprint={selBlueprint} hd={hd} onSeat={null} currentUser={currentUser}/>
-            : <div style={{textAlign:"center",padding:"40px 0",color:"var(--tx3)",fontSize:13}}>
-                Selecciona un edificio y planta para ver el mapa
+          {/* Nueva planta */}
+          {selBuild && (
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              <input value={newFloorName} onChange={e => setNewFloorName(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") addBlueprint(); }}
+                placeholder="Nombre de la planta (ej: Floor 1)…"
+                style={{ ...sInp, flex: 1 }} />
+              <button onClick={addBlueprint}
+                style={{ ...sInp, cursor: "pointer", background: "var(--ac)", color: "#fff", border: "none", fontWeight: 600 }}>
+                + Nueva planta
+              </button>
+            </div>
+          )}
+
+          {/* Editor de blueprint */}
+          {selBp
+            ? <BlueprintEditor blueprint={selBp} onSave={saveLayout} />
+            : (
+              <div className="a-card" style={{ textAlign: "center", padding: "40px 20px", color: "var(--tx3)" }}>
+                {selBuild ? "Selecciona o crea una planta para editar el mapa" : "Selecciona un edificio primero"}
               </div>
+            )
           }
         </div>
       )}
 
-      {/* ── Tab: Puestos fijos ── */}
+      {/* ═══ TAB: EDIFICIOS ═════════════════════════════════════════════ */}
+      {sub === "edificios" && (
+        <div>
+          <div className="a-card" style={{ padding: 0, overflow: "hidden", marginBottom: 12 }}>
+            {buildings.length === 0 && <div style={{ padding: "20px 16px", color: "var(--tx3)", fontSize: 12, textAlign: "center" }}>Sin edificios</div>}
+            {buildings.map(b => (
+              <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "1px solid var(--bd)" }}>
+                <input value={b.name} onChange={e => renameBuild(b.id, e.target.value)}
+                  style={{ ...sInp, flex: 1, textDecoration: b.active ? "none" : "line-through", opacity: b.active ? 1 : 0.5 }} />
+                <span style={{ fontSize: 10, color: "var(--tx3)", fontFamily: "monospace" }}>{b.id.slice(0, 8)}…</span>
+                <button onClick={() => toggleBuildActive(b)}
+                  style={{ ...sInp, cursor: "pointer", color: b.active ? "var(--red)" : "var(--green)", borderColor: b.active ? "rgba(224,82,82,.3)" : "rgba(62,207,142,.3)", padding: "5px 10px", fontSize: 11 }}>
+                  {b.active ? "Desactivar" : "Activar"}
+                </button>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input value={newBuildName} onChange={e => setNewBuildName(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") addBuilding(); }}
+              placeholder="Nombre del edificio…"
+              style={{ ...sInp, flex: 1 }} />
+            <button onClick={addBuilding}
+              style={{ ...sInp, cursor: "pointer", background: "var(--ac)", color: "#fff", border: "none", fontWeight: 600 }}>
+              + Añadir
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ TAB: PUESTOS FIJOS ═════════════════════════════════════════ */}
       {sub === "fijos" && (
-        <div className="a-card" style={{padding:0,overflow:"hidden"}}>
-          <div style={{padding:"12px 16px",borderBottom:"1px solid var(--bd)",fontSize:12,color:"var(--tx2)"}}>
-            {fixedList.length} puesto{fixedList.length !== 1 ? "s" : ""} fijo{fixedList.length !== 1 ? "s" : ""} asignado{fixedList.length !== 1 ? "s" : ""}
+        <div className="a-card" style={{ padding: 0, overflow: "hidden" }}>
+          <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--bd)", fontSize: 12, color: "var(--tx2)", fontWeight: 600 }}>
+            {fixedList.length} puesto{fixedList.length !== 1 ? "s" : ""} fijo{fixedList.length !== 1 ? "s" : ""}
           </div>
           {fixedList.length === 0 && (
-            <div style={{padding:"24px 16px",color:"var(--tx3)",fontSize:12,textAlign:"center"}}>
-              Sin puestos fijos. Usa el Mapa para asignar desde la vista del plano.
+            <div style={{ padding: "24px 16px", color: "var(--tx3)", fontSize: 12, textAlign: "center" }}>
+              Sin puestos fijos asignados.
             </div>
           )}
           {fixedList.map(fa => {
             const user = users.find(u => u.id === fa.user_id);
             return (
-              <div key={fa.seat_id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",borderBottom:"1px solid var(--bd)"}}>
-                <span style={{fontFamily:"var(--mono)",fontSize:11,color:"var(--ac2)",minWidth:48}}>{fa.seat_id}</span>
-                <div style={{width:24,height:24,borderRadius:"50%",background:"var(--ac)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>
-                  {(user?.avatar || fa.user_name?.slice(0,2) || "?").slice(0,2).toUpperCase()}
+              <div key={fa.seat_id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", borderBottom: "1px solid var(--bd)" }}>
+                <span style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--ac2)", minWidth: 52 }}>{fa.seat_id}</span>
+                <div style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--ac)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+                  {(fa.user_name || "?").slice(0, 2).toUpperCase()}
                 </div>
-                <span style={{flex:1,fontSize:12,color:"var(--tx)"}}>{fa.user_name}</span>
-                <span style={{fontSize:10,color:"var(--tx3)",fontFamily:"var(--mono)"}}>{user?.email || ""}</span>
+                <span style={{ flex: 1, fontSize: 12, color: "var(--tx)" }}>{fa.user_name}</span>
+                <span style={{ fontSize: 10, color: "var(--tx3)" }}>{user?.email || ""}</span>
                 <button onClick={() => releaseFixed(fa.seat_id)}
-                  style={{background:"none",border:"1px solid rgba(224,82,82,.3)",borderRadius:"var(--r)",
-                    color:"var(--red)",cursor:"pointer",fontSize:11,padding:"3px 10px",fontFamily:"inherit"}}>
+                  style={{ ...sInp, cursor: "pointer", color: "var(--red)", borderColor: "rgba(224,82,82,.3)", padding: "4px 10px", fontSize: 11 }}>
                   Liberar
                 </button>
               </div>
@@ -1256,42 +1333,399 @@ function AdminHotDeskSection({ hd, setHd, users, currentUser }) {
           })}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* ── Tab: Edificios ── */}
-      {sub === "edificios" && (
-        <div>
-          <div className="a-card" style={{padding:0,overflow:"hidden",marginBottom:12}}>
-            {buildings.map(b => (
-              <div key={b.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",borderBottom:"1px solid var(--bd)"}}>
-                <span style={{flex:1,fontSize:13,fontWeight:500,color:b.active?"var(--tx)":"var(--tx3)",
-                  textDecoration:b.active?"none":"line-through"}}>{b.name}</span>
-                <span style={{fontSize:10,color:"var(--tx3)",fontFamily:"var(--mono)"}}>{b.id.slice(0,8)}…</span>
-                <button onClick={() => toggleActive(b)}
-                  style={{background:"none",border:`1px solid ${b.active?"rgba(224,82,82,.3)":"rgba(62,207,142,.3)"}`,
-                    borderRadius:"var(--r)",color:b.active?"var(--red)":"var(--green)",
-                    cursor:"pointer",fontSize:11,padding:"3px 10px",fontFamily:"inherit"}}>
-                  {b.active ? "Desactivar" : "Activar"}
-                </button>
-              </div>
-            ))}
-            {buildings.length === 0 && (
-              <div style={{padding:"20px 16px",color:"var(--tx3)",fontSize:12,textAlign:"center"}}>Sin edificios</div>
+// ══════════════════════════════════════════════════════════════════════════
+// BLUEPRINT EDITOR — Canvas drag-to-create editor
+// ══════════════════════════════════════════════════════════════════════════
+function BlueprintEditor({ blueprint, onSave }) {
+  const { theme } = useApp();
+  const canvasRef = React.useRef(null);
+  const wrapRef   = React.useRef(null);
+  const [layout,   setLayout]   = React.useState(Array.isArray(blueprint?.layout) ? blueprint.layout : []);
+  const [tool,     setTool]     = React.useState("select"); // select | desk | room | zone | wall
+  const [selIdx,   setSelIdx]   = React.useState(null);
+  const [dragging, setDragging] = React.useState(null);  // {type:"move"|"resize", itemIdx, startX,startY,ox,oy,ow,oh}
+  const [wallPts,  setWallPts]  = React.useState(null);  // array of {x,y} while drawing wall
+  const [scale,    setScale]    = React.useState(1);
+  const [offset,   setOffset]   = React.useState({ x: 40, y: 40 });
+  const scaleRef  = React.useRef(scale);
+  const offsetRef = React.useRef(offset);
+  React.useEffect(() => { scaleRef.current  = scale;  }, [scale]);
+  React.useEffect(() => { offsetRef.current = offset; }, [offset]);
+
+  const dk = theme !== "light";
+
+  // Reset on blueprint change
+  React.useEffect(() => {
+    setLayout(Array.isArray(blueprint?.layout) ? blueprint.layout : []);
+    setSelIdx(null);
+    setWallPts(null);
+  }, [blueprint?.id]);
+
+  // ── Canvas → world coordinates ───────────────────────────────────────
+  const toWorld = (cx, cy) => ({
+    x: (cx - offsetRef.current.x) / scaleRef.current,
+    y: (cy - offsetRef.current.y) / scaleRef.current,
+  });
+  const toCanvas = (wx, wy) => ({
+    x: wx * scaleRef.current + offsetRef.current.x,
+    y: wy * scaleRef.current + offsetRef.current.y,
+  });
+
+  // ── Render ───────────────────────────────────────────────────────────
+  React.useEffect(() => {
+    const cvs = canvasRef.current;
+    if (!cvs) return;
+    const ctx = cvs.getContext("2d");
+    const W = cvs.width, H = cvs.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Grid
+    ctx.save();
+    ctx.strokeStyle = dk ? "rgba(255,255,255,.04)" : "rgba(0,0,0,.05)";
+    ctx.lineWidth = 1;
+    const GRID = 20 * scale;
+    const ox = ((offset.x % GRID) + GRID) % GRID;
+    const oy = ((offset.y % GRID) + GRID) % GRID;
+    for (let x = ox; x < W; x += GRID) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = oy; y < H; y += GRID) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    ctx.restore();
+
+    ctx.save();
+    ctx.setTransform(scale, 0, 0, scale, offset.x, offset.y);
+
+    const rr = (x, y, w, h, r) => {
+      r = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+      ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+      ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+      ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+      ctx.closePath();
+    };
+
+    layout.forEach((item, i) => {
+      const sel = i === selIdx;
+      const { x = 0, y = 0, w = 120, h = 80 } = item;
+
+      if (item.type === "wall") {
+        const pts = item.pts || [];
+        if (pts.length < 2) return;
+        ctx.strokeStyle = dk ? "#888" : "#666";
+        ctx.lineWidth   = 4 / scale;
+        ctx.lineCap = "round"; ctx.lineJoin = "round";
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.stroke();
+        if (sel) {
+          pts.forEach(p => {
+            ctx.fillStyle = "var(--ac)";
+            ctx.beginPath(); ctx.arc(p.x, p.y, 5 / scale, 0, Math.PI * 2); ctx.fill();
+          });
+        }
+        return;
+      }
+
+      let fillColor, strokeColor, labelColor;
+      if (item.type === "zone") {
+        fillColor   = dk ? "rgba(40,30,80,.2)" : "rgba(238,242,255,.6)";
+        strokeColor = "#818cf8";
+        labelColor  = dk ? "rgba(165,180,252,.85)" : "#4338ca";
+      } else if (item.type === "room") {
+        fillColor   = dk ? "rgba(15,30,70,.5)" : "rgba(219,234,254,.6)";
+        strokeColor = "#3b82f6";
+        labelColor  = dk ? "#93c5fd" : "#1e40af";
+      } else { // desk
+        fillColor   = dk ? "rgba(3,15,6,.4)" : "rgba(240,253,244,.5)";
+        strokeColor = dk ? "rgba(34,197,94,.4)" : "rgba(22,101,52,.3)";
+        labelColor  = dk ? "#86efac" : "#166534";
+      }
+
+      ctx.fillStyle   = fillColor;
+      ctx.strokeStyle = sel ? "var(--ac,#4f6ef7)" : strokeColor;
+      ctx.lineWidth   = sel ? 2 / scale : 1 / scale;
+      ctx.setLineDash(sel ? [] : item.type === "zone" ? [6, 4] : []);
+      rr(x, y, w, h, 7);
+      ctx.fill(); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Label
+      ctx.fillStyle = labelColor;
+      ctx.font = `600 ${13 / scale}px sans-serif`;
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText((item.label || item.type).toUpperCase(), x + w / 2, y + 8 / scale);
+
+      // Prefix info for desk
+      if (item.type === "desk" && item.prefix) {
+        ctx.fillStyle = dk ? "rgba(134,239,172,.5)" : "rgba(22,101,52,.5)";
+        ctx.font = `400 ${10 / scale}px sans-serif`;
+        ctx.textBaseline = "bottom";
+        ctx.fillText(`prefix: ${item.prefix}`, x + w / 2, y + h - 4 / scale);
+      }
+
+      // Resize handle
+      if (sel) {
+        ctx.fillStyle = "var(--ac,#4f6ef7)";
+        ctx.beginPath();
+        ctx.arc(x + w, y + h, 6 / scale, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+
+    // Wall being drawn
+    if (wallPts && wallPts.length > 0) {
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = 3 / scale;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(wallPts[0].x, wallPts[0].y);
+      wallPts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+      wallPts.forEach(p => {
+        ctx.fillStyle = "#f59e0b";
+        ctx.beginPath(); ctx.arc(p.x, p.y, 4 / scale, 0, Math.PI * 2); ctx.fill();
+      });
+    }
+
+    ctx.restore();
+  }, [layout, selIdx, scale, offset, dk, wallPts]);
+
+  // ── Canvas size on mount ─────────────────────────────────────────────
+  React.useEffect(() => {
+    const fit = () => {
+      const wrap = wrapRef.current; const cvs = canvasRef.current;
+      if (!wrap || !cvs) return;
+      cvs.width  = wrap.clientWidth;
+      cvs.height = wrap.clientHeight;
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    if (wrapRef.current) ro.observe(wrapRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  // ── Hit test ─────────────────────────────────────────────────────────
+  const hitTest = (wx, wy) => {
+    for (let i = layout.length - 1; i >= 0; i--) {
+      const item = layout[i];
+      if (item.type === "wall") continue;
+      const { x = 0, y = 0, w = 120, h = 80 } = item;
+      if (wx >= x && wx <= x + w && wy >= y && wy <= y + h) return i;
+    }
+    return -1;
+  };
+  const hitResize = (wx, wy, idx) => {
+    if (idx < 0 || idx >= layout.length) return false;
+    const { x = 0, y = 0, w = 120, h = 80 } = layout[idx];
+    const thresh = 10 / scale;
+    return Math.hypot(wx - (x + w), wy - (y + h)) < thresh;
+  };
+
+  // ── Mouse handlers ───────────────────────────────────────────────────
+  const getXY = (e) => {
+    const r = canvasRef.current.getBoundingClientRect();
+    return toWorld(e.clientX - r.left, e.clientY - r.top);
+  };
+
+  const [panStart, setPanStart] = React.useState(null);
+
+  const onMouseDown = (e) => {
+    if (e.button === 1 || (e.button === 0 && e.altKey)) { // pan
+      setPanStart({ mx: e.clientX, my: e.clientY, ox: offset.x, oy: offset.y });
+      return;
+    }
+    const { x: wx, y: wy } = getXY(e);
+
+    if (tool === "wall") {
+      setWallPts(pts => pts ? [...pts, { x: wx, y: wy }] : [{ x: wx, y: wy }]);
+      return;
+    }
+
+    if (tool === "select") {
+      const idx = hitTest(wx, wy);
+      if (idx >= 0) {
+        if (hitResize(wx, wy, idx)) {
+          const { x = 0, y = 0, w = 120, h = 80 } = layout[idx];
+          setDragging({ type: "resize", itemIdx: idx, startX: wx, startY: wy, ox: x, oy: y, ow: w, oh: h });
+        } else {
+          const { x = 0, y = 0 } = layout[idx];
+          setDragging({ type: "move", itemIdx: idx, startX: wx, startY: wy, ox: x, oy: y });
+        }
+        setSelIdx(idx);
+      } else {
+        setSelIdx(null);
+      }
+      return;
+    }
+
+    // Place new item
+    const newItem = {
+      type:  tool,
+      x:     Math.round(wx),
+      y:     Math.round(wy),
+      w:     tool === "zone" ? 200 : 160,
+      h:     tool === "zone" ? 180 : 120,
+      label: tool === "desk" ? "Zone A" : tool === "room" ? "Meeting Room" : "Zone",
+      prefix: tool === "desk" ? "A" : undefined,
+    };
+    const newLayout = [...layout, newItem];
+    setLayout(newLayout);
+    setSelIdx(newLayout.length - 1);
+    setTool("select");
+  };
+
+  const onMouseMove = (e) => {
+    if (panStart) {
+      setOffset({ x: panStart.ox + e.clientX - panStart.mx, y: panStart.oy + e.clientY - panStart.my });
+      return;
+    }
+    if (!dragging) return;
+    const { x: wx, y: wy } = getXY(e);
+    const dx = wx - dragging.startX, dy = wy - dragging.startY;
+    setLayout(l => l.map((item, i) => {
+      if (i !== dragging.itemIdx) return item;
+      if (dragging.type === "move") return { ...item, x: Math.round(dragging.ox + dx), y: Math.round(dragging.oy + dy) };
+      return { ...item, w: Math.max(60, Math.round(dragging.ow + dx)), h: Math.max(40, Math.round(dragging.oh + dy)) };
+    }));
+  };
+
+  const onMouseUp = () => {
+    setPanStart(null);
+    setDragging(null);
+  };
+
+  const onWheel = (e) => {
+    e.preventDefault();
+    const cvs = canvasRef.current; if (!cvs) return;
+    const r = cvs.getBoundingClientRect();
+    const cx = e.clientX - r.left, cy = e.clientY - r.top;
+    const newScale = Math.max(0.2, Math.min(4, scale + (e.deltaY < 0 ? 0.1 : -0.1)));
+    const ratio = newScale / scale;
+    setScale(newScale);
+    setOffset(o => ({ x: cx - (cx - o.x) * ratio, y: cy - (cy - o.y) * ratio }));
+  };
+
+  const finishWall = () => {
+    if (!wallPts || wallPts.length < 2) { setWallPts(null); return; }
+    const newLayout = [...layout, { type: "wall", pts: wallPts }];
+    setLayout(newLayout);
+    setWallPts(null);
+    setTool("select");
+  };
+
+  const deleteSelected = () => {
+    if (selIdx === null) return;
+    const nl = layout.filter((_, i) => i !== selIdx);
+    setLayout(nl);
+    setSelIdx(null);
+  };
+
+  const selItem = selIdx !== null ? layout[selIdx] : null;
+
+  const updateSel = (patch) => {
+    if (selIdx === null) return;
+    setLayout(l => l.map((item, i) => i === selIdx ? { ...item, ...patch } : item));
+  };
+
+  const TOOLS = [
+    { id: "select", label: "↖ Seleccionar" },
+    { id: "desk",   label: "🗂 Zona de mesas" },
+    { id: "room",   label: "🚪 Sala" },
+    { id: "zone",   label: "◻ Zona" },
+    { id: "wall",   label: "— Pared" },
+  ];
+
+  const sInp = { background: "var(--sf2)", border: "1px solid var(--bd)", borderRadius: "var(--r)", padding: "5px 8px", fontSize: 11, color: "var(--tx)", outline: "none", fontFamily: "inherit" };
+
+  return (
+    <div style={{ display: "flex", gap: 12, height: "calc(100vh - 280px)", minHeight: 480 }}>
+      {/* ── Toolbar ── */}
+      <div style={{ width: 180, flexShrink: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: "var(--tx3)", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 4 }}>Herramienta</div>
+        {TOOLS.map(t => (
+          <button key={t.id} onClick={() => { setTool(t.id); if (t.id !== "wall") setWallPts(null); }}
+            style={{ ...sInp, cursor: "pointer", textAlign: "left", padding: "7px 10px", fontWeight: tool === t.id ? 700 : 400, background: tool === t.id ? "var(--glow)" : "var(--sf2)", borderColor: tool === t.id ? "var(--ac)" : "var(--bd)", color: tool === t.id ? "var(--ac2)" : "var(--tx2)" }}>
+            {t.label}
+          </button>
+        ))}
+        {tool === "wall" && wallPts && wallPts.length > 0 && (
+          <button onClick={finishWall} style={{ ...sInp, cursor: "pointer", background: "rgba(245,158,11,.15)", color: "#f59e0b", borderColor: "#f59e0b", fontWeight: 600 }}>
+            ✓ Terminar pared ({wallPts.length} pts)
+          </button>
+        )}
+        <div style={{ height: 1, background: "var(--bd)", margin: "6px 0" }} />
+        <div style={{ fontSize: 10, fontWeight: 700, color: "var(--tx3)", textTransform: "uppercase", letterSpacing: ".08em" }}>Acciones</div>
+        <button onClick={() => setOffset({ x: 40, y: 40 })}
+          style={{ ...sInp, cursor: "pointer", textAlign: "left", padding: "6px 10px" }}>
+          ⊡ Reset vista
+        </button>
+        {selItem && selItem.type !== "wall" && (
+          <>
+            <div style={{ height: 1, background: "var(--bd)", margin: "6px 0" }} />
+            <div style={{ fontSize: 10, fontWeight: 700, color: "var(--tx3)", textTransform: "uppercase", letterSpacing: ".08em" }}>Elemento seleccionado</div>
+            <div style={{ fontSize: 10, color: "var(--tx3)", marginBottom: 3 }}>Etiqueta</div>
+            <input value={selItem.label || ""} onChange={e => updateSel({ label: e.target.value })} style={{ ...sInp, width: "100%", boxSizing: "border-box" }} />
+            {selItem.type === "desk" && (
+              <>
+                <div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 6, marginBottom: 3 }}>Prefijo puestos (ej: A, B, Z1)</div>
+                <input value={selItem.prefix || ""} onChange={e => updateSel({ prefix: e.target.value.toUpperCase() })} style={{ ...sInp, width: "100%", boxSizing: "border-box" }} />
+              </>
             )}
-          </div>
-          <div style={{display:"flex",gap:8}}>
-            <input value={newBuildingName} onChange={e => setNewBuildingName(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") addBuilding(); }}
-              placeholder="Nombre del edificio…"
-              style={{flex:1,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:"var(--r)",
-                padding:"8px 12px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",outline:"none"}}/>
-            <button onClick={addBuilding}
-              style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:"var(--r)",
-                padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-              + Añadir
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 6 }}>
+              {[["X", "x"], ["Y", "y"], ["W", "w"], ["H", "h"]].map(([lbl, key]) => (
+                <div key={key}>
+                  <div style={{ fontSize: 9, color: "var(--tx3)", marginBottom: 2 }}>{lbl}</div>
+                  <input type="number" value={selItem[key] || 0}
+                    onChange={e => updateSel({ [key]: parseInt(e.target.value) || 0 })}
+                    style={{ ...sInp, width: "100%", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+            <button onClick={deleteSelected}
+              style={{ ...sInp, cursor: "pointer", color: "var(--red)", borderColor: "rgba(224,82,82,.3)", marginTop: 6, padding: "6px 10px", textAlign: "left" }}>
+              🗑 Eliminar
             </button>
-          </div>
+          </>
+        )}
+        {selItem && selItem.type === "wall" && (
+          <>
+            <div style={{ height: 1, background: "var(--bd)", margin: "6px 0" }} />
+            <div style={{ fontSize: 11, color: "var(--tx3)" }}>Pared — {selItem.pts?.length || 0} puntos</div>
+            <button onClick={deleteSelected}
+              style={{ ...sInp, cursor: "pointer", color: "var(--red)", borderColor: "rgba(224,82,82,.3)", padding: "6px 10px", textAlign: "left" }}>
+              🗑 Eliminar pared
+            </button>
+          </>
+        )}
+        <div style={{ marginTop: "auto" }}>
+          <button onClick={() => onSave(layout)}
+            style={{ width: "100%", padding: "9px", background: "var(--ac)", color: "#fff", border: "none", borderRadius: "var(--r)", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "inherit" }}>
+            💾 Guardar
+          </button>
         </div>
-      )}
+      </div>
+
+      {/* ── Canvas ── */}
+      <div ref={wrapRef} style={{ flex: 1, background: "var(--sf)", border: "1px solid var(--bd)", borderRadius: "var(--r2)", position: "relative", overflow: "hidden", cursor: tool === "select" ? "default" : tool === "wall" ? "crosshair" : "copy" }}>
+        <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }}
+          onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}
+          onMouseLeave={onMouseUp} onWheel={onWheel} />
+        {/* Instructions */}
+        <div style={{ position: "absolute", bottom: 10, right: 12, fontSize: 10, color: "var(--tx3)", textAlign: "right", pointerEvents: "none" }}>
+          Scroll: zoom · Alt+drag: pan · Selecciona para mover/redimensionar
+        </div>
+        {layout.length === 0 && (
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--tx3)", fontSize: 13, flexDirection: "column", gap: 8, pointerEvents: "none" }}>
+            <span style={{ fontSize: 28 }}>🗺️</span>
+            <span>Selecciona una herramienta y haz click en el canvas para añadir elementos</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
