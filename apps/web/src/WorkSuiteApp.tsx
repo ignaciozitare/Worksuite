@@ -18,6 +18,9 @@ import { WorklogService } from './modules/jira-tracker/domain/services/WorklogSe
 import { CsvService } from './modules/jira-tracker/domain/services/CsvService';
 import { DeskType, SeatStatusEnum as SeatStatus } from './modules/hotdesk/domain/entities/constants';
 import { ReservationService } from './modules/hotdesk/domain/services/ReservationService';
+import { makeAvatar, isValidEmail, daysInMonth, firstMonday, isoFromYMD, fmtMonthYear } from './shared/lib/utils';
+import { PasswordStrength } from './shared/ui/PasswordStrength';
+import { MiniCalendar } from './shared/ui/MiniCalendar';
 
 // ── API helpers ────────────────────────────────────────────────────────────
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
@@ -312,67 +315,10 @@ function formatFullDate(iso, lang) {
   return `${dn[d.getDay()]}, ${ms[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
-function makeAvatar(name) { return (name||"?").split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2); }
-function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
-function daysInMonth(y,m) { return new Date(y,m+1,0).getDate(); }
-function firstMonday(y,m) { return (new Date(y,m,1).getDay()+6)%7; }
-function isoFromYMD(y,m,d) { return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
-function fmtMonthYear(y,m,lang) { return lang==="es" ? `${MONTHS_ES[m]} ${y}` : `${MONTHS_EN[m]} ${y}`; }
+// makeAvatar, isValidEmail, daysInMonth, firstMonday, isoFromYMD, fmtMonthYear
+// → imported from shared/lib/utils
 
-// ══════════════════════════════════════════════════════════════════
-// SHARED PRESENTATIONAL COMPONENTS
-// ══════════════════════════════════════════════════════════════════
-
-function PasswordStrength({ password }) {
-  if (!password) return null;
-  const score = [/.{8,}/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter(r => r.test(password)).length;
-  const level = score<=1?"weak":score<=3?"fair":"strong";
-  const label = score<=1?"Weak":score<=3?"Fair":"Strong";
-  const colors = { weak:"var(--red)", fair:"var(--amber)", strong:"var(--green)" };
-  return (
-    <div>
-      <div className="pwd-meter">
-        {[0,1,2,3].map(i=><div key={i} className={`pwd-seg ${i<score?level:""}`}/>)}
-      </div>
-      <div style={{fontSize:10,color:colors[level],marginTop:2}}>{label}</div>
-    </div>
-  );
-}
-
-function MiniCalendar({ year, month, selectedDates, onToggleDate, occupiedDates=[], minDate="" }) {
-  const { lang } = useApp();
-  const DAYS = lang==="es" ? DAYS_ES : DAYS_EN;
-  const days = daysInMonth(year, month);
-  const first = firstMonday(year, month);
-
-  return (
-    <div className="mini-cal">
-      <div className="mini-day-grid">
-        {DAYS.map(d => <div key={d} className="mini-dh">{d}</div>)}
-        {Array.from({length:first}).map((_,i)=><div key={"e"+i}/>)}
-        {Array.from({length:days},(_,i)=>i+1).map(d => {
-          const iso = isoFromYMD(year, month, d);
-          const dow = (new Date(iso+"T00:00:00").getDay()+6)%7;
-          const isWe = dow>=5;
-          const isPast = iso < MOCK_TODAY;
-          const isOcc = occupiedDates.includes(iso);
-          const isSel = selectedDates.includes(iso);
-          const dis = isWe || isPast || isOcc;
-          let cls = "mini-day ";
-          if (dis) cls += "dis";
-          else if (isSel) cls += "sel";
-          else if (isOcc) cls += "occ";
-          else cls += "avail";
-          return (
-            <div key={d} className={cls} onClick={() => !dis && onToggleDate(iso)}>
-              {d}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+// PasswordStrength, MiniCalendar → imported from shared/ui/
 
 // ══════════════════════════════════════════════════════════════════
 // JIRA TRACKER — Log Worklog Modal
@@ -1374,7 +1320,7 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
                     <span style={{fontSize:12,fontWeight:600,color:"var(--ac2)"}}>{fmtMonthYear(yr,mo,lang)}</span>
                     <button className="n-arr" onClick={next}>›</button>
                   </div>
-                  <MiniCalendar year={yr} month={mo} selectedDates={sel} onToggleDate={toggle} occupiedDates={blockedDates}/>
+                  <MiniCalendar year={yr} month={mo} lang={lang} selectedDates={sel} onToggleDate={toggle} occupiedDates={blockedDates}/>
                   {sel.length>0&&<div style={{fontSize:11,color:"var(--green)",background:"rgba(62,207,142,.07)",border:"1px solid rgba(62,207,142,.2)",borderRadius:"var(--r)",padding:"6px 10px"}}>{t("hdSelectDates")}: {sel.sort().join(", ")}</div>}
                 </>
               )}
@@ -1929,7 +1875,7 @@ function AdminUsers({ users, setUsers, currentUser }) {
 }
 
 function AdminHotDesk({ hd, setHd, users }) {
-  const { t } = useApp();
+  const { t, lang } = useApp();
   const [buildings,  setBuildings]  = useState([]);
   const [floors,     setFloors]     = useState([]);
   const [selBldg,    setSelBldg]    = useState(null);
@@ -2113,7 +2059,7 @@ function AdminHotDesk({ hd, setHd, users }) {
                       <span style={{fontSize:11,fontWeight:600,color:'var(--ac2)'}}>{fmtMonthYear(yr,mo,'en')}</span>
                       <button className="n-arr" onClick={()=>mo===11?(sMo(0),sYr(y=>y+1)):sMo(m=>m+1)}>›</button>
                     </div>
-                    <MiniCalendar year={yr} month={mo} selectedDates={selDates} onToggleDate={d=>setSelDates(p=>p.includes(d)?p.filter(x=>x!==d):[...p,d])} occupiedDates={occupiedForSeat}/>
+                    <MiniCalendar year={yr} month={mo} lang={lang} selectedDates={selDates} onToggleDate={d=>setSelDates(p=>p.includes(d)?p.filter(x=>x!==d):[...p,d])} occupiedDates={occupiedForSeat}/>
                     {selDates.length>0&&<div style={{fontSize:10,color:'var(--green)',marginTop:6}}>{selDates.length} date{selDates.length!==1?'s':''} selected</div>}
                   </div>
                 )}
