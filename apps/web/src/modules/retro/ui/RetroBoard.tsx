@@ -1113,14 +1113,15 @@ export function RetroBoard({currentUser,wsUsers,lang}){
         if(!actBySession[a.session_id])actBySession[a.session_id]=[];
         actBySession[a.session_id].push({id:a.id,text:a.text,assignee:a.assignee,dueDate:a.due_date,priority:a.priority,status:a.status});
       });
-      setHistory((sessions||[]).map(s=>({...s,date:s.created_at,cards:s.cards||[],actionables:actBySession[s.id]||[]})));
+      setHistory((sessions||[]).map(s=>({...s,date:s.created_at,cards:s.stats?.cards_data||[],actionables:actBySession[s.id]||[]})));
       setTeams((teamsData||[]).map(tm=>({...tm,members:(members||[]).filter(m=>m.team_id===tm.id).map(m=>{const u=wsUsers.find(x=>x.id===m.user_id);return{...m,name:u?.name,email:u?.email};})})));
     });
   },[wsUsers.length]);
 
   const saveSession=async(session)=>{
-    // retro_sessions does NOT have 'actionables' column — save only name, team_id, cards, stats
-    const row={name:session.name,team_id:session.teamId,cards:session.cards,stats:session.stats};
+    // retro_sessions only has: name, team_id, stats (jsonb)
+    // Embed cards inside stats since there's no dedicated cards column
+    const row={name:session.name,team_id:session.teamId,stats:{...session.stats,cards_data:session.cards}};
     const{data,error}=await supabase.from("retro_sessions").insert(row).select().single();
     if(error){console.error("[RetroBoard] Save session error:", error.message);return;}
     if(!data)return;
@@ -1134,7 +1135,7 @@ export function RetroBoard({currentUser,wsUsers,lang}){
       if(actErr)console.error("[RetroBoard] Save actionables error:", actErr.message);
     }
     // Update local state with session + actionables
-    setHistory(h=>[{...data,date:data.created_at,cards:data.cards||[],actionables:acts},...h]);
+    setHistory(h=>[{...data,date:data.created_at,cards:data.stats?.cards_data||[],actionables:acts},...h]);
   };
 
   const addToKanban=async(items)=>{
