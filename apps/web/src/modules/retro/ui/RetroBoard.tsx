@@ -796,9 +796,10 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
   // ── CARGA INICIAL desde Supabase ──────────────────────────────
   useEffect(()=>{
     supabase.from("retro_actionables").select("*")
-      .then(({data})=>{
+      .then(({data,error})=>{
+        if(error){console.error("retro_actionables load error:",error.message);return;}
         if(data?.length){
-          setItems(data.map(d=>({id:d.id,status:d.status})));
+          setItems(data.map(d=>({id:d.id,text:d.text,assignee:d.assignee,dueDate:d.due_date,priority:d.priority,status:d.status||"todo",sessionId:d.session_id,teamId:d.team_id})));
         }
       });
   },[]);
@@ -808,10 +809,15 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
     return(r.actionables||[]).map((a)=>({...a,retroName:r.name,teamId:r.team_id,teamName:team?.name||"—",id:a.id||genId()}));
   });
 
-  const merged=baseItems.map(base=>{
-    const edit=(items||[]).find(x=>x.id===base.id);
-    return edit?{...base,...edit}:{...base,status:base.status||"todo"};
-  });
+  // Merge: overlay DB status on history items + include DB-only items
+  const baseIds=new Set(baseItems.map(b=>b.id));
+  const merged=[
+    ...baseItems.map(base=>{
+      const edit=(items||[]).find(x=>x.id===base.id);
+      return edit?{...base,...edit}:{...base,status:base.status||"todo"};
+    }),
+    ...(items||[]).filter(x=>!baseIds.has(x.id)).map(x=>({...x,status:x.status||"todo",retroName:"",teamName:"—"})),
+  ];
 
   // ── MOVE con persistencia a Supabase ─────────────────────────
   const move=async(id,newStatus)=>{
@@ -1098,7 +1104,7 @@ export function RetroBoard({currentUser,wsUsers,lang}){
       supabase.from("retro_teams").select("*"),
       supabase.from("retro_team_members").select("*"),
     ]).then(([{data:sessions},{data:teamsData},{data:members}])=>{
-      setHistory((sessions||[]).map(s=>({...s,date:s.created_at,actionables:s.actionables||[]})));
+      setHistory((sessions||[]).map(s=>({...s,date:s.created_at,cards:s.cards||[],actionables:s.actionables||[]})));
       setTeams((teamsData||[]).map(tm=>({...tm,members:(members||[]).filter(m=>m.team_id===tm.id).map(m=>{const u=wsUsers.find(x=>x.id===m.user_id);return{...m,name:u?.name,email:u?.email};})})));
     });
   },[wsUsers.length]);
@@ -1107,7 +1113,7 @@ export function RetroBoard({currentUser,wsUsers,lang}){
     const row={name:session.name,team_id:session.teamId,cards:session.cards,stats:session.stats,actionables:session.actionables};
     const{data}=await supabase.from("retro_sessions").insert(row).select().single();
     if(data){
-      setHistory(h=>[{...data,date:data.created_at,actionables:data.actionables||[]},...h]);
+      setHistory(h=>[{...data,date:data.created_at,cards:data.cards||[],actionables:data.actionables||[]},...h]);
       // Persist actionables to retro_actionables table for kanban board
       const acts=(data.actionables||[]).filter(a=>a.id);
       if(acts.length){
@@ -1119,11 +1125,12 @@ export function RetroBoard({currentUser,wsUsers,lang}){
     }
   };
 
-  const addToKanban=(items)=>{
-    setKanbanItems(prev=>{
-      const newItems=items.map(i=>({...i,id:i.id||genId(),status:"todo"}));
-      return[...prev,...newItems.filter(ni=>!prev.some(p=>p.id===ni.id))];
-    });
+  const addToKanban=async(items)=>{
+    const newItems=items.map(i=>({...i,id:i.id||genId(),status:i.status||"todo"}));
+    setKanbanItems(prev=>[...prev,...newItems.filter(ni=>!prev.some(p=>p.id===ni.id))]);
+    // Persist to retro_actionables
+    const rows=newItems.map(a=>({id:a.id,text:a.text||a.actionable||"",assignee:a.assignee||"",due_date:a.dueDate||null,priority:a.priority||"medium",status:a.status||"todo",session_id:a.sessionId||null,team_id:a.teamId||null,updated_at:new Date().toISOString()}));
+    if(rows.length) await supabase.from("retro_actionables").upsert(rows,{onConflict:"id"}).catch(e=>console.error("addToKanban persist error:",e));
     setView("accionables");
   };
 
