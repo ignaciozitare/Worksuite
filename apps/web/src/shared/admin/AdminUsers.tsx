@@ -7,6 +7,17 @@ import { PasswordStrength } from '../ui/PasswordStrength';
 import { DeskType } from '../../modules/hotdesk/domain/entities/constants';
 import { CsvService } from '../../modules/jira-tracker/domain/services/CsvService';
 
+const MODULES = [
+  { id:"jt",     label:"Jira Tracker",  color:"var(--ac2)"   },
+  { id:"hd",     label:"HotDesk",       color:"var(--green)" },
+  { id:"retro",  label:"RetroBoard",    color:"#818cf8"      },
+  { id:"deploy", label:"Deploy Planner",color:"#f59e0b"      },
+  { id:"envtracker", label:"Environments",  color:"#22d3ee"  },
+];
+
+const DESK_COLORS = { [DeskType.NONE]: "var(--tx3)", [DeskType.HOTDESK]: "var(--green)", [DeskType.FIXED]: "var(--amber)" };
+const DESK_LABELS = { [DeskType.NONE]: "—", [DeskType.HOTDESK]: "Hotdesk", [DeskType.FIXED]: "Fixed" };
+
 function AddUserModal({ existingUsers, onClose, onSave }) {
   const { t } = useTranslation();
   const [name, setName]  = useState("");

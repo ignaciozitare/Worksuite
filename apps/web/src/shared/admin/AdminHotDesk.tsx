@@ -6,6 +6,9 @@ import { BlueprintHDMap } from '../../modules/hotdesk/ui/BlueprintHDMap';
 import { MiniCalendar } from '../ui/MiniCalendar';
 import { TODAY } from '../lib/constants';
 import { fmtMonthYear } from '../lib/utils';
+import { DeskType, SeatStatusEnum as SeatStatus } from '../../modules/hotdesk/domain/entities/constants';
+import { ReservationService } from '../../modules/hotdesk/domain/services/ReservationService';
+import { SEATS } from '../../modules/hotdesk/domain/entities/seats';
 
 function AdminHotDesk({ hd, setHd, users, theme="dark" }) {
   const { t, locale } = useTranslation();
@@ -131,7 +134,7 @@ function AdminHotDesk({ hd, setHd, users, theme="dark" }) {
             <div style={{fontSize:9,fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:8}}>SELECT SEAT</div>
             <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
               {seats.map(seat=>{
-                const st=ReservationService.statusOf(seat.id,MOCK_TODAY,hd.fixed,hd.reservations);
+                const st=ReservationService.statusOf(seat.id,TODAY,hd.fixed,hd.reservations);
                 const isSel=selSeat===seat.id;
                 return(
                   <button key={seat.id}
@@ -169,7 +172,7 @@ function AdminHotDesk({ hd, setHd, users, theme="dark" }) {
             <div className="a-card" style={{marginBottom:0,flexShrink:0}}>
               <div className="a-ct">🪑 Assign — <span style={{color:'var(--ac2)',fontFamily:'var(--mono)'}}>{selSeat}</span>
                 <span style={{fontSize:10,fontWeight:400,color:'var(--tx3)',marginLeft:8}}>
-                  {hd.fixed[selSeat]?'Fixed: '+hd.fixed[selSeat]:hd.reservations.find(r=>r.seatId===selSeat&&r.date===MOCK_TODAY)?.userName||'Free today'}
+                  {hd.fixed[selSeat]?'Fixed: '+hd.fixed[selSeat]:hd.reservations.find(r=>r.seatId===selSeat&&r.date===TODAY)?.userName||'Free today'}
                 </span>
               </div>
               <div style={{display:'flex',flexDirection:'column',gap:10}}>

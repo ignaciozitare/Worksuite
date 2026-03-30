@@ -2,6 +2,25 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/api';
 
+const ALL_MODULES = [
+  { id:"jt",     label:"Jira Tracker",   color:"var(--ac2)"  },
+  { id:"hd",     label:"HotDesk",        color:"var(--green)" },
+  { id:"retro",  label:"RetroBoard",     color:"#818cf8"     },
+  { id:"deploy", label:"Deploy Planner", color:"#f59e0b"     },
+  { id:"envtracker", label:"Environments", color:"#22d3ee"   },
+];
+
+const ALL_ADMIN_PERMS = [
+  { id:"manage_users",     label:"Manage Users"     },
+  { id:"manage_hotdesk",   label:"Manage HotDesk"   },
+  { id:"manage_blueprint", label:"Manage Blueprint"  },
+  { id:"manage_jira",      label:"Manage Jira Config" },
+  { id:"manage_retro",     label:"Manage Retro Teams" },
+  { id:"manage_deploy",    label:"Manage Deploy"     },
+  { id:"manage_roles",     label:"Manage Roles"      },
+  { id:"manage_envs",      label:"Manage Environments" },
+];
+
 function AdminRoles() {
   const [roles, setRoles] = useState([]);
   const [selRole, setSelRole] = useState(null);

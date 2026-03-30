@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React from 'react';
+import { supabase } from '../lib/api';
 import { AdminEnvEnvironments, AdminEnvRepositories, AdminEnvPolicy } from '../../modules/environments';
 
 function AdminEnvTrackerSection() {

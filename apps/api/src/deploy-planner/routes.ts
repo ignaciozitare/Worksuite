@@ -120,10 +120,10 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
 
   // ── GET /jira/search?jql=...&maxResults=... ────────────────────────────────
   // Usado por Deploy Planner para traer tickets por JQL
-  app.get<{ Querystring: { jql: string; maxResults?: string } }>(
+  app.get<{ Querystring: { jql: string; maxResults?: string; fields?: string } }>(
     '/search',
     async (req, reply) => {
-      const { jql, maxResults = '100' } = req.query;
+      const { jql, maxResults = '100', fields } = req.query;
       if (!jql) return reply.status(400).send({ ok: false, error: 'jql required' });
 
       try {
@@ -133,7 +133,8 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
 
         const auth = Buffer.from(`${conn.email}:${conn.api_token}`).toString('base64');
         const base = conn.base_url.replace(/\/$/, '');
-        const url  = `${base}/rest/api/3/search?jql=${encodeURIComponent(jql)}&maxResults=${maxResults}&fields=summary,assignee,priority,issuetype,labels,customfield_10014,status,components`;
+        const defaultFields = 'summary,assignee,priority,issuetype,labels,customfield_10014,status,components';
+        const url  = `${base}/rest/api/3/search?jql=${encodeURIComponent(jql)}&maxResults=${maxResults}&fields=${fields || defaultFields}`;
 
         const res = await fetch(url, {
           headers: { 'Authorization': `Basic ${auth}`, 'Accept': 'application/json' }
