@@ -1,6 +1,111 @@
 // @ts-nocheck
 import React from 'react';
 import { supabase } from '../lib/api';
+import { GetJiraMetadata } from '../../modules/deploy-planner/domain/useCases/GetJiraMetadata';
+import { JiraMetadataAdapter } from '../../modules/deploy-planner/infra/JiraMetadataAdapter';
+import { SupabaseReleaseRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseReleaseRepo';
+
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+async function getAuthHeaders() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
+}
+const jiraMetadataAdapter = new JiraMetadataAdapter(API_BASE, getAuthHeaders);
+const getJiraMetadata = new GetJiraMetadata(jiraMetadataAdapter);
+const releaseRepo = new SupabaseReleaseRepo(supabase);
+
+function JiraFieldMapping({verCfg,setVerCfg}){
+  const [issueTypes,setIssueTypes]=React.useState([]);
+  const [fields,setFields]=React.useState([]);
+  const [loading,setLoading]=React.useState(false);
+  const [saving,setSaving]=React.useState(false);
+  const [saved,setSaved]=React.useState(false);
+  const [selectedTypes,setSelectedTypes]=React.useState(verCfg?.issue_types||[]);
+  const [selectedField,setSelectedField]=React.useState(verCfg?.repo_jira_field||"components");
+
+  React.useEffect(()=>{
+    if(verCfg?.issue_types)setSelectedTypes(verCfg.issue_types);
+    if(verCfg?.repo_jira_field)setSelectedField(verCfg.repo_jira_field);
+  },[verCfg?.id]);
+
+  const fetchJiraMetadata=async()=>{
+    setLoading(true);
+    try{
+      const result=await getJiraMetadata.execute();
+      setIssueTypes(result.issueTypes);
+      setFields(result.fields);
+    }catch(e){console.error("Fetch Jira metadata error:",e);}
+    setLoading(false);
+  };
+
+  const toggleType=(name)=>{
+    setSelectedTypes(prev=>prev.includes(name)?prev.filter(x=>x!==name):[...prev,name]);
+  };
+
+  const save=async()=>{
+    if(!verCfg?.id)return;
+    setSaving(true);
+    try{
+      await releaseRepo.saveConfig({repoJiraField:selectedField});
+      setVerCfg(v=>({...v,repo_jira_field:selectedField}));
+    }catch(e){console.error("Save config error:",e);}
+    setSaving(false);setSaved(true);setTimeout(()=>setSaved(false),2000);
+  };
+
+  return(
+    <div className="a-card" style={{marginTop:16}}>
+      <div className="a-ct">🔗 Jira Field Mapping</div>
+      <div style={{fontSize:11,color:"var(--tx3)",marginBottom:14}}>
+        Selecciona qué campo de Jira usar como "Repository & Components" para agrupar tickets por repositorio en las releases.
+      </div>
+
+      <button onClick={fetchJiraMetadata} disabled={loading}
+        style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,padding:"7px 14px",fontSize:11,cursor:"pointer",color:"var(--tx2)",fontWeight:600,fontFamily:"inherit",marginBottom:14}}>
+        {loading?"Cargando campos de Jira…":"🔄 Cargar campos desde Jira"}
+      </button>
+
+      {issueTypes.length>0&&(
+        <div style={{marginBottom:14}}>
+          <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:6,letterSpacing:".06em",textTransform:"uppercase"}}>Issue Types disponibles</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+            {issueTypes.filter(it=>!it.subtask).map(it=>{
+              const on=selectedTypes.includes(it.name);
+              return(
+                <button key={it.id} onClick={()=>toggleType(it.name)}
+                  style={{padding:"4px 10px",borderRadius:20,border:`1px solid ${on?"var(--ac)":"var(--bd)"}`,background:on?"var(--glow,rgba(79,110,247,.1))":"transparent",color:on?"var(--ac2)":"var(--tx3)",cursor:"pointer",fontSize:11,fontWeight:on?700:400,fontFamily:"inherit"}}>
+                  {it.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {fields.length>0&&(
+        <div style={{marginBottom:14}}>
+          <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:6,letterSpacing:".06em",textTransform:"uppercase"}}>Campo para Repository & Components</div>
+          <select value={selectedField} onChange={e=>setSelectedField(e.target.value)}
+            style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,padding:"7px 10px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",width:"100%",maxWidth:400}}>
+            <option value="components">components (estándar Jira)</option>
+            {fields.map(f=>(
+              <option key={f.id} value={f.id}>{f.name}{f.custom?" (custom)":""} — {f.id}</option>
+            ))}
+          </select>
+          <div style={{fontSize:10,color:"var(--tx3)",marginTop:4}}>
+            Campo actual: <strong style={{color:"var(--ac2)"}}>{selectedField||"components"}</strong>
+          </div>
+        </div>
+      )}
+
+      {(fields.length>0||selectedField!=="components")&&(
+        <button onClick={save} disabled={saving}
+          style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:6,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+          {saving?"Guardando…":saved?"✓ Guardado":"Guardar campo seleccionado"}
+        </button>
+      )}
+    </div>
+  );
+}
 
 function AdminDeployConfig() {
   const [statuses, setStatuses]   = React.useState([]);
@@ -375,7 +480,9 @@ function AdminDeployConfig() {
         )}
       </div>
 
-      {/* ── Repo groups ───────────────────────────────────────── */}
+      {/* ── Jira Field Mapping ─────────────────────────────────── */}
+      <JiraFieldMapping verCfg={verCfg} setVerCfg={setVerCfg}/>
+
       {/* ── Repo groups ───────────────────────────────────────── */}
       <div className="a-card" style={{marginTop:16}}>
         <div className="a-ct">Grupos de repositorios con dependencias</div>

@@ -155,6 +155,49 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
     }
   );
 
+  // ── GET /jira/issuetypes ────────────────────────────────────────────────────
+  // Returns all issue types from the Jira instance
+  app.get('/issuetypes', async (_req: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const conn = await getAdminConnection(supabase);
+      if (!conn) return reply.status(404).send({ ok: false, error: 'Jira no configurado.' });
+
+      const auth = Buffer.from(`${conn.email}:${conn.api_token}`).toString('base64');
+      const base = conn.base_url.replace(/\/$/, '');
+      const res = await fetch(`${base}/rest/api/3/issuetype`, {
+        headers: { 'Authorization': `Basic ${auth}`, 'Accept': 'application/json' }
+      });
+      if (!res.ok) return reply.status(res.status).send({ ok: false, error: `Jira ${res.status}` });
+      const data = await res.json() as Array<{ id: string; name: string; subtask: boolean }>;
+      return reply.send({ ok: true, issueTypes: data.map(it => ({ id: it.id, name: it.name, subtask: it.subtask })) });
+    } catch (err: unknown) {
+      return reply.status(502).send({ ok: false, error: String(err) });
+    }
+  });
+
+  // ── GET /jira/fields ──────────────────────────────────────────────────────
+  // Returns all fields available in the Jira instance (standard + custom)
+  app.get('/fields', async (_req: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const conn = await getAdminConnection(supabase);
+      if (!conn) return reply.status(404).send({ ok: false, error: 'Jira no configurado.' });
+
+      const auth = Buffer.from(`${conn.email}:${conn.api_token}`).toString('base64');
+      const base = conn.base_url.replace(/\/$/, '');
+      const res = await fetch(`${base}/rest/api/3/field`, {
+        headers: { 'Authorization': `Basic ${auth}`, 'Accept': 'application/json' }
+      });
+      if (!res.ok) return reply.status(res.status).send({ ok: false, error: `Jira ${res.status}` });
+      const data = await res.json() as Array<{ id: string; name: string; custom: boolean; schema?: { type: string } }>;
+      return reply.send({
+        ok: true,
+        fields: data.map(f => ({ id: f.id, name: f.name, custom: f.custom, type: f.schema?.type || 'unknown' }))
+      });
+    } catch (err: unknown) {
+      return reply.status(502).send({ ok: false, error: String(err) });
+    }
+  });
+
   // ── GET /jira/statuses ─────────────────────────────────────────────────────
   // Devuelve todos los estados de la instancia Jira (para Admin → Deploy Config)
   app.get('/statuses', async (_req: FastifyRequest, reply: FastifyReply) => {
