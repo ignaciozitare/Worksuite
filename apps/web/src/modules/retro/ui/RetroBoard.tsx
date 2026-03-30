@@ -829,7 +829,7 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
     });
     // Persistir a Supabase
     const{error}=await supabase.from("retro_actionables")
-      .update({status:newStatus,updated_at:new Date().toISOString()})
+      .update({status:newStatus})
       .eq("id",id);
     if(error)console.error("[RetroBoard] Move error:",error.message);
   };
@@ -979,15 +979,16 @@ export function AdminRetroTeams({wsUsers,teams,setTeams}){
     }
   };
 
-  const removeMember=async(memberId)=>{
+  const removeMember=async(userId)=>{
     if(!selTeam)return;
-    await supabase.from("retro_team_members").delete().eq("id",memberId);
-    setTeams(ts=>ts.map(tm=>tm.id===selTeam.id?{...tm,members:tm.members.filter(m=>m.id!==memberId)}:tm));
+    await supabase.from("retro_team_members").delete().eq("team_id",selTeam.id).eq("user_id",userId);
+    setTeams(ts=>ts.map(tm=>tm.id===selTeam.id?{...tm,members:tm.members.filter(m=>m.user_id!==userId)}:tm));
   };
 
-  const updateRole=async(memberId,role)=>{
-    await supabase.from("retro_team_members").update({role}).eq("id",memberId);
-    setTeams(ts=>ts.map(tm=>tm.id===selTeam?.id?{...tm,members:tm.members.map(m=>m.id===memberId?{...m,role}:m)}:tm));
+  const updateRole=async(userId,role)=>{
+    if(!selTeam)return;
+    await supabase.from("retro_team_members").update({role}).eq("team_id",selTeam.id).eq("user_id",userId);
+    setTeams(ts=>ts.map(tm=>tm.id===selTeam.id?{...tm,members:tm.members.map(m=>m.user_id===userId?{...m,role}:m)}:tm));
   };
 
   const nonMembers=wsUsers.filter(u=>!selTeam?.members?.some(m=>m.user_id===u.id));
@@ -1047,13 +1048,13 @@ export function AdminRetroTeams({wsUsers,teams,setTeams}){
                   <div style={{flex:1}}>
                     <div style={{fontSize:12,fontWeight:600,color:"var(--tx)"}}>{m.name||m.email}</div>
                   </div>
-                  <select value={m.role||"member"} onChange={e=>updateRole(m.id,e.target.value)}
+                  <select value={m.role||"member"} onChange={e=>updateRole(m.user_id,e.target.value)}
                     style={{background:"var(--sf3)",border:"1px solid var(--bd)",borderRadius:5,padding:"3px 7px",fontSize:11,color:"var(--tx)",fontFamily:"inherit"}}>
                     <option value="member">Participante</option>
                     <option value="owner">Mod. Owner</option>
                     <option value="temporal">Mod. Temporal</option>
                   </select>
-                  <button onClick={()=>removeMember(m.id)} style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14}}>×</button>
+                  <button onClick={()=>removeMember(m.user_id)} style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14}}>×</button>
                 </div>
               ))}
               {(!selTeam.members||selTeam.members.length===0)&&<div style={{fontSize:12,color:"var(--tx3)",textAlign:"center",padding:"12px 0"}}>Sin miembros</div>}
@@ -1119,31 +1120,40 @@ export function RetroBoard({currentUser,wsUsers,lang}){
   },[wsUsers.length]);
 
   const saveSession=async(session)=>{
-    // retro_sessions only has: name, team_id, stats (jsonb)
-    // Embed cards inside stats since there's no dedicated cards column
-    const row={name:session.name,team_id:session.teamId,stats:{...session.stats,cards_data:session.cards}};
+    // retro_sessions columns: id, team_id, name, status, phase, votes_per_user, phase_times, created_by, created_at, closed_at, stats
+    const row={
+      name:session.name,
+      team_id:session.teamId,
+      status:"closed",
+      phase:"summary",
+      votes_per_user:session.stats?.votesPerUser||5,
+      phase_times:session.phaseTimes||{creating:5,grouping:5,voting:3,discussion:3},
+      stats:{...session.stats,cards_data:session.cards},
+    };
     const{data,error}=await supabase.from("retro_sessions").insert(row).select().single();
     if(error){console.error("[RetroBoard] Save session error:", error.message);return;}
     if(!data)return;
-    // Save actionables to retro_actionables table
+    // retro_actionables columns: id, session_id, card_id, text, assignee, due_date, status, priority, sort_order, team_id, retro_name, created_at
     const acts=(session.actionables||[]).filter(a=>a.id);
     if(acts.length){
       const{error:actErr}=await supabase.from("retro_actionables").upsert(
-        acts.map(a=>({id:a.id,text:a.text,assignee:a.assignee,due_date:a.dueDate,priority:a.priority||"medium",status:a.status||"todo",session_id:data.id,team_id:session.teamId,updated_at:new Date().toISOString()})),
+        acts.map((a,i)=>({id:a.id,text:a.text,assignee:a.assignee||"",due_date:a.dueDate||null,priority:a.priority||"medium",status:a.status||"todo",sort_order:i,session_id:data.id,team_id:session.teamId,retro_name:session.name})),
         {onConflict:"id"}
       );
       if(actErr)console.error("[RetroBoard] Save actionables error:", actErr.message);
     }
-    // Update local state with session + actionables
     setHistory(h=>[{...data,date:data.created_at,cards:data.stats?.cards_data||[],actionables:acts},...h]);
   };
 
   const addToKanban=async(items)=>{
     const newItems=items.map(i=>({...i,id:i.id||genId(),status:i.status||"todo"}));
     setKanbanItems(prev=>[...prev,...newItems.filter(ni=>!prev.some(p=>p.id===ni.id))]);
-    // Persist to retro_actionables
-    const rows=newItems.map(a=>({id:a.id,text:a.text||a.actionable||"",assignee:a.assignee||"",due_date:a.dueDate||null,priority:a.priority||"medium",status:a.status||"todo",session_id:a.sessionId||null,team_id:a.teamId||null,updated_at:new Date().toISOString()}));
-    if(rows.length) await supabase.from("retro_actionables").upsert(rows,{onConflict:"id"}).catch(e=>console.error("addToKanban persist error:",e));
+    // retro_actionables columns: id, session_id, card_id, text, assignee, due_date, status, priority, sort_order, team_id, retro_name
+    const rows=newItems.map((a,i)=>({id:a.id,text:a.text||a.actionable||"",assignee:a.assignee||"",due_date:a.dueDate||null,priority:a.priority||"medium",status:a.status||"todo",sort_order:i,session_id:a.sessionId||null,team_id:a.teamId||null,retro_name:a.retroName||""}));
+    if(rows.length){
+      const{error}=await supabase.from("retro_actionables").upsert(rows,{onConflict:"id"});
+      if(error)console.error("[RetroBoard] addToKanban error:", error.message);
+    }
     setView("accionables");
   };
 
