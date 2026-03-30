@@ -1,34 +1,28 @@
 // @ts-nocheck
-// WorkSuite — Fase 2 — Prototype connected to real Supabase + real Jira API
+// WorkSuite — Root orchestrator component
 
-import React, {
-  useState, useMemo, useCallback,
-  createContext, useContext, useRef, useEffect,
-  Component
-} from "react";
+import React, { useState, useCallback, createContext, useRef, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { createPortal } from "react-dom";
 import { supabase } from './shared/lib/api';
 import { useTranslation } from '@worksuite/i18n';
-import { RetroBoard, AdminRetroTeams } from './RetroBoard';
-import { DeployPlanner } from './modules/deploy-planner';
-import EnvTracker, { AdminEnvEnvironments, AdminEnvRepositories, AdminEnvPolicy } from './EnvTracker';
 import { useAuth } from './shared/hooks/useAuth';
 import './WorkSuiteApp.css';
+
+// Module UI
 import { LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView } from './modules/jira-tracker/ui';
-import { OfficeSVG, BlueprintMiniMap, SeatTooltip, HDMapView, HDTableView, HDReserveModal, BlueprintHDMap } from './modules/hotdesk/ui';
-import { AdminShell } from './shared/admin';
-import { TimeParser } from './modules/jira-tracker/domain/services/TimeParser';
-import { WorklogService } from './modules/jira-tracker/domain/services/WorklogService';
+import { BlueprintHDMap, HDTableView, HDReserveModal } from './modules/hotdesk/ui';
+import { AdminShell, BuildingFloorSelectors } from './shared/admin';
+import { RetroBoard } from './RetroBoard';
+import { DeployPlanner } from './modules/deploy-planner';
+import EnvTracker from './EnvTracker';
+
+// Domain services
 import { CsvService } from './modules/jira-tracker/domain/services/CsvService';
-import { DeskType, SeatStatusEnum as SeatStatus } from './modules/hotdesk/domain/entities/constants';
+import { SeatStatusEnum as SeatStatus } from './modules/hotdesk/domain/entities/constants';
 import { ReservationService } from './modules/hotdesk/domain/services/ReservationService';
-import { makeAvatar, isValidEmail, daysInMonth, firstMonday, isoFromYMD, fmtMonthYear } from './shared/lib/utils';
-import { PasswordStrength } from './shared/ui/PasswordStrength';
-import { MiniCalendar } from './shared/ui/MiniCalendar';
-import { TODAY, MONTHS_EN, MONTHS_ES, DAYS_EN, DAYS_ES } from './shared/lib/constants';
+import { TODAY } from './shared/lib/constants';
 import { SEATS } from './modules/hotdesk/domain/entities/seats';
-import { MOCK_USERS, MOCK_ISSUES_FALLBACK, MOCK_PROJECTS_FALLBACK, MOCK_WORKLOGS, INITIAL_HD_STATE } from './shared/lib/fallbackData';
+import { MOCK_ISSUES_FALLBACK, MOCK_PROJECTS_FALLBACK } from './shared/lib/fallbackData';
 
 // ── API helpers ────────────────────────────────────────────────────────────
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
@@ -76,74 +70,8 @@ function worklogsArrayToMap(rows) {
 }
 
 
-// DOMAIN LAYER — services imported from modules
-// ══════════════════════════════════════════════════════════════════
-
-const MODULES = [
-  { id:"jt",     label:"Jira Tracker",  color:"var(--ac2)"   },
-  { id:"hd",     label:"HotDesk",       color:"var(--green)" },
-  { id:"retro",  label:"RetroBoard",    color:"#818cf8"      },
-  { id:"deploy", label:"Deploy Planner",color:"#f59e0b"      },
-  { id:"envtracker", label:"Environments",  color:"#22d3ee"      },
-];
-
-// i18n — Translations now provided by @worksuite/i18n via I18nProvider (see main.tsx)
-
-const _memStore = {};
-const StorageAdapter = {
-  load()        { return _memStore["state"] ?? null; },
-  save(state)   { _memStore["state"] = state; },
-};
-
-// Mock data, SEATS, TODAY, MONTHS/DAYS → imported from shared/lib/ and modules/
-const MOCK_TODAY = TODAY;
-
-// ══════════════════════════════════════════════════════════════════
-// CONTEXT
-// ══════════════════════════════════════════════════════════════════
 
 const AppCtx = createContext(null);
-const useApp = () => useContext(AppCtx);
-
-// ══════════════════════════════════════════════════════════════════
-// UTILITY HELPERS
-// ══════════════════════════════════════════════════════════════════
-
-// MONTHS_EN/ES, DAYS_EN/ES → imported from shared/lib/constants
-
-// buildCalGrid, formatFullDate → moved to jira-tracker/ui/CalendarView and DayView
-// LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView → imported from jira-tracker/ui
-
-// ── Remaining inline helpers (used by HotDesk views) ──
-
-function buildCalGrid(year, month) {
-  const first = new Date(year,month,1), last = new Date(year,month+1,0);
-  const so = (first.getDay()+6)%7, eo = (7-last.getDay())%7;
-  const cells = [];
-  for (let i = -so; i <= last.getDate()-1+eo; i++) {
-    const d = new Date(year,month,1+i);
-    cells.push({ date:d.toISOString().slice(0,10), day:d.getDate(), isCurrentMonth:d.getMonth()===month, isToday:d.toISOString().slice(0,10)===MOCK_TODAY });
-  }
-  return cells;
-}
-
-function formatFullDate(iso, lang) {
-  const d = new Date(iso+"T00:00:00");
-  const ms = lang==="es" ? MONTHS_ES : MONTHS_EN;
-  if (lang==="es") {
-    const dn = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
-    return `${dn[d.getDay()]}, ${d.getDate()} de ${ms[d.getMonth()].toLowerCase()} de ${d.getFullYear()}`;
-  }
-  const dn = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  return `${dn[d.getDay()]}, ${ms[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-}
-
-// makeAvatar, isValidEmail, daysInMonth, firstMonday, isoFromYMD, fmtMonthYear
-// → imported from shared/lib/utils
-
-// PasswordStrength, MiniCalendar → imported from shared/ui/
-
-
 
 // ══════════════════════════════════════════════════════════════════
 // ROOT COMPONENT
@@ -296,8 +224,6 @@ function WorkSuiteApp() {
     void loadAll();
     return () => { cancelled = true; };
   }, [authUser?.id]);
-
-  // t() now comes from useTranslation() via I18nProvider
 
   const activeDayRef = useRef(activeDay);
   useEffect(() => { activeDayRef.current = activeDay; }, [activeDay]);

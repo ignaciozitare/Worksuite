@@ -22,23 +22,26 @@
 worksuite/
 ├── packages/                    ← código compartido entre todas las apps
 │   ├── shared-types/            ← tipos TypeScript de dominio
-│   ├── i18n/                    ← sistema de traducción (es/en)
+│   ├── i18n/                    ← sistema de traducción (es/en) — I18nProvider + useTranslation()
 │   ├── ui/                      ← librería de componentes + tokens CSS
 │   └── jira-client/             ← cliente HTTP para Jira Cloud API
 │
 └── apps/
     ├── web/                     ← React frontend
     │   └── src/
+    │       ├── WorkSuiteApp.tsx ← Root orchestrator (~520 líneas, routing + state + layout)
     │       ├── shared/
-    │       │   ├── admin/       ← Panel admin (cross-cutting)
+    │       │   ├── admin/       ← Panel admin (~20 componentes extraídos)
     │       │   ├── auth/        ← Login + useAuth
-    │       │   ├── lib/         ← supabaseClient
-    │       │   └── ui/          ← re-exports de @worksuite/ui
+    │       │   ├── hooks/       ← useAuth
+    │       │   ├── lib/         ← supabaseClient, utils, constants, fallbackData
+    │       │   └── ui/          ← MiniCalendar, PasswordStrength
     │       └── modules/
-    │           ├── jira-tracker/
-    │           ├── hotdesk/
-    │           ├── retro/
-    │           └── deploy-planner/
+    │           ├── jira-tracker/  ← domain/ + infra/ + ui/ (5 componentes)
+    │           ├── hotdesk/       ← domain/ + infra/ + ui/ (7 componentes)
+    │           ├── retro/         ← domain/ + infra/ + ui/
+    │           ├── deploy-planner/← domain/ + infra/ + ui/
+    │           └── environments/  ← domain/ + infra/ + ui/
     │
     └── api/                     ← Fastify backend
         └── src/
@@ -171,8 +174,16 @@ Variables disponibles en todo el CSS:
 |------|--------|-------------|
 | 0 | ✅ Completo | Scaffolding monorepo: packages/, tsconfig, workspaces |
 | 1 | ✅ Completo | `packages/ui` + `packages/i18n` + `packages/jira-client` + `packages/shared-types` |
-| 2 | ⏳ Pendiente | Extraer dominio HotDesk |
-| 3 | ⏳ Pendiente | Extraer dominio JiraTracker |
-| 4 | ⏳ Pendiente | Extraer Admin a `shared/admin/` |
-| 5 | ⏳ Pendiente | Extraer dominio Retro |
-| 6 | ⏳ Pendiente | Scaffolding Deploy Planner |
+| 1.5 | ✅ Completo | Migrar i18n: reemplazar TRANSLATIONS inline por `@worksuite/i18n` con I18nProvider |
+| 2 | ✅ Completo | Extraer dominio + UI HotDesk → `modules/hotdesk/{domain,infra,ui}` (7 componentes) |
+| 3 | ✅ Completo | Extraer dominio + UI JiraTracker → `modules/jira-tracker/{domain,infra,ui}` (5 componentes) |
+| 4 | ✅ Completo | Extraer Admin → `shared/admin/` (~20 componentes, incl. BlueprintCanvas) |
+| 5 | ✅ Completo | Retro dominio + UI (RetroBoard ya como componente separado) |
+| 6 | ✅ Completo | Deploy Planner dominio + UI (DeployPlanner + DeployTimeline + ReleaseDetail) |
+| 7 | ✅ Completo | Environments dominio + UI (EnvironmentsView + Admin) |
+
+### Resultado
+- `WorkSuiteApp.tsx` reducido de **4562 → 520 líneas** (88% reducción)
+- Solo contiene: routing, state management, data loading, layout shell
+- Todos los módulos siguen `domain/ → infra/ → ui/` (hexagonal)
+- i18n centralizado en `@worksuite/i18n` con keys estructuradas por namespace
