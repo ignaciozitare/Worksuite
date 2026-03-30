@@ -828,8 +828,10 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
       return[...prev,{id,status:newStatus}];
     });
     // Persistir a Supabase
-    await supabase.from("retro_actionables")
-      .upsert({id,status:newStatus,updated_at:new Date().toISOString()},{onConflict:"id"});
+    const{error}=await supabase.from("retro_actionables")
+      .update({status:newStatus,updated_at:new Date().toISOString()})
+      .eq("id",id);
+    if(error)console.error("[RetroBoard] Move error:",error.message);
   };
 
   const vis=merged.filter(item=>{
@@ -1103,31 +1105,36 @@ export function RetroBoard({currentUser,wsUsers,lang}){
       supabase.from("retro_sessions").select("*").order("created_at",{ascending:false}),
       supabase.from("retro_teams").select("*"),
       supabase.from("retro_team_members").select("*"),
-    ]).then(([{data:sessions},{data:teamsData},{data:members}])=>{
-      setHistory((sessions||[]).map(s=>({...s,date:s.created_at,cards:s.cards||[],actionables:s.actionables||[]})));
+      supabase.from("retro_actionables").select("*"),
+    ]).then(([{data:sessions},{data:teamsData},{data:members},{data:actionables}])=>{
+      // Enrich sessions with actionables from separate table
+      const actBySession={};
+      (actionables||[]).forEach(a=>{
+        if(!actBySession[a.session_id])actBySession[a.session_id]=[];
+        actBySession[a.session_id].push({id:a.id,text:a.text,assignee:a.assignee,dueDate:a.due_date,priority:a.priority,status:a.status});
+      });
+      setHistory((sessions||[]).map(s=>({...s,date:s.created_at,cards:s.cards||[],actionables:actBySession[s.id]||[]})));
       setTeams((teamsData||[]).map(tm=>({...tm,members:(members||[]).filter(m=>m.team_id===tm.id).map(m=>{const u=wsUsers.find(x=>x.id===m.user_id);return{...m,name:u?.name,email:u?.email};})})));
     });
   },[wsUsers.length]);
 
   const saveSession=async(session)=>{
-    const row={name:session.name,team_id:session.teamId,cards:session.cards,stats:session.stats,actionables:session.actionables};
-    console.log("[RetroBoard] Saving session:", row.name, "actionables:", row.actionables?.length);
+    // retro_sessions does NOT have 'actionables' column — save only name, team_id, cards, stats
+    const row={name:session.name,team_id:session.teamId,cards:session.cards,stats:session.stats};
     const{data,error}=await supabase.from("retro_sessions").insert(row).select().single();
-    if(error){console.error("[RetroBoard] Save session error:", error.message, error);return;}
-    if(data){
-      console.log("[RetroBoard] Session saved:", data.id);
-      setHistory(h=>[{...data,date:data.created_at,cards:data.cards||[],actionables:data.actionables||[]},...h]);
-      // Persist actionables to retro_actionables table for kanban board
-      const acts=(data.actionables||[]).filter(a=>a.id);
-      if(acts.length){
-        const{error:actErr}=await supabase.from("retro_actionables").upsert(
-          acts.map(a=>({id:a.id,text:a.text,assignee:a.assignee,due_date:a.dueDate,priority:a.priority||"medium",status:a.status||"todo",session_id:data.id,team_id:session.teamId,updated_at:new Date().toISOString()})),
-          {onConflict:"id"}
-        );
-        if(actErr)console.error("[RetroBoard] Save actionables error:", actErr.message, actErr);
-        else console.log("[RetroBoard] Actionables saved:", acts.length);
-      }
+    if(error){console.error("[RetroBoard] Save session error:", error.message);return;}
+    if(!data)return;
+    // Save actionables to retro_actionables table
+    const acts=(session.actionables||[]).filter(a=>a.id);
+    if(acts.length){
+      const{error:actErr}=await supabase.from("retro_actionables").upsert(
+        acts.map(a=>({id:a.id,text:a.text,assignee:a.assignee,due_date:a.dueDate,priority:a.priority||"medium",status:a.status||"todo",session_id:data.id,team_id:session.teamId,updated_at:new Date().toISOString()})),
+        {onConflict:"id"}
+      );
+      if(actErr)console.error("[RetroBoard] Save actionables error:", actErr.message);
     }
+    // Update local state with session + actionables
+    setHistory(h=>[{...data,date:data.created_at,cards:data.cards||[],actionables:acts},...h]);
   };
 
   const addToKanban=async(items)=>{
