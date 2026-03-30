@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React from 'react';
 import { supabase } from '../lib/api';
-import { AdminRetroTeams } from '../../RetroBoard';
+import { AdminRetroTeams } from '../../modules/retro/ui/RetroBoard';
 
 function AdminRetroTeamsShell({ users }) {
   const [teams, setTeams] = React.useState([]);

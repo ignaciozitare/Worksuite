@@ -1,7 +1,7 @@
 // @ts-nocheck
 // WorkSuite — Root orchestrator (layout + routing)
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, lazy, Suspense } from "react";
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from './shared/lib/api';
 import { useTranslation } from '@worksuite/i18n';
@@ -11,13 +11,16 @@ import { useWorklogs } from './shared/hooks/useWorklogs';
 import { useHotDesk } from './shared/hooks/useHotDesk';
 import './WorkSuiteApp.css';
 
-// Module UI
+// Module UI — eagerly loaded (always visible)
 import { LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView } from './modules/jira-tracker/ui';
 import { BlueprintHDMap, HDTableView, HDReserveModal } from './modules/hotdesk/ui';
-import { AdminShell, BuildingFloorSelectors } from './shared/admin';
-import { RetroBoard } from './RetroBoard';
-import { DeployPlanner } from './modules/deploy-planner';
-import EnvTracker from './EnvTracker';
+import { BuildingFloorSelectors } from './shared/admin';
+
+// Module UI — lazy loaded (per-route)
+const AdminShell = lazy(() => import('./shared/admin/AdminShell').then(m => ({ default: m.AdminShell })));
+const RetroBoard = lazy(() => import(/* webpackChunkName: "retro" */ './modules/retro/ui/RetroBoard').then(m => ({ default: m.RetroBoard })));
+const DeployPlanner = lazy(() => import('./modules/deploy-planner/ui/DeployPlanner').then(m => ({ default: m.DeployPlanner })));
+const EnvTracker = lazy(() => import('./modules/environments/ui/EnvironmentsView').then(m => ({ default: m.EnvironmentsView })));
 
 // Domain
 import { CsvService } from './modules/jira-tracker/domain/services/CsvService';
@@ -252,22 +255,24 @@ function WorkSuiteApp() {
                 <HDTableView hd={hd} onCell={(sid, date) => handleHdSeatClick(sid, date)} currentUser={CURRENT_USER} blueprint={selectedBlueprint} theme={theme} />
               </main>
             )}
-            {mod === "retro" && view !== "admin" && (
-              <main className="content" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
-                <RetroBoard currentUser={CURRENT_USER} wsUsers={users} lang={locale} />
-              </main>
-            )}
-            {mod === "deploy" && view !== "admin" && (
-              <main className="content" style={{ padding: 0, overflow: "auto" }}>
-                <DeployPlanner currentUser={CURRENT_USER} />
-              </main>
-            )}
-            {mod === "envtracker" && view !== "admin" && (
-              <main className="content" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
-                <EnvTracker supabase={supabase} currentUser={CURRENT_USER} wsUsers={users} />
-              </main>
-            )}
-            {view === "admin" && <AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER} theme={theme} />}
+            <Suspense fallback={<main className="content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx3)' }}>Loading…</main>}>
+              {mod === "retro" && view !== "admin" && (
+                <main className="content" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
+                  <RetroBoard currentUser={CURRENT_USER} wsUsers={users} lang={locale} />
+                </main>
+              )}
+              {mod === "deploy" && view !== "admin" && (
+                <main className="content" style={{ padding: 0, overflow: "auto" }}>
+                  <DeployPlanner currentUser={CURRENT_USER} />
+                </main>
+              )}
+              {mod === "envtracker" && view !== "admin" && (
+                <main className="content" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
+                  <EnvTracker supabase={supabase} currentUser={CURRENT_USER} wsUsers={users} />
+                </main>
+              )}
+              {view === "admin" && <AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER} theme={theme} />}
+            </Suspense>
           </div>
         </div>
       </div>

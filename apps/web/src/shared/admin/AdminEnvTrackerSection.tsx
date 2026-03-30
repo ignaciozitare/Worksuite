@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React from 'react';
-import { AdminEnvEnvironments, AdminEnvRepositories, AdminEnvPolicy } from '../../EnvTracker';
+import { AdminEnvEnvironments, AdminEnvRepositories, AdminEnvPolicy } from '../../modules/environments';
 
 function AdminEnvTrackerSection() {
   const [sub, setSub] = React.useState("environments");
