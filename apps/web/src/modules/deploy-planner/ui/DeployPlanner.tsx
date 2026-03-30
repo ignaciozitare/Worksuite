@@ -283,7 +283,7 @@ export function DeployPlanner({ currentUser }) {
       <ReleaseDetail
         release={current}
         jiraIssues={allTickets}
-        repoField={config?.repoJiraField||''}
+        repoField={config?.repoJiraField||'components'}
         statuses={statuses}
         onClose={()=>setSelected(null)}
         onTicketStatusChange={handleTicketStatus}
