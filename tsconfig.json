@@ -15,7 +15,7 @@
     "sourceMap": true,
     "paths": {
       "@worksuite/shared-types": ["./packages/shared-types/src/index.ts"],
-      "@worksuite/i18n":         ["./packages/i18n/src/index.ts"],
+      "@worksuite/i18n":         ["./packages/i18n/src/index.tsx"],
       "@worksuite/ui":           ["./packages/ui/src/index.ts"],
       "@worksuite/jira-client":  ["./packages/jira-client/src/index.ts"]
     }
