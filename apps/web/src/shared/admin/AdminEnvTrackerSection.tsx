@@ -1,6 +1,5 @@
 // @ts-nocheck
 import React from 'react';
-import { supabase } from '../lib/api';
 import { AdminEnvEnvironments, AdminEnvRepositories, AdminEnvPolicy } from '../../modules/environments';
 
 function AdminEnvTrackerSection() {
@@ -22,9 +21,9 @@ function AdminEnvTrackerSection() {
         ))}
       </div>
       <div className="a-card">
-        {sub==="environments" && <AdminEnvEnvironments supabase={supabase}/>}
-        {sub==="repositories" && <AdminEnvRepositories supabase={supabase}/>}
-        {sub==="policy"       && <AdminEnvPolicy       supabase={supabase}/>}
+        {sub==="environments" && <AdminEnvEnvironments/>}
+        {sub==="repositories" && <AdminEnvRepositories/>}
+        {sub==="policy"       && <AdminEnvPolicy/>}
       </div>
     </div>
   );

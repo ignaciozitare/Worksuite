@@ -1,7 +1,8 @@
 // @ts-nocheck
 // RetroBoard — WorkSuite Module v1.0
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from '@worksuite/i18n';
 import { supabase } from '@/shared/lib/api';
 
 // ════════════════════════════════════════════════════════════════
@@ -112,7 +113,7 @@ function TimerBar({timer,setTimer,running,setRunning,isMod,phaseMins,setPhaseMin
         {isMod&&(
           <div style={{display:"flex",gap:6,flexShrink:0}}>
             <RBtn sm v={running?"warn":"success"} onClick={()=>setRunning(r=>!r)}>{running?"⏸ Pausar":"▶ Iniciar"}</RBtn>
-            {onNext&&<RBtn sm v="ghost" onClick={onNext}>{nextLabel||"Siguiente →"}</RBtn>}
+            {onNext&&<RBtn sm v="ghost" onClick={onNext}>{nextLabel||t("retro.next")}</RBtn>}
           </div>
         )}
       </div>
@@ -513,7 +514,7 @@ function RetroSummary({sortedCards,retroName,onExit,onAddToKanban}){
   const withAct=sortedCards.filter(c=>c.actionable);
   const without=sortedCards.filter(c=>!c.actionable);
   const doCopy=()=>{
-    const text=withAct.map(c=>`• ${c.actionable}\n  ${c.assignee||"Sin asignar"} · ${c.dueDate||"—"}`).join("\n\n");
+    const text=withAct.map(c=>`• ${c.actionable}\n  ${c.assignee||t("retro.unassigned")} · ${c.dueDate||"—"}`).join("\n\n");
     navigator.clipboard?.writeText(text).catch(()=>{});
     setCopied(true);setTimeout(()=>setCopied(false),2000);
   };
@@ -525,7 +526,7 @@ function RetroSummary({sortedCards,retroName,onExit,onAddToKanban}){
         <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:20,color:"var(--tx)",margin:0}}>{retroName||"Retrospectiva"}</h2>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10,marginBottom:22}}>
-        {[{l:"Tarjetas",v:sortedCards.length,c:"#818cf8"},{l:"Con accionable",v:withAct.length,c:"var(--green)"},{l:"Sin accionable",v:without.length,c:"var(--red)"},{l:"Votos",v:sortedCards.reduce((a,c)=>a+c.votes,0),c:"#fbbf24"}].map((s)=>(
+        {[{l:t("retro.cardsLabel"),v:sortedCards.length,c:"#818cf8"},{l:t("retro.withActionable"),v:withAct.length,c:"var(--green)"},{l:"Sin accionable",v:without.length,c:"var(--red)"},{l:t("retro.votes"),v:sortedCards.reduce((a,c)=>a+c.votes,0),c:"#fbbf24"}].map((s)=>(
           <div key={s.l} style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:11,padding:"11px",textAlign:"center"}}>
             <div style={{fontSize:20,fontWeight:700,fontFamily:"'Sora',sans-serif",color:s.c}}>{s.v}</div>
             <div style={{fontSize:10,color:"var(--tx3)",marginTop:2}}>{s.l}</div>
@@ -533,7 +534,7 @@ function RetroSummary({sortedCards,retroName,onExit,onAddToKanban}){
         ))}
       </div>
       <div style={{display:"flex",gap:8,marginBottom:16}}>
-        <RBtn v={copied?"success":"ghost"} full onClick={doCopy}>{copied?"✓ Copiado":"📋 Copiar accionables"}</RBtn>
+        <RBtn v={copied?"success":"ghost"} full onClick={doCopy}>{copied?"✓ Copiado":t("retro.copyActionables")}</RBtn>
       </div>
       {withAct.length>0&&(
         <div style={{background:"var(--sf)",border:"1px solid rgba(129,140,248,.25)",borderRadius:10,padding:"12px 14px",marginBottom:16}}>
@@ -544,7 +545,7 @@ function RetroSummary({sortedCards,retroName,onExit,onAddToKanban}){
                 <input type="checkbox" checked={!!selected[i]} onChange={()=>setSelected((p)=>({...p,[i]:!p[i]}))} style={{marginTop:2,accentColor:"#6366f1"}}/>
                 <div>
                   <p style={{fontSize:12,color:"var(--tx)",margin:"0 0 2px",fontWeight:500}}>{card.actionable}</p>
-                  <span style={{fontSize:11,color:"var(--tx3)"}}>{card.assignee||"Sin asignar"} · {card.dueDate||"—"}</span>
+                  <span style={{fontSize:11,color:"var(--tx3)"}}>{card.assignee||t("retro.unassigned")} · {card.dueDate||"—"}</span>
                 </div>
               </label>
             ))}
@@ -718,7 +719,7 @@ function RetroHistorial({currentUser,history,teams}){
               {teams.find(t=>t.id===retro.team_id)&&<span style={{fontSize:12,color:teams.find(t=>t.id===retro.team_id)?.color,fontWeight:600}}>{teams.find(t=>t.id===retro.team_id)?.name}</span>}
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:10}}>
-              {[{l:"Tarjetas",v:retro.stats?.cards||0,c:"#818cf8"},{l:"Con accionable",v:retro.stats?.withAction||0,c:"var(--green)"},{l:"Votos",v:retro.stats?.votes||0,c:"#fbbf24"}].map((s)=>(
+              {[{l:t("retro.cardsLabel"),v:retro.stats?.cards||0,c:"#818cf8"},{l:t("retro.withActionable"),v:retro.stats?.withAction||0,c:"var(--green)"},{l:t("retro.votes"),v:retro.stats?.votes||0,c:"#fbbf24"}].map((s)=>(
                 <div key={s.l} style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:11,padding:"10px",textAlign:"center"}}>
                   <div style={{fontSize:18,fontWeight:700,fontFamily:"'Sora',sans-serif",color:s.c}}>{s.v}</div>
                   <div style={{fontSize:10,color:"var(--tx3)",marginTop:2}}>{s.l}</div>
@@ -767,7 +768,7 @@ function RetroHistorial({currentUser,history,teams}){
                     {a.priority&&<RPriBadge priority={a.priority}/>}
                   </div>
                 </div>
-                <span style={{fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:600,background:a.status==="done"?"rgba(74,222,128,.1)":"rgba(248,113,113,.1)",color:a.status==="done"?"var(--green)":"var(--red)"}}>{a.status==="done"?"Cerrado":"Abierto"}</span>
+                <span style={{fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:600,background:a.status==="done"?"rgba(74,222,128,.1)":"rgba(248,113,113,.1)",color:a.status==="done"?"var(--green)":"var(--red)"}}>{a.status==="done"?t("retro.closed"):t("retro.open")}</span>
               </div>
             ))}
           </div>
@@ -784,13 +785,14 @@ function RetroHistorial({currentUser,history,teams}){
 // ════════════════════════════════════════════════════════════════
 
 function RetroAccionables({currentUser,items,setItems,history,teams}){
+  const {t}=useTranslation();
   const [filterTeam,setFilterTeam]=useState("");
   const [filterPri,setFilterPri]=useState("");
   const [dragState,setDragState]=useState(null);
 
   // ── CARGA INICIAL desde Supabase ──────────────────────────────
   useEffect(()=>{
-    supabase.from("retro_actionables").select("id,status")
+    supabase.from("retro_actionables").select("*")
       .then(({data})=>{
         if(data?.length){
           setItems(data.map(d=>({id:d.id,status:d.status})));
@@ -869,7 +871,7 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
               </div>
               {colItms.length===0&&(
                 <div style={{border:`2px dashed ${isDragTarget?col.color:"var(--bd)"}`,borderRadius:8,padding:"16px 6px",textAlign:"center",fontSize:11,color:isDragTarget?col.color:"var(--tx3)"}}>
-                  {isDragTarget?"⬇ Soltar aquí":"Sin accionables"}
+                  {isDragTarget?"⬇ Soltar aquí":t("retro.noActionables")}
                 </div>
               )}
               <div style={{display:"flex",flexDirection:"column",gap:7}}>
@@ -886,7 +888,7 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
                         borderRadius:9,
                         padding:"10px 11px",
                         cursor:"grab",
-                        opacity:isDragging?.3:1,
+                        opacity:isDragging?0.3:1,
                         userSelect:"none",
                         transition:"opacity .15s"
                       }}>
@@ -1079,6 +1081,7 @@ export function AdminRetroTeams({wsUsers,teams,setTeams}){
 // ════════════════════════════════════════════════════════════════
 
 export function RetroBoard({currentUser,wsUsers,lang}){
+  const {t}=useTranslation();
   const [view,setView]=useState("board"); // "board" | "historial" | "accionables"
   const [retroActive,setRetroActive]=useState(false);
   const [history,setHistory]=useState([]);
@@ -1149,7 +1152,7 @@ export function RetroBoard({currentUser,wsUsers,lang}){
             <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:18,color:"var(--tx)",marginBottom:8}}>Retrospectivas del equipo</h2>
             <p style={{fontSize:13,color:"var(--tx3)",marginBottom:20}}>Organiza retrospectivas estructuradas: crear tarjetas, votar, definir accionables.</p>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12,maxWidth:600,margin:"0 auto 24px"}}>
-              {[{l:"Retros",v:history.length,c:"#818cf8"},{l:"Equipos",v:teams.length,c:teams[0]?.color||"var(--ac)"},{l:"Accionables",v:history.reduce((a,r)=>a+(r.actionables?.length||0),0),c:"var(--green)"}].map(s=>(
+              {[{l:"Retros",v:history.length,c:"#818cf8"},{l:t("retro.teams"),v:teams.length,c:teams[0]?.color||"var(--ac)"},{l:"Accionables",v:history.reduce((a,r)=>a+(r.actionables?.length||0),0),c:"var(--green)"}].map(s=>(
                 <div key={s.l} style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:12,padding:14,textAlign:"center"}}>
                   <div style={{fontSize:24,fontWeight:700,color:s.c,fontFamily:"'Sora',sans-serif"}}>{s.v}</div>
                   <div style={{fontSize:11,color:"var(--tx3)",marginTop:4}}>{s.l}</div>
