@@ -1111,16 +1111,21 @@ export function RetroBoard({currentUser,wsUsers,lang}){
 
   const saveSession=async(session)=>{
     const row={name:session.name,team_id:session.teamId,cards:session.cards,stats:session.stats,actionables:session.actionables};
-    const{data}=await supabase.from("retro_sessions").insert(row).select().single();
+    console.log("[RetroBoard] Saving session:", row.name, "actionables:", row.actionables?.length);
+    const{data,error}=await supabase.from("retro_sessions").insert(row).select().single();
+    if(error){console.error("[RetroBoard] Save session error:", error.message, error);return;}
     if(data){
+      console.log("[RetroBoard] Session saved:", data.id);
       setHistory(h=>[{...data,date:data.created_at,cards:data.cards||[],actionables:data.actionables||[]},...h]);
       // Persist actionables to retro_actionables table for kanban board
       const acts=(data.actionables||[]).filter(a=>a.id);
       if(acts.length){
-        await supabase.from("retro_actionables").upsert(
+        const{error:actErr}=await supabase.from("retro_actionables").upsert(
           acts.map(a=>({id:a.id,text:a.text,assignee:a.assignee,due_date:a.dueDate,priority:a.priority||"medium",status:a.status||"todo",session_id:data.id,team_id:session.teamId,updated_at:new Date().toISOString()})),
           {onConflict:"id"}
         );
+        if(actErr)console.error("[RetroBoard] Save actionables error:", actErr.message, actErr);
+        else console.log("[RetroBoard] Actionables saved:", acts.length);
       }
     }
   };
