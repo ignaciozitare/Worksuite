@@ -2,7 +2,10 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { TimeParser } from '../domain/services/TimeParser';
+import { WorklogService } from '../domain/services/WorklogService';
 import { MOCK_ISSUES_FALLBACK, MOCK_PROJECTS_FALLBACK } from '@/shared/lib/fallbackData';
+import { TODAY } from '@/shared/lib/constants';
+import { daysInMonth } from '@/shared/lib/utils';
 
 interface TasksViewProps {
   filters: any;
@@ -57,6 +60,22 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues, jiraProjec
         <div className="tk-t">{t("nav.tasks")}</div>
         <div className="c-bdg">{filteredIssues.length}/{issues.length}</div>
         <button className="btn-log" style={{marginLeft:"auto"}} onClick={()=>onOpenLog({})}>{t("jiraTracker.logHours")}</button>
+      </div>
+      <div className="cal-stats" style={{marginBottom:12}}>
+        {(() => {
+          const yr = parseInt(TODAY.slice(0,4)), mo = parseInt(TODAY.slice(5,7)) - 1;
+          const mFrom = `${yr}-${String(mo+1).padStart(2,"0")}-01`;
+          const mTo = `${yr}-${String(mo+1).padStart(2,"0")}-${daysInMonth(yr, mo)}`;
+          const rWls = WorklogService.filterByRange(worklogs, mFrom, mTo, filters.authorId || null);
+          const aWls = Object.values(rWls).flat();
+          const totalH = TimeParser.toHours(aWls.reduce((s,w) => s + w.seconds, 0));
+          const actD = Object.keys(rWls).length;
+          return (<>
+            <div className="chip">{t("jiraTracker.totalLabel")}: <strong>{totalH.toFixed(1)}h</strong></div>
+            <div className="chip">{t("jiraTracker.activeDays")}: <strong>{actD}</strong></div>
+            {actD>0&&<div className="chip">{t("jiraTracker.avgLabel")}: <strong>{(totalH/actD).toFixed(1)}{t("jiraTracker.perDay")}</strong></div>}
+          </>);
+        })()}
       </div>
       <div className="f-row">
         <input className="fi" style={{maxWidth:220}} type="search" placeholder={t("jiraTracker.searchPlaceholder")} value={sr} onChange={e=>ssr(e.target.value)}/>

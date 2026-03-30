@@ -631,7 +631,7 @@ function RetroFlow({currentUser,wsUsers,teams,history,onFinish,onSaveSession,onA
   const removeVote=(id)=>{if(!myVotes[id])return;setMyVotes((p)=>({...p,[id]:p[id]-1}));setAllCards((p)=>p.map(c=>c.id===id?{...c,votes:c.votes-1}:c));};
 
   const handleFinish=()=>{
-    onSaveSession?.({name:retroName,teamId:selectedTeamId,cards:sortedCards,stats:{cards:sortedCards.length,withAction:sortedCards.filter(c=>c.actionable).length,votes:sortedCards.reduce((a,c)=>a+c.votes,0)},actionables:sortedCards.filter(c=>c.actionable).map((c)=>({text:c.actionable,assignee:c.assignee,dueDate:c.dueDate,priority:c.priority||"medium",status:"open"}))});
+    onSaveSession?.({name:retroName,teamId:selectedTeamId,cards:sortedCards,stats:{cards:sortedCards.length,withAction:sortedCards.filter(c=>c.actionable).length,votes:sortedCards.reduce((a,c)=>a+c.votes,0)},actionables:sortedCards.filter(c=>c.actionable).map((c)=>({id:genId(),text:c.actionable,assignee:c.assignee,dueDate:c.dueDate,priority:c.priority||"medium",status:"open"}))});
     goTo("summary");
   };
 
@@ -726,6 +726,33 @@ function RetroHistorial({currentUser,history,teams}){
               ))}
             </div>
           </div>
+          {/* Cards by category */}
+          {retro.cards&&retro.cards.length>0&&(
+            <>
+              <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:13,color:"var(--tx3)",marginBottom:10}}>📋 Tarjetas</h3>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:10,marginBottom:20}}>
+                {[{id:"good",label:"Hacemos Bien",color:"#22c55e"},{id:"bad",label:"Hacemos Mal",color:"#ef4444"},{id:"change",label:"Deberíamos Cambiar",color:"#818cf8"},{id:"stop",label:"Dejar de Hacer",color:"#f59e0b"}].map(cat=>{
+                  const catCards=(retro.cards||[]).filter(c=>c.category===cat.id);
+                  if(!catCards.length)return null;
+                  return(
+                    <div key={cat.id} style={{background:"var(--sf)",border:`1px solid ${cat.color}33`,borderRadius:11,padding:12}}>
+                      <div style={{fontSize:11,fontWeight:700,color:cat.color,marginBottom:8,textTransform:"uppercase",letterSpacing:".5px"}}>{cat.label} ({catCards.length})</div>
+                      {catCards.map((c,i)=>(
+                        <div key={c.id||i} style={{fontSize:12,color:"var(--tx2)",marginBottom:6,paddingBottom:6,borderBottom:i<catCards.length-1?"1px solid var(--bd)":"none"}}>
+                          <p style={{margin:"0 0 2px"}}>{c.text}</p>
+                          <div style={{display:"flex",gap:8,fontSize:10,color:"var(--tx3)"}}>
+                            <span>👤 {c.author}</span>
+                            {c.votes>0&&<span>👍 {c.votes}</span>}
+                            {c.actionable&&<span style={{color:"var(--green)"}}>✓ Accionable</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
           <h3 style={{fontFamily:"'Sora',sans-serif",fontSize:13,color:"var(--tx3)",marginBottom:10}}>🎯 Accionables</h3>
           <div style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:12,overflow:"hidden"}}>
             {(!retro.actionables||retro.actionables.length===0)&&<p style={{padding:16,color:"var(--tx3)",fontSize:13,textAlign:"center"}}>Sin accionables</p>}
@@ -1073,7 +1100,17 @@ export function RetroBoard({currentUser,wsUsers,lang}){
   const saveSession=async(session)=>{
     const row={name:session.name,team_id:session.teamId,cards:session.cards,stats:session.stats,actionables:session.actionables};
     const{data}=await supabase.from("retro_sessions").insert(row).select().single();
-    if(data)setHistory(h=>[{...data,date:data.created_at,actionables:data.actionables||[]},...h]);
+    if(data){
+      setHistory(h=>[{...data,date:data.created_at,actionables:data.actionables||[]},...h]);
+      // Persist actionables to retro_actionables table for kanban board
+      const acts=(data.actionables||[]).filter(a=>a.id);
+      if(acts.length){
+        await supabase.from("retro_actionables").upsert(
+          acts.map(a=>({id:a.id,text:a.text,assignee:a.assignee,due_date:a.dueDate,priority:a.priority||"medium",status:a.status||"todo",session_id:data.id,team_id:session.teamId,updated_at:new Date().toISOString()})),
+          {onConflict:"id"}
+        );
+      }
+    }
   };
 
   const addToKanban=(items)=>{
