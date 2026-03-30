@@ -9,11 +9,13 @@ import React, {
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { createPortal } from "react-dom";
 import { supabase } from './shared/lib/api';
+import { useTranslation } from '@worksuite/i18n';
 import { RetroBoard, AdminRetroTeams } from './RetroBoard';
 import { DeployPlanner } from './modules/deploy-planner';
 import EnvTracker, { AdminEnvEnvironments, AdminEnvRepositories, AdminEnvPolicy } from './EnvTracker';
 import { useAuth } from './shared/hooks/useAuth';
 import './WorkSuiteApp.css';
+import { LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView } from './modules/jira-tracker/ui';
 import { TimeParser } from './modules/jira-tracker/domain/services/TimeParser';
 import { WorklogService } from './modules/jira-tracker/domain/services/WorklogService';
 import { CsvService } from './modules/jira-tracker/domain/services/CsvService';
@@ -83,158 +85,7 @@ const MODULES = [
   { id:"envtracker", label:"Environments",  color:"#22d3ee"      },
 ];
 
-// ══════════════════════════════════════════════════════════════════
-// INFRASTRUCTURE — i18n Adapter
-// ══════════════════════════════════════════════════════════════════
-
-const TRANSLATIONS = {
-  en: {
-    appName:"WorkSuite", protoTag:"UI Prototype",
-    moduleSwitchJira:"Jira Tracker", moduleSwitchHD:"HotDesk",
-    darkMode:"Dark", lightMode:"Light",
-    navCalendar:"Calendar", navDay:"Day View", navTasks:"Tasks", navAdmin:"Admin",
-    navMap:"Office Map", navTable:"Monthly View",
-    dateRange:"Date range", filterByUser:"Filter by user", allUsers:"All users",
-    spaces:"Spaces", taskType:"Task type", mySpaces:"Search spaces…",
-    applyFilters:"Apply filters", exportCsv:"↓ Export CSV",
-    exportHint:"Only hours within the selected range", clearSelection:"Clear",
-    today:"Today", totalLabel:"Total", activeDays:"Active days",
-    avgLabel:"Avg", perDay:"h/d", more:"more", logHours:"+ Log hours",
-    worklogs:"worklogs", tasks:"tasks",
-    noWorklogs:"No worklogs on this day", noWorklogsSub:"Try another day or user filter",
-    logThisDay:"+ Log hours for this day", summaryByTask:"Summary by task",
-    searchPlaceholder:"Search key, summary, user…", jqlGenerated:"JQL",
-    noResults:"No results", clearFilter:"Clear",
-    colKey:"Key", colSummary:"Summary", colType:"Type", colStatus:"Status",
-    colPriority:"Priority", colProject:"Project", colAssignee:"Assignee",
-    colEpic:"Epic", colTime:"Time", colAction:"Action", btnHours:"+ Hours",
-    logWorklog:"Log worklog", taskField:"Task *", selectTask:"Select task…",
-    dateField:"Date *", startTime:"Start time", timeLogged:"Time *",
-    timePlaceholder:"2h, 1h 30m, 45m, 1.5", timeFormats:"Formats:",
-    decimalHours:"(decimal h)", descField:"Description", descOptional:"(optional)",
-    descPlaceholder:"What did you work on?", cancel:"Cancel",
-    saveWorklog:"Save worklog", timeInvalid:"Invalid format", timeExceeds:"Max 160h", timeWarn:"That's a lot! Are you sure you want to log {h}h?",
-    taskRequired:"Select a task", dateRequired:"Date required", savedFlash:"Worklog saved",
-    adminSidebar:"Administration", adminSettings:"Settings", adminUsers:"Users", adminHotDesk:"HotDesk",
-    settingsTitle:"Settings", jiraConnection:"Jira Cloud Connection",
-    jiraUrl:"Jira URL", jiraEmail:"Account email", apiToken:"API Token",
-    tokenHint:"Generate at id.atlassian.com → Security → API tokens",
-    saveConfig:"Save configuration", savedOk:"Saved", connStatus:"Status",
-    connInstance:"Instance", connProjects:"Projects", connLastSync:"Last sync",
-    connected:"Connected", minsAgo:"3 minutes ago", hideToken:"Hide", showToken:"Show",
-    usersTitle:"User management", usersSynced:"users", addUserBtn:"+ Add user",
-    importCsvBtn:"↑ Import CSV", fieldName:"Full name *", fieldEmail:"Email *",
-    fieldRole:"App role", fieldDeskType:"Desk type", fieldPassword:"Password *",
-    fieldConfirm:"Confirm password *", changePassword:"Change password",
-    changePwdBtn:"Change pwd", newPassword:"New password *",
-    confirmPassword:"Confirm new password *", saveUser:"Save user",
-    updatePassword:"Update password", colUser:"User", colEmail:"Email",
-    colRole:"Role", colDeskType:"Desk", colAccess:"Access", colActions:"Actions",
-    roleAdmin:"Admin", roleUser:"User", deskNone:"—", deskHotdesk:"Hotdesk",
-    deskFixed:"Fixed", statusActive:"Active", statusBlocked:"Blocked",
-    makeAdmin:"Make admin", removeAdmin:"Remove admin", blockUser:"Block",
-    unblockUser:"Unblock", you:"(you)", errNameRequired:"Name required",
-    errEmailRequired:"Email required", errEmailInvalid:"Invalid email",
-    errEmailExists:"Email already registered", errPasswordShort:"Min 8 characters",
-    errPasswordMatch:"Passwords don't match", userAdded:"User added",
-    passwordChanged:"Password updated",
-    csvImportTitle:"Bulk import users", csvDropzone:"Drop CSV here or click to browse",
-    csvFormat:"Expected format:", csvFormatHint:"name, email, role (admin/user)",
-    csvPreview:"Preview", csvRows:"rows detected", csvErrors:"rows with errors",
-    csvImport:"Import users", csvImportDone:"users imported",
-    csvDownloadTemplate:"Download template", csvCancel:"Cancel",
-    hotdeskTitle:"HotDesk Configuration", hotdeskSeats:"Seat Management",
-    hotdeskLegend:"Seat status today", assignSeat:"Assign seat",
-    selectSeat:"Select a seat to configure",
-    assignTo:"Assign to user", asFixed:"Mark as permanent",
-    asFixedHint:"Seat will be locked for this person permanently",
-    confirmAssign:"Assign", releaseBtn:"Release", fixedSeats:"Fixed seats",
-    noFixed:"No fixed assignments", unlockSeat:"Unlock",
-    officeMap:"Office Map", monthlyView:"Monthly View",
-    freeSeats:"free today", seatsTotal:"seats",
-    legendFree:"Free", legendOcc:"Occupied", legendFixed:"Fixed", legendMine:"My seat",
-    hdNoReserve:"This seat has a fixed assignment.",
-    hdAlreadyOcc:"Seat already taken.", hdAlreadyRes:"You already have a reservation for this date.",
-    hdReleaseTitle:"Release reservation", hdReleaseQ:"Release your reservation?",
-    hdReleaseBtn:"Release", hdReserveTitle:"New reservation",
-    hdSelectDates:"Select dates", hdConfirm:"Confirm",
-    hdReleasedOk:"Reservation released", hdReservedOk:"Reserved",
-    hdAdminManage:"Manage seat",
-  },
-  es: {
-    appName:"WorkSuite", protoTag:"Prototipo UI",
-    moduleSwitchJira:"Jira Tracker", moduleSwitchHD:"HotDesk",
-    darkMode:"Oscuro", lightMode:"Claro",
-    navCalendar:"Calendario", navDay:"Vista día", navTasks:"Tareas", navAdmin:"Admin",
-    navMap:"Mapa oficina", navTable:"Vista mensual",
-    dateRange:"Rango de fechas", filterByUser:"Filtrar por usuario", allUsers:"Todos",
-    spaces:"Espacios", taskType:"Tipo de tarea", mySpaces:"Buscar espacios…",
-    applyFilters:"Aplicar filtros", exportCsv:"↓ Exportar CSV",
-    exportHint:"Solo horas en el rango seleccionado", clearSelection:"Limpiar",
-    today:"Hoy", totalLabel:"Total", activeDays:"Días activos",
-    avgLabel:"Promedio", perDay:"h/día", more:"más", logHours:"+ Imputar horas",
-    worklogs:"worklogs", tasks:"tareas",
-    noWorklogs:"Sin worklogs en este día", noWorklogsSub:"Prueba otro día o usuario",
-    logThisDay:"+ Imputar horas este día", summaryByTask:"Resumen por tarea",
-    searchPlaceholder:"Buscar clave, resumen, usuario…", jqlGenerated:"JQL",
-    noResults:"Sin resultados", clearFilter:"Limpiar",
-    colKey:"Clave", colSummary:"Resumen", colType:"Tipo", colStatus:"Estado",
-    colPriority:"Prioridad", colProject:"Proyecto", colAssignee:"Asignado",
-    colEpic:"Épica", colTime:"Tiempo", colAction:"Acción", btnHours:"+ Horas",
-    logWorklog:"Imputar horas", taskField:"Tarea *", selectTask:"Selecciona tarea…",
-    dateField:"Fecha *", startTime:"Hora inicio", timeLogged:"Tiempo *",
-    timePlaceholder:"2h, 1h 30m, 45m, 1.5", timeFormats:"Formatos:",
-    decimalHours:"(horas decimales)", descField:"Descripción", descOptional:"(opcional)",
-    descPlaceholder:"¿En qué trabajaste?", cancel:"Cancelar",
-    saveWorklog:"Guardar worklog", timeInvalid:"Formato inválido", timeExceeds:"Máx 160h", timeWarn:"¡Eso es mucho! ¿Seguro que quieres registrar {h}h?",
-    taskRequired:"Selecciona una tarea", dateRequired:"Fecha requerida", savedFlash:"Worklog guardado",
-    adminSidebar:"Administración", adminSettings:"Configuración", adminUsers:"Usuarios", adminHotDesk:"HotDesk",
-    settingsTitle:"Configuración", jiraConnection:"Conexión Jira Cloud",
-    jiraUrl:"URL de Jira", jiraEmail:"Email de la cuenta", apiToken:"API Token",
-    tokenHint:"Genera el token en id.atlassian.com → Seguridad → API tokens",
-    saveConfig:"Guardar configuración", savedOk:"Guardado", connStatus:"Estado",
-    connInstance:"Instancia", connProjects:"Proyectos", connLastSync:"Último sync",
-    connected:"Conectado", minsAgo:"hace 3 minutos", hideToken:"Ocultar", showToken:"Ver",
-    usersTitle:"Gestión de usuarios", usersSynced:"usuarios", addUserBtn:"+ Agregar usuario",
-    importCsvBtn:"↑ Importar CSV", fieldName:"Nombre completo *", fieldEmail:"Email *",
-    fieldRole:"Rol en la app", fieldDeskType:"Tipo de puesto", fieldPassword:"Contraseña *",
-    fieldConfirm:"Confirmar contraseña *", changePassword:"Cambiar contraseña",
-    changePwdBtn:"Cambiar clave", newPassword:"Nueva contraseña *",
-    confirmPassword:"Confirmar nueva contraseña *", saveUser:"Guardar usuario",
-    updatePassword:"Actualizar contraseña", colUser:"Usuario", colEmail:"Email",
-    colRole:"Rol", colDeskType:"Puesto", colAccess:"Acceso", colActions:"Acciones",
-    roleAdmin:"Admin", roleUser:"Usuario", deskNone:"—", deskHotdesk:"Hotdesk",
-    deskFixed:"Fijo", statusActive:"Activo", statusBlocked:"Bloqueado",
-    makeAdmin:"Hacer admin", removeAdmin:"Quitar admin", blockUser:"Bloquear",
-    unblockUser:"Desbloquear", you:"(tú)", errNameRequired:"Nombre obligatorio",
-    errEmailRequired:"Email obligatorio", errEmailInvalid:"Email inválido",
-    errEmailExists:"Email ya registrado", errPasswordShort:"Mín 8 caracteres",
-    errPasswordMatch:"Las contraseñas no coinciden", userAdded:"Usuario añadido",
-    passwordChanged:"Contraseña actualizada",
-    csvImportTitle:"Importación masiva de usuarios", csvDropzone:"Arrastra CSV aquí o haz clic",
-    csvFormat:"Formato esperado:", csvFormatHint:"nombre, email, rol (admin/user)",
-    csvPreview:"Vista previa", csvRows:"filas detectadas", csvErrors:"filas con errores",
-    csvImport:"Importar usuarios", csvImportDone:"usuarios importados",
-    csvDownloadTemplate:"Descargar plantilla", csvCancel:"Cancelar",
-    hotdeskTitle:"Configuración HotDesk", hotdeskSeats:"Gestión de puestos",
-    hotdeskLegend:"Estado de puestos hoy", assignSeat:"Asignar puesto",
-    selectSeat:"Selecciona un puesto para configurarlo",
-    assignTo:"Asignar a usuario", asFixed:"Marcar como permanente",
-    asFixedHint:"El puesto quedará bloqueado para esta persona",
-    confirmAssign:"Asignar", releaseBtn:"Liberar", fixedSeats:"Puestos fijos",
-    noFixed:"Sin asignaciones fijas", unlockSeat:"Desbloquear",
-    officeMap:"Mapa de oficina", monthlyView:"Vista mensual",
-    freeSeats:"libres hoy", seatsTotal:"puestos",
-    legendFree:"Libre", legendOcc:"Ocupado", legendFixed:"Fijo", legendMine:"Mi puesto",
-    hdNoReserve:"Este puesto tiene asignación fija.",
-    hdAlreadyOcc:"Puesto ya ocupado.", hdAlreadyRes:"Ya tienes reserva para esta fecha.",
-    hdReleaseTitle:"Liberar reserva", hdReleaseQ:"¿Deseas liberar tu reserva?",
-    hdReleaseBtn:"Liberar", hdReserveTitle:"Nueva reserva",
-    hdSelectDates:"Selecciona fechas", hdConfirm:"Confirmar",
-    hdReleasedOk:"Reserva liberada", hdReservedOk:"Reserva confirmada",
-    hdAdminManage:"Gestionar puesto",
-  }
-};
+// i18n — Translations now provided by @worksuite/i18n via I18nProvider (see main.tsx)
 
 const _memStore = {};
 const StorageAdapter = {
@@ -257,6 +108,11 @@ const useApp = () => useContext(AppCtx);
 // ══════════════════════════════════════════════════════════════════
 
 // MONTHS_EN/ES, DAYS_EN/ES → imported from shared/lib/constants
+
+// buildCalGrid, formatFullDate → moved to jira-tracker/ui/CalendarView and DayView
+// LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView → imported from jira-tracker/ui
+
+// ── Remaining inline helpers (used by HotDesk views) ──
 
 function buildCalGrid(year, month) {
   const first = new Date(year,month,1), last = new Date(year,month+1,0);
@@ -284,412 +140,6 @@ function formatFullDate(iso, lang) {
 // → imported from shared/lib/utils
 
 // PasswordStrength, MiniCalendar → imported from shared/ui/
-
-// ══════════════════════════════════════════════════════════════════
-// JIRA TRACKER — Log Worklog Modal
-// ══════════════════════════════════════════════════════════════════
-
-function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave, currentUser }) {
-  const { t, jiraIssues } = useApp();
-  const issues = jiraIssues || MOCK_ISSUES_FALLBACK;
-  const [ik,     setIk]    = useState(initialIssueKey||"");
-  const [query,  setQuery] = useState(initialIssueKey||"");
-  const [open,   setOpen]  = useState(false);
-  const [dt,     setDt]    = useState(initialDate||MOCK_TODAY);
-  const [tr,     setTr]    = useState("");
-  const [st,     setSt]    = useState("09:00");
-  const [dc,     setDc]    = useState("");
-  const [er,     setEr]    = useState({});
-  const [ok,     setOk]    = useState(false);
-  const cbRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = e => { if (cbRef.current && !cbRef.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  const filtered = query.trim()
-    ? issues.filter(i =>
-        i.key.toLowerCase().includes(query.toLowerCase()) ||
-        i.summary.toLowerCase().includes(query.toLowerCase()))
-    : issues;
-
-  const selectIssue = issue => {
-    setIk(issue.key);
-    setQuery(issue.key);
-    setOpen(false);
-    setEr(v => ({...v, ik:null}));
-  };
-
-  const ps = TimeParser.parse(tr), tp = ps > 0 ? TimeParser.format(ps) : null;
-
-  const MAX_H = 160 * 3600; // 160h
-  const WARN_H = 160 * 3600;
-  const [warnConfirmed, setWarnConfirmed] = useState(false);
-  const [showWarn, setShowWarn] = useState(false);
-
-  const validate = () => {
-    const e = {};
-    if (!ik)   e.ik = t("taskRequired");
-    if (!dt)   e.dt = t("dateRequired");
-    if (ps<=0) e.tr = t("timeInvalid");
-    if (ps>MAX_H) e.tr = t("timeExceeds");
-    return e;
-  };
-
-  const submit = () => {
-    const errs = validate();
-    if (Object.keys(errs).length) { setEr(errs); return; }
-    // Warn if > 16h and not yet confirmed
-    if (ps > 16 * 3600 && !warnConfirmed) {
-      setShowWarn(true);
-      return;
-    }
-    const iss = issues.find(i => i.key===ik);
-    setOk(true);
-    setTimeout(() => {
-      onSave(dt, { id:`wl-${Date.now()}`, issue:ik, summary:iss?.summary||ik, type:iss?.type||"Task",
-        epic:iss?.epic||"—", epicName:iss?.epicName||"—", author:currentUser.name,
-        authorId:currentUser.id, time:tp, seconds:ps, started:st,
-        project:iss?.project||"—", description:dc, isNew:true });
-      onClose();
-    }, 750);
-  };
-
-  const si = issues.find(i => i.key===ik);
-  return (
-    <div className="ov" onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="mb" style={{maxWidth:480}}>
-        <div className="mh"><div className="mt">⏱ {t("logWorklog")}</div><button className="mc" onClick={onClose}>×</button></div>
-        {ok ? <div className="mbody"><div className="ok-fl">✓ {t("savedFlash")} — {tp} · {ik} · {dt}</div></div> : showWarn ? (
-          <div className="mbody">
-            <div style={{textAlign:"center",padding:"20px 0"}}>
-              <div style={{fontSize:28,marginBottom:12}}>⚠️</div>
-              <div style={{fontWeight:700,fontSize:14,color:"var(--amber)",marginBottom:8}}>
-                {t("timeWarn").replace("{h}", (ps/3600).toFixed(1))}
-              </div>
-              <div style={{fontSize:12,color:"var(--tx3)",marginBottom:20}}>
-                {TimeParser.format(ps)} · {ik}
-              </div>
-              <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-                <button className="b-cancel" onClick={()=>setShowWarn(false)}>Cancelar</button>
-                <button className="b-sub" style={{background:"var(--amber)"}} onClick={()=>{setWarnConfirmed(true);setShowWarn(false);setTimeout(()=>submit(),50);}}>
-                  Sí, registrar {TimeParser.format(ps)}
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="mbody">
-              <div className="fr">
-                <label className="fl">{t("taskField")}</label>
-                <div ref={cbRef} style={{position:"relative"}}>
-                  <input
-                    className={`mi ${er.ik?"err":""}`}
-                    placeholder={t("selectTask")}
-                    value={query}
-                    autoComplete="off"
-                    onChange={e => { setQuery(e.target.value); setIk(""); setOpen(true); setEr(v=>({...v,ik:null})); }}
-                    onFocus={() => setOpen(true)}
-                    style={{fontFamily:"var(--mono)",fontSize:12}}
-                  />
-                  {open && filtered.length > 0 && (
-                    <div className="cb-drop">
-                      {filtered.map(i => (
-                        <div key={i.key} className={`cb-opt ${i.key===ik?"cb-sel":""}`}
-                          onMouseDown={e => { e.preventDefault(); selectIssue(i); }}>
-                          <span className="cb-key">{i.key}</span>
-                          <span className="cb-sum">{i.summary}</span>
-                          <span className="cb-prj">{i.project}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {open && filtered.length === 0 && (
-                    <div className="cb-drop">
-                      <div style={{padding:"10px 12px",color:"var(--tx3)",fontSize:12}}>No results for "{query}"</div>
-                    </div>
-                  )}
-                </div>
-                {er.ik&&<span className="em">{er.ik}</span>}
-                {si && <div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap",alignItems:"center"}}>
-                  <span className="t-pill">{si.type}</span>
-                  <span className="er" style={{fontSize:10}}>{si.epic} · {si.epicName}</span>
-                  <span style={{fontSize:10,color:"var(--tx3)",marginLeft:"auto"}}>{si.summary}</span>
-                </div>}
-              </div>
-              <div className="fr2">
-                <div className="fr"><label className="fl">{t("dateField")}</label><input className={`mi ${er.dt?"err":""}`} type="date" value={dt} onChange={e=>{setDt(e.target.value);setEr(v=>({...v,dt:null}));}}/>{er.dt&&<span className="em">{er.dt}</span>}</div>
-                <div className="fr"><label className="fl">{t("startTime")}</label><input className="mi" type="time" value={st} onChange={e=>setSt(e.target.value)}/></div>
-              </div>
-              <div className="fr">
-                <label className="fl">{t("timeLogged")}</label>
-                <input className={`mi ${er.tr?"err":""}`} placeholder={t("timePlaceholder")} value={tr} onChange={e=>{setTr(e.target.value);setEr(v=>({...v,tr:null}));}} style={{fontFamily:"var(--mono)"}} autoFocus/>
-                <span className="fh">{t("timeFormats")} <code>2h</code> · <code>1h 30m</code> · <code>45m</code> · <code>1.5</code> {t("decimalHours")}</span>
-                {er.tr&&<span className="em">{er.tr}</span>}
-                {tp&&!er.tr&&<div className="tp"><span className="tl">→</span><span className="tv">{tp}</span><span className="tl">({(ps/3600).toFixed(2)}h)</span></div>}
-              </div>
-              <div className="fr">
-                <label className="fl">{t("descField")} <span style={{color:"var(--tx3)",textTransform:"none",letterSpacing:0}}>{t("descOptional")}</span></label>
-                <textarea className="mi" style={{minHeight:56,resize:"vertical",fontFamily:"var(--body)",fontSize:12}} placeholder={t("descPlaceholder")} value={dc} onChange={e=>setDc(e.target.value)}/>
-              </div>
-            </div>
-            <div className="mf">
-              <button className="b-cancel" onClick={onClose}>{t("cancel")}</button>
-              <button className="b-sub" onClick={submit} disabled={!ik||ps<=0}>{t("saveWorklog")}</button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════
-// JIRA TRACKER — Filter Sidebar
-// ══════════════════════════════════════════════════════════════════
-
-function JTFilterSidebar({ filters, onApply, onExport, mobileOpen, onMobileClose, users, onProjectChange }) {
-  const { t, jiraProjects } = useApp();
-  const projects = jiraProjects || MOCK_PROJECTS_FALLBACK;
-  const [l, sL] = useState(filters);
-  const [spaceQ, setSpaceQ] = useState("");
-  const filteredProjects = spaceQ.trim()
-    ? projects.filter(p => p.key.toLowerCase().includes(spaceQ.toLowerCase()) || p.name.toLowerCase().includes(spaceQ.toLowerCase()))
-    : projects;
-
-  const ts = k => {
-    const isAdding = !l.spaceKeys.includes(k);
-    const newKeys = isAdding ? [...l.spaceKeys, k] : l.spaceKeys.filter(x => x !== k);
-    sL(f => ({ ...f, spaceKeys: newKeys }));
-    // Al seleccionar un proyecto, cargar sus issues automáticamente
-    if (isAdding && onProjectChange) onProjectChange(k);
-  };
-
-  return (
-    <aside className={`sb ${mobileOpen?"sb-open":""}`}>
-      <div className="sb-s"><div className="sb-lbl">{t("dateRange")}</div>
-        <input className="fi" type="date" value={l.from} onChange={e=>sL({...l,from:e.target.value})}/>
-        <input className="fi" type="date" value={l.to}   onChange={e=>sL({...l,to:e.target.value})}/>
-      </div>
-      <div className="sb-s"><div className="sb-lbl">{t("filterByUser")}</div>
-        <select className="fi" value={l.authorId} onChange={e=>sL({...l,authorId:e.target.value})}>
-          <option value="">{t("allUsers")}</option>
-          {(users||[]).map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
-        </select>
-      </div>
-      <div className="sb-s">
-        <div className="sb-lbl">{t("spaces")}{l.spaceKeys.length>0&&<span className="sb-cnt">({l.spaceKeys.length})</span>}</div>
-        <input className="fi" placeholder={t("mySpaces")} value={spaceQ} onChange={e=>setSpaceQ(e.target.value)} style={{fontSize:11}}/>
-        <div className="pick-l" style={{maxHeight:200,overflowY:"auto"}}>
-          {filteredProjects.map(p=>{const on=l.spaceKeys.includes(p.key);return(
-            <div key={p.key} className={`pick-i ${on?"on":""}`} onClick={()=>ts(p.key)}>
-              <div className="cb">{on&&"✓"}</div><span className="kb">{p.key}</span><span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</span>
-            </div>
-          );})}
-          {filteredProjects.length===0&&<div style={{fontSize:11,color:"var(--tx3)",padding:"6px 8px"}}>Sin resultados</div>}
-        </div>
-        {l.spaceKeys.length>0&&<button className="btn-g" onClick={()=>sL({...l,spaceKeys:[]})}>{t("clearSelection")}</button>}
-      </div>
-      <button className="btn-p" onClick={()=>onApply(l)}>{t("applyFilters")}</button>
-      <button className="btn-exp" onClick={()=>onExport(l)}>{t("exportCsv")}</button>
-      <div style={{fontSize:10,color:"var(--tx3)",textAlign:"center",lineHeight:1.5,marginTop:-8}}>{t("exportHint")}</div>
-    </aside>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════
-// JIRA TRACKER — Calendar View
-// ══════════════════════════════════════════════════════════════════
-
-function CalendarView({ filters, worklogs, onDayClick, onOpenLog }) {
-  const { t, lang } = useApp();
-  const [yr, sYr] = useState(new Date().getFullYear());
-  const [mo, sMo] = useState(new Date().getMonth());
-  const [sel, sSel] = useState(MOCK_TODAY);
-
-  const mFrom = `${yr}-${String(mo+1).padStart(2,"0")}-01`;
-  const mTo   = `${yr}-${String(mo+1).padStart(2,"0")}-${daysInMonth(yr,mo)}`;
-  const rWls  = WorklogService.filterByRange(worklogs, mFrom, mTo, filters.authorId||null);
-  const aWls  = Object.values(rWls).flat();
-  const totalH = TimeParser.toHours(aWls.reduce((s,w)=>s+w.seconds,0));
-  const actD   = Object.keys(rWls).length;
-  const cells  = buildCalGrid(yr, mo);
-  const DAYS   = lang==="es" ? DAYS_ES : DAYS_EN;
-  const MONTHS = lang==="es" ? MONTHS_ES : MONTHS_EN;
-
-  const prev = ()=>mo===0?(sMo(11),sYr(y=>y-1)):sMo(m=>m-1);
-  const next = ()=>mo===11?(sMo(0),sYr(y=>y+1)):sMo(m=>m+1);
-
-  return (
-    <div>
-      <div className="cal-h">
-        <button className="n-arr" onClick={prev}>‹</button>
-        <div className="cal-t">{MONTHS[mo]} {yr}</div>
-        <button className="n-arr" onClick={next}>›</button>
-        <button className="btn-g" onClick={()=>{sYr(new Date().getFullYear());sMo(new Date().getMonth());}}>{t("today")}</button>
-        <button className="btn-log" onClick={()=>onOpenLog({})}>{t("logHours")}</button>
-        <div className="cal-stats">
-          <div className="chip">{t("totalLabel")}: <strong>{totalH.toFixed(1)}h</strong></div>
-          <div className="chip">{t("activeDays")}: <strong>{actD}</strong></div>
-          {actD>0&&<div className="chip">{t("avgLabel")}: <strong>{(totalH/actD).toFixed(1)}{t("perDay")}</strong></div>}
-        </div>
-      </div>
-      <div className="cgrid">
-        {DAYS.map(d=><div key={d} className="cdh">{d}</div>)}
-        {cells.map(c=>{
-          const dw=rWls[c.date]||[], sec=dw.reduce((s,w)=>s+w.seconds,0), hrs=TimeParser.toHours(sec);
-          const top=[...new Set(dw.map(w=>w.issue))].slice(0,2);
-          return (
-            <div key={c.date} className={["cc",!c.isCurrentMonth?"other":"",c.isToday?"today":"",sec>0?"has-d":"",sel===c.date?"active":""].filter(Boolean).join(" ")}
-              onClick={()=>{sSel(c.date);onDayClick(c.date);}}>
-              <div className="ctop">
-                <div className="cday">{c.day}</div>
-                <div className="cadd" onClick={e=>{e.stopPropagation();onOpenLog({date:c.date});}}>+</div>
-              </div>
-              {hrs>0&&<div className="chrs">{hrs.toFixed(1)}<span>h</span></div>}
-              {top.length>0&&<div className="cdots">{top.map(k=><div key={k} className="cdot">{k}</div>)}{[...new Set(dw.map(w=>w.issue))].length>2&&<div style={{fontSize:9,color:"var(--tx3)"}}>+{[...new Set(dw.map(w=>w.issue))].length-2} {t("more")}</div>}</div>}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════
-// JIRA TRACKER — Day View
-// ══════════════════════════════════════════════════════════════════
-
-function DayView({ date, filters, worklogs, onDateChange, onOpenLog, onDeleteWorklog }) {
-  const { t, lang } = useApp();
-  const af  = worklogs[date]||[];
-  const fl  = filters.authorId ? af.filter(w=>w.authorId===filters.authorId) : af;
-  const ts  = fl.reduce((s,w)=>s+w.seconds,0);
-  const eps = WorklogService.groupByEpic(fl);
-  const su  = MOCK_USERS.find(u=>u.id===filters.authorId);
-
-  function addDays(iso,n){const d=new Date(iso+"T00:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
-
-  return (
-    <div>
-      <div className="dh">
-        <div>
-          <div className="dd">{formatFullDate(date, lang)}</div>
-          <div className="dsub">{t("totalLabel")}: <strong>{TimeParser.toHours(ts).toFixed(2)}h</strong>{" · "}{fl.length} {t("worklogs")}{" · "}{[...new Set(fl.map(w=>w.issue))].length} {t("tasks")}{su&&<span style={{color:"var(--ac2)",marginLeft:8}}>· {su.name}</span>}</div>
-        </div>
-        <div className="dn">
-          <button className="n-arr" onClick={()=>onDateChange(addDays(date,-1))}>‹</button>
-          <button className="btn-g" onClick={()=>onDateChange(MOCK_TODAY)}>{t("today")}</button>
-          <button className="n-arr" onClick={()=>onDateChange(addDays(date,1))}>›</button>
-          <button className="btn-log" onClick={()=>onOpenLog({date})}>{t("logHours")}</button>
-        </div>
-      </div>
-      {fl.length===0&&<div className="empty"><div className="empty-i">📭</div><div>{t("noWorklogs")}</div><div style={{fontSize:11}}>{t("noWorklogsSub")}</div><button className="btn-log" style={{marginTop:10}} onClick={()=>onOpenLog({date})}>{t("logThisDay")}</button></div>}
-      {eps.map(ep=>{
-        const es=ep.items.reduce((s,w)=>s+w.seconds,0);
-        return(<div key={ep.key} className="eb"><div className="eh"><span className="ek">{ep.key}</span><span className="en">{ep.name}</span><span className="ehrs">{TimeParser.toHours(es).toFixed(1)}h</span></div>
-          {ep.items.map(w=><div key={w.id} className={`wlc ${w.isNew?"new":""}`}><div className="wlk">{w.issue}</div><div style={{flex:1,minWidth:0}}><div className="wls">{w.summary}</div></div><div className="wlr"><div className="wlt">{w.time}</div><div className="wlm">{w.started} · {w.author}</div></div><span className="t-pill">{w.type}</span><button className="del-wl" onClick={()=>onDeleteWorklog(date,w.id)}>×</button></div>)}
-        </div>);
-      })}
-      {fl.length>0&&<div style={{marginTop:20}}><div style={{fontSize:9,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:"var(--tx3)",paddingBottom:8,borderBottom:"1px solid var(--bd)",marginBottom:10}}>{t("summaryByTask")}</div><table><thead><tr><th>{t("colKey")}</th><th>{t("colSummary")}</th><th>{t("colType")}</th><th>{t("colTime")}</th></tr></thead><tbody>{[...new Set(fl.map(w=>w.issue))].map(k=>{const ws=fl.filter(w=>w.issue===k),sc=ws.reduce((s,w)=>s+w.seconds,0);return <tr key={k}><td><span className="ik">{k}</span></td><td><div className="ism">{ws[0].summary}</div></td><td><span className="t-pill">{ws[0].type}</span></td><td className="hc">{TimeParser.toHours(sc).toFixed(2)}h</td></tr>;})}</tbody></table></div>}
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════
-// JIRA TRACKER — Tasks View
-// ══════════════════════════════════════════════════════════════════
-
-function TasksView({ filters, onOpenLog, worklogs }) {
-  const { t, jiraIssues, jiraProjects } = useApp();
-  const issues = jiraIssues || MOCK_ISSUES_FALLBACK;
-  const projects = jiraProjects || MOCK_PROJECTS_FALLBACK;
-
-  // Calcular horas imputadas en WorkSuite por issue key
-  const hoursByIssue = useMemo(() => {
-    const map = {};
-    for (const dayWls of Object.values(worklogs || {})) {
-      for (const wl of dayWls) {
-        map[wl.issue] = (map[wl.issue] || 0) + wl.seconds;
-      }
-    }
-    return map;
-  }, [worklogs]);
-
-  const [tf, stf] = useState([]);
-  const [sr, ssr] = useState("");
-  const [so, sso] = useState({key:"key",dir:"asc"});
-
-
-
-  const filteredIssues = useMemo(()=>{
-    let l=issues;
-    if(filters.spaceKeys.length)l=l.filter(i=>filters.spaceKeys.includes(i.project));
-    if(tf.length)l=l.filter(i=>tf.includes(i.type));
-    if(sr){const q=sr.toLowerCase();l=l.filter(i=>i.key.toLowerCase().includes(q)||i.summary.toLowerCase().includes(q)||(i.assignee||"").toLowerCase().includes(q));}
-    return[...l].sort((a,b)=>{const d=so.dir==="asc"?1:-1;if(so.key==="hours")return((a.hours||0)-(b.hours||0))*d;return(a[so.key]??"").localeCompare(b[so.key]??"")*d;});
-  },[issues,filters,tf,sr,so]);
-
-  const ts=k=>sso(s=>s.key===k?{...s,dir:s.dir==="asc"?"desc":"asc"}:{key:k,dir:"asc"});
-  const A=({k})=>so.key!==k?<span style={{fontSize:9,color:"var(--tx3)"}}>⇅</span>:<span style={{fontSize:9,color:"var(--ac2)"}}>{so.dir==="asc"?"↑":"↓"}</span>;
-  const pc=p=>p==="Critical"?"p-crit":p==="High"?"p-high":p==="Medium"?"p-med":"p-low";
-  const pt=[...new Set(issues.map(i=>i.type))];
-
-  // Calcular horas imputadas en WorkSuite por issue
-  const { worklogs: allWorklogs } = { worklogs: {} }; // se pasa desde arriba si hace falta
-
-  const sc = s => {
-    const sl = (s||'').toLowerCase();
-    if (sl.includes('done') || sl.includes('cerrad') || sl.includes('complet') || sl.includes('resuelto')) return 's-done';
-    if (sl.includes('progress') || sl.includes('curso') || sl.includes('proceso') || sl.includes('review') || sl.includes('testing')) return 's-prog';
-    return 's-todo';
-  };
-
-  return(
-    <div>
-      <div className="tk-h">
-        <div className="tk-t">{t("navTasks")}</div>
-        <div className="c-bdg">{filteredIssues.length}/{issues.length}</div>
-        <button className="btn-log" style={{marginLeft:"auto"}} onClick={()=>onOpenLog({})}>{t("logHours")}</button>
-      </div>
-      <div className="f-row">
-        <input className="fi" style={{maxWidth:220}} type="search" placeholder={t("searchPlaceholder")} value={sr} onChange={e=>ssr(e.target.value)}/>
-        {pt.map(ty=><button key={ty} className={`pill ${tf.includes(ty)?"on":""}`} onClick={()=>stf(f=>f.includes(ty)?f.filter(x=>x!==ty):[...f,ty])}>{ty}</button>)}
-        {tf.length>0&&<button className="btn-g" onClick={()=>stf([])}>{t("clearFilter")}</button>}
-      </div>
-      {filteredIssues.length===0&&<div className="empty"><div className="empty-i">🔍</div><div>{t("noResults")}</div></div>}
-      {filteredIssues.length>0&&<div style={{overflowX:"auto"}}><table><thead><tr>
-        <th onClick={()=>ts("key")}>{t("colKey")} <A k="key"/></th>
-        <th onClick={()=>ts("summary")}>{t("colSummary")} <A k="summary"/></th>
-        <th>{t("colType")}</th>
-        <th onClick={()=>ts("status")}>{t("colStatus")} <A k="status"/></th>
-        <th onClick={()=>ts("priority")}>{t("colPriority")} <A k="priority"/></th>
-        <th>{t("colProject")}</th>
-        <th>{t("colAssignee")}</th>
-        <th>{t("colEpic")}</th>
-        <th title="Horas imputadas en WorkSuite">{t("colTime")}</th>
-        <th>{t("colAction")}</th>
-      </tr></thead><tbody>{filteredIssues.map((i,idx)=>{
-        return <tr key={i.key||idx}>
-          <td><span className="ik">{i.key}</span></td>
-          <td><div className="ism">{i.summary}</div><div style={{marginTop:2}}>{(i.labels||[]).slice(0,3).map(l=><span key={l} className="tag">{l}</span>)}</div></td>
-          <td><span className="t-pill">{i.type}</span></td>
-          <td><span className={`s-b ${sc(i.status)}`}>{i.status}</span></td>
-          <td><span className={pc(i.priority)}>{i.priority}</span></td>
-          <td><span style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--tx3)"}}>{i.project}</span></td>
-          <td style={{fontSize:11}}>{i.assignee}</td>
-          <td><span className="er">{i.epic}</span></td>
-          <td className="hc">{hoursByIssue[i.key] ? TimeParser.format(hoursByIssue[i.key]) : "—"}</td>
-          <td><button className="btn-log btn-log-sm" onClick={()=>onOpenLog({issueKey:i.key})}>{t("btnHours")}</button></td>
-        </tr>;
-      })}</tbody></table></div>}
-    </div>
-  );
-}
 
 // ══════════════════════════════════════════════════════════════════
 // HOTDESK — Office SVG
@@ -942,7 +392,7 @@ function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser, blueprint }) {
 }
 
 function HDMapView({ hd, onSeat, currentUser }) {
-  const { t } = useApp();
+  const { t } = useTranslation();
   const [zoom, setZoom] = React.useState(1);
   const [pan, setPan] = React.useState({x:0,y:0});
   const [panning, setPanning] = React.useState(false);
@@ -987,13 +437,13 @@ function HDMapView({ hd, onSeat, currentUser }) {
     <div className="hd-map-wrap">
       <div className="hd-map-header">
         <div className="cal-stats" style={{marginLeft:0}}>
-          <div className="chip">{t("legendFree")}: <strong style={{color:"var(--green)"}}>{freeCount}</strong></div>
-          <div className="chip">{t("legendOcc")}: <strong style={{color:"var(--ac2)"}}>{occCount}</strong></div>
-          <div className="chip">{t("legendFixed")}: <strong style={{color:"var(--red)"}}>{fixCount}</strong></div>
-          <div className="chip">{t("seatsTotal")}: <strong>{SEATS.length}</strong></div>
+          <div className="chip">{t("hotdesk.free")}: <strong style={{color:"var(--green)"}}>{freeCount}</strong></div>
+          <div className="chip">{t("hotdesk.occupied")}: <strong style={{color:"var(--ac2)"}}>{occCount}</strong></div>
+          <div className="chip">{t("hotdesk.fixed")}: <strong style={{color:"var(--red)"}}>{fixCount}</strong></div>
+          <div className="chip">{t("hotdesk.seatsTotal")}: <strong>{SEATS.length}</strong></div>
         </div>
         <div className="hd-legend">
-          {[[t("legendFree"),"var(--seat-free)"],[t("legendOcc"),"var(--seat-occ)"],[t("legendFixed"),"var(--seat-fixed)"],[t("legendMine"),"var(--amber)"]].map(([l,c])=>(
+          {[[t("hotdesk.free"),"var(--seat-free)"],[t("hotdesk.occupied"),"var(--seat-occ)"],[t("hotdesk.fixed"),"var(--seat-fixed)"],[t("hotdesk.mine"),"var(--amber)"]].map(([l,c])=>(
             <div key={l} className="hd-leg"><div className="hd-leg-dot" style={{background:c}}/>{l}</div>
           ))}
         </div>
@@ -1031,7 +481,8 @@ function HDMapView({ hd, onSeat, currentUser }) {
 }
 
 function HDTableView({ hd, onCell, currentUser, blueprint }) {
-  const { t, lang } = useApp();
+  const { t, locale } = useTranslation();
+  const lang = locale;
   const [yr, sYr] = useState(new Date().getFullYear());
   const [mo, sMo] = useState(new Date().getMonth());
   const [tooltip, setTooltip] = useState(null);
@@ -1085,7 +536,7 @@ function HDTableView({ hd, onCell, currentUser, blueprint }) {
           {hidePast?'▼ All days':'▲ Future only'}
         </button>
         <div className="hd-legend" style={{marginLeft:"auto"}}>
-          {[[t("legendFree"),"var(--seat-free)"],[t("legendOcc"),"var(--seat-occ)"],[t("legendFixed"),"var(--seat-fixed)"],["Mine","var(--amber)"]].map(([l,c])=>(
+          {[[t("hotdesk.free"),"var(--seat-free)"],[t("hotdesk.occupied"),"var(--seat-occ)"],[t("hotdesk.fixed"),"var(--seat-fixed)"],["Mine","var(--amber)"]].map(([l,c])=>(
             <div key={l} className="hd-leg"><div className="hd-leg-dot" style={{background:c}}/>{l}</div>
           ))}
         </div>
@@ -1183,7 +634,8 @@ function HDTableView({ hd, onCell, currentUser, blueprint }) {
 }
 
 function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, currentUser }) {
-  const { t, lang } = useApp();
+  const { t, locale } = useTranslation();
+  const lang = locale;
   const [yr, sYr] = useState(new Date().getFullYear());
   const [mo, sMo] = useState(new Date().getMonth());
   const [sel, sSel] = useState(initDate ? [initDate] : []);
@@ -1214,10 +666,10 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
   const next = () => mo === 11 ? (sMo(0), sYr(y => y+1)) : sMo(m => m+1);
 
   // Título dinámico
-  let title = t("hdReserveTitle");
-  if (isMyFixed) title = isMine ? t("hdReleaseTitle") : "Mi puesto fijo";
-  else if (isMine) title = t("hdReleaseTitle");
-  else if (isOtherFixed) title = t("hdAdminManage");
+  let title = t("hotdesk.reserveTitle");
+  if (isMyFixed) title = isMine ? t("hotdesk.releaseTitle") : "Mi puesto fijo";
+  else if (isMine) title = t("hotdesk.releaseTitle");
+  else if (isOtherFixed) title = t("hotdesk.adminManage");
 
   return (
     <div className="ov" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -1232,16 +684,16 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
             <div style={{fontFamily:"var(--mono)",fontWeight:700,color:"var(--ac2)",fontSize:16}}>{seatId}</div>
             <div style={{fontSize:12}}>
               {isMyFixed && <div style={{color:"var(--amber)"}}>📌 Tu puesto permanente</div>}
-              {isOtherFixed && <div style={{color:"var(--red)"}}>{t("legendFixed")}: {fixedOwner}</div>}
-              {!st.includes && res && !isMine && <div style={{color:"var(--ac2)"}}>{t("legendOcc")}: {res.userName}</div>}
-              {st === SeatStatus.FREE && <div style={{color:"var(--green)"}}>{t("legendFree")}</div>}
+              {isOtherFixed && <div style={{color:"var(--red)"}}>{t("hotdesk.fixed")}: {fixedOwner}</div>}
+              {!st.includes && res && !isMine && <div style={{color:"var(--ac2)"}}>{t("hotdesk.occupied")}: {res.userName}</div>}
+              {st === SeatStatus.FREE && <div style={{color:"var(--green)"}}>{t("hotdesk.free")}</div>}
             </div>
           </div>
 
           {/* Bloqueo por puesto fijo de otro */}
           {isOtherFixed && (
             <div style={{fontSize:12,color:"var(--tx3)",padding:"8px 12px",background:"var(--sf2)",borderRadius:"var(--r)",border:"1px solid var(--bd)"}}>
-              {t("hdNoReserve")}
+              {t("hotdesk.noReserve")}
             </div>
           )}
 
@@ -1258,16 +710,16 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
           {/* Mi reserva — puedo liberarla */}
           {isMine && !isMyFixed && (
             <div>
-              <div style={{fontSize:12,color:"var(--tx2)",marginBottom:8}}>{t("hdReleaseQ")}</div>
-              <button className="b-danger" style={{width:"100%"}} onClick={()=>onRelease(seatId, date)}>{t("hdReleaseBtn")}</button>
+              <div style={{fontSize:12,color:"var(--tx2)",marginBottom:8}}>{t("hotdesk.releaseQuestion")}</div>
+              <button className="b-danger" style={{width:"100%"}} onClick={()=>onRelease(seatId, date)}>{t("hotdesk.releaseBtn")}</button>
             </div>
           )}
 
           {/* Puesto liberado por el fijo — otro puede reservar */}
           {isMyFixed && isMine && (
             <div style={{fontSize:12,color:"var(--tx2)",marginBottom:8}}>
-              {t("hdReleaseQ")}
-              <button className="b-danger" style={{width:"100%",marginTop:8}} onClick={()=>onRelease(seatId, date)}>{t("hdReleaseBtn")}</button>
+              {t("hotdesk.releaseQuestion")}
+              <button className="b-danger" style={{width:"100%",marginTop:8}} onClick={()=>onRelease(seatId, date)}>{t("hotdesk.releaseBtn")}</button>
             </div>
           )}
 
@@ -1276,7 +728,7 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
             <>
               {myReservedDates.includes(date) ? (
                 <div style={{fontSize:12,color:"var(--amber)",padding:"8px 12px",background:"rgba(245,166,35,.07)",borderRadius:"var(--r)",border:"1px solid rgba(245,166,35,.25)"}}>
-                  ⚠ {t("hdAlreadyRes")}
+                  ⚠ {t("hotdesk.alreadyReserved")}
                 </div>
               ) : (
                 <>
@@ -1286,7 +738,7 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
                     <button className="n-arr" onClick={next}>›</button>
                   </div>
                   <MiniCalendar year={yr} month={mo} lang={lang} selectedDates={sel} onToggleDate={toggle} occupiedDates={blockedDates}/>
-                  {sel.length>0&&<div style={{fontSize:11,color:"var(--green)",background:"rgba(62,207,142,.07)",border:"1px solid rgba(62,207,142,.2)",borderRadius:"var(--r)",padding:"6px 10px"}}>{t("hdSelectDates")}: {sel.sort().join(", ")}</div>}
+                  {sel.length>0&&<div style={{fontSize:11,color:"var(--green)",background:"rgba(62,207,142,.07)",border:"1px solid rgba(62,207,142,.2)",borderRadius:"var(--r)",padding:"6px 10px"}}>{t("hotdesk.selectDates")}: {sel.sort().join(", ")}</div>}
                 </>
               )}
             </>
@@ -1294,10 +746,10 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
         </div>
 
         <div className="mf">
-          <button className="b-cancel" onClick={onClose}>{t("cancel")}</button>
+          <button className="b-cancel" onClick={onClose}>{t("common.cancel")}</button>
           {!isOtherFixed && !isMine && !isMyFixed && !myReservedDates.includes(date) && (
             <button className="b-sub" onClick={()=>onConfirm(seatId,sel)} disabled={sel.length===0}>
-              {t("hdConfirm")} {sel.length>0&&`(${sel.length})`}
+              {t("hotdesk.confirm")} {sel.length>0&&`(${sel.length})`}
             </button>
           )}
         </div>
@@ -1553,7 +1005,7 @@ function PersonalJiraToken() {
 }
 
 function AdminSettings() {
-  const { t } = useApp();
+  const { t } = useTranslation();
   const [jiraUrl,   setJiraUrl]   = useState("");
   const [email,     setEmail]     = useState("");
   const [token,     setToken]     = useState("");
@@ -1611,26 +1063,26 @@ function AdminSettings() {
 
   return (
     <div>
-      <div className="sec-t">{t("settingsTitle")}</div>
+      <div className="sec-t">{t("admin.settingsTitle")}</div>
       <div className="sec-sub">Configure the connection to your Jira Cloud instance and global preferences.</div>
       <div className="a-card">
-        <div className="a-ct">🔗 {t("jiraConnection")}</div>
+        <div className="a-ct">🔗 {t("admin.jiraConnection")}</div>
         <div className="a-form">
-          <div><div className="a-lbl">{t("jiraUrl")}</div><input className="a-inp" placeholder="https://yourcompany.atlassian.net" value={jiraUrl} onChange={e=>setJiraUrl(e.target.value)}/></div>
-          <div><div className="a-lbl">{t("jiraEmail")}</div><input className="a-inp" type="email" placeholder="you@company.com" value={email} onChange={e=>setEmail(e.target.value)}/></div>
+          <div><div className="a-lbl">{t("admin.jiraUrl")}</div><input className="a-inp" placeholder="https://yourcompany.atlassian.net" value={jiraUrl} onChange={e=>setJiraUrl(e.target.value)}/></div>
+          <div><div className="a-lbl">{t("admin.jiraEmail")}</div><input className="a-inp" type="email" placeholder="you@company.com" value={email} onChange={e=>setEmail(e.target.value)}/></div>
           <div>
-            <div className="a-lbl">{t("apiToken")}</div>
+            <div className="a-lbl">{t("admin.apiToken")}</div>
             <div style={{display:"flex",gap:6}}>
               <input className="a-inp" type={showTok?"text":"password"}
                 placeholder={conn ? "••••••••• (dejar vacío para mantener)" : "ATatt3x..."}
                 value={token} onChange={e=>setToken(e.target.value)} style={{flex:1}}/>
               <button className="btn-g" onClick={()=>setShowTok(s=>!s)} style={{padding:"0 10px",flexShrink:0}}>
-                {showTok?t("hideToken"):t("showToken")}
+                {showTok?t("admin.hideToken"):t("admin.showToken")}
               </button>
             </div>
-            <div className="a-hint">{t("tokenHint")}</div>
+            <div className="a-hint">{t("admin.tokenHint")}</div>
           </div>
-          <button className="btn-p" onClick={handleSave} disabled={saving}>{saving ? "Guardando..." : t("saveConfig")}</button>
+          <button className="btn-p" onClick={handleSave} disabled={saving}>{saving ? "Guardando..." : t("admin.saveConfig")}</button>
           {conn && <button className="btn-g" onClick={handleDisconnect} style={{marginTop:4,color:"var(--red)",borderColor:"var(--red)"}}>Desconectar</button>}
           {errMsg && <div style={{marginTop:8,padding:"8px 12px",background:"rgba(229,62,62,.08)",border:"1px solid rgba(229,62,62,.25)",borderRadius:"var(--r)",color:"var(--red)",fontSize:12}}>{errMsg}</div>}
           {okMsg  && <div className="saved-ok"><span className="dot-ok"/>  {okMsg}</div>}
@@ -1640,11 +1092,11 @@ function AdminSettings() {
         <div className="a-ct">📡 Connection status</div>
         <div style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:"var(--r)",padding:"10px 14px"}}>
           {conn ? (<>
-            <div className="info-r"><span className="ik2">{t("connStatus")}</span><div style={{display:"flex",alignItems:"center",gap:5}}><div className="dot-ok"/><span className="iv" style={{color:"var(--green)"}}>{t("connected")}</span></div></div>
-            <div className="info-r"><span className="ik2">{t("connInstance")}</span><span className="iv">{conn.base_url?.replace("https://","")}</span></div>
+            <div className="info-r"><span className="ik2">{t("admin.connStatus")}</span><div style={{display:"flex",alignItems:"center",gap:5}}><div className="dot-ok"/><span className="iv" style={{color:"var(--green)"}}>{t("admin.connected")}</span></div></div>
+            <div className="info-r"><span className="ik2">{t("admin.connInstance")}</span><span className="iv">{conn.base_url?.replace("https://","")}</span></div>
             <div className="info-r" style={{border:"none"}}><span className="ik2">Email</span><span className="iv">{conn.email}</span></div>
           </>) : (
-            <div className="info-r" style={{border:"none"}}><span className="ik2">{t("connStatus")}</span><span className="iv" style={{color:"var(--tx3)"}}>No conectado</span></div>
+            <div className="info-r" style={{border:"none"}}><span className="ik2">{t("admin.connStatus")}</span><span className="iv" style={{color:"var(--tx3)"}}>No conectado</span></div>
           )}
         </div>
       </div>
@@ -1666,7 +1118,7 @@ function AdminSettings() {
 // ══════════════════════════════════════════════════════════════════
 
 function AddUserModal({ existingUsers, onClose, onSave }) {
-  const { t } = useApp();
+  const { t } = useTranslation();
   const [name, setName]  = useState("");
   const [email,setEmail] = useState("");
   const [role, setRole]  = useState("user");
@@ -1679,12 +1131,12 @@ function AddUserModal({ existingUsers, onClose, onSave }) {
   const existEmails = existingUsers.map(u=>u.email.toLowerCase());
   const validate = () => {
     const e = {};
-    if (!name.trim())                              e.name  = t("errNameRequired");
-    if (!email.trim())                             e.email = t("errEmailRequired");
-    else if (!isValidEmail(email))                 e.email = t("errEmailInvalid");
-    else if (existEmails.includes(email.toLowerCase())) e.email = t("errEmailExists");
-    if (pwd.length < 8)                            e.pwd   = t("errPasswordShort");
-    if (pwd !== conf)                              e.conf  = t("errPasswordMatch");
+    if (!name.trim())                              e.name  = t("admin.errNameRequired");
+    if (!email.trim())                             e.email = t("admin.errEmailRequired");
+    else if (!isValidEmail(email))                 e.email = t("admin.errEmailInvalid");
+    else if (existEmails.includes(email.toLowerCase())) e.email = t("admin.errEmailExists");
+    if (pwd.length < 8)                            e.pwd   = t("admin.errPasswordShort");
+    if (pwd !== conf)                              e.conf  = t("admin.errPasswordMatch");
     return e;
   };
   const submit = async () => {
@@ -1715,19 +1167,19 @@ function AddUserModal({ existingUsers, onClose, onSave }) {
   return (
     <div className="ov" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="mb" style={{maxWidth:490}}>
-        <div className="mh"><div className="mt">👤 {t("addUserBtn")}</div><button className="mc" onClick={onClose}>×</button></div>
-        {done?<div className="mbody"><div className="ok-fl">✓ {t("userAdded")}</div></div>:(
+        <div className="mh"><div className="mt">👤 {t("admin.addUser")}</div><button className="mc" onClick={onClose}>×</button></div>
+        {done?<div className="mbody"><div className="ok-fl">✓ {t("admin.userAdded")}</div></div>:(
           <>
             <div className="mbody">
-              <div className="fr"><label className="fl">{t("fieldName")}</label><input className={`mi ${er.name?"err":""}`} placeholder="John Smith" value={name} onChange={e=>{setName(e.target.value);setEr(v=>({...v,name:null}));}} autoFocus/>{er.name&&<span className="em">{er.name}</span>}</div>
+              <div className="fr"><label className="fl">{t("admin.fieldName")}</label><input className={`mi ${er.name?"err":""}`} placeholder="John Smith" value={name} onChange={e=>{setName(e.target.value);setEr(v=>({...v,name:null}));}} autoFocus/>{er.name&&<span className="em">{er.name}</span>}</div>
               <div className="fr2">
-                <div className="fr"><label className="fl">{t("fieldEmail")}</label><input className={`mi ${er.email?"err":""}`} type="email" placeholder="john@co.com" value={email} onChange={e=>{setEmail(e.target.value);setEr(v=>({...v,email:null}));}}/>{er.email&&<span className="em">{er.email}</span>}</div>
-                <div className="fr"><label className="fl">{t("fieldRole")}</label><select className="mi" value={role} onChange={e=>setRole(e.target.value)}><option value="user">{t("roleUser")}</option><option value="admin">{t("roleAdmin")}</option></select></div>
+                <div className="fr"><label className="fl">{t("admin.fieldEmail")}</label><input className={`mi ${er.email?"err":""}`} type="email" placeholder="john@co.com" value={email} onChange={e=>{setEmail(e.target.value);setEr(v=>({...v,email:null}));}}/>{er.email&&<span className="em">{er.email}</span>}</div>
+                <div className="fr"><label className="fl">{t("admin.fieldRole")}</label><select className="mi" value={role} onChange={e=>setRole(e.target.value)}><option value="user">{t("admin.roleUser")}</option><option value="admin">{t("admin.roleAdmin")}</option></select></div>
               </div>
-              <div className="fr"><label className="fl">{t("fieldPassword")}</label><div style={{display:"flex",gap:6}}><input className={`mi ${er.pwd?"err":""}`} type={show?"text":"password"} placeholder="········" autoComplete="new-password" style={{flex:1}} value={pwd} onChange={e=>{setPwd(e.target.value);setEr(v=>({...v,pwd:null}));}}/><button className="btn-g" onClick={()=>setShow(s=>!s)} style={{flexShrink:0,padding:"0 10px"}}>{show?"🙈":"👁"}</button></div><PasswordStrength password={pwd}/>{er.pwd&&<span className="em">{er.pwd}</span>}</div>
-              <div className="fr"><label className="fl">{t("fieldConfirm")}</label><input className={`mi ${er.conf?"err":""}`} type={show?"text":"password"} placeholder="········" autoComplete="new-password" value={conf} onChange={e=>{setConf(e.target.value);setEr(v=>({...v,conf:null}));}}/>{er.conf&&<span className="em">{er.conf}</span>}</div>
+              <div className="fr"><label className="fl">{t("admin.fieldPassword")}</label><div style={{display:"flex",gap:6}}><input className={`mi ${er.pwd?"err":""}`} type={show?"text":"password"} placeholder="········" autoComplete="new-password" style={{flex:1}} value={pwd} onChange={e=>{setPwd(e.target.value);setEr(v=>({...v,pwd:null}));}}/><button className="btn-g" onClick={()=>setShow(s=>!s)} style={{flexShrink:0,padding:"0 10px"}}>{show?"🙈":"👁"}</button></div><PasswordStrength password={pwd}/>{er.pwd&&<span className="em">{er.pwd}</span>}</div>
+              <div className="fr"><label className="fl">{t("admin.fieldConfirm")}</label><input className={`mi ${er.conf?"err":""}`} type={show?"text":"password"} placeholder="········" autoComplete="new-password" value={conf} onChange={e=>{setConf(e.target.value);setEr(v=>({...v,conf:null}));}}/>{er.conf&&<span className="em">{er.conf}</span>}</div>
             </div>
-            <div className="mf"><button className="b-cancel" onClick={onClose}>{t("cancel")}</button><button className="b-sub" onClick={submit}>{t("saveUser")}</button></div>
+            <div className="mf"><button className="b-cancel" onClick={onClose}>{t("common.cancel")}</button><button className="b-sub" onClick={submit}>{t("admin.saveUser")}</button></div>
           </>
         )}
       </div>
@@ -1736,27 +1188,27 @@ function AddUserModal({ existingUsers, onClose, onSave }) {
 }
 
 function ChangePasswordModal({ user, onClose }) {
-  const { t } = useApp();
+  const { t } = useTranslation();
   const [pwd,  setPwd]  = useState("");
   const [conf, setConf] = useState("");
   const [show, setShow] = useState(false);
   const [er,   setEr]   = useState({});
   const [done, setDone] = useState(false);
-  const validate = () => { const e = {}; if (pwd.length<8) e.pwd=t("errPasswordShort"); if (pwd!==conf) e.conf=t("errPasswordMatch"); return e; };
+  const validate = () => { const e = {}; if (pwd.length<8) e.pwd=t("admin.errPasswordShort"); if (pwd!==conf) e.conf=t("admin.errPasswordMatch"); return e; };
   const submit = () => { const errs=validate(); if (Object.keys(errs).length){setEr(errs);return;} setDone(true); setTimeout(()=>onClose(),850); };
   return (
     <div className="ov" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="mb" style={{maxWidth:420}}>
-        <div className="mh"><div className="mt">🔑 {t("changePassword")}</div><button className="mc" onClick={onClose}>×</button></div>
-        {done?<div className="mbody"><div className="ok-fl">✓ {t("passwordChanged")}</div></div>:(
+        <div className="mh"><div className="mt">🔑 {t("admin.changePassword")}</div><button className="mc" onClick={onClose}>×</button></div>
+        {done?<div className="mbody"><div className="ok-fl">✓ {t("admin.passwordChanged")}</div></div>:(
           <><div className="mbody">
             <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:"var(--sf2)",borderRadius:"var(--r)",border:"1px solid var(--bd)"}}>
               <div className="avatar" style={{width:30,height:30,fontSize:10,flexShrink:0}}>{user.avatar}</div>
               <div><div style={{fontWeight:600}}>{user.name}</div><div style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--tx3)"}}>{user.email}</div></div>
             </div>
-            <div className="fr"><label className="fl">{t("newPassword")}</label><div style={{display:"flex",gap:6}}><input className={`mi ${er.pwd?"err":""}`} type={show?"text":"password"} placeholder="········" style={{flex:1}} autoFocus value={pwd} onChange={e=>{setPwd(e.target.value);setEr(v=>({...v,pwd:null}));}}/><button className="btn-g" onClick={()=>setShow(s=>!s)} style={{flexShrink:0,padding:"0 10px"}}>{show?"🙈":"👁"}</button></div><PasswordStrength password={pwd}/>{er.pwd&&<span className="em">{er.pwd}</span>}</div>
-            <div className="fr"><label className="fl">{t("confirmPassword")}</label><input className={`mi ${er.conf?"err":""}`} type={show?"text":"password"} placeholder="········" autoComplete="new-password" value={conf} onChange={e=>{setConf(e.target.value);setEr(v=>({...v,conf:null}));}}/>{er.conf&&<span className="em">{er.conf}</span>}</div>
-          </div><div className="mf"><button className="b-cancel" onClick={onClose}>{t("cancel")}</button><button className="b-sub" onClick={submit}>{t("updatePassword")}</button></div></>
+            <div className="fr"><label className="fl">{t("admin.newPassword")}</label><div style={{display:"flex",gap:6}}><input className={`mi ${er.pwd?"err":""}`} type={show?"text":"password"} placeholder="········" style={{flex:1}} autoFocus value={pwd} onChange={e=>{setPwd(e.target.value);setEr(v=>({...v,pwd:null}));}}/><button className="btn-g" onClick={()=>setShow(s=>!s)} style={{flexShrink:0,padding:"0 10px"}}>{show?"🙈":"👁"}</button></div><PasswordStrength password={pwd}/>{er.pwd&&<span className="em">{er.pwd}</span>}</div>
+            <div className="fr"><label className="fl">{t("admin.confirmPassword")}</label><input className={`mi ${er.conf?"err":""}`} type={show?"text":"password"} placeholder="········" autoComplete="new-password" value={conf} onChange={e=>{setConf(e.target.value);setEr(v=>({...v,conf:null}));}}/>{er.conf&&<span className="em">{er.conf}</span>}</div>
+          </div><div className="mf"><button className="b-cancel" onClick={onClose}>{t("common.cancel")}</button><button className="b-sub" onClick={submit}>{t("admin.updatePassword")}</button></div></>
         )}
       </div>
     </div>
@@ -1764,7 +1216,7 @@ function ChangePasswordModal({ user, onClose }) {
 }
 
 function CsvImportModal({ existingUsers, onClose, onImport }) {
-  const { t } = useApp();
+  const { t } = useTranslation();
   const fileRef = useRef(null);
   const [drag,  setDrag]  = useState(false);
   const [parsed,setParsed]= useState(null);
@@ -1781,12 +1233,12 @@ function CsvImportModal({ existingUsers, onClose, onImport }) {
   return (
     <div className="ov" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="mb" style={{maxWidth:580}}>
-        <div className="mh"><div className="mt">📋 {t("csvImportTitle")}</div><button className="mc" onClick={onClose}>×</button></div>
-        {done?<div className="mbody"><div className="ok-fl">✓ {cnt} {t("csvImportDone")}</div></div>:(
+        <div className="mh"><div className="mt">📋 {t("admin.csvImportTitle")}</div><button className="mc" onClick={onClose}>×</button></div>
+        {done?<div className="mbody"><div className="ok-fl">✓ {cnt} {t("admin.csvImportDone")}</div></div>:(
           <><div className="mbody">
-            {!parsed&&(<><div className={`dropzone ${drag?"over":""}`} onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)} onDrop={e=>{e.preventDefault();setDrag(false);process(e.dataTransfer.files[0]);}} onClick={()=>fileRef.current?.click()}><div style={{fontSize:26,marginBottom:8}}>📂</div><div style={{fontSize:12,color:"var(--tx2)",fontWeight:500,marginBottom:4}}>{t("csvDropzone")}</div><div style={{fontSize:10,color:"var(--tx3)"}}>CSV only</div><input ref={fileRef} type="file" accept=".csv" style={{display:"none"}} onChange={e=>process(e.target.files[0])}/></div><button className="btn-g" style={{alignSelf:"flex-start"}} onClick={downloadTpl}>↓ {t("csvDownloadTemplate")}</button></>)}
-            {parsed&&(<><div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}}><span style={{fontSize:11,color:"var(--tx2)"}}><strong>{parsed.rows.length}</strong> {t("csvRows")}</span><span style={{fontSize:11,color:parsed.errorCount>0?"var(--amber)":"var(--tx2)"}}><strong>{parsed.errorCount}</strong> {t("csvErrors")}</span><span style={{fontSize:11,color:"var(--green)"}}><strong>{validRows.length}</strong> ready</span><button className="btn-g" style={{marginLeft:"auto",fontSize:10}} onClick={()=>setParsed(null)}>↩ Change</button></div><div className="csv-preview"><div className="csv-row hdr"><div className="csv-cell">#</div><div className="csv-cell">Name</div><div className="csv-cell">Email</div><div className="csv-cell">Role</div><div className="csv-cell">Status</div></div>{parsed.rows.map(r=>(<div key={r.idx} className={`csv-row ${!r.valid?"err-row":""}`}><div className="csv-cell" style={{color:"var(--tx3)"}}>{r.idx}</div><div className="csv-cell">{r.name||"—"}</div><div className="csv-cell">{r.email||"—"}</div><div className="csv-cell"><span className="r-tag r-user">{r.role}</span></div><div className="csv-err-tag">{r.valid?<span style={{color:"var(--green)"}}>✓ OK</span>:r.errors.join(" · ")}</div></div>))}</div></>)}
-          </div><div className="mf"><button className="b-cancel" onClick={onClose}>{t("csvCancel")}</button>{parsed&&<button className="b-sub" onClick={handleImport} disabled={validRows.length===0}>{t("csvImport")} ({validRows.length})</button>}</div></>
+            {!parsed&&(<><div className={`dropzone ${drag?"over":""}`} onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)} onDrop={e=>{e.preventDefault();setDrag(false);process(e.dataTransfer.files[0]);}} onClick={()=>fileRef.current?.click()}><div style={{fontSize:26,marginBottom:8}}>📂</div><div style={{fontSize:12,color:"var(--tx2)",fontWeight:500,marginBottom:4}}>{t("admin.csvDropzone")}</div><div style={{fontSize:10,color:"var(--tx3)"}}>CSV only</div><input ref={fileRef} type="file" accept=".csv" style={{display:"none"}} onChange={e=>process(e.target.files[0])}/></div><button className="btn-g" style={{alignSelf:"flex-start"}} onClick={downloadTpl}>↓ {t("admin.csvDownloadTemplate")}</button></>)}
+            {parsed&&(<><div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}}><span style={{fontSize:11,color:"var(--tx2)"}}><strong>{parsed.rows.length}</strong> {t("admin.csvRows")}</span><span style={{fontSize:11,color:parsed.errorCount>0?"var(--amber)":"var(--tx2)"}}><strong>{parsed.errorCount}</strong> {t("admin.csvErrors")}</span><span style={{fontSize:11,color:"var(--green)"}}><strong>{validRows.length}</strong> ready</span><button className="btn-g" style={{marginLeft:"auto",fontSize:10}} onClick={()=>setParsed(null)}>↩ Change</button></div><div className="csv-preview"><div className="csv-row hdr"><div className="csv-cell">#</div><div className="csv-cell">Name</div><div className="csv-cell">Email</div><div className="csv-cell">Role</div><div className="csv-cell">Status</div></div>{parsed.rows.map(r=>(<div key={r.idx} className={`csv-row ${!r.valid?"err-row":""}`}><div className="csv-cell" style={{color:"var(--tx3)"}}>{r.idx}</div><div className="csv-cell">{r.name||"—"}</div><div className="csv-cell">{r.email||"—"}</div><div className="csv-cell"><span className="r-tag r-user">{r.role}</span></div><div className="csv-err-tag">{r.valid?<span style={{color:"var(--green)"}}>✓ OK</span>:r.errors.join(" · ")}</div></div>))}</div></>)}
+          </div><div className="mf"><button className="b-cancel" onClick={onClose}>{t("admin.csvCancel")}</button>{parsed&&<button className="b-sub" onClick={handleImport} disabled={validRows.length===0}>{t("admin.csvImport")} ({validRows.length})</button>}</div></>
         )}
       </div>
     </div>
@@ -1794,7 +1246,7 @@ function CsvImportModal({ existingUsers, onClose, onImport }) {
 }
 
 function AdminUsers({ users, setUsers, currentUser }) {
-  const { t } = useApp();
+  const { t } = useTranslation();
   const [modal, setModal] = useState(null);
   const toggleRole   = id => setUsers(us=>us.map(u=>u.id===id?{...u,role:u.role==="admin"?"user":"admin"}:u));
   const toggleAccess = id => setUsers(us=>us.map(u=>u.id===id?{...u,active:!u.active}:u));
@@ -1806,27 +1258,27 @@ function AdminUsers({ users, setUsers, currentUser }) {
   const DESK_LABELS = { [DeskType.NONE]:"—", [DeskType.HOTDESK]:"HD", [DeskType.FIXED]:"FX" };
   return (
     <div>
-      <div className="sec-t">{t("usersTitle")}</div>
-      <div className="sec-sub">{users.length} {t("usersSynced")}. Manage roles, desk assignments, and access.</div>
+      <div className="sec-t">{t("admin.usersTitle")}</div>
+      <div className="sec-sub">{users.length} {t("admin.usersSynced")}. Manage roles, desk assignments, and access.</div>
       <div className="users-bar">
-        <button className="btn-p" style={{width:"auto",padding:"7px 14px"}} onClick={()=>setModal("add")}>{t("addUserBtn")}</button>
-        <button className="btn-exp" style={{width:"auto",padding:"7px 14px"}} onClick={()=>setModal("csv")}>{t("importCsvBtn")}</button>
+        <button className="btn-p" style={{width:"auto",padding:"7px 14px"}} onClick={()=>setModal("add")}>{t("admin.addUser")}</button>
+        <button className="btn-exp" style={{width:"auto",padding:"7px 14px"}} onClick={()=>setModal("csv")}>{t("admin.importCsv")}</button>
       </div>
       <div className="a-card" style={{padding:0,overflow:"hidden"}}>
         <table className="ut">
-          <thead><tr><th>{t("colUser")}</th><th>{t("colEmail")}</th><th>{t("colRole")}</th><th>{t("colDeskType")}</th><th>Módulos</th><th>{t("colAccess")}</th><th>{t("colActions")}</th></tr></thead>
+          <thead><tr><th>{t("admin.colUser")}</th><th>{t("admin.colEmail")}</th><th>{t("admin.colRole")}</th><th>{t("admin.colDeskType")}</th><th>Módulos</th><th>{t("admin.colAccess")}</th><th>{t("admin.colActions")}</th></tr></thead>
           <tbody>{users.map(u=>(
             <tr key={u.id}>
-              <td><div style={{display:"flex",alignItems:"center",gap:8}}><div className="avatar" style={{width:26,height:26,fontSize:9,flexShrink:0}}>{u.avatar}</div><span style={{fontWeight:500}}>{u.name}</span>{u.id===currentUser.id&&<span style={{fontSize:9,color:"var(--tx3)"}}>{t("you")}</span>}</div></td>
+              <td><div style={{display:"flex",alignItems:"center",gap:8}}><div className="avatar" style={{width:26,height:26,fontSize:9,flexShrink:0}}>{u.avatar}</div><span style={{fontWeight:500}}>{u.name}</span>{u.id===currentUser.id&&<span style={{fontSize:9,color:"var(--tx3)"}}>{t("admin.you")}</span>}</div></td>
               <td style={{fontFamily:"var(--mono)",fontSize:11,color:"var(--tx3)"}}>{u.email}</td>
-              <td><span className={`r-tag ${u.role==="admin"?"r-admin":"r-user"}`}>{u.role==="admin"?t("roleAdmin"):t("roleUser")}</span></td>
+              <td><span className={`r-tag ${u.role==="admin"?"r-admin":"r-user"}`}>{u.role==="admin"?t("admin.roleAdmin"):t("admin.roleUser")}</span></td>
               <td><div style={{display:"flex",gap:3}}>{[DeskType.NONE, DeskType.HOTDESK, DeskType.FIXED].map(dt=>(<button key={dt} onClick={()=>changeDeskType(u.id,dt)} style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:3,border:`1px solid ${u.deskType===dt?DESK_COLORS[dt]:"var(--bd)"}`,background:u.deskType===dt?`${DESK_COLORS[dt]}15`:"transparent",color:u.deskType===dt?DESK_COLORS[dt]:"var(--tx3)",cursor:"pointer"}}>{DESK_LABELS[dt]}</button>))}</div></td>
               <td><div style={{display:"flex",gap:3,flexWrap:"wrap"}}>{MODULES.map(m=>{const hasMod=(u.modules||["jt","hd","retro","deploy"]).includes(m.id);return(<button key={m.id} onClick={()=>toggleModule(u.id,m.id)} style={{fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:3,border:`1px solid ${hasMod?m.color:"var(--bd)"}`,background:hasMod?`${m.color}18`:"transparent",color:hasMod?m.color:"var(--tx3)",cursor:"pointer",textDecoration:hasMod?"none":"line-through"}}>{m.id.toUpperCase()}</button>);})}</div></td>
-              <td><span style={{fontSize:11,fontWeight:500,color:u.active?"var(--green)":"var(--red)"}}>{u.active?t("statusActive"):t("statusBlocked")}</span></td>
+              <td><span style={{fontSize:11,fontWeight:500,color:u.active?"var(--green)":"var(--red)"}}>{u.active?t("admin.statusActive"):t("admin.statusBlocked")}</span></td>
               <td>
-                <button className="act act-adm" onClick={()=>toggleRole(u.id)}>{u.role==="admin"?t("removeAdmin"):t("makeAdmin")}</button>
-                <button className="act act-pwd" onClick={()=>setModal({type:"pwd",user:u})}>{t("changePwdBtn")}</button>
-                {u.id!==currentUser.id&&<button className={`act ${u.active?"act-d":"act-a"}`} onClick={()=>toggleAccess(u.id)}>{u.active?t("blockUser"):t("unblockUser")}</button>}
+                <button className="act act-adm" onClick={()=>toggleRole(u.id)}>{u.role==="admin"?t("admin.removeAdmin"):t("admin.makeAdmin")}</button>
+                <button className="act act-pwd" onClick={()=>setModal({type:"pwd",user:u})}>{t("admin.changePwdBtn")}</button>
+                {u.id!==currentUser.id&&<button className={`act ${u.active?"act-d":"act-a"}`} onClick={()=>toggleAccess(u.id)}>{u.active?t("admin.blockUser"):t("admin.unblockUser")}</button>}
               </td>
             </tr>
           ))}</tbody>
@@ -1840,7 +1292,8 @@ function AdminUsers({ users, setUsers, currentUser }) {
 }
 
 function AdminHotDesk({ hd, setHd, users }) {
-  const { t, lang } = useApp();
+  const { t, locale } = useTranslation();
+  const lang = locale;
   const [buildings,  setBuildings]  = useState([]);
   const [floors,     setFloors]     = useState([]);
   const [selBldg,    setSelBldg]    = useState(null);
@@ -1915,7 +1368,7 @@ function AdminHotDesk({ hd, setHd, users }) {
   return (
     <div style={{display:'flex',flexDirection:'column',gap:14,height:'100%',overflow:'hidden'}}>
       <div style={{flexShrink:0}}>
-        <div className="sec-t">{t('hotdeskTitle')}</div>
+        <div className="sec-t">{t('admin.hotdeskTitle')}</div>
         <div className="sec-sub">Assign seats and fixed allocations from the floor plan.</div>
       </div>
 
@@ -4063,7 +3516,7 @@ function AdminEnvTrackerSection() {
 }
 
 function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
-  const { t } = useApp();
+  const { t } = useTranslation();
   const isAdmin = currentUser.role === 'admin';
   const [mod, setMod] = useState("settings");
 
@@ -4082,10 +3535,10 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   }
 
   const NAV = [
-    { id:"settings",   icon:"⚙",  label:t("adminSettings") },
-    { id:"users",      icon:"👥", label:t("adminUsers"),  badge:"Admin" },
+    { id:"settings",   icon:"⚙",  label:t("admin.settings") },
+    { id:"users",      icon:"👥", label:t("admin.users"),  badge:"Admin" },
     { id:"roles",      icon:"🛡", label:"Roles & Perms" },
-    { id:"hotdesk",    icon:"🪑", label:t("adminHotDesk"),hd:true },
+    { id:"hotdesk",    icon:"🪑", label:t("admin.hotdesk"),hd:true },
     { id:"blueprint",  icon:"🗺", label:"Blueprint" },
     { id:"retroteams", icon:"🔁", label:"Retro Teams" },
     { id:"deploy",     icon:"🚀", label:"Deploy Planner" },
@@ -4094,7 +3547,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
   return (
     <div className="admin-wrap">
       <nav className="admin-nav">
-        <div className="admin-nav-t">{t("adminSidebar")}</div>
+        <div className="admin-nav-t">{t("admin.sidebar")}</div>
         {NAV.map(item=>(<button key={item.id} className={`an-btn ${mod===item.id ? (item.hd?"active-hd":"active") : ""}`} onClick={()=>setMod(item.id)}><span className="an-icon">{item.icon}</span><span>{item.label}</span>{item.badge&&<span className="an-badge">{item.badge}</span>}</button>))}
       </nav>
       <div className="admin-content">
@@ -4120,7 +3573,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser }) {
 function WorkSuiteApp() {
   const { user: authUser, logout } = useAuth();
 
-  const [lang,  setLang]  = useState("en");
+  const { t, locale, setLocale } = useTranslation();
   const [theme, setTheme] = useState("dark");
 
   // ── Routing — derive mod/view from URL ────────────────────────
@@ -4265,7 +3718,7 @@ function WorkSuiteApp() {
     return () => { cancelled = true; };
   }, [authUser?.id]);
 
-  const t = useCallback(k => TRANSLATIONS[lang]?.[k] ?? TRANSLATIONS.en[k] ?? k, [lang]);
+  // t() now comes from useTranslation() via I18nProvider
 
   const activeDayRef = useRef(activeDay);
   useEffect(() => { activeDayRef.current = activeDay; }, [activeDay]);
@@ -4353,9 +3806,9 @@ function WorkSuiteApp() {
 
   const handleHdSeatClick = (seatId, date = TODAY) => {
     const st = ReservationService.statusOf(seatId, date, hd.fixed, hd.reservations);
-    if (st === SeatStatus.FIXED) { notify(t('hdNoReserve')); return; }
+    if (st === SeatStatus.FIXED) { notify(t('hotdesk.noReserve')); return; }
     const res = ReservationService.resOf(seatId, date, hd.reservations);
-    if (st === SeatStatus.OCCUPIED && res?.userId !== CURRENT_USER.id) { notify(t('hdAlreadyOcc')); return; }
+    if (st === SeatStatus.OCCUPIED && res?.userId !== CURRENT_USER.id) { notify(t('hotdesk.alreadyOccupied')); return; }
     setHdModal({ seatId, date });
   };
 
@@ -4369,7 +3822,7 @@ function WorkSuiteApp() {
       ],
     }));
     setHdModal(null);
-    notify(`✓ ${t('hdReservedOk')} — ${seatId}`);
+    notify(`✓ ${t('hotdesk.reservedOk')} — ${seatId}`);
     try {
       const rows = dates.map(d => ({
         id: `res-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,
@@ -4383,7 +3836,7 @@ function WorkSuiteApp() {
   const handleHdRelease = async (seatId, date) => {
     setHd(h => ({ ...h, reservations: h.reservations.filter(r => !(r.seatId === seatId && r.date === date)) }));
     setHdModal(null);
-    notify(t('hdReleasedOk'));
+    notify(t('hotdesk.releasedOk'));
     try {
       const { error } = await supabase.from('seat_reservations')
         .delete().eq('seat_id', seatId).eq('date', date).eq('user_id', CURRENT_USER.id);
@@ -4393,13 +3846,13 @@ function WorkSuiteApp() {
 
   const isAdmin = CURRENT_USER.role === 'admin';
   const jtNavItems = [
-    { id: 'calendar', label: t('navCalendar') },
-    { id: 'day',      label: t('navDay')      },
-    { id: 'tasks',    label: t('navTasks')    },
+    { id: 'calendar', label: t('nav.calendar') },
+    { id: 'day',      label: t('nav.dayView')      },
+    { id: 'tasks',    label: t('nav.tasks')    },
   ];
   const hdNavItems = [
-    { id: 'map',   label: t('navMap')   },
-    { id: 'table', label: t('navTable') },
+    { id: 'map',   label: t('nav.officeMap')   },
+    { id: 'table', label: t('nav.monthlyView') },
   ];
   const currentNavItems = mod === 'jt' ? jtNavItems : hdNavItems;
 
@@ -4423,7 +3876,7 @@ function WorkSuiteApp() {
   if (!authUser) return null;
 
   return (
-    <AppCtx.Provider value={{ lang, t, theme, jiraIssues, jiraProjects }}>
+    <AppCtx.Provider value={{ locale, theme, jiraIssues, jiraProjects }}>
       {/* CSS loaded via import './WorkSuiteApp.css' */}
       <div data-theme={theme} style={{height:"100vh",overflow:"hidden",background:"var(--bg)",color:"var(--tx)"}}>
       <div className="shell">
@@ -4435,10 +3888,10 @@ function WorkSuiteApp() {
           </div>
           <div className="sw-group mod-group">
             {(CURRENT_USER.modules||["jt","hd","retro"]).includes("jt") && (
-              <button className={`sw-btn ${mod==="jt"?"active":""}`} onClick={()=> navigate('/jira-tracker/calendar')}>📋 {t("moduleSwitchJira")}</button>
+              <button className={`sw-btn ${mod==="jt"?"active":""}`} onClick={()=> navigate('/jira-tracker/calendar')}>📋 {t("nav.jiraTracker")}</button>
             )}
             {(CURRENT_USER.modules||["jt","hd","retro"]).includes("hd") && (
-              <button className={`sw-btn ${mod==="hd"?"active-green":""}`} onClick={()=> navigate('/hotdesk/map')}>🪑 {t("moduleSwitchHD")}</button>
+              <button className={`sw-btn ${mod==="hd"?"active-green":""}`} onClick={()=> navigate('/hotdesk/map')}>🪑 {t("nav.hotdesk")}</button>
             )}
             {(CURRENT_USER.modules||["jt","hd","retro","deploy"]).includes("retro") && (
               <button className={`sw-btn ${mod==="retro"?"active-retro":""}`} onClick={()=> navigate('/retro')}>🔁 RetroBoard</button>
@@ -4453,13 +3906,13 @@ function WorkSuiteApp() {
               <button className={`sw-btn ${theme==="light"?"active-theme":""}`} onClick={()=>setTheme("light")}>☀️</button>
             </div>
             <div className="sw-group">
-              <button className={`sw-btn ${lang==="en"?"active":""}`} onClick={()=>setLang("en")}>EN</button>
-              <button className={`sw-btn ${lang==="es"?"active":""}`} onClick={()=>setLang("es")}>ES</button>
+              <button className={`sw-btn ${locale==="en"?"active":""}`} onClick={()=>setLocale("en")}>EN</button>
+              <button className={`sw-btn ${locale==="es"?"active":""}`} onClick={()=>setLocale("es")}>ES</button>
             </div>
             <div className="o-dot"/>
             <div className="avatar">{CURRENT_USER.avatar}</div>
             <span className="u-name">{CURRENT_USER.name}</span>
-            <span className={`r-tag ${CURRENT_USER.role==="admin"?"r-admin":"r-user"}`}>{CURRENT_USER.role==="admin"?t("roleAdmin"):t("roleUser")}</span>
+            <span className={`r-tag ${CURRENT_USER.role==="admin"?"r-admin":"r-user"}`}>{CURRENT_USER.role==="admin"?t("admin.roleAdmin"):t("admin.roleUser")}</span>
             <button onClick={()=> navigate('/admin')}
                 style={{
                   background: view==="admin" ? "var(--ac)" : "rgba(79,110,247,.15)",
@@ -4506,11 +3959,11 @@ function WorkSuiteApp() {
 
         <div className="body">
           {mod==="jt" && view!=="admin" && (
-            <JTFilterSidebar filters={filters} onApply={f=>{setFilters(f);setSbOpen(false);}} onExport={handleExport} mobileOpen={sbOpen} onMobileClose={()=>setSbOpen(false)} users={users} onProjectChange={loadJiraIssues}/>
+            <JTFilterSidebar filters={filters} onApply={f=>{setFilters(f);setSbOpen(false);}} onExport={handleExport} mobileOpen={sbOpen} onMobileClose={()=>setSbOpen(false)} users={users} onProjectChange={loadJiraIssues} jiraProjects={jiraProjects}/>
           )}
           {mod==="jt" && view==="calendar" && (<main className="content"><CalendarView filters={filters} worklogs={worklogs} onDayClick={handleDayClick} onOpenLog={openLogModal}/></main>)}
           {mod==="jt" && view==="day"      && (<main className="content"><DayView date={activeDay} filters={filters} worklogs={worklogs} onDateChange={setActiveDay} onOpenLog={openLogModal} onDeleteWorklog={handleDeleteWorklog}/></main>)}
-          {mod==="jt" && view==="tasks"    && (<main className="content"><TasksView filters={filters} onOpenLog={openLogModal} worklogs={worklogs}/></main>)}
+          {mod==="jt" && view==="tasks"    && (<main className="content"><TasksView filters={filters} onOpenLog={openLogModal} worklogs={worklogs} jiraIssues={jiraIssues} jiraProjects={jiraProjects}/></main>)}
           {mod==="hd" && view==="map"      && (
             <main className="content">
               {selectedBlueprint
@@ -4526,7 +3979,7 @@ function WorkSuiteApp() {
           )}
           {mod==="retro" && view!=="admin" && (
             <main className="content" style={{padding:0,overflow:"hidden",display:"flex",flexDirection:"column",height:"100%"}}>
-              <RetroBoard currentUser={CURRENT_USER} wsUsers={users} lang={lang}/>
+              <RetroBoard currentUser={CURRENT_USER} wsUsers={users} lang={locale}/>
             </main>
           )}
           {mod==="deploy" && view!=="admin" && (
@@ -4545,7 +3998,7 @@ function WorkSuiteApp() {
       </div>
 
       {logModal && (
-        <LogWorklogModal initialDate={logModal.date} initialIssueKey={logModal.issueKey} onClose={()=>setLogModal(null)} onSave={handleSaveWorklog} currentUser={CURRENT_USER}/>
+        <LogWorklogModal initialDate={logModal.date} initialIssueKey={logModal.issueKey} onClose={()=>setLogModal(null)} onSave={handleSaveWorklog} currentUser={CURRENT_USER} jiraIssues={jiraIssues}/>
       )}
       {hdModal && (
         <HDReserveModal seatId={hdModal.seatId} initDate={hdModal.date} hd={hd} onConfirm={handleHdConfirm} onRelease={handleHdRelease} onClose={()=>setHdModal(null)} currentUser={CURRENT_USER}/>
