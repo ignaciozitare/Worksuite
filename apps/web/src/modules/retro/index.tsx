@@ -7,7 +7,10 @@ export type { RetroSession, RetroTeam, RetroActionable } from "./domain/entities
 export type { RetroRepository }    from "./domain/ports/RetroRepository";
 
 // Infrastructure
-export { SupabaseRetroRepository } from "./infra/SupabaseRetroRepository";
+export { SupabaseRetroRepository }    from "./infra/SupabaseRetroRepository";
+export { SupabaseRetroSessionRepo }   from "./infra/SupabaseRetroSessionRepo";
+export { SupabaseRetroActionableRepo } from "./infra/SupabaseRetroActionableRepo";
+export { SupabaseRetroTeamRepo }      from "./infra/SupabaseRetroTeamRepo";
 
 // UI
 export { RetroBoard, AdminRetroTeams } from "./ui/RetroBoard";

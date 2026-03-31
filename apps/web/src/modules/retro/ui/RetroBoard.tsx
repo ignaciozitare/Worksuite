@@ -4,6 +4,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from '@worksuite/i18n';
 import { supabase } from '@/shared/lib/api';
+import { SupabaseRetroSessionRepo } from '../infra/SupabaseRetroSessionRepo';
+import { SupabaseRetroActionableRepo } from '../infra/SupabaseRetroActionableRepo';
+import { SupabaseRetroTeamRepo } from '../infra/SupabaseRetroTeamRepo';
+
+// ── Port implementations (singleton) ──
+const sessionRepo    = new SupabaseRetroSessionRepo(supabase);
+const actionableRepo = new SupabaseRetroActionableRepo(supabase);
+const teamRepo       = new SupabaseRetroTeamRepo(supabase);
 
 // ════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -795,13 +803,13 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
 
   // ── CARGA INICIAL desde Supabase ──────────────────────────────
   useEffect(()=>{
-    supabase.from("retro_actionables").select("*")
-      .then(({data,error})=>{
-        if(error){console.error("retro_actionables load error:",error.message);return;}
+    actionableRepo.findAll()
+      .then(data=>{
         if(data?.length){
           setItems(data.map(d=>({id:d.id,text:d.text,assignee:d.assignee,dueDate:d.due_date,priority:d.priority,status:d.status||"todo",sessionId:d.session_id,teamId:d.team_id})));
         }
-      });
+      })
+      .catch(e=>console.error("retro_actionables load error:",e.message));
   },[]);
 
   const baseItems=history.flatMap(r=>{
@@ -828,10 +836,8 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
       return[...prev,{id,status:newStatus}];
     });
     // Persistir a Supabase
-    const{error}=await supabase.from("retro_actionables")
-      .update({status:newStatus})
-      .eq("id",id);
-    if(error)console.error("[RetroBoard] Move error:",error.message);
+    try{ await actionableRepo.updateStatus(id,newStatus); }
+    catch(e){ console.error("[RetroBoard] Move error:",e.message); }
   };
 
   const vis=merged.filter(item=>{
@@ -956,15 +962,16 @@ export function AdminRetroTeams({wsUsers,teams,setTeams}){
   const createTeam=async()=>{
     if(!form.name.trim())return;
     setSaving(true);
-    const{data,error}=await supabase.from("retro_teams").insert({name:form.name.trim(),color:form.color}).select().single();
-    if(!error&&data){setTeams(prev=>[...prev,{...data,members:[]}]);setSel(data.id);setForm({name:"",color:"#6366f1"});}
-    else setMsg(error?.message||"Error");
+    try{
+      const data=await teamRepo.createTeam(form.name.trim(),form.color);
+      setTeams(prev=>[...prev,{...data,members:[]}]);setSel(data.id);setForm({name:"",color:"#6366f1"});
+    }catch(e){setMsg(e.message||"Error");}
     setSaving(false);
   };
 
   const deleteTeam=async(id)=>{
     if(!confirm("¿Eliminar este equipo?"))return;
-    await supabase.from("retro_teams").delete().eq("id",id);
+    await teamRepo.deleteTeam(id);
     setTeams(prev=>prev.filter(x=>x.id!==id));
     if(sel===id)setSel(null);
   };
@@ -973,21 +980,21 @@ export function AdminRetroTeams({wsUsers,teams,setTeams}){
     if(!selTeam)return;
     const u=wsUsers.find(x=>x.id===userId);
     if(!u)return;
-    const{data,error}=await supabase.from("retro_team_members").insert({team_id:selTeam.id,user_id:userId,role}).select().single();
-    if(!error&&data){
+    try{
+      const data=await teamRepo.addMember(selTeam.id,userId,role);
       setTeams(ts=>ts.map(tm=>tm.id===selTeam.id?{...tm,members:[...tm.members,{...data,name:u.name,email:u.email}]}:tm));
-    }
+    }catch(e){console.error("addMember error:",e.message);}
   };
 
   const removeMember=async(userId)=>{
     if(!selTeam)return;
-    await supabase.from("retro_team_members").delete().eq("team_id",selTeam.id).eq("user_id",userId);
+    await teamRepo.removeMember(selTeam.id,userId);
     setTeams(ts=>ts.map(tm=>tm.id===selTeam.id?{...tm,members:tm.members.filter(m=>m.user_id!==userId)}:tm));
   };
 
   const updateRole=async(userId,role)=>{
     if(!selTeam)return;
-    await supabase.from("retro_team_members").update({role}).eq("team_id",selTeam.id).eq("user_id",userId);
+    await teamRepo.updateMemberRole(selTeam.id,userId,role);
     setTeams(ts=>ts.map(tm=>tm.id===selTeam.id?{...tm,members:tm.members.map(m=>m.user_id===userId?{...m,role}:m)}:tm));
   };
 
@@ -1101,14 +1108,12 @@ export function RetroBoard({currentUser,wsUsers,lang}){
   const [kanbanItems,setKanbanItems]=useState([]);
 
   useEffect(()=>{
-    if(!supabase)return;
     Promise.all([
-      supabase.from("retro_sessions").select("*").order("created_at",{ascending:false}),
-      supabase.from("retro_teams").select("*"),
-      supabase.from("retro_team_members").select("*"),
-      supabase.from("retro_actionables").select("*"),
-    ]).then(([{data:sessions},{data:teamsData},{data:members},{data:actionables}])=>{
-      // Enrich sessions with actionables from separate table
+      sessionRepo.findAll(),
+      teamRepo.findAllTeams(),
+      teamRepo.findAllMembers(),
+      actionableRepo.findAll(),
+    ]).then(([sessions,teamsData,members,actionables])=>{
       const actBySession={};
       (actionables||[]).forEach(a=>{
         if(!actBySession[a.session_id])actBySession[a.session_id]=[];
@@ -1116,43 +1121,37 @@ export function RetroBoard({currentUser,wsUsers,lang}){
       });
       setHistory((sessions||[]).map(s=>({...s,date:s.created_at,cards:s.stats?.cards_data||[],actionables:actBySession[s.id]||[]})));
       setTeams((teamsData||[]).map(tm=>({...tm,members:(members||[]).filter(m=>m.team_id===tm.id).map(m=>{const u=wsUsers.find(x=>x.id===m.user_id);return{...m,name:u?.name,email:u?.email};})})));
-    });
+    }).catch(e=>console.error("[RetroBoard] Load error:",e.message));
   },[wsUsers.length]);
 
   const saveSession=async(session)=>{
-    // retro_sessions columns: id, team_id, name, status, phase, votes_per_user, phase_times, created_by, created_at, closed_at, stats
-    const row={
-      name:session.name,
-      team_id:session.teamId,
-      status:"closed",
-      phase:"summary",
-      votes_per_user:session.stats?.votesPerUser||5,
-      phase_times:session.phaseTimes||{creating:5,grouping:5,voting:3,discussion:3},
-      stats:{...session.stats,cards_data:session.cards},
-    };
-    const{data,error}=await supabase.from("retro_sessions").insert(row).select().single();
-    if(error){console.error("[RetroBoard] Save session error:", error.message);return;}
-    if(!data)return;
-    // retro_actionables columns: id, session_id, card_id, text, assignee, due_date, status, priority, sort_order, team_id, retro_name, created_at
-    const acts=(session.actionables||[]).filter(a=>a.id);
-    if(acts.length){
-      const{error:actErr}=await supabase.from("retro_actionables").upsert(
-        acts.map((a,i)=>({id:a.id,text:a.text,assignee:a.assignee||"",due_date:a.dueDate||null,priority:a.priority||"medium",status:a.status||"todo",sort_order:i,session_id:data.id,team_id:session.teamId,retro_name:session.name})),
-        {onConflict:"id"}
-      );
-      if(actErr)console.error("[RetroBoard] Save actionables error:", actErr.message);
-    }
-    setHistory(h=>[{...data,date:data.created_at,cards:data.stats?.cards_data||[],actionables:acts},...h]);
+    try{
+      const data=await sessionRepo.save({
+        name:session.name,
+        team_id:session.teamId,
+        status:"closed",
+        phase:"summary",
+        votes_per_user:session.stats?.votesPerUser||5,
+        phase_times:session.phaseTimes||{creating:5,grouping:5,voting:3,discussion:3},
+        stats:{...session.stats,cards_data:session.cards},
+      });
+      const acts=(session.actionables||[]).filter(a=>a.id);
+      if(acts.length){
+        await actionableRepo.upsertMany(
+          acts.map((a,i)=>({id:a.id,text:a.text,assignee:a.assignee||"",due_date:a.dueDate||null,priority:a.priority||"medium",status:a.status||"todo",sort_order:i,session_id:data.id,team_id:session.teamId,retro_name:session.name}))
+        );
+      }
+      setHistory(h=>[{...data,date:data.created_at,cards:data.stats?.cards_data||[],actionables:acts},...h]);
+    }catch(e){console.error("[RetroBoard] Save session error:",e.message);}
   };
 
   const addToKanban=async(items)=>{
     const newItems=items.map(i=>({...i,id:i.id||genId(),status:i.status||"todo"}));
     setKanbanItems(prev=>[...prev,...newItems.filter(ni=>!prev.some(p=>p.id===ni.id))]);
-    // retro_actionables columns: id, session_id, card_id, text, assignee, due_date, status, priority, sort_order, team_id, retro_name
     const rows=newItems.map((a,i)=>({id:a.id,text:a.text||a.actionable||"",assignee:a.assignee||"",due_date:a.dueDate||null,priority:a.priority||"medium",status:a.status||"todo",sort_order:i,session_id:a.sessionId||null,team_id:a.teamId||null,retro_name:a.retroName||""}));
     if(rows.length){
-      const{error}=await supabase.from("retro_actionables").upsert(rows,{onConflict:"id"});
-      if(error)console.error("[RetroBoard] addToKanban error:", error.message);
+      try{ await actionableRepo.upsertMany(rows); }
+      catch(e){ console.error("[RetroBoard] addToKanban error:", e.message); }
     }
     setView("accionables");
   };
