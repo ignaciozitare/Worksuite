@@ -20,12 +20,15 @@ function AdminBlueprint() {
 
   useEffect(() => {
     buildingRepo.findAllBuildings()
-      .then(data=>{ if(data) setBuildings(data); });
+      .then(data=>{ if(data) setBuildings(data); })
+      .catch(e=>console.error('[AdminBlueprint] loadBuildings:',e));
   }, []);
 
   useEffect(() => {
     if(!selBldg){setFloors([]);setSelFloor(null);return;}
-    buildingRepo.findBlueprints(selBldg.id).then(data=>{ if(data){setFloors(data);if(!selFloor||!data.find(f=>f.id===selFloor.id))setSelFloor(data[0]||null);}});
+    buildingRepo.findBlueprints(selBldg.id)
+      .then(data=>{ if(data){setFloors(data);if(!selFloor||!data.find(f=>f.id===selFloor.id))setSelFloor(data[0]||null);}})
+      .catch(e=>console.error('[AdminBlueprint] loadFloors:',e));
   }, [selBldg?.id]);
 
   const saveBuilding = async () => {
@@ -222,27 +225,28 @@ function BuildingFloorSelectors({ selectedBuilding, selectedBlueprint, onChange 
   useEffect(() => {
     buildingRepo.findAllBuildings()
       .then(data=>{
-        if(!data) return;
+        if(!data?.length) return;
         setBuildings(data);
-        // Auto-select: last used from localStorage, or first building
         const lastBid = localStorage.getItem('ws_last_building');
         const b = data.find(x=>x.id===lastBid) || data[0];
         if(b && !selectedBuilding) onChange(b, null);
-      });
+      })
+      .catch(e=>console.error('[BuildingFloorSelectors] loadBuildings:',e));
   }, []);
 
   useEffect(() => {
     if(!selectedBuilding){setFloors([]);return;}
-    buildingRepo.findBlueprints(selectedBuilding.id).then(data=>{
+    buildingRepo.findBlueprints(selectedBuilding.id)
+      .then(data=>{
         if(!data) return;
         setFloors(data);
-        // Auto-select: last used floor or first
         const lastFid = localStorage.getItem('ws_last_floor_'+selectedBuilding.id);
         const fl = data.find(x=>x.id===lastFid) || data[0];
         if(fl && (!selectedBlueprint || selectedBlueprint.id !== fl.id)) {
           onChange(selectedBuilding, fl);
         }
-      });
+      })
+      .catch(e=>console.error('[BuildingFloorSelectors] loadFloors:',e));
   }, [selectedBuilding?.id]);
 
   const selectBuilding = (bid) => {
