@@ -1,5 +1,5 @@
-// @ts-nocheck
 import { useState, useEffect } from 'react';
+import type { WorklogRow } from '../../modules/jira-tracker/domain/ports/WorklogPort';
 import { supabase } from '../lib/api';
 import { SEATS } from '../../modules/hotdesk/domain/entities/seats';
 import { MOCK_ISSUES_FALLBACK, MOCK_PROJECTS_FALLBACK } from '../lib/fallbackData';
@@ -10,7 +10,7 @@ import { JiraSyncAdapter } from '../../modules/jira-tracker/infra/JiraSyncAdapte
 import { SupabaseSeatReservationRepo } from '../../modules/hotdesk/infra/SupabaseSeatReservationRepo';
 import { SupabaseUserRepo } from '../infra/SupabaseUserRepo';
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+const API_BASE = ((import.meta as any).env?.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 async function getAuthHeaders() {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
@@ -21,7 +21,7 @@ const jiraSync    = new JiraSyncAdapter(API_BASE, getAuthHeaders);
 const seatRepo    = new SupabaseSeatReservationRepo(supabase);
 const userRepo    = new SupabaseUserRepo(supabase);
 
-function dbWorklogToUI(row) {
+function dbWorklogToUI(row: WorklogRow) {
   const seconds = row.seconds ?? 0;
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -35,8 +35,8 @@ function dbWorklogToUI(row) {
   };
 }
 
-function worklogsArrayToMap(rows) {
-  const map = {};
+function worklogsArrayToMap(rows: WorklogRow[]) {
+  const map: Record<string, any[]> = {};
   for (const row of rows) {
     const date = typeof row.date === 'string' ? row.date.slice(0, 10) : row.date;
     if (!map[date]) map[date] = [];
@@ -45,11 +45,11 @@ function worklogsArrayToMap(rows) {
   return map;
 }
 
-export function useWorkSuiteData(authUser) {
+export function useWorkSuiteData(authUser: any) {
   const [loadingData,  setLoadingData]  = useState(true);
-  const [worklogs,     setWorklogs]     = useState({});
-  const [users,        setUsers]        = useState([]);
-  const [hd,           setHd]           = useState({ fixed: {}, reservations: [] });
+  const [worklogs,     setWorklogs]     = useState<Record<string, any[]>>({});
+  const [users,        setUsers]        = useState<any[]>([]);
+  const [hd,           setHd]           = useState<{ fixed: Record<string, string>; reservations: any[] }>({ fixed: {}, reservations: [] });
   const [jiraIssues,   setJiraIssues]   = useState(MOCK_ISSUES_FALLBACK);
   const [jiraProjects, setJiraProjects] = useState(MOCK_PROJECTS_FALLBACK);
 
@@ -75,10 +75,10 @@ export function useWorkSuiteData(authUser) {
           id: u.id, name: u.name, email: u.email,
           avatar: u.avatar || u.name.slice(0, 2).toUpperCase(),
           role: u.role, deskType: u.desk_type, active: u.active,
-          modules: u.modules || ["jt", "hd", "retro", "deploy"],
+          modules: (u as any).modules || ["jt", "hd", "retro", "deploy"],
         })));
 
-        const fixed = {};
+        const fixed: Record<string, string> = {};
         fixedRows.forEach(fa => {
           const resolved = usersRows.find(u => u.id === (fa.user_name || fa.user_id))?.name || fa.user_name || fa.user_id || "";
           fixed[fa.seat_id] = resolved;
@@ -101,7 +101,7 @@ export function useWorkSuiteData(authUser) {
           const projects = await jiraSync.loadProjects();
           if (projects.length && !cancelled) {
             setJiraProjects(projects);
-            const preferred = projects.find(p => p.key === 'ANDURIL') ?? projects[0];
+            const preferred = projects.find(p => p.key === 'ANDURIL') ?? projects[0]!;
             const issues = await jiraSync.loadIssues(preferred.key);
             if (issues.length && !cancelled) {
               setJiraIssues(issues.map((i, idx) => ({

@@ -1,16 +1,23 @@
-// @ts-nocheck
 import { useCallback, useRef, useEffect } from 'react';
 import { worklogRepo, jiraSync } from './useWorkSuiteData';
 
-export function useWorklogs({ worklogs, setWorklogs, activeDay, currentUser, notify }) {
+interface UseWorklogsParams {
+  worklogs: Record<string, any[]>;
+  setWorklogs: (fn: (p: any) => any) => void;
+  activeDay: string;
+  currentUser: { id: string; name: string };
+  notify: (msg: string) => void;
+}
+
+export function useWorklogs({ worklogs, setWorklogs, activeDay, currentUser, notify }: UseWorklogsParams) {
   const activeDayRef = useRef(activeDay);
   useEffect(() => { activeDayRef.current = activeDay; }, [activeDay]);
 
-  const openLogModal = useCallback(({ date, issueKey } = {}) => {
+  const openLogModal = useCallback(({ date, issueKey }: { date?: string; issueKey?: string } = {}) => {
     return { date: date || activeDayRef.current, issueKey: issueKey || '' };
   }, []);
 
-  const handleSaveWorklog = useCallback(async (date, wl) => {
+  const handleSaveWorklog = useCallback(async (date: string, wl: any) => {
     setWorklogs(p => ({ ...p, [date]: [...(p[date] || []), wl] }));
     try {
       await worklogRepo.insert({
@@ -29,7 +36,7 @@ export function useWorklogs({ worklogs, setWorklogs, activeDay, currentUser, not
         if (syncResult.ok) {
           setWorklogs(p => ({
             ...p,
-            [date]: (p[date] || []).map(w => w.id === wl.id ? { ...w, syncedToJira: true } : w),
+            [date]: (p[date] || []).map((w: any) => w.id === wl.id ? { ...w, syncedToJira: true } : w),
           }));
           notify('✓ Worklog guardado y sincronizado con Jira');
         } else {
@@ -42,9 +49,9 @@ export function useWorklogs({ worklogs, setWorklogs, activeDay, currentUser, not
     } catch (err) { console.error('Save worklog failed:', err); }
   }, [currentUser.id, currentUser.name, setWorklogs, notify]);
 
-  const handleDeleteWorklog = useCallback(async (date, id) => {
+  const handleDeleteWorklog = useCallback(async (date: string, id: string) => {
     setWorklogs(p => {
-      const u = (p[date] || []).filter(w => w.id !== id);
+      const u = (p[date] || []).filter((w: any) => w.id !== id);
       if (!u.length) { const { [date]: _, ...r } = p; return r; }
       return { ...p, [date]: u };
     });
@@ -53,7 +60,7 @@ export function useWorklogs({ worklogs, setWorklogs, activeDay, currentUser, not
     } catch (err) { console.error('Delete worklog failed:', err); }
   }, [setWorklogs]);
 
-  const loadJiraIssues = useCallback(async (projectKey, setJiraIssues) => {
+  const loadJiraIssues = useCallback(async (projectKey: string, setJiraIssues: (issues: any[]) => void) => {
     try {
       const issues = await jiraSync.loadIssues(projectKey);
       if (issues.length) {
