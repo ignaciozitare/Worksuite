@@ -143,10 +143,11 @@ export class JiraCloudAdapter implements IJiraApi {
   }
 
   async searchIssues(jql: string, maxResults = 50, fields?: string): Promise<any> {
-    const fieldList = fields || 'summary,assignee,priority,issuetype,status,components';
-    const data = await this.fetch<any>(
-      `/search?jql=${encodeURIComponent(jql)}&maxResults=${maxResults}&fields=${fieldList}`
-    );
+    const fieldList = (fields || 'summary,assignee,priority,issuetype,status,components').split(',');
+    const data = await this.fetch<any>('/search', {
+      method: 'POST',
+      body: JSON.stringify({ jql, maxResults, fields: fieldList }),
+    });
     return data;
   }
 }
