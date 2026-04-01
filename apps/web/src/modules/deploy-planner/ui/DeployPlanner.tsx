@@ -1082,11 +1082,12 @@ export function DeployPlanner({ currentUser }) {
 
       // Use configured repo field from dp_version_config, fallback to components
       const repoFieldName = versionCfg?.repo_jira_field || "components";
+      if(filtered.length>0) console.log("[DeployPlanner] repoField:", repoFieldName, "sample issue:", filtered[0].key, "fields keys:", Object.keys(filtered[0].fields||{}), "value:", (filtered[0].fields||{})[repoFieldName]);
 
       const newTickets = filtered.map(i => {
         const fields = i.fields || i;
         // Read the configured repo field
-        const repoFieldValue = fields[repoFieldName] || i[repoFieldName] || [];
+        const repoFieldValue = fields[repoFieldName] || i[repoFieldName] || i.components || [];
         const repos = (Array.isArray(repoFieldValue) ? repoFieldValue : [repoFieldValue])
           .map(v => (typeof v === "string" ? v : v?.name || v?.value || ""))
           .filter(Boolean);
