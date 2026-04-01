@@ -1,9 +1,9 @@
 // @ts-nocheck
 import { useCallback } from 'react';
-import { supabase } from '../lib/api';
 import { SeatStatusEnum as SeatStatus } from '../../modules/hotdesk/domain/entities/constants';
 import { ReservationService } from '../../modules/hotdesk/domain/services/ReservationService';
 import { TODAY } from '../lib/constants';
+import { seatRepo } from './useWorkSuiteData';
 
 export function useHotDesk({ hd, setHd, currentUser, notify, t }) {
   const handleSeatClick = useCallback((seatId, date = TODAY) => {
@@ -29,8 +29,7 @@ export function useHotDesk({ hd, setHd, currentUser, notify, t }) {
         id: `res-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         seat_id: seatId, user_id: currentUser.id, user_name: currentUser.name, date: d,
       }));
-      const { error } = await supabase.from('seat_reservations').upsert(rows, { onConflict: 'seat_id,date' });
-      if (error) console.error('Reserve error:', error.message);
+      await seatRepo.upsertReservations(rows);
     } catch (err) { console.error('Reserve failed:', err); }
   }, [currentUser.id, currentUser.name, setHd, notify, t]);
 
@@ -38,9 +37,7 @@ export function useHotDesk({ hd, setHd, currentUser, notify, t }) {
     setHd(h => ({ ...h, reservations: h.reservations.filter(r => !(r.seatId === seatId && r.date === date)) }));
     notify(t('hotdesk.releasedOk'));
     try {
-      const { error } = await supabase.from('seat_reservations')
-        .delete().eq('seat_id', seatId).eq('date', date).eq('user_id', currentUser.id);
-      if (error) console.error('Release error:', error.message);
+      await seatRepo.removeReservation(seatId, date, currentUser.id);
     } catch (err) { console.error('Release failed:', err); }
   }, [currentUser.id, setHd, notify, t]);
 
