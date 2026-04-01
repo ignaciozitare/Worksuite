@@ -214,6 +214,7 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
         const data = await adapter.searchIssues(jql, parseInt(maxResults), fields);
         return reply.send({ ok: true, ...data });
       } catch (err: unknown) {
+        app.log.error({ err, jql, fields }, 'jira/search error');
         const status = (err as { statusCode?: number }).statusCode ?? 502;
         return reply.status(status).send({ ok: false, error: String(err) });
       }

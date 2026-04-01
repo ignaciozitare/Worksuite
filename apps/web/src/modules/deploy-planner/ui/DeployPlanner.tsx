@@ -1068,7 +1068,7 @@ export function DeployPlanner({ currentUser }) {
       await Promise.all(projects.map(async (project) => {
         try {
           const jql = encodeURIComponent(`project = "${project}" ORDER BY updated DESC`);
-          const res = await fetch(`${API_BASE}/jira/search?jql=${jql}&maxResults=200&fields=${searchFields}`, { headers });
+          const res = await fetch(`${API_BASE}/jira/search?jql=${jql}&maxResults=200&fields=${encodeURIComponent(searchFields)}`, { headers });
           if(!res.ok) return;
           const data = await res.json();
           // Map search results to flat format
