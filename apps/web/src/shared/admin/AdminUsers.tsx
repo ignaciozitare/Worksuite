@@ -4,11 +4,11 @@ import { useTranslation } from '@worksuite/i18n';
 import { supabase } from '../lib/api';
 import { SupabaseAdminUserRepo } from '../infra/SupabaseAdminUserRepo';
 import { makeAvatar, isValidEmail } from '../lib/utils';
-
-const adminUserRepo = new SupabaseAdminUserRepo(supabase);
 import { PasswordStrength } from '../ui/PasswordStrength';
 import { DeskType } from '../../modules/hotdesk/domain/entities/constants';
 import { CsvService } from '../../modules/jira-tracker/domain/services/CsvService';
+
+const adminUserRepo = new SupabaseAdminUserRepo(supabase);
 
 const MODULES = [
   { id:"jt",     label:"Jira Tracker",  color:"var(--ac2)"   },

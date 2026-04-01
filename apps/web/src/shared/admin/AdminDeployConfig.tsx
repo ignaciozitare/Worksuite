@@ -3,9 +3,6 @@ import React from 'react';
 import { supabase } from '../lib/api';
 import { SupabaseDeployConfigRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseDeployConfigRepo';
 import { JiraSyncAdapter } from '../../modules/jira-tracker/infra/JiraSyncAdapter';
-
-const deployConfigRepo = new SupabaseDeployConfigRepo(supabase);
-const jiraSyncAdapter = new JiraSyncAdapter(API_BASE, getAuthHeaders);
 import { GetJiraMetadata } from '../../modules/deploy-planner/domain/useCases/GetJiraMetadata';
 import { JiraMetadataAdapter } from '../../modules/deploy-planner/infra/JiraMetadataAdapter';
 import { SupabaseReleaseRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseReleaseRepo';
@@ -15,6 +12,9 @@ async function getAuthHeaders() {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
 }
+
+const deployConfigRepo = new SupabaseDeployConfigRepo(supabase);
+const jiraSyncAdapter = new JiraSyncAdapter(API_BASE, getAuthHeaders);
 const jiraMetadataAdapter = new JiraMetadataAdapter(API_BASE, getAuthHeaders);
 const getJiraMetadata = new GetJiraMetadata(jiraMetadataAdapter);
 const releaseRepo = new SupabaseReleaseRepo(supabase);

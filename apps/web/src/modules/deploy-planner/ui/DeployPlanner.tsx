@@ -9,24 +9,23 @@ import { UpdateRelease }             from '../domain/useCases/UpdateRelease';
 import { DeleteRelease }             from '../domain/useCases/DeleteRelease';
 import { UpdateTicketStatuses }      from '../domain/useCases/UpdateTicketStatuses';
 import { ReleaseDetail }             from './ReleaseDetail';
+import { JiraSyncAdapter }           from '../../jira-tracker/infra/JiraSyncAdapter';
 import type { Release, ReleaseStatus, ReleaseConfig } from '../domain/entities/Release';
 
 // ── Singletons (port → repo → use-case) ─────────────────────────────────────
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+async function authHeaders() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
+}
+
 const repo         = new SupabaseReleaseRepo(supabase);
 const getReleases  = new GetReleases(repo);
 const createUC     = new CreateRelease(repo);
 const updateUC     = new UpdateRelease(repo);
 const deleteUC     = new DeleteRelease(repo);
 const ticketUC     = new UpdateTicketStatuses(repo);
-
-import { JiraSyncAdapter } from '../../jira-tracker/infra/JiraSyncAdapter';
-
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
-async function authHeaders() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
-}
-const jiraAdapter = new JiraSyncAdapter(API_BASE, authHeaders);
+const jiraAdapter  = new JiraSyncAdapter(API_BASE, authHeaders);
 
 // ── Inline style helpers ──────────────────────────────────────────────────────
 const inp = (extra={}) => ({

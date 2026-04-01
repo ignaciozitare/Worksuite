@@ -4,9 +4,6 @@ import { useTranslation } from '@worksuite/i18n';
 import { supabase } from '../lib/api';
 import { SupabaseBuildingRepo } from '../infra/SupabaseBuildingRepo';
 import { SupabaseHotDeskAdminRepo } from '../infra/SupabaseHotDeskAdminRepo';
-
-const buildingRepo = new SupabaseBuildingRepo(supabase);
-const hotdeskAdminRepo = new SupabaseHotDeskAdminRepo(supabase);
 import { BlueprintHDMap } from '../../modules/hotdesk/ui/BlueprintHDMap';
 import { MiniCalendar } from '../ui/MiniCalendar';
 import { TODAY } from '../lib/constants';
@@ -14,6 +11,9 @@ import { fmtMonthYear } from '../lib/utils';
 import { DeskType, SeatStatusEnum as SeatStatus } from '../../modules/hotdesk/domain/entities/constants';
 import { ReservationService } from '../../modules/hotdesk/domain/services/ReservationService';
 import { SEATS } from '../../modules/hotdesk/domain/entities/seats';
+
+const buildingRepo = new SupabaseBuildingRepo(supabase);
+const hotdeskAdminRepo = new SupabaseHotDeskAdminRepo(supabase);
 
 function AdminHotDesk({ hd, setHd, users, theme="dark" }) {
   const { t, locale } = useTranslation();
