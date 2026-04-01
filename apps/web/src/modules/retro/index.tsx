@@ -1,4 +1,3 @@
-// @ts-nocheck
 // RetroBoard module barrel
 
 // Domain

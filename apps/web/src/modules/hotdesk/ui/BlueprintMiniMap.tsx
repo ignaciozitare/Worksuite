@@ -2,8 +2,8 @@
 import React, { useRef, useMemo, useEffect } from 'react';
 import { TODAY } from '@/shared/lib/constants';
 
-function BlueprintMiniMap({ blueprint, hd, seatId, theme="dark" }) {
-  const canvasRef = useRef(null);
+function BlueprintMiniMap({ blueprint, hd, seatId, theme="dark" }: { blueprint: any; hd: any; seatId: string; theme?: string }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   
   const dk = theme !== 'light';
 

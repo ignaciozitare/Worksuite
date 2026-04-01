@@ -1,4 +1,3 @@
-// @ts-nocheck
 // WorkSuite — Root orchestrator (layout + routing)
 
 import React, { useState, useCallback, lazy, Suspense } from "react";
@@ -70,8 +69,8 @@ function WorkSuiteApp() {
   } : { id: '', name: 'Loading...', email: '', avatar: '..', role: 'user', deskType: 'hotdesk', active: true, modules: ["jt", "hd", "retro", "deploy"] };
 
   // Toast
-  const [toast, setToast] = useState(null);
-  const notify = useCallback(msg => { setToast(msg); setTimeout(() => setToast(null), 3000); }, []);
+  const [toast, setToast] = useState<any>(null);
+  const notify = useCallback((msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); }, []);
 
   // Jira Tracker state & handlers
   const [activeDay, setActiveDay] = useState(TODAY);
@@ -80,7 +79,7 @@ function WorkSuiteApp() {
     to: TODAY.slice(0, 7) + '-' + new Date(parseInt(TODAY.slice(0, 4)), parseInt(TODAY.slice(5, 7)), 0).getDate().toString().padStart(2, '0'),
     authorId: '', spaceKeys: [], jql: ''
   });
-  const [logModal, setLogModal] = useState(null);
+  const [logModal, setLogModal] = useState<any>(null);
   const [sbOpen, setSbOpen] = useState(false);
 
   const { openLogModal, handleSaveWorklog, handleDeleteWorklog, loadJiraIssues } = useWorklogs({
@@ -91,35 +90,35 @@ function WorkSuiteApp() {
     setLogModal(openLogModal(opts));
   }, [openLogModal]);
 
-  const handleExport = f => CsvService.exportWorklogs(worklogs, f.from, f.to, f.authorId || null, f.spaceKeys);
-  const handleDayClick = d => { setActiveDay(d); navigate('/jira-tracker/day'); };
-  const handleLoadJiraIssues = useCallback(pk => loadJiraIssues(pk, setJiraIssues), [loadJiraIssues, setJiraIssues]);
+  const handleExport = (f: any) => CsvService.exportWorklogs(worklogs, f.from, f.to, f.authorId || null, f.spaceKeys);
+  const handleDayClick = (d: string) => { setActiveDay(d); navigate('/jira-tracker/day'); };
+  const handleLoadJiraIssues = useCallback((pk: string) => loadJiraIssues(pk, setJiraIssues), [loadJiraIssues, setJiraIssues]);
 
   // HotDesk state & handlers
-  const [hdModal, setHdModal] = useState(null);
-  const [selectedBuilding, setSelectedBuilding] = useState(null);
-  const [selectedBlueprint, setSelectedBlueprint] = useState(null);
+  const [hdModal, setHdModal] = useState<any>(null);
+  const [selectedBuilding, setSelectedBuilding] = useState<any>(null);
+  const [selectedBlueprint, setSelectedBlueprint] = useState<any>(null);
 
   const { handleSeatClick, handleConfirm: hdConfirm, handleRelease: hdRelease } = useHotDesk({
     hd, setHd, currentUser: CURRENT_USER, notify, t,
   });
 
-  const handleHdSeatClick = useCallback((seatId, date = TODAY) => {
+  const handleHdSeatClick = useCallback((seatId: string, date: string = TODAY) => {
     const result = handleSeatClick(seatId, date);
     if (result) setHdModal(result);
   }, [handleSeatClick]);
 
-  const handleHdConfirm = useCallback(async (seatId, dates) => {
+  const handleHdConfirm = useCallback(async (seatId: string, dates: string[]) => {
     await hdConfirm(seatId, dates);
     setHdModal(null);
   }, [hdConfirm]);
 
-  const handleHdRelease = useCallback(async (seatId, date) => {
+  const handleHdRelease = useCallback(async (seatId: string, date: string) => {
     await hdRelease(seatId, date);
     setHdModal(null);
   }, [hdRelease]);
 
-  const handleBuildingFloorChange = useCallback((b, fl) => {
+  const handleBuildingFloorChange = useCallback((b: any, fl: any) => {
     setSelectedBuilding(b);
     setSelectedBlueprint(fl);
   }, []);
@@ -268,7 +267,7 @@ function WorkSuiteApp() {
               )}
               {mod === "envtracker" && view !== "admin" && (
                 <main className="content" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
-                  <EnvTracker supabase={supabase} currentUser={CURRENT_USER} wsUsers={users} />
+                  <EnvTracker currentUser={CURRENT_USER} wsUsers={users} />
                 </main>
               )}
               {view === "admin" && <AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER} theme={theme} />}

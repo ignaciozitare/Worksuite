@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { AdminSettings, PersonalJiraToken } from './AdminSettings';
@@ -10,7 +9,16 @@ import { AdminRetroTeamsShell } from './AdminRetroTeamsShell';
 import { AdminDeployConfig } from './AdminDeployConfig';
 import { AdminEnvTrackerSection } from './AdminEnvTrackerSection';
 
-function AdminShell({ users, setUsers, hd, setHd, currentUser, theme="dark" }) {
+interface AdminShellProps {
+  users: any[];
+  setUsers: (fn: any) => void;
+  hd: any;
+  setHd: (fn: any) => void;
+  currentUser: { id: string; name: string; role: string; email: string };
+  theme?: string;
+}
+
+function AdminShell({ users, setUsers, hd, setHd, currentUser, theme="dark" }: AdminShellProps) {
   const { t } = useTranslation();
   const isAdmin = currentUser.role === 'admin';
   const [mod, setMod] = useState("settings");

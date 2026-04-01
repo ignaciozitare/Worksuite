@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { SeatStatusEnum as SeatStatus } from '../domain/entities/constants';
@@ -9,7 +8,7 @@ import { MiniCalendar } from '@/shared/ui/MiniCalendar';
 
 const MOCK_TODAY = TODAY;
 
-function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, currentUser }) {
+function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, currentUser }: { seatId: string; initDate: string; hd: any; onConfirm: (id: string, dates: string[]) => void; onRelease: (id: string, date: string) => void; onClose: () => void; currentUser: any }) {
   const { t, locale } = useTranslation();
   const lang = locale;
   const [yr, sYr] = useState(new Date().getFullYear());
@@ -28,16 +27,16 @@ function HDReserveModal({ seatId, initDate, hd, onConfirm, onRelease, onClose, c
 
   // Fechas donde el usuario ya tiene reserva en OTRO puesto (para bloquear en el mini-cal)
   const myReservedDates = hd.reservations
-    .filter(r => r.userId === currentUser.id && r.seatId !== seatId)
-    .map(r => r.date);
+    .filter((r: any) => r.userId === currentUser.id && r.seatId !== seatId)
+    .map((r: any) => r.date);
 
   // Fechas ocupadas para este puesto (por otros)
-  const occupiedDates = hd.reservations.filter(r => r.seatId === seatId).map(r => r.date);
+  const occupiedDates = hd.reservations.filter((r: any) => r.seatId === seatId).map((r: any) => r.date);
 
   // Combinar: no puede seleccionar días donde ya reservó otro puesto
   const blockedDates = [...new Set([...occupiedDates, ...myReservedDates])];
 
-  const toggle = iso => sSel(p => p.includes(iso) ? p.filter(x => x !== iso) : [...p, iso]);
+  const toggle = (iso: string) => sSel(p => p.includes(iso) ? p.filter(x => x !== iso) : [...p, iso]);
   const prev = () => mo === 0 ? (sMo(11), sYr(y => y-1)) : sMo(m => m-1);
   const next = () => mo === 11 ? (sMo(0), sYr(y => y+1)) : sMo(m => m+1);
 

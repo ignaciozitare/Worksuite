@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { Deployment } from "../domain/entities/Deployment";
 
 const STATUS_CFG = {
@@ -11,7 +10,7 @@ const STATUS_CFG = {
 
 const ENV_LABELS = { development:"DEV", staging:"STG", production:"PROD" };
 
-export function DeployTimeline({ deployments, onSelect }) {
+export function DeployTimeline({ deployments, onSelect }: { deployments: any[]; onSelect: (d: any) => void }) {
   if (!deployments.length) {
     return (
       <div style={{textAlign:"center",padding:"40px 20px",color:"var(--tx3)",fontSize:14}}>
@@ -22,9 +21,9 @@ export function DeployTimeline({ deployments, onSelect }) {
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
-      {deployments.map(d => {
-        const st  = STATUS_CFG[d.status] ?? STATUS_CFG["planned"];
-        const env = ENV_LABELS[d.environment] ?? d.environment;
+      {deployments.map((d: any) => {
+        const st  = (STATUS_CFG as any)[d.status] ?? STATUS_CFG["planned"];
+        const env = (ENV_LABELS as any)[d.environment] ?? d.environment;
         return (
           <div key={d.id}
             onClick={onSelect ? () => onSelect(d) : undefined}
@@ -34,7 +33,7 @@ export function DeployTimeline({ deployments, onSelect }) {
               borderLeft:   `3px solid ${st.color}`,
               borderRadius: "var(--r2,8px)",
               padding:      "10px 14px",
-              cursor:       onSelect ? "pointer" : "default",
+              cursor:       "pointer",
               transition:   "all .15s",
             }}
           >

@@ -1,17 +1,16 @@
-// @ts-nocheck
 import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { BlueprintMiniMap } from './BlueprintMiniMap';
 import { TODAY } from '@/shared/lib/constants';
 
-function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser, blueprint, theme="dark" }) {
+function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser, blueprint, theme="dark" }: { seatId: string; anchorX: number; anchorY: number; hd: any; currentUser: any; blueprint: any; theme?: string }) {
   
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ left: anchorX - 140, top: anchorY + 8 });
 
   // Enrich hd with currentUserId for mini-map coloring
   const hdWithUser = useMemo(()=>({...hd, _currentUserId: currentUser?.id}), [hd, currentUser?.id]);
 
-  const res = hd.reservations.find(r=>r.seatId===seatId&&r.date===TODAY);
+  const res = hd.reservations.find((r: any)=>r.seatId===seatId&&r.date===TODAY);
   const isFixed = !!hd.fixed[seatId];
   const isMine = res?.userId === currentUser?.id;
   const ownerName = isFixed ? hd.fixed[seatId] : res?.userName;

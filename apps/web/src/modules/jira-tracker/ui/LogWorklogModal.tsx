@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { TimeParser } from '../domain/services/TimeParser';

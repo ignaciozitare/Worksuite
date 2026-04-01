@@ -1,4 +1,3 @@
-// @ts-nocheck
 // HotDesk module barrel
 
 // Domain

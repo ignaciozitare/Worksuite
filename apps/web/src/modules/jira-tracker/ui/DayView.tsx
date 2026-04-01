@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { WorklogService } from '../domain/services/WorklogService';
@@ -12,7 +11,7 @@ function formatFullDate(iso: string, lang: string) {
   const ms = lang==="es" ? MONTHS_ES : MONTHS_EN;
   if (lang==="es") {
     const dn = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
-    return `${dn[d.getDay()]}, ${d.getDate()} de ${ms[d.getMonth()].toLowerCase()} de ${d.getFullYear()}`;
+    return `${dn[d.getDay()]}, ${d.getDate()} de ${ms[d.getMonth()]!.toLowerCase()} de ${d.getFullYear()}`;
   }
   const dn = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   return `${dn[d.getDay()]}, ${ms[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
@@ -34,7 +33,7 @@ export function DayView({ date, filters, worklogs, onDateChange, onOpenLog, onDe
   const fl  = filters.authorId ? af.filter(w=>w.authorId===filters.authorId) : af;
   const ts  = fl.reduce((s,w)=>s+w.seconds,0);
   const eps = WorklogService.groupByEpic(fl);
-  const su  = MOCK_USERS.find(u=>u.id===filters.authorId);
+  const su  = MOCK_USERS.find((u: any)=>u.id===filters.authorId) as any;
 
   function addDays(iso: string,n: number){const d=new Date(iso+"T00:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
 

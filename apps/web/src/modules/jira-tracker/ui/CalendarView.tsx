@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { WorklogService } from '../domain/services/WorklogService';

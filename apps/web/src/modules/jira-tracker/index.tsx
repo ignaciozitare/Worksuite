@@ -1,4 +1,3 @@
-// @ts-nocheck
 // JiraTracker module barrel
 
 // Domain

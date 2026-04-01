@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { TimeParser } from '../domain/services/TimeParser';
@@ -97,14 +96,14 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues, jiraProjec
       </tr></thead><tbody>{filteredIssues.map((i,idx)=>{
         return <tr key={i.key||idx}>
           <td><span className="ik">{i.key}</span></td>
-          <td><div className="ism">{i.summary}</div><div style={{marginTop:2}}>{(i.labels||[]).slice(0,3).map(l=><span key={l} className="tag">{l}</span>)}</div></td>
+          <td><div className="ism">{i.summary}</div><div style={{marginTop:2}}>{(i.labels||[]).slice(0,3).map((l: string)=><span key={l} className="tag">{l}</span>)}</div></td>
           <td><span className="t-pill">{i.type}</span></td>
           <td><span className={`s-b ${sc(i.status)}`}>{i.status}</span></td>
           <td><span className={pc(i.priority)}>{i.priority}</span></td>
           <td><span style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--tx3)"}}>{i.project}</span></td>
           <td style={{fontSize:11}}>{i.assignee}</td>
           <td><span className="er">{i.epic}</span></td>
-          <td className="hc">{hoursByIssue[i.key] ? TimeParser.format(hoursByIssue[i.key]) : "—"}</td>
+          <td className="hc">{hoursByIssue[i.key] ? TimeParser.format(hoursByIssue[i.key] || 0) : "—"}</td>
           <td><button className="btn-log btn-log-sm" onClick={()=>onOpenLog({issueKey:i.key})}>{t("jiraTracker.btnHours")}</button></td>
         </tr>;
       })}</tbody></table></div>}

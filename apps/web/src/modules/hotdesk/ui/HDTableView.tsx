@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { SeatStatusEnum as SeatStatus } from '../domain/entities/constants';
@@ -10,16 +9,16 @@ import { SeatTooltip } from './SeatTooltip';
 
 const MOCK_TODAY = TODAY;
 
-function HDTableView({ hd, onCell, currentUser, blueprint, theme="dark" }) {
+function HDTableView({ hd, onCell, currentUser, blueprint, theme="dark" }: { hd: any; onCell: (seatId: string, date: string) => void; currentUser: any; blueprint: any; theme?: string }) {
   const { t, locale } = useTranslation();
   const lang = locale;
   const [yr, sYr] = useState(new Date().getFullYear());
   const [mo, sMo] = useState(new Date().getMonth());
-  const [tooltip, setTooltip] = useState(null);
+  const [tooltip, setTooltip] = useState<{seatId:string;ax:number;ay:number}|null>(null);
   const [hidePast, setHidePast] = useState(false);
 
   const days = daysInMonth(yr, mo);
-  function isoD(d) { return `${yr}-${String(mo+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
+  function isoD(d: number) { return `${yr}-${String(mo+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
   const prev = ()=>mo===0?(sMo(11),sYr(y=>y-1)):sMo(m=>m-1);
   const next = ()=>mo===11?(sMo(0),sYr(y=>y+1)):sMo(m=>m+1);
   const DOW_EN = ["S","M","T","W","T","F","S"];
@@ -31,8 +30,8 @@ function HDTableView({ hd, onCell, currentUser, blueprint, theme="dark" }) {
   const seats = useMemo(()=>{
     const items = (() => { try { return Array.isArray(blueprint?.layout) ? blueprint.layout : []; } catch { return []; }})();
     if(!items.length) return SEATS.map(s=>({...s}));
-    const result=[];
-    items.forEach(item=>{
+    const result: any[]=[];
+    items.forEach((item: any)=>{
       if(item.type!=='desk'&&item.type!=='circle') return;
       const dis=item.disabled||[];
       let seatList;

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React from 'react';
 import { SeatStatusEnum as SeatStatus } from '../domain/entities/constants';
 import { ReservationService } from '../domain/services/ReservationService';
@@ -7,7 +6,7 @@ import { TODAY } from '@/shared/lib/constants';
 
 const MOCK_TODAY = TODAY;
 
-function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true, theme="dark" }) {
+function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true, theme="dark" }: { hd: any; onSeat?: (id: string) => void; highlightSeat?: string; currentUser: any; showOccupants?: boolean; theme?: string }) {
   
   const C = theme === "light"
     ? { free:"#0f9060", occ:"#4f6ef7", fixed:"#c02828", amber:"#b86800",
@@ -17,9 +16,9 @@ function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true,
         bd:"#2a2a38", sf:"#141418", sf2:"#1b1b22", sf3:"#21212c", tx3:"#50506a",
         zoneBg:"#18181f", zoneBd:"#2a2a38" };
 
-  const colOf = st => st===SeatStatus.FIXED ? C.fixed : st===SeatStatus.OCCUPIED ? C.occ : C.free;
+  const colOf = (st: string) => st===SeatStatus.FIXED ? C.fixed : st===SeatStatus.OCCUPIED ? C.occ : C.free;
 
-  const SeatIcon = ({ seat }) => {
+  const SeatIcon = ({ seat }: { seat: any }) => {
     const st     = ReservationService.statusOf(seat.id, MOCK_TODAY, hd.fixed, hd.reservations);
     const res    = ReservationService.resOf(seat.id, MOCK_TODAY, hd.reservations);
     const col    = colOf(st);
@@ -27,8 +26,8 @@ function OfficeSVG({ hd, onSeat, highlightSeat, currentUser, showOccupants=true,
     const isMyFixed = hd.fixed[seat.id] === currentUser.name;
     const stroke = (isMine || isMyFixed) ? C.amber : col;
     const lbl    = hd.fixed[seat.id]
-      ? hd.fixed[seat.id].split(" ")[0].slice(0,7)
-      : res ? res.userName.split(" ")[0].slice(0,7) : "";
+      ? (hd.fixed?.[seat.id] ?? "").split(" ")[0].slice(0,7)
+      : res ? (res!.userName ?? "").split(" ")[0].slice(0,7) : "";
     const { x, y } = seat;
     const op = theme === "light" ? 0.18 : 0.10;
     return (

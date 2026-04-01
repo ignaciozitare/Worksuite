@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { SeatStatusEnum as SeatStatus } from '../domain/entities/constants';
@@ -9,16 +8,16 @@ import { OfficeSVG } from './OfficeSVG';
 
 const MOCK_TODAY = TODAY;
 
-function HDMapView({ hd, onSeat, currentUser }) {
+function HDMapView({ hd, onSeat, currentUser }: { hd: any; onSeat: (id: string) => void; currentUser: any }) {
   const { t } = useTranslation();
   const [zoom, setZoom] = React.useState(1);
   const [pan, setPan] = React.useState({x:0,y:0});
   const [panning, setPanning] = React.useState(false);
   const [panStart, setPanStart] = React.useState({x:0,y:0,px:0,py:0});
-  const containerRef = React.useRef(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   const MIN_ZOOM = 0.4, MAX_ZOOM = 3;
-  const clamp = v => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v));
+  const clamp = (v: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v));
 
   const freeCount = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations) === SeatStatus.FREE).length;
   const occCount  = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations) === SeatStatus.OCCUPIED).length;
@@ -28,7 +27,7 @@ function HDMapView({ hd, onSeat, currentUser }) {
   React.useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const handler = e => {
+    const handler = (e: WheelEvent) => {
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
       setZoom(z => clamp(Math.round((z + delta) * 100) / 100));
@@ -38,12 +37,12 @@ function HDMapView({ hd, onSeat, currentUser }) {
   }, []);
 
   // Pan with mouse drag on the map background (not on seats)
-  const onMouseDown = e => {
+  const onMouseDown = (e: React.MouseEvent) => {
     if(e.button !== 0) return;
     setPanning(true);
     setPanStart({x:e.clientX, y:e.clientY, px:pan.x, py:pan.y});
   };
-  const onMouseMove = e => {
+  const onMouseMove = (e: React.MouseEvent) => {
     if(!panning) return;
     setPan({x:panStart.px+(e.clientX-panStart.x), y:panStart.py+(e.clientY-panStart.y)});
   };

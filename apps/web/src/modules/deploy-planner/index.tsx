@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Deploy Planner module barrel
 export { SupabaseDeploymentRepository } from "./infra/SupabaseDeploymentRepository";
 export { CreateDeployment }             from "./domain/useCases/CreateDeployment";

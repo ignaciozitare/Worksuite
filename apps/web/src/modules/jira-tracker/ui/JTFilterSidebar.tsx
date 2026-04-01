@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { MOCK_PROJECTS_FALLBACK } from '@/shared/lib/fallbackData';
@@ -25,8 +24,8 @@ export function JTFilterSidebar({ filters, onApply, onExport, mobileOpen, onMobi
 
   const ts = (k: string) => {
     const isAdding = !l.spaceKeys.includes(k);
-    const newKeys = isAdding ? [...l.spaceKeys, k] : l.spaceKeys.filter(x => x !== k);
-    sL(f => ({ ...f, spaceKeys: newKeys }));
+    const newKeys = isAdding ? [...l.spaceKeys, k] : l.spaceKeys.filter((x: string) => x !== k);
+    sL((f: any) => ({ ...f, spaceKeys: newKeys }));
     if (isAdding && onProjectChange) onProjectChange(k);
   };
 

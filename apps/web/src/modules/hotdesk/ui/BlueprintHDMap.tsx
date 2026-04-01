@@ -2,7 +2,7 @@
 import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { TODAY } from '@/shared/lib/constants';
 
-function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null, theme="dark" }) {
+function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null, theme="dark" }: { hd: any; onSeat: (id: string) => void; currentUser: any; blueprint: any; highlightSeat?: string | null; theme?: string }) {
   
   const canvasRef = useRef(null);
   const cwRef = useRef(null);
