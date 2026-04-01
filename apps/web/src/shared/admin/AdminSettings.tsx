@@ -4,15 +4,17 @@ import { useTranslation } from '@worksuite/i18n';
 import { supabase } from '../lib/api';
 import { SupabaseSsoConfigRepo } from '../infra/SupabaseSsoConfigRepo';
 import { SupabaseAdminUserRepo } from '../infra/SupabaseAdminUserRepo';
-
-const ssoRepo = new SupabaseSsoConfigRepo(supabase);
-const adminUserRepo = new SupabaseAdminUserRepo(supabase);
+import { JiraConnectionAdapter } from '../infra/JiraConnectionAdapter';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
-async function getAuthHeader() {
+async function getAuthHeaders() {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
 }
+
+const ssoRepo = new SupabaseSsoConfigRepo(supabase);
+const adminUserRepo = new SupabaseAdminUserRepo(supabase);
+const jiraConnRepo = new JiraConnectionAdapter(API_BASE, getAuthHeaders);
 
 function SSOConfig() {
   const [cfg, setCfg] = useState({ ad_group_id: '', ad_group_name: '', allow_google: true, allow_microsoft: true });
@@ -264,17 +266,12 @@ function AdminSettings() {
   const [okMsg,     setOkMsg]     = useState("");
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/jira/connection`, { headers: await getAuthHeader() });
-        const json = await res.json();
-        if (json.ok && json.data) {
-          setConn(json.data);
-          setJiraUrl(json.data.base_url || "");
-          setEmail(json.data.email || "");
-        }
-      } catch { } finally { setLoading(false); }
-    })();
+    jiraConnRepo.get()
+      .then(data => {
+        if (data) { setConn(data); setJiraUrl(data.base_url || ""); setEmail(data.email || ""); }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const handleSave = async () => {
@@ -283,25 +280,16 @@ function AdminSettings() {
     if (!conn && !token.trim()) { setErrMsg("Introduce el API Token"); return; }
     setSaving(true);
     try {
-      const body: any = { baseUrl: jiraUrl.trim(), email: email.trim() };
-      if (token.trim()) body.apiToken = token.trim();
-      if (!token.trim() && conn) body.apiToken = "__keep__";
-      const res  = await fetch(`${API_BASE}/jira/connection`, {
-        method: "POST",
-        headers: { ...await getAuthHeader(), "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const json = await res.json();
-      if (!json.ok) { setErrMsg(json.error?.message || "Error al guardar"); return; }
+      await jiraConnRepo.save(jiraUrl.trim(), email.trim(), token.trim() || "__keep__");
       setConn({ base_url: jiraUrl.trim(), email: email.trim() });
       setToken("");
       setOkMsg("✓ Configuración guardada");
       setTimeout(() => setOkMsg(""), 3000);
-    } catch { setErrMsg("Error de red"); } finally { setSaving(false); }
+    } catch(e) { setErrMsg(e.message || "Error de red"); } finally { setSaving(false); }
   };
 
   const handleDisconnect = async () => {
-    await fetch(`${API_BASE}/jira/connection`, { method: "DELETE", headers: await getAuthHeader() });
+    try { await jiraConnRepo.remove(); } catch(e) { console.error(e); }
     setConn(null); setJiraUrl(""); setEmail(""); setToken("");
     setOkMsg("Desconectado"); setTimeout(() => setOkMsg(""), 3000);
   };
@@ -329,7 +317,7 @@ function AdminSettings() {
             </div>
             <div className="a-hint">{t("admin.tokenHint")}</div>
           </div>
-          <button className="btn-p" onClick={handleSave} disabled={saving}>{saving ? "Guardando..." : t("admin.saveConfig")}</button>
+          <button className="btn-p" onClick={handleSave} disabled={saving}>{saving ? t("common.loading") : t("admin.saveConfig")}</button>
           {conn && <button className="btn-g" onClick={handleDisconnect} style={{marginTop:4,color:"var(--red)",borderColor:"var(--red)"}}>Desconectar</button>}
           {errMsg && <div style={{marginTop:8,padding:"8px 12px",background:"rgba(229,62,62,.08)",border:"1px solid rgba(229,62,62,.25)",borderRadius:"var(--r)",color:"var(--red)",fontSize:12}}>{errMsg}</div>}
           {okMsg  && <div className="saved-ok"><span className="dot-ok"/>  {okMsg}</div>}

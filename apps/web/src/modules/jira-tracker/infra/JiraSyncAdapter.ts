@@ -29,4 +29,12 @@ export class JiraSyncAdapter implements JiraSyncPort {
     if (!json.ok || !json.data?.length) return [];
     return json.data;
   }
+
+  async searchIssues(jql: string, maxResults = 50, fields?: string): Promise<any> {
+    const headers = await this.getHeaders();
+    const params = `jql=${encodeURIComponent(jql)}&maxResults=${maxResults}${fields ? `&fields=${fields}` : ''}`;
+    const res = await fetch(`${this.apiBase}/jira/search?${params}`, { headers });
+    if (!res.ok) throw new Error(`Jira search failed: ${res.status}`);
+    return res.json();
+  }
 }

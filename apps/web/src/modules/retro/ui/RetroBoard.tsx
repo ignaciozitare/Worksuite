@@ -536,7 +536,7 @@ function RetroSummary({sortedCards,retroName,onExit,onAddToKanban}){
         <h2 style={{fontFamily:"'Sora',sans-serif",fontSize:20,color:"var(--tx)",margin:0}}>{retroName||"Retrospectiva"}</h2>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10,marginBottom:22}}>
-        {[{l:t("retro.cardsLabel"),v:sortedCards.length,c:"#818cf8"},{l:t("retro.withActionable"),v:withAct.length,c:"var(--green)"},{l:"Sin accionable",v:without.length,c:"var(--red)"},{l:t("retro.votes"),v:sortedCards.reduce((a,c)=>a+c.votes,0),c:"#fbbf24"}].map((s)=>(
+        {[{l:t("retro.cardsLabel"),v:sortedCards.length,c:"#818cf8"},{l:t("retro.withActionable"),v:withAct.length,c:"var(--green)"},{l:t("retro.noActionables"),v:without.length,c:"var(--red)"},{l:t("retro.votes"),v:sortedCards.reduce((a,c)=>a+c.votes,0),c:"#fbbf24"}].map((s)=>(
           <div key={s.l} style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:11,padding:"11px",textAlign:"center"}}>
             <div style={{fontSize:20,fontWeight:700,fontFamily:"'Sora',sans-serif",color:s.c}}>{s.v}</div>
             <div style={{fontSize:10,color:"var(--tx3)",marginTop:2}}>{s.l}</div>
@@ -702,7 +702,7 @@ function RetroHistorial({currentUser,history,teams}){
           <div key={team?.id||"none"} style={{marginBottom:16}}>
             <div style={{display:"flex",alignItems:"center",gap:6,padding:"4px 8px 6px",borderBottom:"1px solid var(--bd)",marginBottom:4}}>
               <div style={{width:8,height:8,borderRadius:"50%",background:team?.color||"#64748b"}}/>
-              <span style={{fontSize:11,color:team?.color||"#64748b",fontWeight:700}}>{team?.name||"Sin equipo"}</span>
+              <span style={{fontSize:11,color:team?.color||"#64748b",fontWeight:700}}>{team?.name||t("retro.noTeams")}</span>
               <span style={{fontSize:10,color:"var(--tx3)",marginLeft:"auto"}}>{retros.length}</span>
             </div>
             {retros.map(r=>{

@@ -19,14 +19,14 @@ const updateUC     = new UpdateRelease(repo);
 const deleteUC     = new DeleteRelease(repo);
 const ticketUC     = new UpdateTicketStatuses(repo);
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+import { JiraSyncAdapter } from '../../jira-tracker/infra/JiraSyncAdapter';
 
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 async function authHeaders() {
   const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token
-    ? { Authorization: `Bearer ${session.access_token}` }
-    : {};
+  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
 }
+const jiraAdapter = new JiraSyncAdapter(API_BASE, authHeaders);
 
 // ── Inline style helpers ──────────────────────────────────────────────────────
 const inp = (extra={}) => ({
@@ -46,11 +46,8 @@ function TicketSearch({ existingKeys, allTickets, onAdd, onRemove }) {
     if(!query.trim()||query.length<2){setResults([]);return;}
     setLoading(true);
     try {
-      const h = await authHeaders();
-      const jql = encodeURIComponent(`text ~ "${query}" OR issueKey = "${query}" ORDER BY updated DESC`);
-      const r = await fetch(`${API_BASE}/jira/search?jql=${jql}&maxResults=15`,{headers:h});
-      if(!r.ok) throw new Error();
-      const d = await r.json();
+      const jql = `text ~ "${query}" OR issueKey = "${query}" ORDER BY updated DESC`;
+      const d = await jiraAdapter.searchIssues(jql, 15);
       setResults((d.issues||[]).map(i=>({key:i.key,summary:i.fields?.summary||i.key,type:i.fields?.issuetype?.name||'Task'})));
     } catch { setResults([]); }
     setLoading(false);
@@ -217,16 +214,12 @@ export function DeployPlanner({ currentUser }) {
       if(allIds.length>0) {
         setTicketLoad(true);
         try {
-          const h = await authHeaders();
           const fieldList = ['summary','assignee','priority','issuetype','status',cfg?.repoJiraField||'components'].filter(Boolean).join(',');
-          const jql = encodeURIComponent(`issueKey in (${allIds.join(',')})`);
-          const r = await fetch(`${API_BASE}/jira/search?jql=${jql}&maxResults=500&fields=${fieldList}`,{headers:h});
-          if(r.ok) {
-            const d = await r.json();
-            const map = {};
-            (d.issues||[]).forEach(i=>{map[i.key]=i;});
-            setAllTickets(map);
-          }
+          const jql = `issueKey in (${allIds.join(',')})`;
+          const d = await jiraAdapter.searchIssues(jql, 500, fieldList);
+          const map = {};
+          (d.issues||[]).forEach(i=>{map[i.key]=i;});
+          setAllTickets(map);
         } catch {}
         setTicketLoad(false);
       }

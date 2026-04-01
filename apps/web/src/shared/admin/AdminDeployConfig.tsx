@@ -2,8 +2,10 @@
 import React from 'react';
 import { supabase } from '../lib/api';
 import { SupabaseDeployConfigRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseDeployConfigRepo';
+import { JiraSyncAdapter } from '../../modules/jira-tracker/infra/JiraSyncAdapter';
 
 const deployConfigRepo = new SupabaseDeployConfigRepo(supabase);
+const jiraSyncAdapter = new JiraSyncAdapter(API_BASE, getAuthHeaders);
 import { GetJiraMetadata } from '../../modules/deploy-planner/domain/useCases/GetJiraMetadata';
 import { JiraMetadataAdapter } from '../../modules/deploy-planner/infra/JiraMetadataAdapter';
 import { SupabaseReleaseRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseReleaseRepo';
@@ -64,7 +66,7 @@ function JiraFieldMapping({verCfg,setVerCfg}){
 
       <button onClick={fetchJiraMetadata} disabled={loading}
         style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,padding:"7px 14px",fontSize:11,cursor:"pointer",color:"var(--tx2)",fontWeight:600,fontFamily:"inherit",marginBottom:14}}>
-        {loading?"Cargando campos de Jira…":"🔄 Cargar campos desde Jira"}
+        {loading?t("common.loading"):"🔄 Cargar campos desde Jira"}
       </button>
 
       {issueTypes.length>0&&(
@@ -103,7 +105,7 @@ function JiraFieldMapping({verCfg,setVerCfg}){
       {(fields.length>0||selectedField!=="components")&&(
         <button onClick={save} disabled={saving}
           style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:6,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-          {saving?"Guardando…":saved?"✓ Guardado":"Guardar campo seleccionado"}
+          {saving?t("common.loading"):saved?t("common.success"):t("common.save")}
         </button>
       )}
     </div>
@@ -188,24 +190,14 @@ function AdminDeployConfig() {
   const fetchAllJiraStatuses = async () => {
     setFetchingJ(true);
     try {
-      const {data:{session}} = await supabase.auth.getSession();
-      const API = (import.meta.env.VITE_API_URL||"http://localhost:3001").replace(/\/$/,"");
-      const hdrs = {"Authorization":`Bearer ${session?.access_token}`};
+      const projects = await jiraSyncAdapter.loadProjects();
+      const keys = projects.map(p=>p.key).slice(0,5);
 
-      // Obtener proyectos (mismo endpoint que JiraTracker)
-      const projRes = await fetch(`${API}/jira/projects`, { headers: hdrs });
-      if(!projRes.ok) throw new Error(`Proyectos: HTTP ${projRes.status}`);
-      const projData = await projRes.json();
-      const projects = (projData.data||[]).map(p=>p.key||p.id).filter(Boolean).slice(0,5);
-
-      // Recoger estados únicos de issues de los primeros proyectos
       const statusSet = new Set();
-      await Promise.all(projects.map(async proj => {
+      await Promise.all(keys.map(async proj => {
         try {
-          const r = await fetch(`${API}/jira/issues?project=${proj}`, { headers: hdrs });
-          if(!r.ok) return;
-          const d = await r.json();
-          (d.data||[]).forEach(i => {
+          const issues = await jiraSyncAdapter.loadIssues(proj);
+          issues.forEach(i => {
             const st = i.status || i.fields?.status?.name;
             if(st) statusSet.add(st);
           });
@@ -305,7 +297,7 @@ function AdminDeployConfig() {
           </button>
           <button onClick={saveJiraStatuses} disabled={savingJ}
             style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:5,padding:"5px 12px",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-            {savingJ?"Guardando…":savedJ?"✓ Guardado":"Guardar"}
+            {savingJ?t("common.loading"):savedJ?t("common.success"):t("common.save")}
           </button>
         </div>
         <div style={{fontSize:11,color:"var(--tx3)",marginBottom:12}}>
@@ -473,7 +465,7 @@ function AdminDeployConfig() {
 
             <button onClick={saveVerCfg} disabled={verCfgSaving}
               style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:6,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",alignSelf:"flex-start"}}>
-              {verCfgSaving?"Guardando…":verCfgSaved?"✓ Guardado":"Guardar configuración"}
+              {verCfgSaving?t("common.loading"):verCfgSaved?t("common.success"):t("common.save")}
             </button>
           </div>
         )}

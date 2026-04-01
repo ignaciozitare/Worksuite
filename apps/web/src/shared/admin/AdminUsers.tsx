@@ -2,7 +2,10 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { supabase } from '../lib/api';
+import { SupabaseAdminUserRepo } from '../infra/SupabaseAdminUserRepo';
 import { makeAvatar, isValidEmail } from '../lib/utils';
+
+const adminUserRepo = new SupabaseAdminUserRepo(supabase);
 import { PasswordStrength } from '../ui/PasswordStrength';
 import { DeskType } from '../../modules/hotdesk/domain/entities/constants';
 import { CsvService } from '../../modules/jira-tracker/domain/services/CsvService';
@@ -45,18 +48,8 @@ function AddUserModal({ existingUsers, onClose, onSave }) {
     if (Object.keys(errs).length) { setEr(errs); return; }
     setDone(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-        },
-        body: JSON.stringify({ name: name.trim(), email: email.toLowerCase().trim(), password: pwd, role, deskType: desk })
-      });
-      const json = await res.json();
-      if (!res.ok) { setEr({ email: json.error || 'Error creating user' }); setDone(false); return; }
+      const json = await adminUserRepo.createUser({ name: name.trim(), email: email.toLowerCase().trim(), password: pwd, role, desk_type: desk });
+      if (json.error) { setEr({ email: json.error || 'Error creating user' }); setDone(false); return; }
       // Map snake_case → camelCase for local state
       const u = json.user;
       onSave({ id: u.id, name: u.name, email: u.email, avatar: u.avatar||makeAvatar(u.name), role: u.role, deskType: u.desk_type||'hotdesk', active: u.active });
@@ -154,17 +147,17 @@ function AdminUsers({ users, setUsers, currentUser }) {
     if(!u) return;
     const newRole = u.role==="admin"?"user":"admin";
     setUsers(us=>us.map(x=>x.id===id?{...x,role:newRole}:x));
-    await supabase.from('users').update({role:newRole}).eq('id',id);
+    try{ await adminUserRepo.updateRole(id, newRole); }catch(e){console.error(e);}
   };
   const toggleAccess = async (id) => {
     const u = users.find(x=>x.id===id);
     if(!u) return;
     setUsers(us=>us.map(x=>x.id===id?{...x,active:!x.active}:x));
-    await supabase.from('users').update({active:!u.active}).eq('id',id);
+    try{ await adminUserRepo.updateActive(id, !u.active); }catch(e){console.error(e);}
   };
   const changeDeskType = async (id, dt) => {
     setUsers(us=>us.map(u=>u.id===id?{...u,deskType:dt}:u));
-    await supabase.from('users').update({desk_type:dt}).eq('id',id);
+    try{ await adminUserRepo.updateDeskType(id, dt); }catch(e){console.error(e);}
   };
   const toggleModule = async (id, modId) => {
     const u = users.find(x=>x.id===id);
@@ -172,7 +165,7 @@ function AdminUsers({ users, setUsers, currentUser }) {
     const mods = u.modules||["jt","hd","retro","deploy"];
     const next = mods.includes(modId) ? mods.filter(m=>m!==modId) : [...mods, modId];
     setUsers(us=>us.map(x=>x.id===id?{...x,modules:next}:x));
-    await supabase.from('users').update({modules:next}).eq('id',id);
+    try{ await adminUserRepo.updateModules(id, next); }catch(e){console.error(e);}
   };
   const handleAdd    = u  => setUsers(us=>[...us,u]);
   const handleImport = us => setUsers(prev=>[...prev,...us]);
