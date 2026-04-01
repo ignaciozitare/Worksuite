@@ -149,10 +149,27 @@ function CsvImportModal({ existingUsers, onClose, onImport }) {
 function AdminUsers({ users, setUsers, currentUser }) {
   const { t } = useTranslation();
   const [modal, setModal] = useState(null);
-  const toggleRole   = id => setUsers(us=>us.map(u=>u.id===id?{...u,role:u.role==="admin"?"user":"admin"}:u));
-  const toggleAccess = id => setUsers(us=>us.map(u=>u.id===id?{...u,active:!u.active}:u));
-  const changeDeskType = (id, dt) => setUsers(us=>us.map(u=>u.id===id?{...u,deskType:dt}:u));
-  const toggleModule = (id, modId) => setUsers(us=>us.map(u=>{ if (u.id!==id) return u; const mods = u.modules||["jt","hd","retro","deploy"]; return {...u, modules: mods.includes(modId) ? mods.filter(m=>m!==modId) : [...mods, modId]}; }));
+  const toggleRole = async (id) => {
+    const u = users.find(x=>x.id===id);
+    if(!u) return;
+    const newRole = u.role==="admin"?"user":"admin";
+    setUsers(us=>us.map(x=>x.id===id?{...x,role:newRole}:x));
+    await supabase.from('users').update({role:newRole}).eq('id',id);
+  };
+  const toggleAccess = async (id) => {
+    const u = users.find(x=>x.id===id);
+    if(!u) return;
+    setUsers(us=>us.map(x=>x.id===id?{...x,active:!x.active}:x));
+    await supabase.from('users').update({active:!u.active}).eq('id',id);
+  };
+  const changeDeskType = async (id, dt) => {
+    setUsers(us=>us.map(u=>u.id===id?{...u,deskType:dt}:u));
+    await supabase.from('users').update({desk_type:dt}).eq('id',id);
+  };
+  const toggleModule = (id, modId) => {
+    // Note: 'modules' column may not exist in users table yet — state-only for now
+    setUsers(us=>us.map(u=>{ if (u.id!==id) return u; const mods = u.modules||["jt","hd","retro","deploy"]; return {...u, modules: mods.includes(modId) ? mods.filter(m=>m!==modId) : [...mods, modId]}; }));
+  };
   const handleAdd    = u  => setUsers(us=>[...us,u]);
   const handleImport = us => setUsers(prev=>[...prev,...us]);
   const DESK_COLORS = { [DeskType.NONE]:"var(--tx3)", [DeskType.HOTDESK]:"var(--ac2)", [DeskType.FIXED]:"var(--red)" };
