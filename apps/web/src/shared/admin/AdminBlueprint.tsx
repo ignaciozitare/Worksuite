@@ -20,12 +20,12 @@ function AdminBlueprint() {
 
   useEffect(() => {
     buildingRepo.findAllBuildings()
-      .then(({data})=>{ if(data) setBuildings(data); });
+      .then(data=>{ if(data) setBuildings(data); });
   }, []);
 
   useEffect(() => {
     if(!selBldg){setFloors([]);setSelFloor(null);return;}
-    buildingRepo.findBlueprints(bldg.id).then(data=>{ if(data){setFloors(data);if(!selFloor||!data.find(f=>f.id===selFloor.id))setSelFloor(data[0]||null);}});
+    buildingRepo.findBlueprints(selBldg.id).then(data=>{ if(data){setFloors(data);if(!selFloor||!data.find(f=>f.id===selFloor.id))setSelFloor(data[0]||null);}});
   }, [selBldg?.id]);
 
   const saveBuilding = async () => {
@@ -221,7 +221,7 @@ function BuildingFloorSelectors({ selectedBuilding, selectedBlueprint, onChange 
 
   useEffect(() => {
     buildingRepo.findAllBuildings()
-      .then(({data})=>{
+      .then(data=>{
         if(!data) return;
         setBuildings(data);
         // Auto-select: last used from localStorage, or first building
@@ -233,7 +233,7 @@ function BuildingFloorSelectors({ selectedBuilding, selectedBlueprint, onChange 
 
   useEffect(() => {
     if(!selectedBuilding){setFloors([]);return;}
-    buildingRepo.findBlueprints(bldg.id).then(data=>{
+    buildingRepo.findBlueprints(selectedBuilding.id).then(data=>{
         if(!data) return;
         setFloors(data);
         // Auto-select: last used floor or first
