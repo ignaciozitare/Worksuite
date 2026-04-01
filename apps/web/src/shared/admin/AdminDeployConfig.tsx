@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React from 'react';
+import { useTranslation } from '@worksuite/i18n';
 import { supabase } from '../lib/api';
 import { SupabaseDeployConfigRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseDeployConfigRepo';
 import { JiraSyncAdapter } from '../../modules/jira-tracker/infra/JiraSyncAdapter';
@@ -20,6 +21,7 @@ const getJiraMetadata = new GetJiraMetadata(jiraMetadataAdapter);
 const releaseRepo = new SupabaseReleaseRepo(supabase);
 
 function JiraFieldMapping({verCfg,setVerCfg}){
+  const {t}=useTranslation();
   const [issueTypes,setIssueTypes]=React.useState([]);
   const [fields,setFields]=React.useState([]);
   const [loading,setLoading]=React.useState(false);
@@ -115,6 +117,7 @@ function JiraFieldMapping({verCfg,setVerCfg}){
 }
 
 function AdminDeployConfig() {
+  const {t}=useTranslation();
   const [statuses, setStatuses]   = React.useState([]);
   const [editing, setEditing]     = React.useState(null); // {id, name, color, is_final}
   const [jiraList, setJiraList]   = React.useState([]); // [{name, id?}]
