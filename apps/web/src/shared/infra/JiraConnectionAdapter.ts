@@ -11,7 +11,7 @@ export class JiraConnectionAdapter implements JiraConnectionPort {
     const res = await fetch(`${this.apiBase}/jira/connection`, { headers });
     if (!res.ok) return null;
     const json = await res.json();
-    return json.ok ? json.connection : null;
+    return json.ok ? json.data : null;
   }
 
   async save(baseUrl: string, email: string, apiToken: string): Promise<void> {
