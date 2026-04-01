@@ -1,6 +1,9 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/api';
+import { SupabaseRoleRepo } from '../infra/SupabaseRoleRepo';
+
+const roleRepo = new SupabaseRoleRepo(supabase);
 
 const ALL_MODULES = [
   { id:"jt",     label:"Jira Tracker",   color:"var(--ac2)"  },
@@ -29,27 +32,27 @@ function AdminRoles() {
   const [newRoleName, setNewRoleName] = useState('');
 
   useEffect(()=>{
-    supabase.from('roles').select('*').order('created_at')
-      .then(({data})=>{ if(data) setRoles(data); });
+    roleRepo.findAll().then(data=>{ if(data) setRoles(data); });
   },[]);
 
   const createRole = async () => {
     if(!newRoleName.trim()) return;
-    const {data,error} = await supabase.from('roles').insert({
-      name: newRoleName.trim().toLowerCase().replace(/\s+/g,'_'),
-      description: newRoleName.trim(),
-      permissions: {
-        modules: ['jt','hd'],
-        admin: { users:false,hotdesk:false,blueprint:false,settings:false,jira_config:false,sso:false,roles:false }
-      }
-    }).select().single();
-    if(!error&&data){ setRoles(r=>[...r,data]); setSelRole(data); setNewRoleName(''); }
-    else setMsg(error?.message||'Error');
+    try {
+      const data = await roleRepo.create({
+        name: newRoleName.trim().toLowerCase().replace(/\s+/g,'_'),
+        description: newRoleName.trim(),
+        permissions: {
+          modules: ['jt','hd'],
+          admin: { users:false,hotdesk:false,blueprint:false,settings:false,jira_config:false,sso:false,roles:false }
+        }
+      });
+      setRoles(r=>[...r,data]); setSelRole(data); setNewRoleName('');
+    } catch(e) { setMsg(e.message||'Error'); }
   };
 
   const deleteRole = async (id) => {
     if(!confirm('Delete this role?')) return;
-    await supabase.from('roles').delete().eq('id',id);
+    await roleRepo.remove(id);
     setRoles(r=>r.filter(x=>x.id!==id));
     if(selRole?.id===id) setSelRole(null);
   };
@@ -59,7 +62,7 @@ function AdminRoles() {
     const updated = { ...selRole.permissions, ...value };
     setSelRole(r=>({...r, permissions: updated}));
     setRoles(rs=>rs.map(r=>r.id===selRole.id?{...r,permissions:updated}:r));
-    await supabase.from('roles').update({permissions:updated}).eq('id',selRole.id);
+    await roleRepo.updatePermissions(selRole.id, updated);
   };
 
   const toggleModule = (modId) => {
@@ -76,7 +79,7 @@ function AdminRoles() {
   const saveDescription = async (desc) => {
     if(!selRole) return;
     setSelRole(r=>({...r,description:desc}));
-    await supabase.from('roles').update({description:desc}).eq('id',selRole.id);
+    await roleRepo.updateDescription(selRole.id, desc);
   };
 
   return (

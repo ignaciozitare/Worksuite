@@ -2,6 +2,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { supabase } from '../lib/api';
+import { SupabaseBuildingRepo } from '../infra/SupabaseBuildingRepo';
+import { SupabaseHotDeskAdminRepo } from '../infra/SupabaseHotDeskAdminRepo';
+
+const buildingRepo = new SupabaseBuildingRepo(supabase);
+const hotdeskAdminRepo = new SupabaseHotDeskAdminRepo(supabase);
 import { BlueprintHDMap } from '../../modules/hotdesk/ui/BlueprintHDMap';
 import { MiniCalendar } from '../ui/MiniCalendar';
 import { TODAY } from '../lib/constants';
@@ -27,15 +32,14 @@ function AdminHotDesk({ hd, setHd, users, theme="dark" }) {
   const hotdeskUsers = users.filter(u => u.deskType===DeskType.HOTDESK || u.deskType===DeskType.FIXED);
 
   useEffect(()=>{
-    supabase.from('buildings').select('*').eq('active',true).order('name')
-      .then(({data})=>{if(data){setBuildings(data);if(data[0])setSelBldg(data[0]);}});
+    buildingRepo.findAllBuildings()
+      .then(data=>{if(data){setBuildings(data);if(data[0])setSelBldg(data[0]);}});
   },[]);
 
   useEffect(()=>{
     if(!selBldg){setFloors([]);setSelFloor(null);return;}
-    supabase.from('blueprints').select('id,floor_name,floor_order,layout')
-      .eq('building_id',selBldg.id).order('floor_order')
-      .then(({data})=>{if(data){setFloors(data);setSelFloor(data[0]||null);}});
+    buildingRepo.findBlueprints(selBldg.id)
+      .then(data=>{if(data){setFloors(data);setSelFloor(data[0]||null);}});
   },[selBldg?.id]);
 
   function getSeatsForItem(item) {
@@ -67,19 +71,19 @@ function AdminHotDesk({ hd, setHd, users, theme="dark" }) {
     const usr = users.find(u=>u.id===selUser);
     if (asFixed) {
       setHd(h=>({ ...h, fixed:{ ...h.fixed, [selSeat]:usr?.name||selUser }, reservations:h.reservations.filter(r=>r.seatId!==selSeat) }));
-      await supabase.from('fixed_assignments').upsert({seat_id:selSeat,user_id:selUser,user_name:usr?.name||selUser});
+      await hotdeskAdminRepo.upsertFixedAssignment(selSeat,selUser,usr?.name||selUser);
     } else {
       if (!selDates.length) return;
       setHd(h=>({ ...h, reservations:[ ...h.reservations.filter(r=>!selDates.includes(r.date)||r.seatId!==selSeat), ...selDates.map(date=>({seatId:selSeat,date,userId:selUser,userName:usr?.name||selUser})) ]}));
       const rows=selDates.map(d=>({id:`res-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,seat_id:selSeat,user_id:selUser,user_name:usr?.name||selUser,date:d}));
-      await supabase.from('seat_reservations').upsert(rows,{onConflict:'seat_id,date'});
+      await hotdeskAdminRepo.upsertReservations(rows);
     }
     setSelSeat(null); setSelUser(''); setSelDates([]); setAsFixed(false);
   };
 
   const removeFixed = async (sid) => {
     setHd(h=>{ const f={...h.fixed}; delete f[sid]; return {...h,fixed:f}; });
-    await supabase.from('fixed_assignments').delete().eq('seat_id',sid);
+    await hotdeskAdminRepo.removeFixedAssignment(sid);
   };
 
   const occupiedForSeat = selSeat ? hd.reservations.filter(r=>r.seatId===selSeat).map(r=>r.date) : [];

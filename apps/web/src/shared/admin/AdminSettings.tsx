@@ -2,6 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { supabase } from '../lib/api';
+import { SupabaseSsoConfigRepo } from '../infra/SupabaseSsoConfigRepo';
+import { SupabaseAdminUserRepo } from '../infra/SupabaseAdminUserRepo';
+
+const ssoRepo = new SupabaseSsoConfigRepo(supabase);
+const adminUserRepo = new SupabaseAdminUserRepo(supabase);
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 async function getAuthHeader() {
@@ -17,8 +22,8 @@ function SSOConfig() {
   const [err,     setErr]     = useState('');
 
   useEffect(() => {
-    supabase.from('sso_config').select('*').eq('id', 1).single()
-      .then(({ data }) => {
+    ssoRepo.get()
+      .then(data => {
         if (data) setCfg({
           ad_group_id:   data.ad_group_id   ?? '',
           ad_group_name: data.ad_group_name ?? '',
@@ -31,15 +36,15 @@ function SSOConfig() {
 
   const save = async () => {
     setSaving(true); setErr(''); setOk('');
-    const { error } = await supabase.from('sso_config').update({
-      ad_group_id:   cfg.ad_group_id.trim()   || null,
-      ad_group_name: cfg.ad_group_name.trim() || null,
-      allow_google:      cfg.allow_google,
-      allow_microsoft:   cfg.allow_microsoft,
-      updated_at: new Date().toISOString(),
-    }).eq('id', 1);
-    if (error) setErr(error.message);
-    else { setOk('\u2713 Configuraci\u00f3n guardada'); setTimeout(() => setOk(''), 3000); }
+    try {
+      await ssoRepo.update(1, {
+        ad_group_id:   cfg.ad_group_id.trim()   || null,
+        ad_group_name: cfg.ad_group_name.trim() || null,
+        allow_google:      cfg.allow_google,
+        allow_microsoft:   cfg.allow_microsoft,
+      });
+      setOk('\u2713 Configuraci\u00f3n guardada'); setTimeout(() => setOk(''), 3000);
+    } catch(e) { setErr(e.message); }
     setSaving(false);
   };
 
@@ -192,8 +197,7 @@ function PersonalJiraToken() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
-      supabase.from('users').select('jira_api_token').eq('id', user.id).single()
-        .then(({ data }) => setHasToken(!!data?.jira_api_token));
+      adminUserRepo.getJiraToken(user.id).then(tok => setHasToken(!!tok));
     });
   }, []);
 
@@ -201,15 +205,13 @@ function PersonalJiraToken() {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setSaving(false); return; }
-    const { error } = await supabase.from('users')
-      .update({ jira_api_token: token.trim() || null })
-      .eq('id', user.id);
-    if (!error) {
+    try {
+      await adminUserRepo.updateJiraToken(user.id, token.trim() || null);
       setHasToken(!!token.trim());
       setToken('');
       setOk(token.trim() ? '✓ Token guardado' : '✓ Token eliminado');
       setTimeout(() => setOk(''), 3000);
-    }
+    } catch(e) { console.error('Save token error:', e); }
     setSaving(false);
   };
 

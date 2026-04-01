@@ -1,6 +1,9 @@
 // @ts-nocheck
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '../lib/api';
+import { SupabaseBuildingRepo } from '../infra/SupabaseBuildingRepo';
+
+const buildingRepo = new SupabaseBuildingRepo(supabase);
 
 function AdminBlueprint() {
   const [buildings, setBuildings]   = useState([]);
@@ -16,22 +19,22 @@ function AdminBlueprint() {
   const dragFloorRef = useRef(null);
 
   useEffect(() => {
-    supabase.from('buildings').select('*').eq('active',true).order('name')
+    buildingRepo.findAllBuildings()
       .then(({data})=>{ if(data) setBuildings(data); });
   }, []);
 
   useEffect(() => {
     if(!selBldg){setFloors([]);setSelFloor(null);return;}
-    supabase.from('blueprints').select('id,floor_name,floor_order,layout')
-      .eq('building_id',selBldg.id).order('floor_order')
-      .then(({data})=>{ if(data){setFloors(data);if(!selFloor||!data.find(f=>f.id===selFloor.id))setSelFloor(data[0]||null);}});
+    buildingRepo.findBlueprints(bldg.id).then(data=>{ if(data){setFloors(data);if(!selFloor||!data.find(f=>f.id===selFloor.id))setSelFloor(data[0]||null);}});
   }, [selBldg?.id]);
 
   const saveBuilding = async () => {
     if(!bForm.name.trim()) return;
     setSaving(true);
-    const{data,error}=await supabase.from('buildings').insert({name:bForm.name.trim(),address:bForm.address.trim()||null}).select().single();
-    if(!error&&data){setBuildings(b=>[...b,data]);setSelBldg(data);setBForm({name:'',address:''});setShowEdit(false);setMsg('Building created');setTimeout(()=>setMsg(''),3000);}
+    try{
+      const data=await buildingRepo.createBuilding(bForm.name.trim(),bForm.address.trim()||null);
+      setBuildings(b=>[...b,data]);setSelBldg(data);setBForm({name:'',address:''});setShowEdit(false);setMsg('Building created');setTimeout(()=>setMsg(''),3000);
+    }catch(e){console.error(e);}
     setSaving(false);
   };
 
@@ -39,13 +42,15 @@ function AdminBlueprint() {
     if(!selBldg) return;
     const name=prompt('Floor name:','Floor '+(floors.length+1));
     if(!name) return;
-    const{data,error}=await supabase.from('blueprints').insert({building_id:selBldg.id,floor_name:name,floor_order:floors.length,layout:[]}).select().single();
-    if(!error&&data){setFloors(f=>[...f,data]);setSelFloor(data);}
+    try{
+      const data=await buildingRepo.createBlueprint(selBldg.id,name,floors.length);
+      setFloors(f=>[...f,data]);setSelFloor(data);
+    }catch(e){console.error(e);}
   };
 
   const deleteFloor = async (id) => {
     if(!confirm('Delete this floor and its layout?')) return;
-    await supabase.from('blueprints').delete().eq('id',id);
+    await buildingRepo.deleteBlueprint(id);
     const next=floors.filter(f=>f.id!==id);
     setFloors(next);
     setSelFloor(selFloor?.id===id?(next[0]||null):selFloor);
@@ -55,7 +60,7 @@ function AdminBlueprint() {
     const fl=floors.find(f=>f.id===id);
     const nv=prompt('Rename:',fl?.floor_name||'');
     if(!nv||!nv.trim()) return;
-    await supabase.from('blueprints').update({floor_name:nv.trim()}).eq('id',id);
+    await buildingRepo.renameBlueprint(id,nv.trim());
     setFloors(f=>f.map(fl=>fl.id===id?{...fl,floor_name:nv.trim()}:fl));
   };
 
@@ -67,24 +72,24 @@ function AdminBlueprint() {
     [next[idx],next[newIdx]]=[next[newIdx],next[idx]];
     setFloors(next);
     // persist new order
-    await Promise.all(next.map((f,i)=>supabase.from('blueprints').update({floor_order:i}).eq('id',f.id)));
+    await buildingRepo.reorderBlueprints(next.map((f,i)=>({id:f.id,floor_order:i})));
   };
 
   const saveLayout = async (layout) => {
     if(!selFloor) return;
     setSaving(true);
-    const{error}=await supabase.from('blueprints').update({layout,updated_at:new Date().toISOString()}).eq('id',selFloor.id);
-    if(!error){
+    try{
+      await buildingRepo.saveLayout(selFloor.id,layout);
       setFloors(f=>f.map(fl=>fl.id===selFloor.id?{...fl,layout}:fl));
       setSelFloor(sf=>sf?.id===selFloor.id?{...sf,layout}:sf);
       setMsg('✓ Blueprint saved');setTimeout(()=>setMsg(''),3000);
-    }else setMsg('Error: '+error.message);
+    }catch(e){setMsg('Error: '+e.message);}
     setSaving(false);
   };
 
   const deleteBuilding = async (id) => {
     if(!confirm('Delete building and ALL its floors?')) return;
-    await supabase.from('buildings').delete().eq('id',id);
+    await buildingRepo.deleteBuilding(id);
     setBuildings(b=>b.filter(x=>x.id!==id));
     if(selBldg?.id===id){setSelBldg(null);setFloors([]);setSelFloor(null);}
   };
@@ -92,7 +97,7 @@ function AdminBlueprint() {
   const renameBuilding = async (b) => {
     const nv=prompt('Building name:',b.name);
     if(!nv||!nv.trim()) return;
-    await supabase.from('buildings').update({name:nv.trim()}).eq('id',b.id);
+    await buildingRepo.renameBuilding(b.id,nv.trim());
     setBuildings(bs=>bs.map(x=>x.id===b.id?{...x,name:nv.trim()}:x));
     if(selBldg?.id===b.id) setSelBldg(sb=>({...sb,name:nv.trim()}));
   };
@@ -215,7 +220,7 @@ function BuildingFloorSelectors({ selectedBuilding, selectedBlueprint, onChange 
   const [floors,    setFloors]    = useState([]);
 
   useEffect(() => {
-    supabase.from('buildings').select('*').eq('active',true).order('name')
+    buildingRepo.findAllBuildings()
       .then(({data})=>{
         if(!data) return;
         setBuildings(data);
@@ -228,9 +233,7 @@ function BuildingFloorSelectors({ selectedBuilding, selectedBlueprint, onChange 
 
   useEffect(() => {
     if(!selectedBuilding){setFloors([]);return;}
-    supabase.from('blueprints').select('id,floor_name,floor_order,layout')
-      .eq('building_id',selectedBuilding.id).order('floor_order')
-      .then(({data})=>{
+    buildingRepo.findBlueprints(bldg.id).then(data=>{
         if(!data) return;
         setFloors(data);
         // Auto-select: last used floor or first
