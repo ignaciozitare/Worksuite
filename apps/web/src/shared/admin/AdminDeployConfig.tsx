@@ -34,6 +34,8 @@ function JiraFieldMapping({verCfg,setVerCfg}){
   React.useEffect(()=>{
     if(verCfg?.issue_types)setSelectedTypes(verCfg.issue_types);
     if(verCfg?.repo_jira_field)setSelectedField(verCfg.repo_jira_field);
+    // Auto-load Jira metadata if field is already configured
+    if(verCfg?.id && !fields.length) fetchJiraMetadata();
   },[verCfg?.id]);
 
   const fetchJiraMetadata=async()=>{

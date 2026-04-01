@@ -1061,14 +1061,31 @@ export function DeployPlanner({ currentUser }) {
 
       if(projects.length === 0) throw new Error("No hay proyectos Jira configurados");
 
-      // Paso 2: cargar issues de cada proyecto (mismo endpoint que JiraTracker)
+      // Paso 2: cargar issues de cada proyecto con el campo repo configurado
+      const repoField = versionCfg?.repo_jira_field || "components";
+      const searchFields = `summary,assignee,priority,issuetype,status,components,labels,${repoField}`;
       const allIssues = [];
       await Promise.all(projects.map(async (project) => {
         try {
-          const res = await fetch(`${API_BASE}/jira/issues?project=${project}`, { headers });
+          const jql = encodeURIComponent(`project = "${project}" ORDER BY updated DESC`);
+          const res = await fetch(`${API_BASE}/jira/search?jql=${jql}&maxResults=200&fields=${searchFields}`, { headers });
           if(!res.ok) return;
           const data = await res.json();
-          allIssues.push(...(data.data || []));
+          // Map search results to flat format
+          (data.issues || []).forEach(i => {
+            const f = i.fields || {};
+            allIssues.push({
+              key: i.key,
+              summary: f.summary || "",
+              assignee: f.assignee?.displayName || "—",
+              priority: f.priority?.name || "Medium",
+              type: f.issuetype?.name || "Task",
+              status: f.status?.name || "",
+              fields: f,
+              labels: f.labels || [],
+              components: (f.components || []).map(c => c.name || c),
+            });
+          });
         } catch { /* proyecto sin acceso, ignorar */ }
       }));
 
@@ -1078,16 +1095,16 @@ export function DeployPlanner({ currentUser }) {
         return targetStatuses.some(s => issueStatus.includes(s) || s.includes(issueStatus));
       });
 
+      // Use configured repo field from dp_version_config, fallback to components
+      const repoFieldName = versionCfg?.repo_jira_field || "components";
+
       const newTickets = filtered.map(i => {
-        // New API returns flat fields including pre-mapped components array
-        // Fallback chain: components[] → customfield_10014 csv → labels
-        const directComponents = (i.components||[]).filter(Boolean);  // from new endpoint
-        const fields    = i.fields || i;
-        const fieldComponents = (fields.components||[]).map(c=>(typeof c==="string"?c:c.name)||"").filter(Boolean);
-        const components = directComponents.length ? directComponents : fieldComponents;
-        const cf10014   = (i.customfield_10014||"").split(",").map(s=>s.trim()).filter(Boolean);
-        const labels    = (i.labels||fields.labels||[]).filter(Boolean);
-        const repos     = components.length ? components : cf10014.length ? cf10014 : labels;
+        const fields = i.fields || i;
+        // Read the configured repo field
+        const repoFieldValue = fields[repoFieldName] || i[repoFieldName] || [];
+        const repos = (Array.isArray(repoFieldValue) ? repoFieldValue : [repoFieldValue])
+          .map(v => (typeof v === "string" ? v : v?.name || v?.value || ""))
+          .filter(Boolean);
         return {
           key:      i.key || i.id,
           summary:  i.summary || fields.summary || "",
