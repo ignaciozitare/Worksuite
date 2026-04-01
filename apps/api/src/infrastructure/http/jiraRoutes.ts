@@ -102,15 +102,15 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
     }
   });
 
-  // ── GET /jira/issues?project=X ────────────────────────────────────────────
-  app.get<{ Querystring: { project: string } }>(
+  // ── GET /jira/issues?project=X&extraFields=customfield_10146,components ──
+  app.get<{ Querystring: { project: string; extraFields?: string } }>(
     '/issues',
-    { schema: { querystring: { type: 'object', required: ['project'], properties: { project: { type: 'string' } } } } },
     async (req, reply) => {
       const userId = (req.user as { sub: string }).sub;
+      const extraFields = req.query.extraFields?.split(',').filter(Boolean);
       try {
         const adapter = await adapterForUser(jiraConnectionRepo, userId);
-        const issues = await adapter.getIssues(req.query.project);
+        const issues = await adapter.getIssues(req.query.project, extraFields);
         return reply.send({ ok: true, data: issues });
       } catch (err: unknown) {
         const status = (err as { statusCode?: number }).statusCode ?? 502;

@@ -63,12 +63,14 @@ export class JiraCloudAdapter implements IJiraApi {
     return data.values.map(p => ({ key: p.key, name: p.name, id: p.id }));
   }
 
- async getIssues(projectKey: string): Promise<JiraIssue[]> {
+ async getIssues(projectKey: string, extraFields?: string[]): Promise<JiraIssue[]> {
+  const baseFields = ['summary', 'issuetype', 'status', 'priority', 'project',
+             'assignee', 'labels', 'parent', 'customfield_10014', 'customfield_10008'];
+  const fields = extraFields?.length ? [...new Set([...baseFields, ...extraFields])] : baseFields;
   const body = {
     jql: `project = "${projectKey}" ORDER BY updated DESC`,
     maxResults: 100,
-    fields: ['summary', 'issuetype', 'status', 'priority', 'project', 
-             'assignee', 'labels', 'parent', 'customfield_10014', 'customfield_10008'],
+    fields,
   };
 
   const data = await this.fetch<{ issues: JiraIssueRaw[] }>(
@@ -98,6 +100,8 @@ export class JiraCloudAdapter implements IJiraApi {
       epicName,
       assignee: f.assignee?.displayName ?? '',
       labels:   f.labels ?? [],
+      components: (f.components ?? []).map((c: any) => typeof c === 'string' ? c : c.name).filter(Boolean),
+      fields:   f,
     };
   });
 }

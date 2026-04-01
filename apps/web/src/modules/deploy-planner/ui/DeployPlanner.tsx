@@ -1063,29 +1063,14 @@ export function DeployPlanner({ currentUser }) {
 
       // Paso 2: cargar issues de cada proyecto con el campo repo configurado
       const repoField = versionCfg?.repo_jira_field || "components";
-      const searchFields = `summary,assignee,priority,issuetype,status,components,labels,${repoField}`;
+      const extraFields = repoField !== "components" ? `&extraFields=${repoField}` : "";
       const allIssues = [];
       await Promise.all(projects.map(async (project) => {
         try {
-          const jql = encodeURIComponent(`project = "${project}" ORDER BY updated DESC`);
-          const res = await fetch(`${API_BASE}/jira/search?jql=${jql}&maxResults=200&fields=${encodeURIComponent(searchFields)}`, { headers });
+          const res = await fetch(`${API_BASE}/jira/issues?project=${project}${extraFields}`, { headers });
           if(!res.ok) return;
           const data = await res.json();
-          // Map search results to flat format
-          (data.issues || []).forEach(i => {
-            const f = i.fields || {};
-            allIssues.push({
-              key: i.key,
-              summary: f.summary || "",
-              assignee: f.assignee?.displayName || "—",
-              priority: f.priority?.name || "Medium",
-              type: f.issuetype?.name || "Task",
-              status: f.status?.name || "",
-              fields: f,
-              labels: f.labels || [],
-              components: (f.components || []).map(c => c.name || c),
-            });
-          });
+          allIssues.push(...(data.data || []));
         } catch { /* proyecto sin acceso, ignorar */ }
       }));
 
