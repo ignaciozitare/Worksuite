@@ -175,4 +175,48 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
       }
     },
   );
+
+  // ── GET /jira/issuetypes ──────────────────────────────────────────────────
+  app.get('/issuetypes', async (req: FastifyRequest, reply: FastifyReply) => {
+    const userId = (req.user as { sub: string }).sub;
+    try {
+      const adapter = await adapterForUser(jiraConnectionRepo, userId);
+      const issueTypes = await adapter.getIssueTypes();
+      return reply.send({ ok: true, issueTypes });
+    } catch (err: unknown) {
+      const status = (err as { statusCode?: number }).statusCode ?? 502;
+      return reply.status(status).send({ ok: false, error: String(err) });
+    }
+  });
+
+  // ── GET /jira/fields ──────────────────────────────────────────────────────
+  app.get('/fields', async (req: FastifyRequest, reply: FastifyReply) => {
+    const userId = (req.user as { sub: string }).sub;
+    try {
+      const adapter = await adapterForUser(jiraConnectionRepo, userId);
+      const fields = await adapter.getFields();
+      return reply.send({ ok: true, fields });
+    } catch (err: unknown) {
+      const status = (err as { statusCode?: number }).statusCode ?? 502;
+      return reply.status(status).send({ ok: false, error: String(err) });
+    }
+  });
+
+  // ── GET /jira/search?jql=...&maxResults=...&fields=... ────────────────────
+  app.get<{ Querystring: { jql: string; maxResults?: string; fields?: string } }>(
+    '/search',
+    async (req, reply) => {
+      const { jql, maxResults = '50', fields } = req.query;
+      if (!jql) return reply.status(400).send({ ok: false, error: 'jql required' });
+      const userId = (req.user as { sub: string }).sub;
+      try {
+        const adapter = await adapterForUser(jiraConnectionRepo, userId);
+        const data = await adapter.searchIssues(jql, parseInt(maxResults), fields);
+        return reply.send({ ok: true, ...data });
+      } catch (err: unknown) {
+        const status = (err as { statusCode?: number }).statusCode ?? 502;
+        return reply.status(status).send({ ok: false, error: String(err) });
+      }
+    }
+  );
 }
