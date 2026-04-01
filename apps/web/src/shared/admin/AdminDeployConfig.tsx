@@ -25,6 +25,7 @@ function JiraFieldMapping({verCfg,setVerCfg}){
   const [loading,setLoading]=React.useState(false);
   const [saving,setSaving]=React.useState(false);
   const [saved,setSaved]=React.useState(false);
+  const [errMsg,setErrMsg]=React.useState("");
   const [selectedTypes,setSelectedTypes]=React.useState(verCfg?.issue_types||[]);
   const [selectedField,setSelectedField]=React.useState(verCfg?.repo_jira_field||"components");
 
@@ -39,7 +40,7 @@ function JiraFieldMapping({verCfg,setVerCfg}){
       const result=await getJiraMetadata.execute();
       setIssueTypes(result.issueTypes);
       setFields(result.fields);
-    }catch(e){console.error("Fetch Jira metadata error:",e);}
+    }catch(e){console.error("Fetch Jira metadata error:",e);setErrMsg(e.message||"Error loading Jira metadata. Make sure the API is deployed.");}
     setLoading(false);
   };
 
@@ -64,10 +65,11 @@ function JiraFieldMapping({verCfg,setVerCfg}){
         Selecciona qué campo de Jira usar como "Repository & Components" para agrupar tickets por repositorio en las releases.
       </div>
 
-      <button onClick={fetchJiraMetadata} disabled={loading}
+      <button onClick={()=>{setErrMsg("");fetchJiraMetadata();}} disabled={loading}
         style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,padding:"7px 14px",fontSize:11,cursor:"pointer",color:"var(--tx2)",fontWeight:600,fontFamily:"inherit",marginBottom:14}}>
         {loading?t("common.loading"):"🔄 Cargar campos desde Jira"}
       </button>
+      {errMsg&&<div style={{padding:"8px 12px",background:"rgba(239,68,68,.08)",border:"1px solid rgba(239,68,68,.25)",borderRadius:6,color:"var(--red)",fontSize:11,marginBottom:14}}>{errMsg}</div>}
 
       {issueTypes.length>0&&(
         <div style={{marginBottom:14}}>
@@ -125,13 +127,15 @@ function AdminDeployConfig() {
 
   // ── Load ─────────────────────────────────────────────────────────────────
   React.useEffect(() => {
-    deployConfigRepo.findAllStatuses().then(data => {
-      if(data) setStatuses(data);
-    });
-    deployConfigRepo.getJiraDeployStatuses().then(raw => {
-      const str = raw || "Ready to Production";
-      setJiraList(str.split(",").map(s=>s.trim()).filter(Boolean).map((n,i)=>({id:i, name:n})));
-    });
+    deployConfigRepo.findAllStatuses()
+      .then(data => { if(data) setStatuses(data); })
+      .catch(e => console.error('[AdminDeployConfig] loadStatuses:', e));
+    deployConfigRepo.getJiraDeployStatuses()
+      .then(raw => {
+        const str = raw || "Ready to Production";
+        setJiraList(str.split(",").map(s=>s.trim()).filter(Boolean).map((n,i)=>({id:i, name:n})));
+      })
+      .catch(e => console.error('[AdminDeployConfig] loadJiraStatuses:', e));
   }, []);
 
   // ── Release statuses CRUD ─────────────────────────────────────────────────
@@ -221,10 +225,12 @@ function AdminDeployConfig() {
   const [verCfgSaved, setVerCfgSaved]   = React.useState(false);
 
   React.useEffect(() => {
-    deployConfigRepo.getVersionConfig().then(data => {
-      if(data) setVerCfg(data);
-      else setVerCfg({ prefix:"v", segments:[{name:"major",value:1},{name:"minor",value:0},{name:"patch",value:0}], separator:"." });
-    });
+    deployConfigRepo.getVersionConfig()
+      .then(data => {
+        if(data) setVerCfg(data);
+        else setVerCfg({ prefix:"v", segments:[{name:"major",value:1},{name:"minor",value:0},{name:"patch",value:0}], separator:"." });
+      })
+      .catch(e => console.error('[AdminDeployConfig] loadVersionConfig:', e));
   }, []);
 
   const saveVerCfg = async () => {
@@ -241,9 +247,9 @@ function AdminDeployConfig() {
   const [newRepoName, setNewRepoName]     = React.useState("");
 
   React.useEffect(() => {
-    deployConfigRepo.findAllRepoGroups().then(data => {
-      if(data) setRepoGroups(data);
-    });
+    deployConfigRepo.findAllRepoGroups()
+      .then(data => { if(data) setRepoGroups(data); })
+      .catch(e => console.error('[AdminDeployConfig] loadRepoGroups:', e));
   }, []);
 
   const addGroup = async () => {
