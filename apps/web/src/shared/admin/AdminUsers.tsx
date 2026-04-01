@@ -166,9 +166,13 @@ function AdminUsers({ users, setUsers, currentUser }) {
     setUsers(us=>us.map(u=>u.id===id?{...u,deskType:dt}:u));
     await supabase.from('users').update({desk_type:dt}).eq('id',id);
   };
-  const toggleModule = (id, modId) => {
-    // Note: 'modules' column may not exist in users table yet — state-only for now
-    setUsers(us=>us.map(u=>{ if (u.id!==id) return u; const mods = u.modules||["jt","hd","retro","deploy"]; return {...u, modules: mods.includes(modId) ? mods.filter(m=>m!==modId) : [...mods, modId]}; }));
+  const toggleModule = async (id, modId) => {
+    const u = users.find(x=>x.id===id);
+    if(!u) return;
+    const mods = u.modules||["jt","hd","retro","deploy"];
+    const next = mods.includes(modId) ? mods.filter(m=>m!==modId) : [...mods, modId];
+    setUsers(us=>us.map(x=>x.id===id?{...x,modules:next}:x));
+    await supabase.from('users').update({modules:next}).eq('id',id);
   };
   const handleAdd    = u  => setUsers(us=>[...us,u]);
   const handleImport = us => setUsers(prev=>[...prev,...us]);
