@@ -1,6 +1,9 @@
 // @ts-nocheck
 import React from 'react';
 import { supabase } from '../lib/api';
+import { SupabaseDeployConfigRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseDeployConfigRepo';
+
+const deployConfigRepo = new SupabaseDeployConfigRepo(supabase);
 import { GetJiraMetadata } from '../../modules/deploy-planner/domain/useCases/GetJiraMetadata';
 import { JiraMetadataAdapter } from '../../modules/deploy-planner/infra/JiraMetadataAdapter';
 import { SupabaseReleaseRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseReleaseRepo';
@@ -120,12 +123,12 @@ function AdminDeployConfig() {
 
   // ── Load ─────────────────────────────────────────────────────────────────
   React.useEffect(() => {
-    supabase.from("dp_release_statuses").select("*").order("ord").then(({data}) => {
+    deployConfigRepo.findAllStatuses().then(data => {
       if(data) setStatuses(data);
     });
-    supabase.from("sso_config").select("deploy_jira_statuses").limit(1).single().then(({data}) => {
-      const raw = data?.deploy_jira_statuses || "Ready to Production";
-      setJiraList(raw.split(",").map(s=>s.trim()).filter(Boolean).map((n,i)=>({id:i, name:n})));
+    deployConfigRepo.getJiraDeployStatuses().then(raw => {
+      const str = raw || "Ready to Production";
+      setJiraList(str.split(",").map(s=>s.trim()).filter(Boolean).map((n,i)=>({id:i, name:n})));
     });
   }, []);
 
@@ -135,22 +138,22 @@ function AdminDeployConfig() {
     const hex = newStatus.color;
     const bg  = hex + "20";
     const brd = hex + "66";
-    const {data} = await supabase.from("dp_release_statuses")
-      .insert({name:newStatus.name, color:hex, bg_color:bg, border:brd, is_final:newStatus.is_final, ord:statuses.length})
-      .select().single();
-    if(data) { setStatuses(s=>[...s,data]); setNewStatus({name:"",color:"#6b7280",is_final:false}); }
+    try {
+      const data = await deployConfigRepo.createStatus({name:newStatus.name, color:hex, bg_color:bg, border:brd, is_final:newStatus.is_final, ord:statuses.length});
+      setStatuses(s=>[...s,data]); setNewStatus({name:"",color:"#6b7280",is_final:false});
+    } catch(e) { console.error(e); }
   };
 
   const saveRelStatus = async (st) => {
     const hex = st.color;
     const patch = {name:st.name, color:hex, bg_color:hex+"20", border:hex+"66", is_final:st.is_final};
-    await supabase.from("dp_release_statuses").update(patch).eq("id",st.id);
+    await deployConfigRepo.updateStatus(st.id, patch);
     setStatuses(s=>s.map(x=>x.id===st.id?{...x,...patch}:x));
     setEditing(null);
   };
 
   const delRelStatus = async (id) => {
-    await supabase.from("dp_release_statuses").delete().eq("id",id);
+    await deployConfigRepo.deleteStatus(id);
     setStatuses(s=>s.filter(x=>x.id!==id));
   };
 
@@ -164,7 +167,7 @@ function AdminDeployConfig() {
     setStatuses(updated);
     setDragging(null); setDragOver(null);
     // Persist new ord values
-    await Promise.all(updated.map(s => supabase.from("dp_release_statuses").update({ord:s.ord}).eq("id",s.id)));
+    await deployConfigRepo.reorderStatuses(updated.map(s=>({id:s.id,ord:s.ord})));
   };
 
   // ── Jira statuses list ────────────────────────────────────────────────────
@@ -178,8 +181,7 @@ function AdminDeployConfig() {
   const saveJiraStatuses = async () => {
     setSavingJ(true);
     const str = jiraList.map(j=>j.name).join(",");
-    const {data:cfg} = await supabase.from("sso_config").select("id").limit(1).single();
-    if(cfg) await supabase.from("sso_config").update({deploy_jira_statuses:str}).eq("id",cfg.id);
+    await deployConfigRepo.saveJiraDeployStatuses(str);
     setSavingJ(false); setSavedJ(true); setTimeout(()=>setSavedJ(false),2000);
   };
 
@@ -227,7 +229,7 @@ function AdminDeployConfig() {
   const [verCfgSaved, setVerCfgSaved]   = React.useState(false);
 
   React.useEffect(() => {
-    supabase.from("dp_version_config").select("*").limit(1).single().then(({data}) => {
+    deployConfigRepo.getVersionConfig().then(data => {
       if(data) setVerCfg(data);
       else setVerCfg({ prefix:"v", segments:[{name:"major",value:1},{name:"minor",value:0},{name:"patch",value:0}], separator:"." });
     });
@@ -236,12 +238,7 @@ function AdminDeployConfig() {
   const saveVerCfg = async () => {
     if(!verCfg) return;
     setVerCfgSaving(true);
-    const {data:existing} = await supabase.from("dp_version_config").select("id").limit(1).single();
-    if(existing?.id) {
-      await supabase.from("dp_version_config").update({prefix:verCfg.prefix,segments:verCfg.segments,separator:verCfg.separator}).eq("id",existing.id);
-    } else {
-      await supabase.from("dp_version_config").insert({prefix:verCfg.prefix,segments:verCfg.segments,separator:verCfg.separator});
-    }
+    await deployConfigRepo.saveVersionConfig({prefix:verCfg.prefix,segments:verCfg.segments,separator:verCfg.separator});
     setVerCfgSaving(false); setVerCfgSaved(true); setTimeout(()=>setVerCfgSaved(false),2000);
   };
 
@@ -252,19 +249,21 @@ function AdminDeployConfig() {
   const [newRepoName, setNewRepoName]     = React.useState("");
 
   React.useEffect(() => {
-    supabase.from("dp_repo_groups").select("*").order("name").then(({data}) => {
+    deployConfigRepo.findAllRepoGroups().then(data => {
       if(data) setRepoGroups(data);
     });
   }, []);
 
   const addGroup = async () => {
     if(!newGroupName.trim()) return;
-    const {data} = await supabase.from("dp_repo_groups").insert({name:newGroupName.trim(), repos:[]}).select().single();
-    if(data) { setRepoGroups(g=>[...g,data]); setNewGroupName(""); setExpandedGroup(data.id); }
+    try {
+      const data = await deployConfigRepo.createRepoGroup(newGroupName.trim());
+      setRepoGroups(g=>[...g,data]); setNewGroupName(""); setExpandedGroup(data.id);
+    } catch(e) { console.error(e); }
   };
 
   const deleteGroup = async (id) => {
-    await supabase.from("dp_repo_groups").delete().eq("id",id);
+    await deployConfigRepo.deleteRepoGroup(id);
     setRepoGroups(g=>g.filter(x=>x.id!==id));
   };
 
@@ -273,7 +272,7 @@ function AdminDeployConfig() {
     const group = repoGroups.find(g=>g.id===groupId);
     if(!group || group.repos.includes(repoName.trim())) return;
     const updated = [...group.repos, repoName.trim()];
-    await supabase.from("dp_repo_groups").update({repos:updated}).eq("id",groupId);
+    await deployConfigRepo.updateRepoGroupRepos(groupId,updated);
     setRepoGroups(gs=>gs.map(g=>g.id===groupId?{...g,repos:updated}:g));
     setNewRepoName("");
   };
@@ -282,12 +281,12 @@ function AdminDeployConfig() {
     const group = repoGroups.find(g=>g.id===groupId);
     if(!group) return;
     const updated = group.repos.filter(r=>r!==repoName);
-    await supabase.from("dp_repo_groups").update({repos:updated}).eq("id",groupId);
+    await deployConfigRepo.updateRepoGroupRepos(groupId,updated);
     setRepoGroups(gs=>gs.map(g=>g.id===groupId?{...g,repos:updated}:g));
   };
 
   const renameGroup = async (groupId, name) => {
-    await supabase.from("dp_repo_groups").update({name}).eq("id",groupId);
+    await deployConfigRepo.renameRepoGroup(groupId,name);
     setRepoGroups(gs=>gs.map(g=>g.id===groupId?{...g,name}:g));
   };
 
