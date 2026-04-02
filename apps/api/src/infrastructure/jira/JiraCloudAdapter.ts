@@ -148,7 +148,7 @@ export class JiraCloudAdapter implements IJiraApi {
 
   async searchIssues(jql: string, maxResults = 50, fields?: string): Promise<any> {
     const fieldList = (fields || 'summary,assignee,priority,issuetype,status,components').split(',');
-    const data = await this.fetch<any>('/search', {
+    const data = await this.fetch<any>('/search/jql', {
       method: 'POST',
       body: JSON.stringify({ jql, maxResults, fields: fieldList }),
     });
@@ -160,7 +160,7 @@ export class JiraCloudAdapter implements IJiraApi {
     // Batch: get subtasks for all parent keys via JQL
     const keysStr = parentKeys.join(',');
     const jql = `parent in (${keysStr})`;
-    const data = await this.fetch<{ issues: any[] }>('/search', {
+    const data = await this.fetch<{ issues: any[] }>('/search/jql', {
       method: 'POST',
       body: JSON.stringify({
         jql,
