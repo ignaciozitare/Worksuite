@@ -187,7 +187,7 @@ function VersionPicker({ versionCfg, allReleaseNumbers, onSelect, onClose }) {
   );
 }
 
-function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag, drag, allReleases, repoGroups, versionCfg, allReleaseNumbers }) {
+function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag, drag, allReleases, repoGroups, versionCfg, allReleaseNumbers, jiraBaseUrl="" }) {
   const [addingTicket, setAddingTicket] = useState(false);
   const [search, setSearch] = useState("");
   const [showVersionPicker, setShowVersionPicker] = useState(false);
@@ -349,6 +349,10 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
               <span style={{color:"#38bdf8",fontWeight:700,flexShrink:0}}>{t.key}</span>
               <span style={{color:noRepo?"#ef4444":"var(--dp-tx3,#64748b)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.summary.slice(0,28)}{t.summary.length>28?"…":""}</span>
               <span style={{color:"var(--dp-tx3,#334155)",flexShrink:0,fontSize:9}}>{t.assignee?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"—"}</span>
+              {jiraBaseUrl&&<a href={`${jiraBaseUrl}/browse/${t.key}`} target="_blank" rel="noopener noreferrer"
+                onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()}
+                style={{color:"var(--dp-tx3,#475569)",fontSize:10,flexShrink:0,textDecoration:"none",lineHeight:1,padding:"0 2px"}}
+                title={`Open ${t.key} in Jira`}>↗</a>}
               <button onClick={e=>{e.stopPropagation();onUpd(rel.id,{ticket_ids:(rel.ticket_ids||[]).filter(x=>x!==t.key)});}}
                 style={{background:"none",border:"none",color:"var(--dp-tx3,#334155)",cursor:"pointer",fontSize:12,lineHeight:1,flexShrink:0}}>×</button>
             </div>
@@ -1000,6 +1004,7 @@ export function DeployPlanner({ currentUser }) {
   const [loading, setLoading]         = useState(true);
   const [fetchingJira, setFetchingJira] = useState(false);
   const [drag, setDrag]           = useState(null);
+  const [jiraBaseUrl, setJiraBaseUrl] = useState("");
 
   // Light mode — read from html element class, watch for changes
   const [isLight, setIsLight] = useState(document.documentElement.classList.contains("light"));
@@ -1036,6 +1041,12 @@ export function DeployPlanner({ currentUser }) {
     }
     setStatusCfg(cfg);
     setLoading(false);
+    // Load Jira base URL for ticket links
+    try {
+      const connRes = await fetch(`${API_BASE}/jira/connection`, { headers: await authHeaders() });
+      const connData = await connRes.json();
+      if(connData.ok && connData.data?.base_url) setJiraBaseUrl(connData.data.base_url.replace(/\/$/,""));
+    } catch {}
     // Auto-cargar tickets de Jira usando la conexión ya existente
     fetchJiraTickets(ssoData?.deploy_jira_statuses, verCfg);
   }
@@ -1221,7 +1232,8 @@ export function DeployPlanner({ currentUser }) {
                       onDrop={handleDrop} setDrag={setDrag} drag={drag}
                       allReleases={releases} repoGroups={repoGroups}
                       versionCfg={versionCfg}
-                      allReleaseNumbers={(releases||[]).map(r=>r.release_number).filter(Boolean)}/>
+                      allReleaseNumbers={(releases||[]).map(r=>r.release_number).filter(Boolean)}
+                      jiraBaseUrl={jiraBaseUrl}/>
                   ))}
                   <div onClick={addRelease}
                     style={{width:290,minHeight:140,background:"transparent",border:"2px dashed var(--dp-bd,#1e293b)",borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",color:"var(--dp-tx3,#334155)",fontSize:12,transition:"border-color .15s"}}
