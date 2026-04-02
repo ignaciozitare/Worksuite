@@ -7,6 +7,7 @@ import { JiraSyncAdapter } from '../../modules/jira-tracker/infra/JiraSyncAdapte
 import { GetJiraMetadata } from '../../modules/deploy-planner/domain/useCases/GetJiraMetadata';
 import { JiraMetadataAdapter } from '../../modules/deploy-planner/infra/JiraMetadataAdapter';
 import { SupabaseReleaseRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseReleaseRepo';
+import { SupabaseSubtaskConfigRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseSubtaskConfigRepo';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 async function getAuthHeaders() {
@@ -19,6 +20,7 @@ const jiraSyncAdapter = new JiraSyncAdapter(API_BASE, getAuthHeaders);
 const jiraMetadataAdapter = new JiraMetadataAdapter(API_BASE, getAuthHeaders);
 const getJiraMetadata = new GetJiraMetadata(jiraMetadataAdapter);
 const releaseRepo = new SupabaseReleaseRepo(supabase);
+const subtaskConfigRepo = new SupabaseSubtaskConfigRepo(supabase);
 
 function JiraFieldMapping({verCfg,setVerCfg}){
   const {t}=useTranslation();
@@ -617,6 +619,156 @@ function AdminDeployConfig() {
         </div>
       </div>
 
+      {/* ── Subtask Config ──────────────────────────────────────── */}
+      <SubtaskConfigSection />
+
+    </div>
+  );
+}
+
+/* ─── Subtask Config Section ──────────────────────────────────────── */
+function SubtaskConfigSection() {
+  const {t}=useTranslation();
+  const [configs, setConfigs]         = React.useState([]);
+  const [jiraTypes, setJiraTypes]     = React.useState([]);
+  const [jiraStatuses, setJiraStatuses] = React.useState([]);
+  const [loading, setLoading]         = React.useState(false);
+
+  React.useEffect(() => {
+    subtaskConfigRepo.findAll()
+      .then(data => setConfigs(data || []))
+      .catch(e => console.error('[SubtaskConfig] load:', e));
+  }, []);
+
+  const loadJiraTypes = async () => {
+    setLoading(true);
+    try {
+      const result = await getJiraMetadata.execute();
+      setJiraTypes(result.issueTypes || []);
+      // Also load statuses for the closed_statuses picker
+      const projects = await jiraSyncAdapter.loadProjects();
+      const statusSet = new Set();
+      for (const p of projects.slice(0, 3)) {
+        const issues = await jiraSyncAdapter.loadIssues(p.key);
+        issues.forEach(i => { if (i.status) statusSet.add(i.status); });
+      }
+      setJiraStatuses([...statusSet].sort());
+    } catch(e) { console.error('Load Jira types:', e); }
+    setLoading(false);
+  };
+
+  const addType = async (typeName) => {
+    try {
+      const data = await subtaskConfigRepo.upsert({ jira_issue_type: typeName, category: 'other', closed_statuses: [] });
+      setConfigs(prev => [...prev.filter(c => c.jira_issue_type !== typeName), data]);
+    } catch(e) { console.error(e); }
+  };
+
+  const updateConfig = async (id, patch) => {
+    const cfg = configs.find(c => c.id === id);
+    if (!cfg) return;
+    try {
+      const data = await subtaskConfigRepo.upsert({ ...cfg, ...patch });
+      setConfigs(prev => prev.map(c => c.id === id ? data : c));
+    } catch(e) { console.error(e); }
+  };
+
+  const removeConfig = async (id) => {
+    try {
+      await subtaskConfigRepo.remove(id);
+      setConfigs(prev => prev.filter(c => c.id !== id));
+    } catch(e) { console.error(e); }
+  };
+
+  const toggleClosedStatus = async (id, status) => {
+    const cfg = configs.find(c => c.id === id);
+    if (!cfg) return;
+    const next = cfg.closed_statuses.includes(status)
+      ? cfg.closed_statuses.filter(s => s !== status)
+      : [...cfg.closed_statuses, status];
+    updateConfig(id, { closed_statuses: next });
+  };
+
+  const configuredTypes = new Set(configs.map(c => c.jira_issue_type.toLowerCase()));
+  const CATEGORY_COLORS = { bug: '#ef4444', test: '#3b82f6', other: 'var(--tx3)' };
+
+  return (
+    <div className="a-card" style={{marginTop:16}}>
+      <div className="a-ct">🐛 {t('deployPlanner.subtaskConfig')}</div>
+      <div style={{fontSize:11,color:"var(--tx3)",marginBottom:14}}>{t('deployPlanner.subtaskDesc')}</div>
+
+      {/* Load Jira types button */}
+      <button onClick={loadJiraTypes} disabled={loading}
+        style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 12px",fontSize:11,color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit",marginBottom:14}}>
+        {loading ? t('common.loading') : `🔄 ${t('deployPlanner.loadIssueTypes')}`}
+      </button>
+
+      {/* Available types from Jira (not yet configured) */}
+      {jiraTypes.length > 0 && (
+        <div style={{marginBottom:14}}>
+          <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:6,letterSpacing:".06em",textTransform:"uppercase"}}>
+            Issue types disponibles
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+            {jiraTypes.filter(it => !configuredTypes.has(it.name.toLowerCase())).map(it => (
+              <button key={it.id} onClick={() => addType(it.name)}
+                style={{padding:"4px 10px",borderRadius:20,border:"1px solid var(--bd)",background:"transparent",color:"var(--tx3)",cursor:"pointer",fontSize:11,fontFamily:"inherit"}}>
+                + {it.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Configured subtask types */}
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {configs.map(cfg => (
+          <div key={cfg.id} style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:8,padding:"12px 14px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+              <span style={{fontSize:13,fontWeight:700,color:CATEGORY_COLORS[cfg.category] || "var(--tx)"}}>{cfg.jira_issue_type}</span>
+
+              {/* Category selector */}
+              <select value={cfg.category} onChange={e => updateConfig(cfg.id, { category: e.target.value })}
+                style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"2px 8px",fontSize:10,color:"var(--tx)",fontFamily:"inherit"}}>
+                <option value="bug">🐛 Bug</option>
+                <option value="test">🧪 Test</option>
+                <option value="other">📋 Otro</option>
+              </select>
+
+              {/* Test type (only if test) */}
+              {cfg.category === 'test' && (
+                <input value={cfg.test_type || ''} onChange={e => updateConfig(cfg.id, { test_type: e.target.value })}
+                  placeholder="Tipo (Regresión, Smoke, UAT…)"
+                  style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"4px 8px",fontSize:10,color:"var(--tx)",fontFamily:"inherit",flex:1}}/>
+              )}
+
+              <button onClick={() => removeConfig(cfg.id)}
+                style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14,marginLeft:"auto"}}>×</button>
+            </div>
+
+            {/* Closed statuses picker */}
+            <div style={{fontSize:10,color:"var(--tx3)",marginBottom:4}}>{t('deployPlanner.closedStatuses')}:</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
+              {/* Show saved statuses + available from Jira */}
+              {[...new Set([...cfg.closed_statuses, ...jiraStatuses])].sort().map(status => {
+                const isOn = cfg.closed_statuses.includes(status);
+                return (
+                  <button key={status} onClick={() => toggleClosedStatus(cfg.id, status)}
+                    style={{padding:"2px 8px",borderRadius:10,border:`1px solid ${isOn ? "var(--green)" : "var(--bd)"}`,background:isOn ? "rgba(62,207,142,.1)" : "transparent",color:isOn ? "var(--green)" : "var(--tx3)",cursor:"pointer",fontSize:9,fontFamily:"inherit"}}>
+                    {isOn ? "✓ " : ""}{status}
+                  </button>
+                );
+              })}
+              {cfg.closed_statuses.length === 0 && jiraStatuses.length === 0 && (
+                <span style={{fontSize:10,color:"var(--tx3)"}}>Carga tipos de Jira para ver los estados disponibles</span>
+              )}
+            </div>
+          </div>
+        ))}
+        {configs.length === 0 && (
+          <div style={{fontSize:11,color:"var(--tx3)",padding:"8px 0"}}>Sin tipos configurados — carga tipos desde Jira y añade los que necesites</div>
+        )}
+      </div>
     </div>
   );
 }
