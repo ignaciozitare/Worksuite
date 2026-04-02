@@ -298,12 +298,11 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
         <select value={rel.status||"Planned"}
           onChange={e=>{
             const newStatus = e.target.value;
-            const isFinal = statusCfg[newStatus]?.is_final;
-            if(isFinal && linkedGroups.length) {
-              const check = RepoGroupService.canTransitionToFinal(
+            const isDone = statusCfg[newStatus]?.status_category === 'done';
+            if(isDone && linkedGroups.length) {
+              const check = RepoGroupService.canTransitionToDone(
                 rel.id, linkedGroups,
-                allReleases.map(r=>({id:r.id,ticketIds:r.ticket_ids||[],status:r.status||"Planned"})),
-                (s)=>statusCfg[s]?.is_final||false
+                allReleases.map(r=>({id:r.id,ticketIds:r.ticket_ids||[],status:r.status||"Planned",statusCategory:statusCfg[r.status||"Planned"]?.status_category||"backlog"})),
               );
               if(!check.allowed) {
                 alert(`🔒 No puedes pasar a "${newStatus}" porque hay releases vinculadas pendientes:\n${check.blockers.map(b=>`• ${b.groupName}: release en "${b.status}"`).join("\n")}`);
@@ -315,11 +314,10 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
           onClick={e=>e.stopPropagation()}
           style={{background:cfg.bg_color,border:`1px solid ${cfg.border}`,borderRadius:5,padding:"4px 10px",fontSize:10,color:cfg.color,cursor:"pointer",outline:"none",fontWeight:700,fontFamily:"inherit"}}>
           {Object.entries(statusCfg).map(([name,v])=>{
-            const isFinal = v.is_final;
-            const blocked = isFinal && linkedGroups.length>0 && !RepoGroupService.canTransitionToFinal(
+            const isDoneCat = v.status_category === 'done';
+            const blocked = isDoneCat && linkedGroups.length>0 && !RepoGroupService.canTransitionToDone(
               rel.id, linkedGroups,
-              allReleases.map(r=>({id:r.id,ticketIds:r.ticket_ids||[],status:r.status||"Planned"})),
-              (s)=>statusCfg[s]?.is_final||false
+              allReleases.map(r=>({id:r.id,ticketIds:r.ticket_ids||[],status:r.status||"Planned",statusCategory:statusCfg[r.status||"Planned"]?.status_category||"backlog"})),
             ).allowed;
             return <option key={name} value={name} disabled={blocked}>{blocked?"🔒 ":""}{name}</option>;
           })}
@@ -372,7 +370,7 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
               style={{display:"flex",alignItems:"center",gap:6,padding:"5px 8px",background:"var(--dp-sf2,#07090f)",border:noRepo?"1px solid rgba(239,68,68,.5)":"1px solid var(--dp-bd,#1e293b)",borderLeft:`2px solid ${noRepo?"#ef4444":pColor}`,borderRadius:4,cursor:"grab",fontSize:10}}>
               {noRepo&&<span style={{color:"#ef4444",fontSize:10,flexShrink:0}}>⚠</span>}
               <span style={{color:"#38bdf8",fontWeight:700,flexShrink:0}}>{t.key}</span>
-              <span style={{color:noRepo?"#ef4444":"var(--dp-tx3,#64748b)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.summary.slice(0,28)}{t.summary.length>28?"…":""}</span>
+              <span style={{color:noRepo?"#ef4444":"var(--dp-tx2,#94a3b8)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.summary.slice(0,28)}{t.summary.length>28?"…":""}</span>
               <span style={{color:"var(--dp-tx3,#334155)",flexShrink:0,fontSize:9}}>{t.assignee?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"—"}</span>
               {jiraBaseUrl&&<a href={`${jiraBaseUrl}/browse/${t.key}`} target="_blank" rel="noopener noreferrer"
                 onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()}
@@ -621,9 +619,9 @@ function ReleaseDetail({ rel, tickets, statusCfg, repoGroups, allReleases, onBac
         })}
       </div>
 
-      {/* Close Release */}
+      {/* Release status info */}
       <div style={{background:"var(--dp-sf,#0b0f18)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:8,padding:"18px 20px"}}>
-        <SLabel style={{marginBottom:12}}>Cerrar Release</SLabel>
+        <SLabel style={{marginBottom:12}}>Estado de la Release</SLabel>
 
         {/* Tickets pendientes */}
         {!allReady&&(
@@ -636,43 +634,7 @@ function ReleaseDetail({ rel, tickets, statusCfg, repoGroups, allReleases, onBac
           </div>
         )}
 
-        {/* Merge blocker — otras releases activas comparten repos del mismo grupo */}
-        {mergeBlockers.length>0&&(
-          <div style={{padding:"8px 12px",background:"rgba(251,191,36,.06)",border:"1px solid #92400e",borderRadius:6,fontSize:10,color:"#fbbf24",marginBottom:10}}>
-            <div style={{fontWeight:700,marginBottom:4}}>🔒 Merge a master bloqueado por conflicto de repos:</div>
-            {mergeBlockers.map(b=>(
-              <div key={b.repo} style={{marginTop:3}}>
-                · <strong style={{color:"#fcd34d"}}>{b.repo}</strong>
-                <span style={{color:"#92400e"}}> también en <strong style={{color:"#fbbf24"}}>{b.otherRelease}</strong> ({b.otherStatus}) — grupo "{b.groupName}"</span>
-              </div>
-            ))}
-            <div style={{marginTop:6,color:"#92400e",fontSize:9}}>
-              Puedes cambiar a Staging o Deployed, pero no a "Merged to master" hasta que las otras releases del grupo estén cerradas.
-            </div>
-          </div>
-        )}
-
-        <div style={{display:"flex",gap:10,alignItems:"center"}}>
-          <select value={targetStatus} onChange={e=>setTargetStatus(e.target.value)}
-            style={{flex:1,background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:6,padding:"8px 12px",fontSize:11,color:"var(--dp-tx2,#94a3b8)",outline:"none",fontFamily:"inherit"}}>
-            <option value="">Selecciona estado final…</option>
-            {Object.entries(statusCfg).map(([name,c])=>{
-              // Block "Merged to master" if there are merge blockers
-              const isMergeStatus = name.toLowerCase().includes("merge");
-              const isBlocked     = isMergeStatus && mergeBlockers.length > 0;
-              return (
-                <option key={name} value={isBlocked?"":name} disabled={isBlocked}>
-                  {isBlocked?"🔒 ":""}{name}{isBlocked?" (bloqueado)":""}
-                </option>
-              );
-            })}
-          </select>
-          <button onClick={handleCloseRelease} disabled={!targetStatus||closing}
-            style={{background:targetStatus&&!closing?"linear-gradient(135deg,#1d4ed8,#0ea5e9)":"var(--dp-sf2,#0b0f18)",border:`1px solid ${targetStatus?"#3b82f6":"var(--dp-bd,#1e293b)"}`,borderRadius:6,padding:"8px 20px",fontSize:11,fontWeight:700,color:targetStatus&&!closing?"#fff":"var(--dp-tx3,#334155)",cursor:targetStatus&&!closing?"pointer":"not-allowed",transition:"all .2s",fontFamily:"inherit"}}>
-            {closing?"Cerrando…":"Cerrar Release →"}
-          </button>
-        </div>
-        <div style={{marginTop:8,fontSize:9,color:"var(--dp-tx3,#334155)"}}>
+        <div style={{marginTop:8,fontSize:9,color:"var(--dp-tx3,#64748b)"}}>
           Estados configurables desde Admin → Deploy Config
         </div>
       </div>
@@ -709,15 +671,15 @@ function Timeline({ releases, tickets, upd, setDetail, statusCfg, repoGroups=[] 
       const relRepos = [...new Set(relTickets.flatMap(t=>t.repos||[]))];
       return relRepos.some(r => (g.repos||[]).includes(r));
     }).map(r=>r.id);
-    const allDeployed = relIds.every(id => {
+    const allDoneOrApproved = relIds.every(id => {
       const rel = releases.find(r=>r.id===id);
-      const cfg = statusCfg[rel?.status];
-      return cfg?.is_final;
+      const cat = statusCfg[rel?.status]?.status_category;
+      return cat === 'done' || cat === 'approved';
     });
     return {
       id: g.id,
       label: g.name,
-      color: allDeployed ? "#22c55e" : "#f59e0b",
+      color: allDoneOrApproved ? "#22c55e" : "#f59e0b",
       barIds: relIds,
     };
   }).filter(g => g.barIds.length >= 2);
@@ -947,13 +909,13 @@ export function DeployPlanner({ currentUser }) {
     setVersionCfg(verCfg || { prefix:"v", segments:[{name:"major",value:1},{name:"minor",value:0},{name:"patch",value:0}], separator:"." });
     setReleases(rels||[]);
     const cfg = {};
-    (statuses||[]).forEach(s=>{ cfg[s.name]={ color:s.color, bg_color:s.bg_color, border:s.border, is_final:s.is_final, ord:s.ord }; });
+    (statuses||[]).forEach(s=>{ cfg[s.name]={ color:s.color, bg_color:s.bg_color, border:s.border, is_final:s.is_final, status_category:s.status_category||'backlog', ord:s.ord }; });
     if(Object.keys(cfg).length===0) {
-      cfg["Planned"]          = { color:"#6b7280", bg_color:"rgba(107,114,128,.12)", border:"#1f2937", is_final:false };
-      cfg["Staging"]          = { color:"#f59e0b", bg_color:"rgba(245,158,11,.12)",  border:"#78350f", is_final:false };
-      cfg["Merged to master"] = { color:"#a78bfa", bg_color:"rgba(167,139,250,.12)", border:"#4c1d95", is_final:false };
-      cfg["Deployed"]         = { color:"#34d399", bg_color:"rgba(52,211,153,.12)",  border:"#064e3b", is_final:true  };
-      cfg["Rollback"]         = { color:"#f87171", bg_color:"rgba(248,113,113,.12)", border:"#7f1d1d", is_final:true  };
+      cfg["Planned"]          = { color:"#6b7280", bg_color:"rgba(107,114,128,.12)", border:"#1f2937", is_final:false, status_category:"backlog" };
+      cfg["Staging"]          = { color:"#f59e0b", bg_color:"rgba(245,158,11,.12)",  border:"#78350f", is_final:false, status_category:"in_progress" };
+      cfg["Merged to master"] = { color:"#a78bfa", bg_color:"rgba(167,139,250,.12)", border:"#4c1d95", is_final:false, status_category:"done" };
+      cfg["Deployed"]         = { color:"#34d399", bg_color:"rgba(52,211,153,.12)",  border:"#064e3b", is_final:true, status_category:"approved"  };
+      cfg["Rollback"]         = { color:"#f87171", bg_color:"rgba(248,113,113,.12)", border:"#7f1d1d", is_final:true, status_category:"done"  };
     }
     setStatusCfg(cfg);
     setLoading(false);
@@ -1076,12 +1038,11 @@ export function DeployPlanner({ currentUser }) {
 
   // Compute linked groups for visual grouping + is_final blocking
   const tMap = Object.fromEntries(tickets.map(t=>[t.key,t]));
-  const isFinalStatus = (status) => statusCfg[status]?.is_final || false;
+  const getCat = (status) => statusCfg[status]?.status_category || 'backlog';
   const linkedGroups = RepoGroupService.findLinkedGroups(
     repoGroups,
-    releases.map(r=>({id:r.id,ticketIds:r.ticket_ids||[],status:r.status||"Planned"})),
+    releases.map(r=>({id:r.id,ticketIds:r.ticket_ids||[],status:r.status||"Planned",statusCategory:getCat(r.status||"Planned")})),
     tickets.map(t=>({key:t.key,repos:t.repos||[]})),
-    isFinalStatus,
   );
 
   // Order visible: group members together

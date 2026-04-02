@@ -3,9 +3,12 @@
  *
  * A group contains a set of repo names. When 2+ releases have tickets
  * whose repos overlap with the same group, those releases are "linked".
- * No linked release can move to a final status until ALL linked releases
- * in the group are deployed.
+ *
+ * Blocking rule: no linked release can move to a 'done' status category
+ * unless ALL other linked releases are in 'done' or 'approved'.
  */
+
+import type { StatusCategory } from '../ports/DeployConfigPort';
 
 export interface RepoGroup {
   id: string;
@@ -17,6 +20,7 @@ export interface ReleaseForGrouping {
   id: string;
   ticketIds: string[];
   status: string;
+  statusCategory: StatusCategory;
 }
 
 export interface TicketWithRepos {
@@ -27,20 +31,18 @@ export interface TicketWithRepos {
 export interface LinkedGroup {
   group: RepoGroup;
   releaseIds: string[];
-  allDeployed: boolean;
+  allDoneOrApproved: boolean;
 }
 
 export class RepoGroupService {
   /**
    * Find which releases are linked through each repo group.
-   * A release is "in" a group if any of its tickets have repos that belong to the group.
    * Only returns groups that link 2+ releases.
    */
   static findLinkedGroups(
     groups: RepoGroup[],
     releases: ReleaseForGrouping[],
     tickets: TicketWithRepos[],
-    isFinalStatus: (status: string) => boolean,
   ): LinkedGroup[] {
     const ticketMap = new Map(tickets.map(t => [t.key, t]));
 
@@ -58,25 +60,24 @@ export class RepoGroupService {
           })
           .map(r => r.id);
 
-        const allDeployed = releaseIds.every(id => {
+        const allDoneOrApproved = releaseIds.every(id => {
           const rel = releases.find(r => r.id === id);
-          return rel ? isFinalStatus(rel.status) : false;
+          return rel ? (rel.statusCategory === 'done' || rel.statusCategory === 'approved') : false;
         });
 
-        return { group, releaseIds, allDeployed };
+        return { group, releaseIds, allDoneOrApproved };
       })
       .filter(lg => lg.releaseIds.length >= 2);
   }
 
   /**
-   * Check if a release can transition to a final status.
-   * Returns blockers: other releases in the same group that are NOT yet deployed.
+   * Check if a release can transition to a 'done' status category.
+   * Allowed only if all other releases in shared groups are 'done' or 'approved'.
    */
-  static canTransitionToFinal(
+  static canTransitionToDone(
     releaseId: string,
     linkedGroups: LinkedGroup[],
     releases: ReleaseForGrouping[],
-    isFinalStatus: (status: string) => boolean,
   ): { allowed: boolean; blockers: { groupName: string; releaseId: string; status: string }[] } {
     const blockers: { groupName: string; releaseId: string; status: string }[] = [];
 
@@ -86,7 +87,7 @@ export class RepoGroupService {
       for (const otherId of lg.releaseIds) {
         if (otherId === releaseId) continue;
         const other = releases.find(r => r.id === otherId);
-        if (other && !isFinalStatus(other.status)) {
+        if (other && other.statusCategory !== 'done' && other.statusCategory !== 'approved') {
           blockers.push({
             groupName: lg.group.name,
             releaseId: otherId,

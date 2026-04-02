@@ -126,7 +126,7 @@ function AdminDeployConfig() {
   const [fetchingJ, setFetchingJ] = React.useState(false);
   const [savingJ, setSavingJ]     = React.useState(false);
   const [savedJ, setSavedJ]       = React.useState(false);
-  const [newStatus, setNewStatus] = React.useState({name:"",color:"#6b7280",is_final:false});
+  const [newStatus, setNewStatus] = React.useState({name:"",color:"#6b7280",status_category:"backlog"});
   const [dragging, setDragging]   = React.useState(null); // index being dragged
   const [dragOver, setDragOver]   = React.useState(null);
 
@@ -150,14 +150,14 @@ function AdminDeployConfig() {
     const bg  = hex + "20";
     const brd = hex + "66";
     try {
-      const data = await deployConfigRepo.createStatus({name:newStatus.name, color:hex, bg_color:bg, border:brd, is_final:newStatus.is_final, ord:statuses.length});
-      setStatuses(s=>[...s,data]); setNewStatus({name:"",color:"#6b7280",is_final:false});
+      const data = await deployConfigRepo.createStatus({name:newStatus.name, color:hex, bg_color:bg, border:brd, status_category:newStatus.status_category||"backlog", ord:statuses.length});
+      setStatuses(s=>[...s,data]); setNewStatus({name:"",color:"#6b7280",status_category:"backlog"});
     } catch(e) { console.error(e); }
   };
 
   const saveRelStatus = async (st) => {
     const hex = st.color;
-    const patch = {name:st.name, color:hex, bg_color:hex+"20", border:hex+"66", is_final:st.is_final};
+    const patch = {name:st.name, color:hex, bg_color:hex+"20", border:hex+"66", status_category:st.status_category||"backlog"};
     await deployConfigRepo.updateStatus(st.id, patch);
     setStatuses(s=>s.map(x=>x.id===st.id?{...x,...patch}:x));
     setEditing(null);
@@ -391,9 +391,14 @@ function AdminDeployConfig() {
                     style={{flex:1,background:"var(--sf)",border:"1px solid var(--ac)",borderRadius:4,padding:"3px 7px",fontSize:12,color:"var(--tx)",fontFamily:"inherit",outline:"none"}}/>
                   <input type="color" value={editing.color} onChange={e=>setEditing(v=>({...v,color:e.target.value}))}
                     style={{width:28,height:24,border:"none",background:"none",cursor:"pointer",padding:0}}/>
-                  <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"var(--tx3)",cursor:"pointer",flexShrink:0}}>
-                    <input type="checkbox" checked={editing.is_final} onChange={e=>setEditing(v=>({...v,is_final:e.target.checked}))}/>
-                    Final
+                  <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"var(--tx3)",flexShrink:0}}>
+                    <select value={editing.status_category||"backlog"} onChange={e=>setEditing(v=>({...v,status_category:e.target.value}))}
+                      style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:4,padding:"2px 6px",fontSize:10,color:"var(--tx)",fontFamily:"inherit"}}>
+                      <option value="backlog">Backlog</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="approved">Approved</option>
+                      <option value="done">Done</option>
+                    </select>
                   </label>
                   <button onClick={()=>saveRelStatus(editing)}
                     style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:4,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>✓</button>
@@ -404,8 +409,8 @@ function AdminDeployConfig() {
                 <>
                   <span style={{flex:1,fontSize:13,fontWeight:600,color:"var(--tx)"}}>{st.name}</span>
                   <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:st.bg_color,color:st.color,border:`1px solid ${st.border}`,flexShrink:0}}>{st.name}</span>
-                  {st.is_final&&<span style={{fontSize:9,color:"var(--tx3)",background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:10,padding:"1px 6px",flexShrink:0}}>Final</span>}
-                  <button onClick={()=>setEditing({id:st.id,name:st.name,color:st.color,is_final:st.is_final})}
+                  <span style={{fontSize:9,color:"var(--tx3)",background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:10,padding:"1px 6px",flexShrink:0}}>{st.status_category||"backlog"}</span>
+                  <button onClick={()=>setEditing({id:st.id,name:st.name,color:st.color,status_category:st.status_category||"backlog"})}
                     style={{background:"none",border:"none",color:"var(--tx3)",cursor:"pointer",fontSize:13}}>✎</button>
                   <button onClick={()=>delRelStatus(st.id)}
                     style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14}}>×</button>
@@ -428,10 +433,13 @@ function AdminDeployConfig() {
                 onChange={e=>setNewStatus(s=>({...s,color:e.target.value}))}
                 style={{width:32,height:28,border:"none",background:"none",cursor:"pointer",padding:0}}/>
             </div>
-            <label style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--tx3)",cursor:"pointer"}}>
-              <input type="checkbox" checked={newStatus.is_final} onChange={e=>setNewStatus(s=>({...s,is_final:e.target.checked}))}/>
-              Estado final
-            </label>
+            <select value={newStatus.status_category||"backlog"} onChange={e=>setNewStatus(s=>({...s,status_category:e.target.value}))}
+              style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"4px 8px",fontSize:10,color:"var(--tx)",fontFamily:"inherit"}}>
+              <option value="backlog">Backlog</option>
+              <option value="in_progress">In Progress</option>
+              <option value="approved">Approved</option>
+              <option value="done">Done</option>
+            </select>
             <button onClick={addRelStatus}
               style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:5,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
               + Añadir

@@ -1,3 +1,5 @@
+export type StatusCategory = 'backlog' | 'in_progress' | 'approved' | 'done';
+
 export interface ReleaseStatusData {
   id: string;
   name: string;
@@ -5,7 +7,8 @@ export interface ReleaseStatusData {
   bg_color: string;
   border: string;
   ord: number;
-  is_final: boolean;
+  is_final: boolean;          // legacy — read from status_category instead
+  status_category: StatusCategory;
 }
 
 export interface RepoGroupData {
