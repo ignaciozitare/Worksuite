@@ -250,6 +250,32 @@ function AdminDeployConfig() {
   const [newGroupName, setNewGroupName]   = React.useState("");
   const [expandedGroup, setExpandedGroup] = React.useState(null); // group id
   const [newRepoName, setNewRepoName]     = React.useState("");
+  const [availableRepos, setAvailableRepos] = React.useState([]);
+  const [loadingRepos, setLoadingRepos]   = React.useState(false);
+
+  // Load available repos from Jira tickets (reads configured repo field)
+  const loadAvailableRepos = async () => {
+    if(availableRepos.length) return; // already loaded
+    setLoadingRepos(true);
+    try {
+      const repoField = verCfg?.repo_jira_field || "components";
+      const projects = await jiraSyncAdapter.loadProjects();
+      const allRepos = new Set();
+      for (const p of projects.slice(0, 5)) {
+        const issues = await jiraSyncAdapter.loadIssues(p.key);
+        issues.forEach(i => {
+          const fields = i.fields || i;
+          const val = fields[repoField] || i[repoField] || i.components || [];
+          (Array.isArray(val) ? val : [val])
+            .map(v => typeof v === "string" ? v : v?.name || v?.value || "")
+            .filter(Boolean)
+            .forEach(r => allRepos.add(r));
+        });
+      }
+      setAvailableRepos([...allRepos].sort());
+    } catch(e) { console.error("Load repos error:", e); }
+    setLoadingRepos(false);
+  };
 
   React.useEffect(() => {
     deployConfigRepo.findAllRepoGroups()
@@ -519,35 +545,34 @@ function AdminDeployConfig() {
                 </div>
               </div>
 
-              {/* Group repos (expanded) */}
+              {/* Group repos (expanded) — multi-select from Jira repos */}
               {expandedGroup===group.id&&(
                 <div style={{padding:"12px 14px"}}>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
-                    {group.repos.length===0&&(
-                      <span style={{fontSize:11,color:"var(--tx3)"}}>Sin repositorios — añade el primero abajo</span>
-                    )}
-                    {group.repos.map(repo=>(
-                      <div key={repo} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:20,fontSize:11,color:"var(--tx2)"}}>
-                        <span>⬡</span>
-                        <span>{repo}</span>
-                        <button onClick={()=>removeRepoFromGroup(group.id,repo)}
-                          style={{background:"none",border:"none",color:"var(--tx3)",cursor:"pointer",fontSize:12,lineHeight:1,padding:0}}>×</button>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{display:"flex",gap:6}}>
-                    <input
-                      placeholder="Nombre del repo (ej: backend-api)…"
-                      value={expandedGroup===group.id?newRepoName:""}
-                      onChange={e=>setNewRepoName(e.target.value)}
-                      onKeyDown={e=>{if(e.key==="Enter"){addRepoToGroup(group.id,newRepoName);}}}
-                      style={{flex:1,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:11,fontFamily:"inherit",outline:"none"}}
-                    />
-                    <button onClick={()=>addRepoToGroup(group.id,newRepoName)}
-                      style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 12px",fontSize:11,color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit"}}>
-                      + Añadir repo
+                  {loadingRepos&&<div style={{fontSize:11,color:"var(--tx3)",marginBottom:8}}>Cargando repositorios de Jira…</div>}
+                  {!loadingRepos&&availableRepos.length===0&&(
+                    <button onClick={loadAvailableRepos}
+                      style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 12px",fontSize:11,color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit",marginBottom:8}}>
+                      🔄 Cargar repositorios desde Jira
                     </button>
+                  )}
+                  <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+                    {availableRepos.map(repo=>{
+                      const isIn = (group.repos||[]).includes(repo);
+                      return (
+                        <button key={repo} onClick={async()=>{
+                          const next = isIn ? group.repos.filter(r=>r!==repo) : [...group.repos, repo];
+                          setRepoGroups(gs=>gs.map(g=>g.id===group.id?{...g,repos:next}:g));
+                          await deployConfigRepo.updateRepoGroupRepos(group.id, next);
+                        }}
+                          style={{padding:"4px 10px",borderRadius:20,border:`1px solid ${isIn?"var(--ac)":"var(--bd)"}`,background:isIn?"var(--glow)":"transparent",color:isIn?"var(--ac2)":"var(--tx3)",cursor:"pointer",fontSize:11,fontWeight:isIn?700:400,fontFamily:"inherit",transition:"all .15s"}}>
+                          {isIn?"✓ ":""}{repo}
+                        </button>
+                      );
+                    })}
                   </div>
+                  {group.repos.length>0&&(
+                    <div style={{fontSize:10,color:"var(--tx3)",marginTop:4}}>{group.repos.length} repositorios seleccionados</div>
+                  )}
                 </div>
               )}
             </div>

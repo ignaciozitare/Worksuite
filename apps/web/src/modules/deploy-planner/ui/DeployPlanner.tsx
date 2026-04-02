@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../../../shared/lib/supabaseClient";
 import { GanttTimeline } from '@worksuite/ui';
+import { RepoGroupService } from '../domain/services/RepoGroupService';
 
 /* ─── CSS ────────────────────────────────────────────────────── */
 const CSS = `
@@ -18,7 +19,7 @@ const CSS = `
 /* Dark (default) */
 .dp{
   --dp-bg:#07090f; --dp-sf:#0b0f18; --dp-sf2:#07090f;
-  --dp-tx:#c9d1d9; --dp-tx2:#94a3b8; --dp-tx3:#334155;
+  --dp-tx:#c9d1d9; --dp-tx2:#94a3b8; --dp-tx3:#64748b;
   --dp-bd:#1e293b; --dp-date-filter:invert(.4) sepia(1) hue-rotate(180deg);
 }
 /* Light mode — activated by data-theme="light" or .light class */
@@ -188,7 +189,7 @@ function VersionPicker({ versionCfg, allReleaseNumbers, onSelect, onClose }) {
   );
 }
 
-function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag, drag, allReleases, repoGroups, versionCfg, allReleaseNumbers, jiraBaseUrl="" }) {
+function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag, drag, allReleases, repoGroups, versionCfg, allReleaseNumbers, jiraBaseUrl="", linkedGroups=[] }) {
   const [addingTicket, setAddingTicket] = useState(false);
   const [search, setSearch] = useState("");
   const [showVersionPicker, setShowVersionPicker] = useState(false);
@@ -292,13 +293,36 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
         style={{width:"100%",background:"none",border:"none",borderBottom:"1px solid var(--dp-bd,#0e1520)",fontSize:10,color:"var(--dp-tx2,#475569)",fontFamily:"inherit",outline:"none",marginBottom:12,paddingBottom:6,resize:"none",lineHeight:1.5}}
       />
 
-      {/* Status selector */}
+      {/* Status selector with is_final blocking */}
       <div style={{marginBottom:10}}>
         <select value={rel.status||"Planned"}
-          onChange={e=>onUpd(rel.id,{status:e.target.value})}
+          onChange={e=>{
+            const newStatus = e.target.value;
+            const isFinal = statusCfg[newStatus]?.is_final;
+            if(isFinal && linkedGroups.length) {
+              const check = RepoGroupService.canTransitionToFinal(
+                rel.id, linkedGroups,
+                allReleases.map(r=>({id:r.id,ticketIds:r.ticket_ids||[],status:r.status||"Planned"})),
+                (s)=>statusCfg[s]?.is_final||false
+              );
+              if(!check.allowed) {
+                alert(`🔒 No puedes pasar a "${newStatus}" porque hay releases vinculadas pendientes:\n${check.blockers.map(b=>`• ${b.groupName}: release en "${b.status}"`).join("\n")}`);
+                return;
+              }
+            }
+            onUpd(rel.id,{status:newStatus});
+          }}
           onClick={e=>e.stopPropagation()}
           style={{background:cfg.bg_color,border:`1px solid ${cfg.border}`,borderRadius:5,padding:"4px 10px",fontSize:10,color:cfg.color,cursor:"pointer",outline:"none",fontWeight:700,fontFamily:"inherit"}}>
-          {Object.entries(statusCfg).map(([name])=><option key={name} value={name}>{name}</option>)}
+          {Object.entries(statusCfg).map(([name,v])=>{
+            const isFinal = v.is_final;
+            const blocked = isFinal && linkedGroups.length>0 && !RepoGroupService.canTransitionToFinal(
+              rel.id, linkedGroups,
+              allReleases.map(r=>({id:r.id,ticketIds:r.ticket_ids||[],status:r.status||"Planned"})),
+              (s)=>statusCfg[s]?.is_final||false
+            ).allowed;
+            return <option key={name} value={name} disabled={blocked}>{blocked?"🔒 ":""}{name}</option>;
+          })}
         </select>
       </div>
 
@@ -1047,8 +1071,31 @@ export function DeployPlanner({ currentUser }) {
 
   const [filterStatus, setFilterStatus] = useState([]);
   const activeF = filterStatus.length===0;
-  const visible  = releases.filter(r=>activeF||filterStatus.includes(r.status));
+  const filteredRels  = releases.filter(r=>activeF||filterStatus.includes(r.status));
   const hidden   = releases.filter(r=>!activeF&&!filterStatus.includes(r.status)).length;
+
+  // Compute linked groups for visual grouping + is_final blocking
+  const tMap = Object.fromEntries(tickets.map(t=>[t.key,t]));
+  const isFinalStatus = (status) => statusCfg[status]?.is_final || false;
+  const linkedGroups = RepoGroupService.findLinkedGroups(
+    repoGroups,
+    releases.map(r=>({id:r.id,ticketIds:r.ticket_ids||[],status:r.status||"Planned"})),
+    tickets.map(t=>({key:t.key,repos:t.repos||[]})),
+    isFinalStatus,
+  );
+
+  // Order visible: group members together
+  const visible = (() => {
+    if(!linkedGroups.length) return filteredRels;
+    const ordered = [];
+    const used = new Set();
+    linkedGroups.forEach(lg => {
+      const members = filteredRels.filter(r=>lg.releaseIds.includes(r.id));
+      members.forEach(r=>{ if(!used.has(r.id)){ ordered.push(r); used.add(r.id); }});
+    });
+    filteredRels.forEach(r=>{ if(!used.has(r.id)) ordered.push(r); });
+    return ordered;
+  })();
 
   const TABS=[
     {id:"planning", label:"Planning", badge:releases.filter(r=>!statusCfg[r.status]?.is_final).length||undefined},
@@ -1118,15 +1165,46 @@ export function DeployPlanner({ currentUser }) {
                 </div>
                 {hidden>0&&<div style={{fontSize:10,color:"var(--dp-tx3,#334155)",marginBottom:14}}>↓ {hidden} release{hidden>1?"s":""} oculta{hidden>1?"s":""} por filtros — actívalas arriba o ve a History.</div>}
                 <div style={{display:"flex",gap:14,flexWrap:"wrap",alignItems:"flex-start"}}>
-                  {visible.map(rel=>(
-                    <ReleaseCard key={rel.id} rel={rel} statusCfg={statusCfg} tickets={tickets}
-                      onOpen={setDetail} onUpd={upd} onDelete={delRelease}
-                      onDrop={handleDrop} setDrag={setDrag} drag={drag}
-                      allReleases={releases} repoGroups={repoGroups}
-                      versionCfg={versionCfg}
-                      allReleaseNumbers={(releases||[]).map(r=>r.release_number).filter(Boolean)}
-                      jiraBaseUrl={jiraBaseUrl}/>
-                  ))}
+                  {/* Render cards with group frames */}
+                  {(() => {
+                    const rendered = new Set();
+                    const elements = [];
+                    // First render grouped cards with frames
+                    linkedGroups.forEach(lg => {
+                      const groupCards = visible.filter(r=>lg.releaseIds.includes(r.id)&&!rendered.has(r.id));
+                      if(groupCards.length<2) return;
+                      groupCards.forEach(r=>rendered.add(r.id));
+                      elements.push(
+                        <div key={`group-${lg.group.id}`} style={{display:"flex",gap:14,flexWrap:"wrap",padding:10,border:`2px solid ${lg.allDeployed?"#22c55e":"#f59e0b"}`,borderRadius:10,background:lg.allDeployed?"rgba(34,197,94,.04)":"rgba(245,158,11,.04)",position:"relative"}}>
+                          <span style={{position:"absolute",top:-9,left:14,fontSize:8,fontWeight:700,color:lg.allDeployed?"#22c55e":"#f59e0b",background:"var(--dp-bg,var(--bg,#07090f))",padding:"0 6px",letterSpacing:".05em",textTransform:"uppercase"}}>{lg.group.name}</span>
+                          {groupCards.map(rel=>(
+                            <ReleaseCard key={rel.id} rel={rel} statusCfg={statusCfg} tickets={tickets}
+                              onOpen={setDetail} onUpd={upd} onDelete={delRelease}
+                              onDrop={handleDrop} setDrag={setDrag} drag={drag}
+                              allReleases={releases} repoGroups={repoGroups}
+                              versionCfg={versionCfg}
+                              allReleaseNumbers={(releases||[]).map(r=>r.release_number).filter(Boolean)}
+                              jiraBaseUrl={jiraBaseUrl}
+                              linkedGroups={linkedGroups}/>
+                          ))}
+                        </div>
+                      );
+                    });
+                    // Then render ungrouped cards
+                    visible.filter(r=>!rendered.has(r.id)).forEach(rel=>{
+                      elements.push(
+                        <ReleaseCard key={rel.id} rel={rel} statusCfg={statusCfg} tickets={tickets}
+                          onOpen={setDetail} onUpd={upd} onDelete={delRelease}
+                          onDrop={handleDrop} setDrag={setDrag} drag={drag}
+                          allReleases={releases} repoGroups={repoGroups}
+                          versionCfg={versionCfg}
+                          allReleaseNumbers={(releases||[]).map(r=>r.release_number).filter(Boolean)}
+                          jiraBaseUrl={jiraBaseUrl}
+                          linkedGroups={linkedGroups}/>
+                      );
+                    });
+                    return elements;
+                  })()}
                   <div onClick={addRelease}
                     style={{width:290,minHeight:140,background:"transparent",border:"2px dashed var(--dp-bd,#1e293b)",borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",color:"var(--dp-tx3,#334155)",fontSize:12,transition:"border-color .15s"}}
                     onMouseEnter={e=>e.currentTarget.style.borderColor="#38bdf8"}
