@@ -1037,10 +1037,11 @@ export function DeployPlanner({ currentUser }) {
     setStatusCfg(cfg);
     setLoading(false);
     // Auto-cargar tickets de Jira usando la conexión ya existente
-    fetchJiraTickets(ssoData?.deploy_jira_statuses);
+    fetchJiraTickets(ssoData?.deploy_jira_statuses, verCfg);
   }
 
-  async function fetchJiraTickets(rawStatuses) {
+  async function fetchJiraTickets(rawStatuses, cfgOverride) {
+    const cfg = cfgOverride || versionCfg;
     setFetchingJira(true);
     try {
       // Si no hay args (refresh manual), leer de DB
@@ -1062,12 +1063,12 @@ export function DeployPlanner({ currentUser }) {
       if(projects.length === 0) throw new Error("No hay proyectos Jira configurados");
 
       // Paso 2: cargar issues de cada proyecto con el campo repo configurado
-      const repoField = versionCfg?.repo_jira_field || "components";
-      const extraFields = repoField !== "components" ? `&extraFields=${repoField}` : "";
+      const repoFieldName = cfg?.repo_jira_field || "components";
+      const extraFieldsParam = repoFieldName !== "components" ? `&extraFields=${repoFieldName}` : "";
       const allIssues = [];
       await Promise.all(projects.map(async (project) => {
         try {
-          const res = await fetch(`${API_BASE}/jira/issues?project=${project}${extraFields}`, { headers });
+          const res = await fetch(`${API_BASE}/jira/issues?project=${project}${extraFieldsParam}`, { headers });
           if(!res.ok) return;
           const data = await res.json();
           allIssues.push(...(data.data || []));
@@ -1080,9 +1081,7 @@ export function DeployPlanner({ currentUser }) {
         return targetStatuses.some(s => issueStatus.includes(s) || s.includes(issueStatus));
       });
 
-      // Use configured repo field from dp_version_config, fallback to components
-      const repoFieldName = versionCfg?.repo_jira_field || "components";
-      if(filtered.length>0) console.log("[DeployPlanner] repoField:", repoFieldName, "sample issue:", filtered[0].key, "fields keys:", Object.keys(filtered[0].fields||{}), "value:", (filtered[0].fields||{})[repoFieldName]);
+      if(filtered.length>0) console.log("[DeployPlanner] repoField:", repoFieldName, "sample:", filtered[0].key, "fields:", Object.keys(filtered[0].fields||{}), "value:", (filtered[0].fields||{})[repoFieldName]);
 
       const newTickets = filtered.map(i => {
         const fields = i.fields || i;
