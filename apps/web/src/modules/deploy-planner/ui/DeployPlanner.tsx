@@ -1119,11 +1119,16 @@ export function DeployPlanner({ currentUser }) {
       try {
         const stConfigs = await subtaskConfigRepo.findAll();
         setSubtaskConfigs(stConfigs);
+        console.log("[DeployPlanner] subtask configs:", stConfigs.length, "tickets:", newTickets.length);
         if (stConfigs.length > 0 && newTickets.length > 0) {
           const parentKeys = newTickets.map(t => t.key);
+          console.log("[DeployPlanner] fetching subtasks for:", parentKeys.join(","));
           const rawSubs = await subtaskAdapter.getSubtasks(parentKeys);
+          console.log("[DeployPlanner] raw subtasks:", rawSubs.length);
+          const classified = SubtaskService.classify(rawSubs, stConfigs);
+          console.log("[DeployPlanner] classified:", classified.length, classified.map(s=>s.key+":"+s.type+":"+s.category));
           setAllSubtasks(rawSubs);
-          setClassifiedSubs(SubtaskService.classify(rawSubs, stConfigs));
+          setClassifiedSubs(classified);
         }
       } catch(e) { console.warn("Subtask load error:", e.message); }
     } catch(e) {

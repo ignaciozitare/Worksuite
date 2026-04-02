@@ -157,9 +157,9 @@ export class JiraCloudAdapter implements IJiraApi {
 
   async getSubtasks(parentKeys: string[]): Promise<any[]> {
     if (!parentKeys.length) return [];
-    // Batch: get subtasks + linked issues for all parent keys via JQL
+    // Batch: get subtasks for all parent keys via JQL
     const keysStr = parentKeys.join(',');
-    const jql = `parent in (${keysStr}) OR issuekey in linkedIssuesOf(${keysStr})`;
+    const jql = `parent in (${keysStr})`;
     const data = await this.fetch<{ issues: any[] }>('/search', {
       method: 'POST',
       body: JSON.stringify({
