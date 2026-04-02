@@ -1,6 +1,6 @@
 # WorkSuite — Architecture
 
-> Documento vivo. Actualizar con cada fase del refactor.
+> Documento vivo. Actualizar con cada cambio arquitectural.
 
 ---
 
@@ -20,170 +20,168 @@
 
 ```
 worksuite/
-├── packages/                    ← código compartido entre todas las apps
-│   ├── shared-types/            ← tipos TypeScript de dominio
-│   ├── i18n/                    ← sistema de traducción (es/en) — I18nProvider + useTranslation()
-│   ├── ui/                      ← librería de componentes + tokens CSS
-│   └── jira-client/             ← cliente HTTP para Jira Cloud API
+├── packages/
+│   ├── shared-types/          ← tipos TypeScript de dominio
+│   ├── i18n/                  ← sistema de traducción (es/en) — I18nProvider + useTranslation()
+│   ├── ui/                    ← librería de componentes reutilizables
+│   │   └── src/components/
+│   │       ├── Btn.tsx
+│   │       ├── Atoms.tsx      (Avatar, Badge, StatBox, Divider, Chip)
+│   │       ├── Modal.tsx      (Modal, ConfirmModal)
+│   │       ├── GanttTimeline.tsx  ← Gantt chart interactivo (zoom, drag, groups)
+│   │       └── TimerBar.tsx
+│   └── jira-client/           ← cliente HTTP para Jira Cloud API
 │
 └── apps/
-    ├── web/                     ← React frontend
+    ├── web/                   ← React frontend
     │   └── src/
-    │       ├── WorkSuiteApp.tsx ← Root orchestrator (~520 líneas, routing + state + layout)
+    │       ├── WorkSuiteApp.tsx   ← Root orchestrator (~296 líneas, routing + layout)
+    │       ├── main.tsx           ← Entry point con I18nProvider
+    │       ├── AppRouter.tsx      ← React Router con lazy loading
     │       ├── shared/
-    │       │   ├── admin/       ← Panel admin (~20 componentes extraídos)
-    │       │   ├── auth/        ← Login + useAuth
-    │       │   ├── hooks/       ← useAuth
-    │       │   ├── lib/         ← supabaseClient, utils, constants, fallbackData
-    │       │   └── ui/          ← MiniCalendar, PasswordStrength
+    │       │   ├── admin/         ← Panel admin (9 archivos: Settings, Users, HotDesk, Blueprint,
+    │       │   │                     Roles, RetroTeams, DeployConfig, EnvTracker, Shell)
+    │       │   ├── hooks/         ← useAuth, useWorkSuiteData, useWorklogs, useHotDesk
+    │       │   ├── domain/ports/  ← UserPort, SsoConfigPort, RolePort, BuildingPort,
+    │       │   │                     AdminUserPort, HotDeskAdminPort, JiraConnectionPort
+    │       │   ├── infra/         ← Supabase repos + JiraConnectionAdapter (7 archivos)
+    │       │   ├── lib/           ← supabaseClient, utils, constants, fallbackData
+    │       │   └── ui/            ← MiniCalendar, PasswordStrength
     │       └── modules/
-    │           ├── jira-tracker/  ← domain/ + infra/ + ui/ (5 componentes)
-    │           ├── hotdesk/       ← domain/ + infra/ + ui/ (7 componentes)
-    │           ├── retro/         ← domain/ + infra/ + ui/
-    │           ├── deploy-planner/← domain/ + infra/ + ui/
-    │           └── environments/  ← domain/ + infra/ + ui/
+    │           ├── auth/          ← LoginPage
+    │           ├── jira-tracker/
+    │           │   ├── domain/    ← entities, ports (WorklogPort, JiraSyncPort), useCases, services
+    │           │   ├── infra/     ← SupabaseWorklogRepo, JiraSyncAdapter
+    │           │   └── ui/        ← LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView
+    │           ├── hotdesk/
+    │           │   ├── domain/    ← entities, ports (SeatReservationPort), useCases, services
+    │           │   ├── infra/     ← SupabaseSeatReservationRepo, SupabaseReservationRepository
+    │           │   └── ui/        ← OfficeSVG, HDMapView, HDTableView, HDReserveModal,
+    │           │                     BlueprintHDMap, BlueprintMiniMap, SeatTooltip
+    │           ├── retro/
+    │           │   ├── domain/    ← entities, ports (RetroSessionPort, RetroActionablePort, RetroTeamPort)
+    │           │   ├── infra/     ← SupabaseRetroSessionRepo, SupabaseRetroActionableRepo, SupabaseRetroTeamRepo
+    │           │   └── ui/        ← RetroBoard (lobby, phases, kanban, history, teams)
+    │           ├── deploy-planner/
+    │           │   ├── domain/    ← entities, ports (DeployConfigPort, SubtaskConfigPort, SubtaskPort,
+    │           │   │                 JiraMetadataPort, DeploymentRepository), services (RepoGroupService,
+    │           │   │                 SubtaskService), useCases
+    │           │   ├── infra/     ← SupabaseReleaseRepo, SupabaseDeployConfigRepo,
+    │           │   │                 SupabaseSubtaskConfigRepo, JiraMetadataAdapter, JiraSubtaskAdapter
+    │           │   └── ui/        ← DeployPlanner (planning, timeline, detail, history, metrics),
+    │           │                     DeployTimeline, ReleaseDetail
+    │           └── environments/
+    │               ├── domain/    ← entities, ports, useCases
+    │               ├── infra/     ← SupabaseEnvironmentRepo, SupabaseReservationRepo
+    │               └── ui/        ← EnvironmentsView, AdminEnvironments
     │
-    └── api/                     ← Fastify backend
+    └── api/                   ← Fastify backend
         └── src/
-            ├── shared/          ← jiraConnection resolver
-            ├── jira-tracker/    ← routes + domain
-            └── deploy-planner/  ← routes + domain
+            ├── domain/        ← interfaces (IJiraConnectionRepository, IUserRepository, etc.)
+            ├── infrastructure/
+            │   ├── http/      ← authRoutes, worklogRoutes, hotdeskRoutes, jiraRoutes
+            │   └── jira/      ← JiraCloudAdapter (projects, issues, subtasks, fields, search, worklogs)
+            └── app.ts         ← Fastify setup, plugin registration
 ```
 
 ---
 
-## Arquitectura hexagonal por módulo
+## Arquitectura hexagonal
 
-Cada módulo en `apps/web/src/modules/X/` sigue esta estructura:
-
+### Regla de dependencias
 ```
-modules/X/
-├── domain/
-│   ├── entities/      ← clases/tipos de dominio puro (sin frameworks)
-│   ├── ports/         ← interfaces (contratos de repositorios)
-│   └── useCases/      ← lógica de aplicación
-├── infra/
-│   └── supabase/      ← implementaciones de los puertos con Supabase
-└── ui/
-    └── *.tsx          ← componentes React (solo llaman a useCases)
+UI → UseCases/Services → Ports ← Infra (Supabase/Jira)
 ```
 
-**Regla de dependencias:**
-```
-ui → useCases → ports ← infra/supabase
-```
 - `domain/` no importa nada de `infra/` ni de `ui/`
-- `ui/` no hace llamadas directas a Supabase
+- `ui/` no hace llamadas directas a Supabase ni fetch — usa repos/adapters
 - `infra/` implementa los `ports/`
+- `supabase.from()` solo aparece en archivos dentro de `/infra/`
+- `fetch()` a APIs externas solo en adapters
+
+### Verificación
+```
+supabase.from() outside /infra/: 0
+fetch() in UI/admin: 0
+```
 
 ---
 
 ## Paquetes compartidos
 
-### `@worksuite/shared-types`
-Tipos TypeScript de dominio compartidos entre frontend y backend:
-`WorksuiteUser`, `Blueprint`, `JiraIssue`, `RetroSession`, `Deployment`, etc.
-
 ### `@worksuite/i18n`
-- Locales JSON en `locales/es.json` y `locales/en.json`
-- Hook `useTranslation()` para componentes React
-- `createTranslator(locale)` para código fuera de React
-- Para añadir un idioma: crear `locales/XX.json` + añadir a `Locale` type
+- I18nProvider en main.tsx con persistencia en localStorage
+- Locales: `locales/es.json`, `locales/en.json`
+- Namespaces: common, auth, nav, admin, jiraTracker, hotdesk, retro, deployPlanner
 
 ### `@worksuite/ui`
-- Tokens CSS en `src/tokens/index.css` — dark/light mode vía variables `--ws-*`
-- Componentes: `Btn`, `Avatar`, `Badge`, `Modal`, `Timeline`, `TimerBar`, `StatBox`
-- **Regla**: ningún componente usa colores hardcodeados, solo variables `--ws-*`
-- **Regla**: ningún componente importa Supabase ni lógica de dominio
-
-### `@worksuite/jira-client`
-- `JiraClient` — adaptador HTTP único para Jira Cloud REST API v3
-- Usado por `apps/api/src/jira-tracker/` Y `apps/api/src/deploy-planner/`
-- **Un solo cliente compartido** — JiraTracker y DeployPlanner no reimplementan auth
+- `GanttTimeline` — Gantt chart con zoom (días/semanas/meses), drag-to-move/resize, group frames
+- `Btn`, `Avatar`, `Badge`, `Modal`, `TimerBar`, `StatBox`
+- Dark/light mode vía CSS variables (`--ws-*`)
 
 ---
 
-## Integración Jira — cómo funciona el token compartido
+## Deploy Planner — Features
 
-```
-apps/api/src/shared/jiraConnection.ts
-  └── resolveJiraClient(userId, supabase)
-        ├── Si el usuario tiene jira_api_token → usa su token personal
-        └── Si no → usa el token del admin (jira_connections tabla)
+### Releases
+- CRUD releases con versión auto-generada
+- Status con categorías: `backlog`, `in_progress`, `approved`, `done`
+- Drag-and-drop tickets entre releases
 
-apps/api/src/jira-tracker/routes.ts
-  └── import { resolveJiraClient } from '../shared/jiraConnection'
-  └── import { createJiraClient }  from '@worksuite/jira-client'
+### Repo Groups
+- Grupos de repos configurados en admin con repos de Jira
+- Releases que comparten grupo se agrupan visualmente (marco naranja/verde)
+- Bloqueo: no se puede pasar a `done` si releases del grupo no están en `done`/`approved`
 
-apps/api/src/deploy-planner/routes.ts
-  └── import { resolveJiraClient } from '../shared/jiraConnection'  ← misma función
-  └── import { createJiraClient }  from '@worksuite/jira-client'    ← mismo cliente
-```
+### Subtareas
+- Admin configura qué issue types son bug/test/other
+- Define qué estados de Jira cierran cada tipo
+- API batch: `GET /jira/subtasks?parents=AND-7,AND-8`
+- Contadores `🐛 2/5 · 🧪 3/8` en cards
+- Tabla de subtareas en detalle de release
 
----
+### Jira Field Mapping
+- Admin selecciona qué campo de Jira usar como "Repository & Components"
+- Soporta custom fields (ej: `customfield_10146`)
 
-## Internacionalización
-
-```tsx
-// En cualquier componente:
-import { useTranslation } from '@worksuite/i18n';
-
-function MyComponent() {
-  const { t } = useTranslation();
-  return <button>{t('common.save')}</button>;
-}
-
-// Estructura de claves:
-// common.*        — acciones y estados genéricos
-// auth.*          — login/logout
-// nav.*           — navegación principal
-// admin.*         — panel de administración
-// jiraTracker.*   — módulo Jira Tracker
-// hotdesk.*       — módulo HotDesk
-// retro.*         — módulo RetroBoard
-// deployPlanner.* — módulo Deploy Planner
-```
+### Vistas
+- **Planning**: Cards con tickets, repos, contadores, filtro por estado
+- **Timeline**: GanttTimeline con zoom, drag-resize, group frames, filtro
+- **History**: Tabla con filtros, ordenar, columna de bugs
+- **Metrics**: Stats de releases, bugs, tests, repos
 
 ---
 
-## Design system
+## Base de datos (Supabase)
 
-Importar tokens en el entry point de la app:
-```tsx
-// apps/web/src/main.tsx
-import '@worksuite/ui/tokens';
-```
-
-Variables disponibles en todo el CSS:
-```css
-/* Superficies */   --ws-bg, --ws-surface, --ws-surface-2
-/* Texto */         --ws-text, --ws-text-2, --ws-text-3
-/* Bordes */        --ws-border, --ws-border-2
-/* Estado */        --ws-green, --ws-red, --ws-amber, --ws-blue
-/* Módulos */       --ws-jira, --ws-hotdesk, --ws-retro, --ws-deploy
-/* Tipografía */    --ws-font-sans, --ws-font-heading
-/* Espaciado */     --ws-space-{1-8}
-/* Radio */         --ws-radius-{sm,md,lg,xl,full}
-```
+### Tablas principales
+| Tabla | Descripción |
+|-------|------------|
+| `users` | Usuarios con role, desk_type, modules (jsonb), jira_api_token |
+| `worklogs` | Imputaciones de tiempo |
+| `seats`, `seat_reservations`, `fixed_assignments` | HotDesk |
+| `buildings`, `blueprints` | Planos de oficina |
+| `retro_sessions`, `retro_actionables`, `retro_teams`, `retro_team_members` | RetroBoard |
+| `dp_releases`, `dp_release_statuses`, `dp_version_config` | Deploy Planner |
+| `dp_repo_groups`, `dp_subtask_config` | Config de repos y subtareas |
+| `jira_connections` | Conexiones Jira por usuario |
+| `sso_config` | SSO + deploy Jira statuses |
+| `roles` | Roles y permisos |
 
 ---
 
-## Historial de fases
+## API Endpoints (Fastify)
 
-| Fase | Estado | Descripción |
-|------|--------|-------------|
-| 0 | ✅ Completo | Scaffolding monorepo: packages/, tsconfig, workspaces |
-| 1 | ✅ Completo | `packages/ui` + `packages/i18n` + `packages/jira-client` + `packages/shared-types` |
-| 1.5 | ✅ Completo | Migrar i18n: reemplazar TRANSLATIONS inline por `@worksuite/i18n` con I18nProvider |
-| 2 | ✅ Completo | Extraer dominio + UI HotDesk → `modules/hotdesk/{domain,infra,ui}` (7 componentes) |
-| 3 | ✅ Completo | Extraer dominio + UI JiraTracker → `modules/jira-tracker/{domain,infra,ui}` (5 componentes) |
-| 4 | ✅ Completo | Extraer Admin → `shared/admin/` (~20 componentes, incl. BlueprintCanvas) |
-| 5 | ✅ Completo | Retro dominio + UI (RetroBoard ya como componente separado) |
-| 6 | ✅ Completo | Deploy Planner dominio + UI (DeployPlanner + DeployTimeline + ReleaseDetail) |
-| 7 | ✅ Completo | Environments dominio + UI (EnvironmentsView + Admin) |
-
-### Resultado
-- `WorkSuiteApp.tsx` reducido de **4562 → 520 líneas** (88% reducción)
-- Solo contiene: routing, state management, data loading, layout shell
-- Todos los módulos siguen `domain/ → infra/ → ui/` (hexagonal)
-- i18n centralizado en `@worksuite/i18n` con keys estructuradas por namespace
+| Ruta | Método | Descripción |
+|------|--------|------------|
+| `/jira/connection` | GET/POST/DELETE | CRUD conexión Jira |
+| `/jira/projects` | GET | Listar proyectos Jira |
+| `/jira/issues?project=X&extraFields=Y` | GET | Issues con campos custom |
+| `/jira/issuetypes` | GET | Tipos de issue de Jira |
+| `/jira/fields` | GET | Campos disponibles (standard + custom) |
+| `/jira/subtasks?parents=K1,K2` | GET | Subtareas batch por JQL |
+| `/jira/search` | GET | Búsqueda JQL con POST a Jira |
+| `/jira/worklogs/:key/sync` | POST | Sync worklog a Jira |
+| `/worklogs` | CRUD | Worklogs locales |
+| `/hotdesk` | CRUD | Reservas y asignaciones |
+| `/auth` | POST | Login/registro |

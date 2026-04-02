@@ -1,115 +1,108 @@
 # WorkSuite
 
-Unified work utilities platform — Jira Tracker + HotDesk.
+Plataforma unificada de utilidades de trabajo — Jira Tracker, HotDesk, RetroBoard, Deploy Planner, Environments.
 
 ## Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | React 18 + Vite + TypeScript |
-| Backend | Fastify + TypeScript (Vercel Functions) |
-| Database | Supabase (Postgres + Auth + RLS) |
-| Jira | REST API v3 (Mock adapter for dev) |
-| Testing | Vitest + Testing Library |
-| Deploy | Vercel + Supabase |
+| Capa | Tecnología |
+|------|-----------|
+| Frontend | React 18 + TypeScript + Vite |
+| Backend | Node.js + Fastify + TypeScript (Vercel Functions) |
+| Base de datos | Supabase (Postgres + Auth + RLS) |
+| Jira | REST API v3 via JiraCloudAdapter |
+| i18n | @worksuite/i18n (es/en) |
+| UI Components | @worksuite/ui (GanttTimeline, Btn, Modal, etc.) |
+| Deploy | Vercel (web + api auto-deploy on push to main) |
+| Monorepo | npm workspaces |
 
-## Monorepo structure
+## Estructura del monorepo
 
 ```
 worksuite/
-├── apps/
-│   ├── api/                    ← Fastify backend (hexagonal)
-│   │   └── src/
-│   │       ├── domain/         ← Pure business logic, zero deps
-│   │       ├── application/    ← Use cases
-│   │       └── infrastructure/ ← Adapters (Supabase, Jira, HTTP)
-│   └── web/                    ← React frontend
-│       └── src/
-│           ├── modules/        ← jira-tracker, hotdesk, admin
-│           └── shared/         ← components, hooks, lib
 ├── packages/
-│   └── shared-types/           ← Domain types shared by api + web
+│   ├── shared-types/    ← Tipos TypeScript compartidos
+│   ├── i18n/            ← Sistema de traducción (es/en)
+│   ├── ui/              ← Componentes reutilizables (GanttTimeline, Btn, Modal, etc.)
+│   └── jira-client/     ← Cliente HTTP para Jira Cloud
+├── apps/
+│   ├── web/             ← React SPA (Vite)
+│   │   └── src/
+│   │       ├── modules/ ← jira-tracker, hotdesk, retro, deploy-planner, environments
+│   │       └── shared/  ← admin, hooks, domain/ports, infra, lib, ui
+│   └── api/             ← Fastify backend (hexagonal)
+│       └── src/
+│           ├── domain/         ← Interfaces puras
+│           └── infrastructure/ ← Adapters (Supabase, Jira, HTTP routes)
 └── docs/
-    ├── specs/                  ← Living specifications per domain
-    ├── adr/                    ← Architecture Decision Records
-    └── api/                    ← OpenAPI contract
 ```
+
+## Módulos
+
+| Módulo | Descripción |
+|--------|------------|
+| **Jira Tracker** | Imputación de horas, calendario, vista día, tareas, sync con Jira |
+| **HotDesk** | Mapa de oficina, reservas de puesto, vista mensual, blueprints |
+| **RetroBoard** | Retrospectivas estructuradas, kanban de accionables, historial |
+| **Deploy Planner** | Releases, timeline Gantt, repo groups, subtareas (bugs/tests), métricas |
+| **Environments** | Gestión de entornos de despliegue, reservas, políticas |
 
 ## Getting started
 
 ```bash
-# 1. Install
+# 1. Instalar dependencias
 npm install
 
-# 2. Set env vars (copy and fill)
-cp apps/api/.env.example apps/api/.env
-cp apps/web/.env.example apps/web/.env
+# 2. Variables de entorno
+# apps/web necesita: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL
+# apps/api necesita: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET
 
-# 3. Run tests
-npm test
+# 3. Desarrollo local
+npm run dev    # api + web en paralelo
 
-# 4. Dev server (api + web in parallel)
-npm run dev
+# 4. Build
+npm run build --workspace=apps/web
 ```
 
-## Environment variables
+## Arquitectura
 
-See `docs/adr/002-vercel-supabase.md` for the full list.
+Hexagonal — ver [ARCHITECTURE.md](ARCHITECTURE.md) para detalles completos.
 
-## Supabase setup
+```
+UI → Services/UseCases → Ports ← Infra (Supabase/Jira)
+```
 
-1. Create a new Supabase project at https://supabase.com
-2. Run the SQL from `docs/specs/jira-tracker.md` and `docs/specs/hotdesk.md` in the SQL editor
-3. Copy the project URL and keys to your `.env` files
+- 0 llamadas a `supabase.from()` fuera de `/infra/`
+- 0 `fetch()` directos en UI — todo vía adapters
+- Cada módulo: `domain/` + `infra/` + `ui/`
 
-## Jira setup
+## Jira
 
-When ready:
-1. Generate an API token at https://id.atlassian.com/manage-profile/security/api-tokens
-2. Set `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN` in `apps/api/.env`
-3. Switch the adapter in `apps/api/src/server.ts` from `MockJiraAdapter` to `JiraCloudAdapter`
+La conexión se configura en Admin → Settings:
+1. URL de Jira Cloud
+2. Email de la cuenta
+3. API Token (generar en id.atlassian.com)
 
-## Documentation
+Admin → Deploy Config permite:
+- Mapear qué campo de Jira usar como Repository & Components
+- Configurar tipos de subtareas (bug/test/other)
+- Definir qué estados de Jira cierran cada tipo
 
-- `docs/specs/jira-tracker.md` — Jira Tracker domain spec
-- `docs/specs/hotdesk.md` — HotDesk domain spec  
-- `docs/adr/` — Architecture decisions
+## i18n
 
-## Fix production rollback: make GitHub `main` match a promoted Vercel deployment
+```tsx
+import { useTranslation } from '@worksuite/i18n';
+const { t } = useTranslation();
+<button>{t('common.save')}</button>
+```
 
-For this deployment URL:
+Idioma se persiste en localStorage. Switchear con botones EN/ES en el topbar.
 
-`https://vercel.com/ignaciozitare-9429s-projects/worksuite/9GVxFjjpnKGxLbvebmB92m5xh9Yu`
+## Base de datos
 
-the direct solution is to move `main` to the **same commit SHA** used by that deployment, then push that SHA to GitHub.
+Supabase Postgres. Schema completo en [ARCHITECTURE.md](ARCHITECTURE.md#base-de-datos-supabase).
 
-### Exact commands to run
-
-1. In Vercel, open the deployment above and copy the **Git Commit SHA** shown in the deployment details.
-2. Run:
-
+Para ejecutar DDL:
 ```bash
-git fetch origin
-git checkout main
-git pull origin main
-git branch backup/main-before-vercel-rollback-$(date +%Y%m%d)
-git reset --hard <SHA_FROM_VERCEL_DEPLOYMENT>
-git push --force-with-lease origin main
+export SUPABASE_ACCESS_TOKEN="..."
+npx supabase db query --linked "ALTER TABLE ..."
 ```
-
-### Why this solves your request
-
-- `git reset --hard <SHA>` makes local `main` exactly that old version.
-- `git push --force-with-lease origin main` makes remote GitHub `main` point to the same commit.
-- After push, GitHub `main` and your promoted Vercel version are aligned.
-
-### Important edge case
-
-If that deployment was created without a linked Git commit (manual upload/build artifact), there is no SHA to reset to. In that case, download/rebuild that source, commit it to `main`, and push normally.
-
-## Testing approach
-
-- **Domain tests:** Pure unit tests, no I/O, no mocks needed
-- **Use case tests:** Ports mocked with `vi.fn()`, no real DB or HTTP
-- **Integration tests (future):** Against a Supabase test project
-- **QA review:** After each feature iteration, bugs are filed with severity + repro steps
