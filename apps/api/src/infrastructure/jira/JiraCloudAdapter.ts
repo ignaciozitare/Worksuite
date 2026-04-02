@@ -154,4 +154,47 @@ export class JiraCloudAdapter implements IJiraApi {
     });
     return data;
   }
+
+  async getSubtasks(parentKeys: string[]): Promise<any[]> {
+    if (!parentKeys.length) return [];
+    // Batch: get subtasks + linked issues for all parent keys via JQL
+    const keysStr = parentKeys.join(',');
+    const jql = `parent in (${keysStr}) OR issuekey in linkedIssuesOf(${keysStr})`;
+    const data = await this.fetch<{ issues: any[] }>('/search', {
+      method: 'POST',
+      body: JSON.stringify({
+        jql,
+        maxResults: 500,
+        fields: ['summary', 'issuetype', 'status', 'priority', 'assignee', 'parent', 'issuelinks'],
+      }),
+    });
+
+    return (data.issues || []).map(i => {
+      const f = i.fields;
+      const parentKey = f.parent?.key || null;
+      // If no parent, check issuelinks for linked parent
+      let relation: 'subtask' | 'linked' = parentKey ? 'subtask' : 'linked';
+      let resolvedParent = parentKey;
+      if (!resolvedParent && f.issuelinks) {
+        for (const link of f.issuelinks) {
+          const inward = link.inwardIssue?.key;
+          const outward = link.outwardIssue?.key;
+          if (inward && parentKeys.includes(inward)) { resolvedParent = inward; break; }
+          if (outward && parentKeys.includes(outward)) { resolvedParent = outward; break; }
+        }
+      }
+
+      return {
+        key: i.key,
+        summary: f.summary,
+        type: f.issuetype?.name || 'Task',
+        status: f.status?.name || '',
+        statusCategory: f.status?.statusCategory?.name || '',
+        priority: f.priority?.name || 'Medium',
+        assignee: f.assignee?.displayName || '',
+        parentKey: resolvedParent || parentKeys[0],
+        relation,
+      };
+    });
+  }
 }

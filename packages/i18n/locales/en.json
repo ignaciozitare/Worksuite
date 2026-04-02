@@ -388,6 +388,31 @@
       "deployed":    "Deployed",
       "rolled-back": "Rolled back",
       "cancelled":   "Cancelled"
-    }
+    },
+    "subtasks":       "Subtasks",
+    "subtaskConfig":  "Related subtask configuration",
+    "subtaskDesc":    "Define which Jira issue types are considered subtasks and how to classify them.",
+    "loadIssueTypes": "Load types from Jira",
+    "category":       "Category",
+    "testType":       "Test type",
+    "closedStatuses": "Closed statuses",
+    "closedStatusesHint": "Jira statuses that indicate the subtask is closed",
+    "bugs":           "Bugs",
+    "tests":          "Tests",
+    "bugsOpen":       "bugs open",
+    "bugsClosed":     "bugs closed",
+    "testsOpen":      "tests open",
+    "testsClosed":    "tests closed",
+    "groupByParent":  "Group by parent",
+    "groupByType":    "Group by type",
+    "sortByType":     "Sort by type",
+    "filterByStatus": "Filter by status",
+    "allStatuses":    "All statuses",
+    "metrics":        "Metrics",
+    "totalBugs":      "Total bugs",
+    "bugResolution":  "Bug resolution",
+    "testCoverage":   "Test coverage",
+    "avgBugsPerRelease":"Bugs per release (avg)",
+    "history":        "History"
   }
 }

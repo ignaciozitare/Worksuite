@@ -220,4 +220,24 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
       }
     }
   );
+
+  // ── GET /jira/subtasks?parents=AND-7,AND-8 ────────────────────────────────
+  app.get<{ Querystring: { parents: string } }>(
+    '/subtasks',
+    async (req, reply) => {
+      const { parents } = req.query;
+      if (!parents) return reply.status(400).send({ ok: false, error: 'parents required' });
+      const userId = (req.user as { sub: string }).sub;
+      const parentKeys = parents.split(',').map(k => k.trim()).filter(Boolean);
+      try {
+        const adapter = await adapterForUser(jiraConnectionRepo, userId);
+        const subtasks = await adapter.getSubtasks(parentKeys);
+        return reply.send({ ok: true, subtasks });
+      } catch (err: unknown) {
+        app.log.error({ err, parents }, 'jira/subtasks error');
+        const status = (err as { statusCode?: number }).statusCode ?? 502;
+        return reply.status(status).send({ ok: false, error: String(err) });
+      }
+    }
+  );
 }

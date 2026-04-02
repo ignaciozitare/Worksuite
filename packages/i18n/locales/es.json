@@ -388,6 +388,31 @@
       "deployed":    "Desplegado",
       "rolled-back": "Revertido",
       "cancelled":   "Cancelado"
-    }
+    },
+    "subtasks":       "Subtareas",
+    "subtaskConfig":  "Configuración de subtareas relacionadas",
+    "subtaskDesc":    "Define qué tipos de issue de Jira se consideran subtareas y cómo clasificarlas.",
+    "loadIssueTypes": "Cargar tipos desde Jira",
+    "category":       "Categoría",
+    "testType":       "Tipo de test",
+    "closedStatuses": "Estados que cierran",
+    "closedStatusesHint": "Estados de Jira que indican que la subtarea está cerrada",
+    "bugs":           "Bugs",
+    "tests":          "Tests",
+    "bugsOpen":       "bugs abiertos",
+    "bugsClosed":     "bugs cerrados",
+    "testsOpen":      "tests abiertos",
+    "testsClosed":    "tests cerrados",
+    "groupByParent":  "Agrupar por padre",
+    "groupByType":    "Agrupar por tipo",
+    "sortByType":     "Ordenar por tipo",
+    "filterByStatus": "Filtrar por estado",
+    "allStatuses":    "Todos los estados",
+    "metrics":        "Métricas",
+    "totalBugs":      "Total bugs",
+    "bugResolution":  "Resolución de bugs",
+    "testCoverage":   "Cobertura de tests",
+    "avgBugsPerRelease":"Bugs por release (media)",
+    "history":        "Historial"
   }
 }
