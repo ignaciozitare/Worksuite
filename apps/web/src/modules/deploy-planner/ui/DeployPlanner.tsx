@@ -453,7 +453,7 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
 }
 
 /* ─── RELEASE DETAIL — repo cards ────────────────────────────── */
-function ReleaseDetail({ rel, tickets, statusCfg, repoGroups, allReleases, onBack, onUpdRelease, isLight, classifiedSubs=[] }) {
+function ReleaseDetail({ rel, tickets, statusCfg, repoGroups, allReleases, onBack, onUpdRelease, isLight, classifiedSubs=[], jiraBaseUrl="", onRefreshSubtasks }) {
   const [ticketStatuses, setTicketStatuses] = useState(rel.ticket_statuses||{});
   const [syncing, setSyncing] = useState({});
   const [closing, setClosing] = useState(false);
@@ -679,6 +679,10 @@ function ReleaseDetail({ rel, tickets, statusCfg, repoGroups, allReleases, onBac
               <span style={{fontSize:10,color:"var(--dp-tx2,#94a3b8)"}}>{relSubs.length} total</span>
               {counts.bugs.total>0&&<span style={{fontSize:10,color:counts.bugs.open>0?"#ef4444":"#22c55e",fontWeight:600}}>🐛 {counts.bugs.closed}/{counts.bugs.total}</span>}
               {counts.tests.total>0&&<span style={{fontSize:10,color:counts.tests.open>0?"#3b82f6":"#22c55e",fontWeight:600}}>🧪 {counts.tests.closed}/{counts.tests.total}</span>}
+              {onRefreshSubtasks&&<button onClick={onRefreshSubtasks}
+                style={{marginLeft:"auto",background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:4,padding:"3px 10px",fontSize:9,color:"var(--dp-tx2,#94a3b8)",cursor:"pointer",fontFamily:"inherit"}}>
+                🔄 Actualizar
+              </button>}
             </div>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:10}}>
               <thead><tr style={{borderBottom:"1px solid var(--dp-bd,#0e1520)"}}>
@@ -689,7 +693,10 @@ function ReleaseDetail({ rel, tickets, statusCfg, repoGroups, allReleases, onBac
               <tbody>
                 {relSubs.sort((a,b)=>a.category.localeCompare(b.category)||a.type.localeCompare(b.type)).map(st=>(
                   <tr key={st.key} style={{borderBottom:"1px solid var(--dp-bd,#0d111a)"}}>
-                    <td style={{padding:"8px 10px"}}><span style={{color:"#38bdf8",fontWeight:700}}>{st.key}</span></td>
+                    <td style={{padding:"8px 10px"}}>{jiraBaseUrl
+                      ? <a href={`${jiraBaseUrl}/browse/${st.key}`} target="_blank" rel="noopener noreferrer" style={{color:"#38bdf8",fontWeight:700,textDecoration:"none"}}>{st.key}</a>
+                      : <span style={{color:"#38bdf8",fontWeight:700}}>{st.key}</span>
+                    }</td>
                     <td style={{padding:"8px 10px"}}>
                       <span style={{padding:"2px 7px",borderRadius:10,fontSize:9,fontWeight:600,
                         background:st.category==='bug'?'rgba(239,68,68,.12)':st.category==='test'?'rgba(59,130,246,.12)':'rgba(100,116,139,.12)',
@@ -1247,6 +1254,16 @@ export function DeployPlanner({ currentUser }) {
             onBack={()=>setDetail(null)}
             onUpdRelease={patch=>upd(detail,patch)}
             classifiedSubs={classifiedSubs}
+            jiraBaseUrl={jiraBaseUrl}
+            onRefreshSubtasks={async()=>{
+              try {
+                const stConfigs = await subtaskConfigRepo.findAll();
+                const parentKeys = tickets.map(t=>t.key);
+                const rawSubs = await subtaskAdapter.getSubtasks(parentKeys);
+                setAllSubtasks(rawSubs);
+                setClassifiedSubs(SubtaskService.classify(rawSubs, stConfigs));
+              } catch(e) { console.warn("Refresh subtasks error:", e.message); }
+            }}
           />
         ) : (
           <>
