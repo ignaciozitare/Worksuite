@@ -12,9 +12,9 @@ export type { }                         from './components/Atoms';
 // ── Overlay ────────────────────────────────────────────────────────────────────
 export { Modal, ConfirmModal }           from './components/Modal';
 
-// ── Timeline ───────────────────────────────────────────────────────────────────
-export { Timeline, TimelineCard }        from './components/Timeline';
-export type { TimelineItem, TimelineItemStatus } from './components/Timeline';
+// ── Gantt Timeline ────────────────────────────────────────────────────────────
+export { GanttTimeline }                 from './components/GanttTimeline';
+export type { GanttBar, GanttGroup, GanttZoom, GanttTimelineProps } from './components/GanttTimeline';
 
 // ── Timer ──────────────────────────────────────────────────────────────────────
 export { TimerBar }                      from './components/TimerBar';

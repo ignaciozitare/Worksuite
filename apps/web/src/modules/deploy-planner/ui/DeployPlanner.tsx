@@ -2,6 +2,7 @@
 // Deploy Planner — v3 — Integrado con Supabase + Jira sync + Timeline zoom + Light mode
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../../../shared/lib/supabaseClient";
+import { GanttTimeline } from '@worksuite/ui';
 
 /* ─── CSS ────────────────────────────────────────────────────── */
 const CSS = `
@@ -655,179 +656,70 @@ function ReleaseDetail({ rel, tickets, statusCfg, repoGroups, allReleases, onBac
   );
 }
 
-/* ─── TIMELINE ───────────────────────────────────────────────── */
-function Timeline({ releases, tickets, upd, setDetail, statusCfg }) {
-  const [zoom, setZoom] = useState("weeks"); // days | weeks | months
-  const [drag, setDrag] = useState(null);
-  const relRef = useRef(releases);
-  relRef.current = releases;
+/* ─── TIMELINE (uses GanttTimeline from @worksuite/ui) ──────── */
+function Timeline({ releases, tickets, upd, setDetail, statusCfg, repoGroups=[] }) {
   const tMap = Object.fromEntries(tickets.map(t=>[t.key,t]));
 
-  const DAYS_ES = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-  const MONTHS_ES = ["Ene","Feb","Mar","Apr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  // Map releases to GanttBar format
+  const bars = releases.filter(r=>r.start_date&&r.end_date).map(rel => {
+    const cfg = statusCfg[rel.status] || { color:"#6b7280", bg_color:"rgba(107,114,128,.12)" };
+    const relTickets = (rel.ticket_ids||[]).map(k=>tMap[k]).filter(Boolean);
+    const dur = diffD(rel.start_date, rel.end_date);
+    return {
+      id: rel.id,
+      label: rel.release_number || "—",
+      startDate: rel.start_date,
+      endDate: rel.end_date,
+      color: cfg.color,
+      bgColor: cfg.bg_color || "rgba(107,114,128,.12)",
+      status: rel.status || "Planned",
+      meta: `${dur}d · ${rel.ticket_ids?.length||0} tickets`,
+    };
+  });
 
-  // Column width per day based on zoom
-  const DAY_W = { days:44, weeks:16, months:4 }[zoom];
-  const LABEL_W = 200;
+  // Map repoGroups to GanttGroup format
+  const groups = (repoGroups||[]).map(g => {
+    // Find releases that have tickets touching repos in this group
+    const relIds = releases.filter(rel => {
+      const relTickets = (rel.ticket_ids||[]).map(k=>tMap[k]).filter(Boolean);
+      const relRepos = [...new Set(relTickets.flatMap(t=>t.repos||[]))];
+      return relRepos.some(r => (g.repos||[]).includes(r));
+    }).map(r=>r.id);
+    const allDeployed = relIds.every(id => {
+      const rel = releases.find(r=>r.id===id);
+      const cfg = statusCfg[rel?.status];
+      return cfg?.is_final;
+    });
+    return {
+      id: g.id,
+      label: g.name,
+      color: allDeployed ? "#22c55e" : "#f59e0b",
+      barIds: relIds,
+    };
+  }).filter(g => g.barIds.length >= 2);
 
-  const allDates = releases.flatMap(r=>[r.start_date,r.end_date]).filter(Boolean).sort();
-  const minDate = allDates[0]||fmt(today);
-  const maxDate = allDates[allDates.length-1]||addD(fmt(today),30);
-  const startDate = addD(minDate,-7);
-  const totalDays = Math.max(diffD(startDate,maxDate)+21, 30);
-  const totalW = LABEL_W + totalDays * DAY_W;
-
-  const dateToX = iso => LABEL_W + diffD(startDate,iso)*DAY_W;
-  const xToDate = x => addD(startDate, Math.round((x-LABEL_W)/DAY_W));
-  const todayX  = dateToX(fmt(today));
-
-  // Generate header marks
-  const marks = [];
-  if(zoom==="days") {
-    // every day
-    let d = new Date(startDate+"T00:00:00");
-    while(fmt(d)<=addD(maxDate,14)) {
-      marks.push({ date:fmt(d), label:DAYS_ES[d.getDay()], sub:d.getDate(), isWeekend:d.getDay()===0||d.getDay()===6 });
-      d.setDate(d.getDate()+1);
-    }
-  } else if(zoom==="weeks") {
-    // every monday
-    let d = new Date(startDate+"T00:00:00");
-    // advance to monday
-    while(d.getDay()!==1) d.setDate(d.getDate()+1);
-    while(fmt(d)<=addD(maxDate,14)) {
-      marks.push({ date:fmt(d), label:`${d.getDate()} ${MONTHS_ES[d.getMonth()]}` });
-      d.setDate(d.getDate()+7);
-    }
-  } else {
-    // every 1st of month
-    let d = new Date(startDate+"T00:00:00"); d.setDate(1);
-    while(fmt(d)<=addD(maxDate,31)) {
-      marks.push({ date:fmt(d), label:`${MONTHS_ES[d.getMonth()]} ${d.getFullYear()}` });
-      d.setMonth(d.getMonth()+1);
-    }
-  }
-
-  const handleMD = (e,relId,type) => {
-    e.preventDefault(); e.stopPropagation();
-    const rel = releases.find(r=>r.id===relId);
-    if(!rel?.start_date||!rel?.end_date) return;
-    setDrag({relId,type,startX:e.clientX,origStart:rel.start_date,origEnd:rel.end_date});
+  const handleBarMove = (id, startDate, endDate) => {
+    upd(id, { start_date: startDate, end_date: endDate });
   };
 
-  useEffect(()=>{
-    if(!drag) return;
-    const onMove = e => {
-      const daysDx=Math.round((e.clientX-drag.startX)/DAY_W);
-      if(!daysDx) return;
-      if(drag.type==="move") upd(drag.relId,{start_date:addD(drag.origStart,daysDx),end_date:addD(drag.origEnd,daysDx)});
-      else if(drag.type==="left"){ const s=addD(drag.origStart,daysDx); if(diffD(s,drag.origEnd)>=1) upd(drag.relId,{start_date:s}); }
-      else { const e2=addD(drag.origEnd,daysDx); if(diffD(drag.origStart,e2)>=1) upd(drag.relId,{end_date:e2}); }
-    };
-    const onUp=()=>setDrag(null);
-    window.addEventListener("mousemove",onMove);
-    window.addEventListener("mouseup",onUp);
-    return()=>{window.removeEventListener("mousemove",onMove);window.removeEventListener("mouseup",onUp);};
-  },[drag,DAY_W]);
-
-  const GANTT_COLORS = {};
-  Object.entries(statusCfg).forEach(([name,cfg])=>{ GANTT_COLORS[name]=cfg.color; });
+  // Legend
+  const legend = Object.entries(statusCfg).map(([name, cfg]) => ({ name, color: cfg.color }));
 
   return (
     <div>
-      <div style={{display:"flex",alignItems:"center",marginBottom:16,gap:12,flexWrap:"wrap"}}>
-        <h2 style={{fontSize:14,color:"var(--dp-tx,#e6edf3)",fontWeight:700}}>Timeline</h2>
-        {/* Zoom selector */}
-        <div style={{display:"flex",background:"var(--dp-sf,#0b0f18)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:6,overflow:"hidden",marginLeft:8}}>
-          {[["days","Días"],["weeks","Semanas"],["months","Meses"]].map(([z,l])=>(
-            <button key={z} onClick={()=>setZoom(z)}
-              style={{background:zoom===z?"#1d4ed8":"transparent",color:zoom===z?"#fff":"var(--dp-tx3,#64748b)",border:"none",padding:"5px 12px",fontSize:10,cursor:"pointer",fontFamily:"inherit",fontWeight:zoom===z?700:400,transition:"all .15s"}}>
-              {l}
-            </button>
-          ))}
-        </div>
-        {/* Legend */}
-        <div style={{marginLeft:"auto",display:"flex",gap:12,flexWrap:"wrap"}}>
-          {Object.entries(statusCfg).map(([name,cfg])=>(
-            <div key={name} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"var(--dp-tx3,#64748b)"}}>
-              <div style={{width:10,height:10,borderRadius:2,background:cfg.color}}/>
-              {name}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{overflowX:"auto",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:8}}>
-        <div style={{width:Math.max(totalW,600),minWidth:"100%",position:"relative",background:"var(--dp-sf,#07090f)"}}>
-          {/* Date header */}
-          <div style={{display:"flex",height:zoom==="days"?44:36,borderBottom:"1px solid var(--dp-bd,#0e1520)",position:"sticky",top:0,zIndex:5,background:"var(--dp-sf,#07090f)"}}>
-            <div style={{width:LABEL_W,flexShrink:0,borderRight:"1px solid var(--dp-bd,#0e1520)",display:"flex",alignItems:"center",paddingLeft:14}}>
-              <SLabel>{zoom==="days"?"Día":zoom==="weeks"?"Semana":"Mes"}</SLabel>
-            </div>
-            <div style={{flex:1,position:"relative",overflow:"hidden"}}>
-              {marks.map(m=>{
-                const x=dateToX(m.date)-LABEL_W;
-                const isTodayMark = zoom==="days"?m.date===fmt(today): zoom==="weeks"?m.date<=fmt(today)&&addD(m.date,7)>fmt(today):m.date.slice(0,7)===fmt(today).slice(0,7);
-                return (
-                  <div key={m.date} style={{position:"absolute",left:x,top:0,height:"100%",borderLeft:`1px solid ${isTodayMark?"#f59e0b":"var(--dp-bd,#0e1520)"}`,display:"flex",flexDirection:"column",alignItems:"flex-start",paddingLeft:4,justifyContent:"center",minWidth:1}}>
-                    <span style={{fontSize:zoom==="days"?10:9,color:isTodayMark?"#f59e0b":"var(--dp-tx3,#334155)",fontWeight:isTodayMark?700:400,whiteSpace:"nowrap",lineHeight:1.3}}>
-                      {zoom==="days"?m.label:m.label}
-                    </span>
-                    {zoom==="days"&&<span style={{fontSize:11,fontWeight:700,color:isTodayMark?"#f59e0b":m.isWeekend?"var(--dp-tx3,#475569)":"var(--dp-tx2,#94a3b8)",lineHeight:1}}>{m.sub}</span>}
-                  </div>
-                );
-              })}
-              {/* Today line */}
-              <div style={{position:"absolute",left:todayX-LABEL_W,top:0,height:"100%",borderLeft:"1px dashed #f59e0b",pointerEvents:"none"}}/>
-            </div>
+      <GanttTimeline
+        bars={bars}
+        groups={groups}
+        onBarMove={handleBarMove}
+        onBarClick={(id) => setDetail(id)}
+      />
+      {/* Legend */}
+      <div style={{marginTop:12,display:"flex",gap:12,flexWrap:"wrap"}}>
+        {legend.map(l=>(
+          <div key={l.name} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"var(--dp-tx3,var(--tx3,#64748b))"}}>
+            <div style={{width:10,height:10,borderRadius:2,background:l.color}}/>{l.name}
           </div>
-
-          {/* Rows */}
-          {releases.map(rel=>{
-            const color = GANTT_COLORS[rel.status]||"#6b7280";
-            const cfg = statusCfg[rel.status]||{bg_color:"rgba(107,114,128,.12)"};
-            const relTickets=(rel.ticket_ids||[]).map(k=>tMap[k]).filter(Boolean);
-            const hasDates=rel.start_date&&rel.end_date;
-            const x1=hasDates?dateToX(rel.start_date):0, x2=hasDates?dateToX(rel.end_date):0;
-            const barW=Math.max(x2-x1,50);
-            const dur=hasDates?diffD(rel.start_date,rel.end_date):null;
-            return (
-              <div key={rel.id} style={{display:"flex",height:56,borderBottom:"1px solid var(--dp-bd,#0e1520)",alignItems:"center"}}>
-                <div style={{width:LABEL_W,flexShrink:0,borderRight:"1px solid var(--dp-bd,#0e1520)",padding:"0 14px",cursor:"pointer"}} onClick={()=>setDetail(rel.id)}>
-                  <div style={{fontSize:11,fontWeight:700,color:"var(--dp-tx,#e6edf3)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{rel.release_number||"—"}</div>
-                  <div style={{fontSize:9,marginTop:2,display:"flex",alignItems:"center",gap:5}}>
-                    <span style={{color,fontWeight:600}}>{rel.status||"Planned"}</span>
-                    {dur!=null&&<span style={{color:"var(--dp-tx3,#475569)"}}>{dur}d · {rel.ticket_ids?.length||0} tickets</span>}
-                  </div>
-                </div>
-                <div style={{flex:1,position:"relative",height:"100%"}}>
-                  {/* Weekend shading for day view */}
-                  {zoom==="days"&&marks.filter(m=>m.isWeekend).map(m=>(
-                    <div key={m.date} style={{position:"absolute",left:dateToX(m.date)-LABEL_W,top:0,width:DAY_W,height:"100%",background:"rgba(0,0,0,.15)",pointerEvents:"none"}}/>
-                  ))}
-                  {/* Grid */}
-                  <div style={{position:"absolute",inset:0,backgroundImage:`repeating-linear-gradient(90deg,transparent,transparent ${DAY_W*(zoom==="days"?7:zoom==="weeks"?1:1)*7/7-1}px,var(--dp-bd,#0e1520) ${DAY_W*(zoom==="days"?7:zoom==="weeks"?1:1)*7/7}px)`,pointerEvents:"none"}}/>
-                  {/* Today line */}
-                  <div style={{position:"absolute",left:todayX-LABEL_W,top:0,height:"100%",borderLeft:"1px dashed rgba(245,158,11,.3)",pointerEvents:"none"}}/>
-
-                  {hasDates&&(
-                    <div style={{position:"absolute",left:x1-LABEL_W,top:"50%",transform:"translateY(-50%)",width:barW,height:28,background:cfg.bg_color,border:`1px solid ${color}`,borderRadius:4,cursor:drag?.relId===rel.id&&drag.type==="move"?"grabbing":"grab",display:"flex",alignItems:"center",userSelect:"none",overflow:"hidden"}}
-                      onMouseDown={e=>handleMD(e,rel.id,"move")}
-                      onClick={()=>setDetail(rel.id)}>
-                      <div style={{width:5,height:"100%",cursor:"col-resize",flexShrink:0,background:`${color}40`}} onMouseDown={e=>{e.stopPropagation();handleMD(e,rel.id,"left");}}/>
-                      <div style={{flex:1,padding:"0 5px",fontSize:9,color,fontWeight:600,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{rel.start_date} → {rel.end_date}</div>
-                      <div style={{width:5,height:"100%",cursor:"col-resize",flexShrink:0,background:`${color}40`}} onMouseDown={e=>{e.stopPropagation();handleMD(e,rel.id,"right");}}/>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div style={{fontSize:9,color:"var(--dp-tx3,#334155)",marginTop:8,display:"flex",gap:12}}>
-        <span>⟺ Arrastra para mover</span><span>·</span><span>Extremos para redimensionar</span><span>·</span><span>Clic para abrir detalle</span>
+        ))}
       </div>
     </div>
   );
@@ -1245,7 +1137,7 @@ export function DeployPlanner({ currentUser }) {
                 </div>
               </div>
             )}
-            {tab==="timeline"&&<Timeline releases={releases} tickets={tickets} upd={upd} setDetail={setDetail} statusCfg={statusCfg}/>}
+            {tab==="timeline"&&<Timeline releases={releases} tickets={tickets} upd={upd} setDetail={setDetail} statusCfg={statusCfg} repoGroups={repoGroups}/>}
             {tab==="history" &&<History  releases={releases} tickets={tickets} setDetail={setDetail} statusCfg={statusCfg}/>}
             {tab==="metrics" &&<Metrics  releases={releases} tickets={tickets} statusCfg={statusCfg}/>}
           </>
