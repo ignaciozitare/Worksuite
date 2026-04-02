@@ -4,6 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "../../../shared/lib/supabaseClient";
 import { GanttTimeline } from '@worksuite/ui';
 import { RepoGroupService } from '../domain/services/RepoGroupService';
+import { SubtaskService } from '../domain/services/SubtaskService';
+import { JiraSubtaskAdapter } from '../infra/JiraSubtaskAdapter';
+import { SupabaseSubtaskConfigRepo } from '../infra/supabase/SupabaseSubtaskConfigRepo';
 
 /* ─── CSS ────────────────────────────────────────────────────── */
 const CSS = `
@@ -57,6 +60,9 @@ const datesOverlap = (s1, e1, s2, e2) => {
   if(!s1||!e1||!s2||!e2) return true; // if dates missing, assume overlap (conservative)
   return s1 <= e2 && s2 <= e1;
 };
+
+const subtaskAdapter = new JiraSubtaskAdapter(API_BASE, authHeaders);
+const subtaskConfigRepo = new SupabaseSubtaskConfigRepo(supabase);
 
 const SLabel = ({children, style={}}) => (
   <div style={{fontSize:9,fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"var(--dp-tx3,#334155)",...style}}>{children}</div>
@@ -189,7 +195,7 @@ function VersionPicker({ versionCfg, allReleaseNumbers, onSelect, onClose }) {
   );
 }
 
-function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag, drag, allReleases, repoGroups, versionCfg, allReleaseNumbers, jiraBaseUrl="", linkedGroups=[] }) {
+function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag, drag, allReleases, repoGroups, versionCfg, allReleaseNumbers, jiraBaseUrl="", linkedGroups=[], classifiedSubs=[] }) {
   const [addingTicket, setAddingTicket] = useState(false);
   const [search, setSearch] = useState("");
   const [showVersionPicker, setShowVersionPicker] = useState(false);
@@ -415,9 +421,30 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
           onMouseLeave={e=>e.currentTarget.style.borderColor="var(--dp-bd,#1e293b)"}>+ ticket</button>
       )}
 
+      {/* Bug/Test counters */}
+      {(() => {
+        const relSubs = classifiedSubs.filter(s => (rel.ticket_ids||[]).includes(s.parentKey));
+        const counts = SubtaskService.count(relSubs);
+        if (counts.bugs.total === 0 && counts.tests.total === 0) return null;
+        return (
+          <div style={{display:"flex",gap:8,fontSize:10,paddingTop:6,borderTop:"1px solid var(--dp-bd,#0e1520)",marginBottom:4}}>
+            {counts.bugs.total > 0 && (
+              <span style={{color:counts.bugs.open>0?"#ef4444":"#22c55e",fontWeight:600}}>
+                🐛 {counts.bugs.closed}/{counts.bugs.total}
+              </span>
+            )}
+            {counts.tests.total > 0 && (
+              <span style={{color:counts.tests.open>0?"#3b82f6":"#22c55e",fontWeight:600}}>
+                🧪 {counts.tests.closed}/{counts.tests.total}
+              </span>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Repo chips */}
       {relRepos.length>0&&(
-        <div style={{display:"flex",gap:4,flexWrap:"wrap",paddingTop:6,borderTop:"1px solid var(--dp-bd,#0e1520)"}}>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap",paddingTop:relRepos.length?4:6,borderTop:relRepos.length?"none":"1px solid var(--dp-bd,#0e1520)"}}>
           {relRepos.map(r=><RepoChip key={r} name={r}/>)}
         </div>
       )}
@@ -426,7 +453,7 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
 }
 
 /* ─── RELEASE DETAIL — repo cards ────────────────────────────── */
-function ReleaseDetail({ rel, tickets, statusCfg, repoGroups, allReleases, onBack, onUpdRelease, isLight }) {
+function ReleaseDetail({ rel, tickets, statusCfg, repoGroups, allReleases, onBack, onUpdRelease, isLight, classifiedSubs=[] }) {
   const [ticketStatuses, setTicketStatuses] = useState(rel.ticket_statuses||{});
   const [syncing, setSyncing] = useState({});
   const [closing, setClosing] = useState(false);
@@ -638,16 +665,68 @@ function ReleaseDetail({ rel, tickets, statusCfg, repoGroups, allReleases, onBac
           Estados configurables desde Admin → Deploy Config
         </div>
       </div>
+
+      {/* ── Subtask table ──────────────────────────────────────── */}
+      {(() => {
+        const relSubs = classifiedSubs.filter(s => (rel.ticket_ids||[]).includes(s.parentKey));
+        if (!relSubs.length) return null;
+        const counts = SubtaskService.count(relSubs);
+        const [groupBy, setGroupBy] = [null, null]; // will use state from parent
+        return (
+          <div style={{background:"var(--dp-sf,#0b0f18)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:8,padding:"18px 20px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+              <SLabel>Subtareas</SLabel>
+              <span style={{fontSize:10,color:"var(--dp-tx2,#94a3b8)"}}>{relSubs.length} total</span>
+              {counts.bugs.total>0&&<span style={{fontSize:10,color:counts.bugs.open>0?"#ef4444":"#22c55e",fontWeight:600}}>🐛 {counts.bugs.closed}/{counts.bugs.total}</span>}
+              {counts.tests.total>0&&<span style={{fontSize:10,color:counts.tests.open>0?"#3b82f6":"#22c55e",fontWeight:600}}>🧪 {counts.tests.closed}/{counts.tests.total}</span>}
+            </div>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:10}}>
+              <thead><tr style={{borderBottom:"1px solid var(--dp-bd,#0e1520)"}}>
+                {["CLAVE","TIPO","RESUMEN","ESTADO","ASIGNADO","PADRE"].map(h=>(
+                  <th key={h} style={{padding:"7px 10px",textAlign:"left",color:"var(--dp-tx3,#64748b)",fontWeight:600,letterSpacing:".06em",fontSize:9}}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {relSubs.sort((a,b)=>a.category.localeCompare(b.category)||a.type.localeCompare(b.type)).map(st=>(
+                  <tr key={st.key} style={{borderBottom:"1px solid var(--dp-bd,#0d111a)"}}>
+                    <td style={{padding:"8px 10px"}}><span style={{color:"#38bdf8",fontWeight:700}}>{st.key}</span></td>
+                    <td style={{padding:"8px 10px"}}>
+                      <span style={{padding:"2px 7px",borderRadius:10,fontSize:9,fontWeight:600,
+                        background:st.category==='bug'?'rgba(239,68,68,.12)':st.category==='test'?'rgba(59,130,246,.12)':'rgba(100,116,139,.12)',
+                        color:st.category==='bug'?'#ef4444':st.category==='test'?'#3b82f6':'var(--dp-tx3,#64748b)'}}>
+                        {st.category==='bug'?'🐛':'🧪'} {st.type}{st.testType?` (${st.testType})`:''}
+                      </span>
+                    </td>
+                    <td style={{padding:"8px 10px",color:"var(--dp-tx,#e6edf3)",maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{st.summary}</td>
+                    <td style={{padding:"8px 10px"}}>
+                      <span style={{padding:"2px 7px",borderRadius:10,fontSize:9,fontWeight:600,
+                        background:st.isClosed?'rgba(34,197,94,.12)':'rgba(245,158,11,.12)',
+                        color:st.isClosed?'#22c55e':'#f59e0b'}}>
+                        {st.isClosed?'✓':'○'} {st.status}
+                      </span>
+                    </td>
+                    <td style={{padding:"8px 10px",color:"var(--dp-tx2,#94a3b8)"}}>{st.assignee||'—'}</td>
+                    <td style={{padding:"8px 10px"}}><span style={{color:"var(--dp-tx3,#64748b)",fontFamily:"monospace"}}>{st.parentKey}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      })()}
     </div>
   );
 }
 
 /* ─── TIMELINE (uses GanttTimeline from @worksuite/ui) ──────── */
 function Timeline({ releases, tickets, upd, setDetail, statusCfg, repoGroups=[] }) {
+  const [filterStatus, setFilterStatus] = useState([]);
   const tMap = Object.fromEntries(tickets.map(t=>[t.key,t]));
+  const activeF = filterStatus.length===0;
+  const filteredRels = releases.filter(r=>activeF||filterStatus.includes(r.status));
 
   // Map releases to GanttBar format
-  const bars = releases.filter(r=>r.start_date&&r.end_date).map(rel => {
+  const bars = filteredRels.filter(r=>r.start_date&&r.end_date).map(rel => {
     const cfg = statusCfg[rel.status] || { color:"#6b7280", bg_color:"rgba(107,114,128,.12)" };
     const relTickets = (rel.ticket_ids||[]).map(k=>tMap[k]).filter(Boolean);
     const dur = diffD(rel.start_date, rel.end_date);
@@ -693,6 +772,14 @@ function Timeline({ releases, tickets, upd, setDetail, statusCfg, repoGroups=[] 
 
   return (
     <div>
+      {/* Status filter */}
+      <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>
+        {Object.entries(statusCfg).map(([name,cfg])=>{
+          const on=filterStatus.includes(name);
+          return <button key={name} onClick={()=>setFilterStatus(f=>f.includes(name)?f.filter(x=>x!==name):[...f,name])}
+            style={{fontSize:10,padding:"3px 10px",borderRadius:20,cursor:"pointer",fontFamily:"inherit",fontWeight:600,background:on?cfg.bg_color:"transparent",color:on?cfg.color:"var(--dp-tx3,#64748b)",border:`1px solid ${on?cfg.border:"var(--dp-bd,#1e293b)"}`,transition:"all .12s"}}>{name}</button>;
+        })}
+      </div>
       <GanttTimeline
         bars={bars}
         groups={groups}
@@ -712,14 +799,23 @@ function Timeline({ releases, tickets, upd, setDetail, statusCfg, repoGroups=[] 
 }
 
 /* ─── HISTORY ────────────────────────────────────────────────── */
-function History({ releases, tickets, setDetail, statusCfg }) {
+function History({ releases, tickets, setDetail, statusCfg, classifiedSubs=[] }) {
   const [sortBy, setSortBy] = useState("end_date");
+  const [filterStatus, setFilterStatus] = useState([]);
   const tMap = Object.fromEntries(tickets.map(t=>[t.key,t]));
-  const sorted = [...releases].sort((a,b)=>{
-    if(sortBy==="end_date")   return (b.end_date||"")>(a.end_date||"")?1:-1;
-    if(sortBy==="start_date") return (b.start_date||"")>(a.start_date||"")?1:-1;
-    return 0;
-  });
+  const activeF = filterStatus.length === 0;
+  const sorted = [...releases]
+    .filter(r => activeF || filterStatus.includes(r.status))
+    .sort((a,b)=>{
+      if(sortBy==="end_date")   return (b.end_date||"")>(a.end_date||"")?1:-1;
+      if(sortBy==="start_date") return (b.start_date||"")>(a.start_date||"")?1:-1;
+      if(sortBy==="bugs") {
+        const aBugs = SubtaskService.count(classifiedSubs.filter(s=>(a.ticket_ids||[]).includes(s.parentKey))).bugs.open;
+        const bBugs = SubtaskService.count(classifiedSubs.filter(s=>(b.ticket_ids||[]).includes(s.parentKey))).bugs.open;
+        return bBugs - aBugs;
+      }
+      return 0;
+    });
   return (
     <div>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
@@ -730,12 +826,21 @@ function History({ releases, tickets, setDetail, statusCfg }) {
           <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{background:"var(--dp-sf,#0b0f18)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:4,padding:"4px 8px",fontSize:10,color:"var(--dp-tx2,#94a3b8)",outline:"none"}}>
             <option value="end_date">Fecha fin</option>
             <option value="start_date">Fecha inicio</option>
+            <option value="bugs">Bugs abiertos</option>
           </select>
         </div>
       </div>
+      {/* Status filter */}
+      <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
+        {Object.entries(statusCfg).map(([name,cfg])=>{
+          const on=filterStatus.includes(name);
+          return <button key={name} onClick={()=>setFilterStatus(f=>f.includes(name)?f.filter(x=>x!==name):[...f,name])}
+            style={{fontSize:9,padding:"2px 8px",borderRadius:20,cursor:"pointer",fontFamily:"inherit",fontWeight:600,background:on?cfg.bg_color:"transparent",color:on?cfg.color:"var(--dp-tx3,#64748b)",border:`1px solid ${on?cfg.border:"var(--dp-bd,#1e293b)"}`,transition:"all .12s"}}>{name}</button>;
+        })}
+      </div>
       <table style={{width:"100%",borderCollapse:"collapse",fontSize:10}}>
         <thead><tr style={{borderBottom:"1px solid var(--dp-bd,#0e1520)"}}>
-          {["RELEASE","ESTADO","INICIO","FIN","DURACIÓN","TICKETS","REPOS"].map(h=>(
+          {["RELEASE","ESTADO","INICIO","FIN","DURACIÓN","TICKETS","BUGS","REPOS"].map(h=>(
             <th key={h} style={{padding:"7px 12px",textAlign:"left",color:"var(--dp-tx3,#334155)",fontWeight:600,letterSpacing:".06em",fontSize:9}}>{h}</th>
           ))}
         </tr></thead>
@@ -758,7 +863,12 @@ function History({ releases, tickets, setDetail, statusCfg }) {
                 <td style={{padding:"11px 12px",color:"var(--dp-tx2,#64748b)"}}>{rel.end_date||"—"}</td>
                 <td style={{padding:"11px 12px",color:"var(--dp-tx,#94a3b8)",fontWeight:600}}>{dur!=null?`${dur}d`:"—"}</td>
                 <td style={{padding:"11px 12px",color:"var(--dp-tx2,#64748b)"}}>{rel.ticket_ids?.length||0}</td>
-                <td style={{padding:"11px 12px"}}><div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{relRepos.slice(0,3).map(r=><RepoChip key={r} name={r}/>)}{relRepos.length>3&&<span style={{fontSize:9,color:"var(--dp-tx3,#334155)"}}>+{relRepos.length-3}</span>}</div></td>
+                <td style={{padding:"11px 12px"}}>{(()=>{
+                  const relSubs=classifiedSubs.filter(s=>(rel.ticket_ids||[]).includes(s.parentKey));
+                  const c=SubtaskService.count(relSubs);
+                  return c.bugs.total>0?<span style={{color:c.bugs.open>0?"#ef4444":"#22c55e",fontWeight:600}}>🐛 {c.bugs.closed}/{c.bugs.total}</span>:<span style={{color:"var(--dp-tx3,#64748b)"}}>—</span>;
+                })()}</td>
+                <td style={{padding:"11px 12px"}}><div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{relRepos.slice(0,3).map(r=><RepoChip key={r} name={r}/>)}{relRepos.length>3&&<span style={{fontSize:9,color:"var(--dp-tx3,#64748b)"}}>+{relRepos.length-3}</span>}</div></td>
               </tr>
             );
           })}
@@ -769,7 +879,7 @@ function History({ releases, tickets, setDetail, statusCfg }) {
 }
 
 /* ─── METRICS ────────────────────────────────────────────────── */
-function Metrics({ releases, tickets, statusCfg }) {
+function Metrics({ releases, tickets, statusCfg, classifiedSubs=[] }) {
   const tMap = Object.fromEntries(tickets.map(t=>[t.key,t]));
   const finalNames = Object.entries(statusCfg).filter(([,v])=>v.is_final).map(([n])=>n);
   const deployed  = releases.filter(r=>r.status==="Deployed");
@@ -796,12 +906,18 @@ function Metrics({ releases, tickets, statusCfg }) {
   const repoEntries=Object.entries(repoCounts).sort((a,b)=>b[1]-a[1]);
   const maxR=Math.max(...Object.values(repoCounts),1);
 
+  const totalCounts = SubtaskService.count(classifiedSubs);
+  const bugRate = totalCounts.bugs.total > 0 ? Math.round(totalCounts.bugs.closed / totalCounts.bugs.total * 100) : 0;
+  const testRate = totalCounts.tests.total > 0 ? Math.round(totalCounts.tests.closed / totalCounts.tests.total * 100) : 0;
+
   const stats=[
     {l:"TOTAL RELEASES",  v:releases.length,    s:`${deployed.length} deployed · ${rollbacks.length} rollbacks`,c:"var(--dp-tx,#e6edf3)"},
     {l:"DURACIÓN MEDIA",  v:`${avgDur}d`,        s:"inicio → fin",                                               c:"var(--dp-tx,#e6edf3)"},
     {l:"TASA DE ÉXITO",   v:`${successRate}%`,   s:`${deployed.length}/${finished.length} finalizadas`,          c:"#34d399"},
     {l:"TICKETS/RELEASE", v:tpr,                 s:"media",                                                      c:"#38bdf8"},
     {l:"REPOS ÚNICOS",    v:allRepos.length,      s:"repositorios",                                              c:"#a78bfa"},
+    {l:"BUGS",            v:`${totalCounts.bugs.closed}/${totalCounts.bugs.total}`, s:`${bugRate}% resueltos`, c:"#ef4444"},
+    {l:"TESTS",           v:`${totalCounts.tests.closed}/${totalCounts.tests.total}`, s:`${testRate}% completados`, c:"#3b82f6"},
   ];
 
   const TCOL={Bug:"#f59e0b",Story:"#34d399",Task:"#3b82f6",Epic:"#a78bfa"};
@@ -883,6 +999,9 @@ export function DeployPlanner({ currentUser }) {
   const [fetchingJira, setFetchingJira] = useState(false);
   const [drag, setDrag]           = useState(null);
   const [jiraBaseUrl, setJiraBaseUrl] = useState("");
+  const [subtaskConfigs, setSubtaskConfigs] = useState([]);
+  const [allSubtasks, setAllSubtasks]       = useState([]);
+  const [classifiedSubs, setClassifiedSubs] = useState([]);
 
   // Light mode — read from html element class, watch for changes
   const [isLight, setIsLight] = useState(document.documentElement.classList.contains("light"));
@@ -995,6 +1114,18 @@ export function DeployPlanner({ currentUser }) {
       if(newTickets.length === 0) {
         console.warn(`Jira: ${allIssues.length} issues cargados de ${projects.length} proyectos, ninguno coincide con estados: "${rawStatuses}"`);
       }
+
+      // Load subtask config + subtasks for all tickets
+      try {
+        const stConfigs = await subtaskConfigRepo.findAll();
+        setSubtaskConfigs(stConfigs);
+        if (stConfigs.length > 0 && newTickets.length > 0) {
+          const parentKeys = newTickets.map(t => t.key);
+          const rawSubs = await subtaskAdapter.getSubtasks(parentKeys);
+          setAllSubtasks(rawSubs);
+          setClassifiedSubs(SubtaskService.classify(rawSubs, stConfigs));
+        }
+      } catch(e) { console.warn("Subtask load error:", e.message); }
     } catch(e) {
       console.warn("Jira fetch error:", e.message);
     }
@@ -1110,6 +1241,7 @@ export function DeployPlanner({ currentUser }) {
             isLight={isLight}
             onBack={()=>setDetail(null)}
             onUpdRelease={patch=>upd(detail,patch)}
+            classifiedSubs={classifiedSubs}
           />
         ) : (
           <>
@@ -1146,7 +1278,7 @@ export function DeployPlanner({ currentUser }) {
                               versionCfg={versionCfg}
                               allReleaseNumbers={(releases||[]).map(r=>r.release_number).filter(Boolean)}
                               jiraBaseUrl={jiraBaseUrl}
-                              linkedGroups={linkedGroups}/>
+                              linkedGroups={linkedGroups} classifiedSubs={classifiedSubs}/>
                           ))}
                         </div>
                       );
@@ -1161,7 +1293,7 @@ export function DeployPlanner({ currentUser }) {
                           versionCfg={versionCfg}
                           allReleaseNumbers={(releases||[]).map(r=>r.release_number).filter(Boolean)}
                           jiraBaseUrl={jiraBaseUrl}
-                          linkedGroups={linkedGroups}/>
+                          linkedGroups={linkedGroups} classifiedSubs={classifiedSubs}/>
                       );
                     });
                     return elements;
@@ -1177,8 +1309,8 @@ export function DeployPlanner({ currentUser }) {
               </div>
             )}
             {tab==="timeline"&&<Timeline releases={releases} tickets={tickets} upd={upd} setDetail={setDetail} statusCfg={statusCfg} repoGroups={repoGroups}/>}
-            {tab==="history" &&<History  releases={releases} tickets={tickets} setDetail={setDetail} statusCfg={statusCfg}/>}
-            {tab==="metrics" &&<Metrics  releases={releases} tickets={tickets} statusCfg={statusCfg}/>}
+            {tab==="history" &&<History  releases={releases} tickets={tickets} setDetail={setDetail} statusCfg={statusCfg} classifiedSubs={classifiedSubs}/>}
+            {tab==="metrics" &&<Metrics  releases={releases} tickets={tickets} statusCfg={statusCfg} classifiedSubs={classifiedSubs}/>}
           </>
         )}
       </div>
