@@ -255,7 +255,7 @@ function AdminDeployConfig() {
 
   // Load available repos from Jira tickets (reads configured repo field)
   const loadAvailableRepos = async () => {
-    if(availableRepos.length) return; // already loaded
+    // Allow reload to get new repos
     setLoadingRepos(true);
     try {
       const repoField = verCfg?.repo_jira_field || "components";
@@ -554,30 +554,40 @@ function AdminDeployConfig() {
                 </div>
               </div>
 
-              {/* Group repos (expanded) — multi-select from Jira repos */}
+              {/* Group repos (expanded) — show saved + available from Jira */}
               {expandedGroup===group.id&&(
                 <div style={{padding:"12px 14px"}}>
-                  {loadingRepos&&<div style={{fontSize:11,color:"var(--tx3)",marginBottom:8}}>Cargando repositorios de Jira…</div>}
-                  {!loadingRepos&&availableRepos.length===0&&(
-                    <button onClick={loadAvailableRepos}
-                      style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 12px",fontSize:11,color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit",marginBottom:8}}>
-                      🔄 Cargar repositorios desde Jira
-                    </button>
-                  )}
+                  {/* Always show saved repos as selected chips */}
+                  <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}}>
+                    {(group.repos||[]).map(repo=>(
+                      <button key={repo} onClick={async()=>{
+                        const next = group.repos.filter(r=>r!==repo);
+                        setRepoGroups(gs=>gs.map(g=>g.id===group.id?{...g,repos:next}:g));
+                        await deployConfigRepo.updateRepoGroupRepos(group.id, next);
+                      }}
+                        style={{padding:"4px 10px",borderRadius:20,border:"1px solid var(--ac)",background:"var(--glow)",color:"var(--ac2)",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit"}}>
+                        ✓ {repo} ×
+                      </button>
+                    ))}
+                    {group.repos.length===0&&<span style={{fontSize:11,color:"var(--tx3)"}}>Sin repositorios — carga desde Jira</span>}
+                  </div>
+                  {/* Button to load more repos from Jira */}
+                  <button onClick={loadAvailableRepos} disabled={loadingRepos}
+                    style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 12px",fontSize:11,color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit",marginBottom:8}}>
+                    {loadingRepos?"Cargando…":"🔄 Cargar repositorios desde Jira"}
+                  </button>
+                  {/* Available repos from Jira (not yet in group) */}
                   <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
-                    {availableRepos.map(repo=>{
-                      const isIn = (group.repos||[]).includes(repo);
-                      return (
-                        <button key={repo} onClick={async()=>{
-                          const next = isIn ? group.repos.filter(r=>r!==repo) : [...group.repos, repo];
-                          setRepoGroups(gs=>gs.map(g=>g.id===group.id?{...g,repos:next}:g));
-                          await deployConfigRepo.updateRepoGroupRepos(group.id, next);
-                        }}
-                          style={{padding:"4px 10px",borderRadius:20,border:`1px solid ${isIn?"var(--ac)":"var(--bd)"}`,background:isIn?"var(--glow)":"transparent",color:isIn?"var(--ac2)":"var(--tx3)",cursor:"pointer",fontSize:11,fontWeight:isIn?700:400,fontFamily:"inherit",transition:"all .15s"}}>
-                          {isIn?"✓ ":""}{repo}
-                        </button>
-                      );
-                    })}
+                    {availableRepos.filter(repo=>!(group.repos||[]).includes(repo)).map(repo=>(
+                      <button key={repo} onClick={async()=>{
+                        const next = [...group.repos, repo];
+                        setRepoGroups(gs=>gs.map(g=>g.id===group.id?{...g,repos:next}:g));
+                        await deployConfigRepo.updateRepoGroupRepos(group.id, next);
+                      }}
+                        style={{padding:"4px 10px",borderRadius:20,border:"1px solid var(--bd)",background:"transparent",color:"var(--tx3)",cursor:"pointer",fontSize:11,fontFamily:"inherit",transition:"all .15s"}}>
+                        + {repo}
+                      </button>
+                    ))}
                   </div>
                   {group.repos.length>0&&(
                     <div style={{fontSize:10,color:"var(--tx3)",marginTop:4}}>{group.repos.length} repositorios seleccionados</div>
