@@ -98,9 +98,9 @@ export function LoginPage() {
               disabled={!microsoftOn||!!ssoLoading||loading}
               title={!microsoftOn?'Not configured — contact your administrator':undefined}
               style={{...S.ssoBtn,opacity:microsoftOn?1:0.35,cursor:microsoftOn?'pointer':'not-allowed',
-                background:microsoftOn?'#1b1b22':'#161619',borderColor:microsoftOn?'#2a2a38':'#1e1e28'}}>
+                background:microsoftOn?'#1b1b22':'#161619',borderColor:microsoftOn?'var(--bd2)':'var(--bd)'}}>
               {ssoLoading==='microsoft'?<SpinIcon/>:<MsIcon/>}
-              <span style={{color:microsoftOn?'#e4e4ef':'#3a3a50',flex:1,textAlign:'left'}}>
+              <span style={{color:microsoftOn?'var(--tx)':'var(--tx3)',flex:1,textAlign:'left'}}>
                 Continue with Microsoft
               </span>
               {!microsoftOn&&<span style={S.badge}>Unavailable</span>}
@@ -110,9 +110,9 @@ export function LoginPage() {
               disabled={!googleOn||!!ssoLoading||loading}
               title={!googleOn?'Not configured — contact your administrator':undefined}
               style={{...S.ssoBtn,opacity:googleOn?1:0.35,cursor:googleOn?'pointer':'not-allowed',
-                background:googleOn?'#1b1b22':'#161619',borderColor:googleOn?'#2a2a38':'#1e1e28'}}>
+                background:googleOn?'#1b1b22':'#161619',borderColor:googleOn?'var(--bd2)':'var(--bd)'}}>
               {ssoLoading==='google'?<SpinIcon/>:<GgIcon/>}
-              <span style={{color:googleOn?'#e4e4ef':'#3a3a50',flex:1,textAlign:'left'}}>
+              <span style={{color:googleOn?'var(--tx)':'var(--tx3)',flex:1,textAlign:'left'}}>
                 Continue with Google
               </span>
               {!googleOn&&<span style={S.badge}>Unavailable</span>}
@@ -150,7 +150,7 @@ export function LoginPage() {
                 onClick={()=>setShowPwd(s=>!s)}
                 style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',
                   background:'none',border:'none',cursor:'pointer',padding:'4px',
-                  color:'#50506a',display:'flex',alignItems:'center',justifyContent:'center',
+                  color:'var(--tx3)',display:'flex',alignItems:'center',justifyContent:'center',
                   borderRadius:4,transition:'color 0.15s'}}>
                 {showPwd ? <EyeOffIcon/> : <EyeIcon/>}
               </button>
@@ -246,12 +246,12 @@ function SpinIcon() {
 
 const S: Record<string, React.CSSProperties> = {
   root: {
-    minHeight: '100vh', background: '#0d0d10',
+    minHeight: '100vh', background: 'var(--bg, #0d0d10)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: 16, fontFamily: "'Inter', system-ui, sans-serif",
   },
   card: {
-    background: '#141418', border: '1px solid #252530',
+    background: 'var(--sf, #141418)', border: '1px solid var(--bd, #252530)',
     borderRadius: 14, padding: '40px 36px', width: '100%', maxWidth: 400,
     boxShadow: '0 24px 64px rgba(0,0,0,0.65)',
     display: 'flex', flexDirection: 'column', gap: 22,
@@ -261,7 +261,7 @@ const S: Record<string, React.CSSProperties> = {
     justifyContent: 'center', fontSize: 24, fontWeight: 700, letterSpacing: -0.5,
   },
   dot: { width: 10, height: 10, borderRadius: '50%', background: '#4f6ef7', boxShadow: '0 0 12px #4f6ef7' },
-  subtitle: { textAlign: 'center', color: '#50506a', fontSize: 13, margin: '-12px 0 -4px' },
+  subtitle: { textAlign: 'center', color: 'var(--tx3, #50506a)', fontSize: 13, margin: '-12px 0 -4px' },
   ssoBtn: {
     display: 'flex', alignItems: 'center', gap: 10,
     padding: '10px 14px', width: '100%',
@@ -273,12 +273,12 @@ const S: Record<string, React.CSSProperties> = {
     color: '#2a2a3a', textTransform: 'uppercase',
   },
   divider: { display: 'flex', alignItems: 'center', gap: 12, margin: '-4px 0' },
-  divLine: { flex: 1, height: 1, background: '#202028' },
-  divTxt: { color: '#40404e', fontSize: 11, whiteSpace: 'nowrap', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' },
+  divLine: { flex: 1, height: 1, background: 'var(--bd, #202028)' },
+  divTxt: { color: 'var(--tx3, #40404e)', fontSize: 11, whiteSpace: 'nowrap', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' },
   field: { display: 'flex', flexDirection: 'column', gap: 6 },
-  lbl: { fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#50506a' },
+  lbl: { fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--tx3, #50506a)' },
   input: {
-    width: '100%', background: '#1b1b22', border: '1px solid #252530',
+    width: '100%', background: 'var(--sf2, #1b1b22)', border: '1px solid var(--bd, #252530)',
     borderRadius: 7, padding: '9px 12px', color: '#e4e4ef', fontSize: 13,
     fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
     transition: 'border-color 0.15s, box-shadow 0.15s',

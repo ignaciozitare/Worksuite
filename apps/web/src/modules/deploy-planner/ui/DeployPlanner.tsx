@@ -20,14 +20,14 @@ const CSS = `
   --dp-tx:#c9d1d9; --dp-tx2:#94a3b8; --dp-tx3:#334155;
   --dp-bd:#1e293b; --dp-date-filter:invert(.4) sepia(1) hue-rotate(180deg);
 }
-/* Light mode — activated when .light class is on html or on .dp */
-.light .dp, .dp.light{
+/* Light mode — activated by data-theme="light" or .light class */
+[data-theme="light"] .dp, .light .dp, .dp.light{
   --dp-bg:#f1f5f9; --dp-sf:#ffffff; --dp-sf2:#f8fafc;
   --dp-tx:#0f172a; --dp-tx2:#475569; --dp-tx3:#64748b;
   --dp-bd:#e2e8f0; --dp-date-filter:none;
 }
-.light .dp ::-webkit-scrollbar-thumb, .dp.light ::-webkit-scrollbar-thumb{background:#cbd5e1;}
-.light .dp select option, .dp.light select option{background:#ffffff;}
+[data-theme="light"] .dp ::-webkit-scrollbar-thumb, .light .dp ::-webkit-scrollbar-thumb, .dp.light ::-webkit-scrollbar-thumb{background:#cbd5e1;}
+[data-theme="light"] .dp select option, .light .dp select option, .dp.light select option{background:#ffffff;}
 @keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .anim-in{animation:slideIn .2s ease forwards;}

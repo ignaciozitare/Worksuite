@@ -139,9 +139,9 @@ function WorkSuiteApp() {
   // Loading
   if (loadingData) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0d0d10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#50506a', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4f6ef7', boxShadow: '0 0 12px #4f6ef7', margin: '0 auto 12px', animation: 'pulse 1.5s ease infinite' }} />
+      <div style={{ minHeight: '100vh', background: 'var(--bg, #0d0d10)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'var(--tx3, #50506a)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ac, #4f6ef7)', boxShadow: '0 0 12px var(--ac, #4f6ef7)', margin: '0 auto 12px', animation: 'pulse 1.5s ease infinite' }} />
           {t('common.loading')}
         </div>
       </div>
