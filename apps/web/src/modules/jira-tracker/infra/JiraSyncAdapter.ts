@@ -22,9 +22,10 @@ export class JiraSyncAdapter implements JiraSyncPort {
     return json.data.map((p: any) => ({ key: p.key, name: p.name }));
   }
 
-  async loadIssues(projectKey: string): Promise<any[]> {
+  async loadIssues(projectKey: string, extraFields?: string[]): Promise<any[]> {
     const headers = { ...await this.getHeaders(), 'Content-Type': 'application/json' };
-    const res = await fetch(`${this.apiBase}/jira/issues?project=${projectKey}`, { headers });
+    const extra = extraFields?.length ? `&extraFields=${extraFields.join(',')}` : '';
+    const res = await fetch(`${this.apiBase}/jira/issues?project=${projectKey}${extra}`, { headers });
     const json = await res.json();
     if (!json.ok || !json.data?.length) return [];
     return json.data;

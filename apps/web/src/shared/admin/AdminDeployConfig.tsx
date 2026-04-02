@@ -261,8 +261,9 @@ function AdminDeployConfig() {
       const repoField = verCfg?.repo_jira_field || "components";
       const projects = await jiraSyncAdapter.loadProjects();
       const allRepos = new Set();
+      const extraFields = repoField !== "components" ? [repoField] : [];
       for (const p of projects.slice(0, 5)) {
-        const issues = await jiraSyncAdapter.loadIssues(p.key);
+        const issues = await jiraSyncAdapter.loadIssues(p.key, extraFields);
         issues.forEach(i => {
           const fields = i.fields || i;
           const val = fields[repoField] || i[repoField] || i.components || [];

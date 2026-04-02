@@ -6,6 +6,6 @@ export interface JiraSyncResult {
 export interface JiraSyncPort {
   syncWorklog(issueKey: string, payload: { worklogId: string; seconds: number; startedAt: string; description: string }): Promise<JiraSyncResult>;
   loadProjects(): Promise<{ key: string; name: string }[]>;
-  loadIssues(projectKey: string): Promise<any[]>;
+  loadIssues(projectKey: string, extraFields?: string[]): Promise<any[]>;
   searchIssues(jql: string, maxResults?: number, fields?: string): Promise<any>;
 }
