@@ -35,7 +35,7 @@
 - Do not hardcode secrets, tokens, or passwords.
 - Protect sensitive data appropriately.
 
-## Internationalization (i18n)
+## Multi-language (i18n)
 - All user-facing strings must use `t()` from `@worksuite/i18n` — never hardcode Spanish or English text in components.
 - When creating or modifying any component, verify that all visible text uses translation keys.
 - If new keys are needed, add them to both `packages/i18n/locales/es.json` and `packages/i18n/locales/en.json`.
