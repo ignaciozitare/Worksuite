@@ -63,13 +63,21 @@ export class JiraCloudAdapter implements IJiraApi {
     return data.values.map(p => ({ key: p.key, name: p.name, id: p.id }));
   }
 
- async getIssues(projectKey: string, extraFields?: string[]): Promise<JiraIssue[]> {
+ async getIssues(projectKey: string, extraFields?: string[], userFilter?: string): Promise<JiraIssue[]> {
   const baseFields = ['summary', 'issuetype', 'status', 'priority', 'project',
-             'assignee', 'labels', 'parent', 'customfield_10014', 'customfield_10008'];
+             'assignee', 'reporter', 'labels', 'parent', 'customfield_10014', 'customfield_10008'];
   const fields = extraFields?.length ? [...new Set([...baseFields, ...extraFields])] : baseFields;
+
+  // Build JQL with optional user filter
+  let jql = `project = "${projectKey}"`;
+  if (userFilter) {
+    jql += ` AND (assignee = "${userFilter}" OR reporter = "${userFilter}" OR worklogAuthor = "${userFilter}")`;
+  }
+  jql += ` AND statusCategory != "Done" ORDER BY updated DESC`;
+
   const body = {
-    jql: `project = "${projectKey}" ORDER BY updated DESC`,
-    maxResults: 100,
+    jql,
+    maxResults: 200,
     fields,
   };
 
@@ -94,11 +102,13 @@ export class JiraCloudAdapter implements IJiraApi {
       summary:  f.summary,
       type:     f.issuetype.name,
       status:   f.status.name,
+      statusCategory: f.status?.statusCategory?.name ?? '',
       priority: f.priority?.name ?? 'Medium',
       project:  f.project.key,
       epic:     epicKey,
       epicName,
       assignee: f.assignee?.displayName ?? '',
+      reporter: (f as any).reporter?.displayName ?? '',
       labels:   f.labels ?? [],
       components: (f.components ?? []).map((c: any) => typeof c === 'string' ? c : c.name).filter(Boolean),
       fields:   f,

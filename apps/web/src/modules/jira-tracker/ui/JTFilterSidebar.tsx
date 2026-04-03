@@ -11,9 +11,12 @@ interface JTFilterSidebarProps {
   users: any[];
   onProjectChange?: (projectKey: string) => void;
   jiraProjects?: any[];
+  jiraUsers?: string[];
+  jiraUserFilter?: string;
+  onJiraUserFilter?: (email: string) => void;
 }
 
-export function JTFilterSidebar({ filters, onApply, onExport, mobileOpen, onMobileClose, users, onProjectChange, jiraProjects }: JTFilterSidebarProps) {
+export function JTFilterSidebar({ filters, onApply, onExport, mobileOpen, onMobileClose, users, onProjectChange, jiraProjects, jiraUsers=[], jiraUserFilter="", onJiraUserFilter }: JTFilterSidebarProps) {
   const { t } = useTranslation();
   const projects = jiraProjects || MOCK_PROJECTS_FALLBACK;
   const [l, sL] = useState(filters);
@@ -35,7 +38,13 @@ export function JTFilterSidebar({ filters, onApply, onExport, mobileOpen, onMobi
         <input className="fi" type="date" value={l.from} onChange={e=>sL({...l,from:e.target.value})}/>
         <input className="fi" type="date" value={l.to}   onChange={e=>sL({...l,to:e.target.value})}/>
       </div>
-      <div className="sb-s"><div className="sb-lbl">{t("jiraTracker.filterByUser")}</div>
+      <div className="sb-s"><div className="sb-lbl">{t("jiraTracker.filterByUser")} (Jira)</div>
+        <select className="fi" value={jiraUserFilter} onChange={e=>onJiraUserFilter?.(e.target.value)}>
+          <option value="">{t("jiraTracker.allUsers")}</option>
+          {jiraUsers.map(u=><option key={u} value={u}>{u}</option>)}
+        </select>
+      </div>
+      <div className="sb-s"><div className="sb-lbl">{t("jiraTracker.filterByUser")} (WorkSuite)</div>
         <select className="fi" value={l.authorId} onChange={e=>sL({...l,authorId:e.target.value})}>
           <option value="">{t("jiraTracker.allUsers")}</option>
           {(users||[]).map(u=><option key={u.id} value={u.id}>{u.name}</option>)}

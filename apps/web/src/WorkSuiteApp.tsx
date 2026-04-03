@@ -1,11 +1,11 @@
 // WorkSuite — Root orchestrator (layout + routing)
 
-import React, { useState, useCallback, lazy, Suspense } from "react";
+import React, { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from './shared/lib/api';
 import { useTranslation } from '@worksuite/i18n';
 import { useAuth } from './shared/hooks/useAuth';
-import { useWorkSuiteData } from './shared/hooks/useWorkSuiteData';
+import { useWorkSuiteData, jiraSync } from './shared/hooks/useWorkSuiteData';
 import { useWorklogs } from './shared/hooks/useWorklogs';
 import { useHotDesk } from './shared/hooks/useHotDesk';
 import './WorkSuiteApp.css';
@@ -81,6 +81,8 @@ function WorkSuiteApp() {
   });
   const [logModal, setLogModal] = useState<any>(null);
   const [sbOpen, setSbOpen] = useState(false);
+  const [jiraUserFilter, setJiraUserFilter] = useState("");
+  const jiraUsers = [...new Set(jiraIssues.flatMap((i: any) => [i.assignee, i.reporter].filter(Boolean)))].sort() as string[];
 
   const { openLogModal, handleSaveWorklog, handleDeleteWorklog, loadJiraIssues } = useWorklogs({
     worklogs, setWorklogs, activeDay, currentUser: CURRENT_USER, notify,
@@ -93,6 +95,27 @@ function WorkSuiteApp() {
   const handleExport = (f: any) => CsvService.exportWorklogs(worklogs, f.from, f.to, f.authorId || null, f.spaceKeys);
   const handleDayClick = (d: string) => { setActiveDay(d); navigate('/jira-tracker/day'); };
   const handleLoadJiraIssues = useCallback((pk: string) => loadJiraIssues(pk, setJiraIssues), [loadJiraIssues, setJiraIssues]);
+
+  // Reload issues when Jira user filter changes
+  useEffect(() => {
+    if (!jiraProjects.length) return;
+    const reload = async () => {
+      const allIssues: any[] = [];
+      for (const p of jiraProjects) {
+        try {
+          const issues = await jiraSync.loadIssues(p.key, [], jiraUserFilter || undefined);
+          allIssues.push(...issues);
+        } catch {}
+      }
+      setJiraIssues(allIssues.map((i: any, idx: number) => ({
+        id: idx + 1, key: i.key, summary: i.summary, type: i.type,
+        status: i.status, statusCategory: i.statusCategory ?? '', priority: i.priority ?? 'Medium',
+        project: i.project, assignee: i.assignee ?? '', reporter: i.reporter ?? '',
+        epic: i.epic ?? '—', epicName: i.epicName ?? '—', hours: 0, labels: i.labels ?? [],
+      })));
+    };
+    reload();
+  }, [jiraUserFilter, jiraProjects]);
 
   // HotDesk state & handlers
   const [hdModal, setHdModal] = useState<any>(null);
@@ -236,7 +259,7 @@ function WorkSuiteApp() {
           {/* ── Body ────────────────────────────────────────────── */}
           <div className="body">
             {mod === "jt" && view !== "admin" && (
-              <JTFilterSidebar filters={filters} onApply={f => { setFilters(f); setSbOpen(false); }} onExport={handleExport} mobileOpen={sbOpen} onMobileClose={() => setSbOpen(false)} users={users} onProjectChange={handleLoadJiraIssues} jiraProjects={jiraProjects} />
+              <JTFilterSidebar filters={filters} onApply={f => { setFilters(f); setSbOpen(false); }} onExport={handleExport} mobileOpen={sbOpen} onMobileClose={() => setSbOpen(false)} users={users} onProjectChange={handleLoadJiraIssues} jiraProjects={jiraProjects} jiraUsers={jiraUsers} jiraUserFilter={jiraUserFilter} onJiraUserFilter={setJiraUserFilter} />
             )}
             {mod === "jt" && view === "calendar" && <main className="content"><CalendarView filters={filters} worklogs={worklogs} onDayClick={handleDayClick} onOpenLog={handleOpenLog} /></main>}
             {mod === "jt" && view === "day" && <main className="content"><DayView date={activeDay} filters={filters} worklogs={worklogs} onDateChange={setActiveDay} onOpenLog={handleOpenLog} onDeleteWorklog={handleDeleteWorklog} /></main>}
