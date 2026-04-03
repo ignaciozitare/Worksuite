@@ -31,14 +31,14 @@ export function LoginPage() {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      if (remember) localStorage.setItem('ws_email', email);
-      else localStorage.removeItem('ws_email');
+      if (remember) { localStorage.setItem('ws_email', email); localStorage.setItem('ws_remember', '1'); }
+      else { localStorage.removeItem('ws_email'); localStorage.removeItem('ws_remember'); }
       const { data, error: err } = await supabase.auth.signInWithPassword({ email, password: pwd });
       if (err) {
         setError(err.message === 'Invalid login credentials' ? 'Invalid email or password' : err.message);
       } else if (data?.session) {
-        // Navigate to root so React Router re-evaluates the protected route
-        window.location.href = '/';
+        // Small delay to let browser save credentials before navigating
+        setTimeout(() => { window.location.href = '/'; }, 100);
       }
     } finally { setLoading(false); }
   };
@@ -157,11 +157,11 @@ export function LoginPage() {
             </div>
           </div>
 
-          <label style={{display:'flex',alignItems:'center',gap:8,fontSize:12,color:'#8888a8',
+          <label style={{display:'flex',alignItems:'center',gap:8,fontSize:12,color:'var(--tx3, #8888a8)',
             cursor:'pointer',userSelect:'none',marginTop:-4}}>
             <input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}
               style={{width:14,height:14,accentColor:'#4f6ef7',cursor:'pointer'}}/>
-            Remember email
+            Recordar credenciales
           </label>
 
           {error&&(

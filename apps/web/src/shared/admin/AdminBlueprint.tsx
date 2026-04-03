@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../lib/api';
 import { SupabaseBuildingRepo } from '../infra/SupabaseBuildingRepo';
 
