@@ -200,6 +200,9 @@ function WorkSuiteApp() {
               {(CURRENT_USER.modules || ["jt", "hd", "retro", "deploy"]).includes("deploy") && (
                 <button className={`sw-btn ${mod === "deploy" ? "active-deploy" : ""}`} onClick={() => navigate('/deploy')}>🚀 Deploy Planner</button>
               )}
+              {(CURRENT_USER.modules || []).includes("envtracker") && (
+                <button className={`sw-btn ${mod === "envtracker" ? "active" : ""}`} onClick={() => navigate('/envtracker')}>🖥️ Environments</button>
+              )}
             </div>
             <div className="top-right">
               <div className="sw-group">
