@@ -1045,13 +1045,7 @@ export function DeployPlanner({ currentUser }) {
     }
     setStatusCfg(cfg);
     setLoading(false);
-    // Load Jira base URL for ticket links
-    try {
-      const connRes = await fetch(`${API_BASE}/jira/connection`, { headers: await authHeaders() });
-      const connData = await connRes.json();
-      if(connData.ok && connData.data?.base_url) setJiraBaseUrl(connData.data.base_url.replace(/\/$/,""));
-    } catch {}
-    // Auto-cargar tickets de Jira usando la conexión ya existente
+    // Load Jira connection + tickets in parallel
     fetchJiraTickets(ssoData?.deploy_jira_statuses, verCfg);
   }
 
@@ -1069,11 +1063,18 @@ export function DeployPlanner({ currentUser }) {
 
       const headers = await authHeaders();
 
-      // Paso 1: obtener proyectos (mismo endpoint que JiraTracker)
-      const projRes = await fetch(`${API_BASE}/jira/projects`, { headers });
+      // Paso 1: obtener proyectos + conexión Jira en paralelo
+      const [projRes, connRes] = await Promise.all([
+        fetch(`${API_BASE}/jira/projects`, { headers }),
+        fetch(`${API_BASE}/jira/connection`, { headers }).catch(() => null),
+      ]);
       if(!projRes.ok) throw new Error(`No se pudieron cargar proyectos: HTTP ${projRes.status}`);
       const projData = await projRes.json();
       const projects = (projData.data || []).map(p => p.key || p.id).filter(Boolean);
+      // Set Jira base URL from connection
+      try {
+        if(connRes?.ok) { const cd = await connRes.json(); if(cd.ok && cd.data?.base_url) setJiraBaseUrl(cd.data.base_url.replace(/\/$/,"")); }
+      } catch {}
 
       if(projects.length === 0) throw new Error("No hay proyectos Jira configurados");
 
@@ -1268,10 +1269,21 @@ export function DeployPlanner({ currentUser }) {
         ) : (
           <>
             {tab==="planning"&&(
-              <div>
+              <div style={{position:"relative"}}>
+                {/* Loading overlay */}
+                {fetchingJira&&tickets.length===0&&(
+                  <div style={{position:"absolute",inset:0,zIndex:10,background:"var(--dp-bg,rgba(7,9,15,.85))",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,borderRadius:8,minHeight:200}}>
+                    <div className="spin" style={{fontSize:24,color:"#38bdf8"}}>⟳</div>
+                    <div style={{fontSize:12,color:"var(--dp-tx2,#94a3b8)",fontWeight:600}}>Cargando tickets de Jira…</div>
+                    <div style={{fontSize:10,color:"var(--dp-tx3,#64748b)"}}>Conectando con proyectos y sincronizando issues</div>
+                  </div>
+                )}
                 <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:20,flexWrap:"wrap"}}>
                   <h2 style={{fontSize:14,color:"var(--dp-tx,#e6edf3)",fontWeight:700,marginRight:8}}>Planificación</h2>
-                  <span style={{fontSize:10,color:"var(--dp-tx3,#334155)",marginRight:8}}>{releases.length} releases · {tickets.length} tickets</span>
+                  <span style={{fontSize:10,color:"var(--dp-tx3,#64748b)",marginRight:8}}>
+                    {releases.length} releases · {tickets.length} tickets
+                    {fetchingJira&&tickets.length>0&&<span className="spin" style={{marginLeft:6,display:"inline-block"}}>⟳</span>}
+                  </span>
                   {Object.entries(statusCfg).map(([name,cfg])=>{
                     const on=filterStatus.includes(name);
                     return <button key={name} onClick={()=>setFilterStatus(f=>f.includes(name)?f.filter(x=>x!==name):[...f,name])}
