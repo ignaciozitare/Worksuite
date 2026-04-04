@@ -1,8 +1,11 @@
 // @ts-nocheck
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase }                from '@/shared/lib/supabaseClient';
 // Usamos el mismo DeployTimeline de Deploy Planner — sin tocarlo
 import { DeployTimeline }          from '../../deploy-planner/ui/DeployTimeline';
+import { GanttTimeline }           from '@worksuite/ui';
+import { JiraSyncAdapter }         from '../../jira-tracker/infra/JiraSyncAdapter';
+import { SupabaseReservationHistoryRepo } from '../infra/supabase/SupabaseReservationHistoryRepo';
 import type { Environment }        from '../domain/entities/Environment';
 import type { Reservation, Repository, EnvPolicy } from '../domain/entities/Reservation';
 import { SupabaseEnvironmentRepo } from '../infra/supabase/SupabaseEnvironmentRepo';
@@ -19,6 +22,15 @@ const getEnvs  = new GetEnvironments(envRepo);
 const getRes   = new GetReservations(resRepo);
 const upsertUC = new UpsertReservation(resRepo);
 const statusUC = new UpdateReservationStatus(resRepo);
+
+// ── Adapters ─────────────────────────────────────────────────────────────────
+const API_BASE = ((import.meta as any).env?.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+async function getAuthHeaders() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
+}
+const jiraSyncAdapter = new JiraSyncAdapter(API_BASE, getAuthHeaders);
+const historyRepo = new SupabaseReservationHistoryRepo(supabase);
 
 // ── Mapeo Reservation → formato que entiende DeployTimeline ──────────────────
 const STATUS_MAP = {
@@ -80,6 +92,9 @@ const CAT    = {
   STAGING: {color:'#22d3ee', bg:'rgba(14,116,144,.15)'},
 };
 
+// ── REPO_FIELD: campo personalizado de Jira que contiene repos ───────────────
+const JIRA_REPO_FIELD = 'customfield_10146';
+
 // ── Modal ─────────────────────────────────────────────────────────────────────
 function Modal({ title, onClose, children, width=520 }) {
   useEffect(()=>{
@@ -108,54 +123,162 @@ function Modal({ title, onClose, children, width=520 }) {
   );
 }
 
-// ── Jira tag input ─────────────────────────────────────────────────────────────
-function JiraTagInput({ value, onChange }) {
-  const [draft,setDraft] = useState('');
-  const [err,setErr]     = useState('');
-  const add = raw => {
-    const key = raw.trim().toUpperCase();
-    if(!key) return;
-    if(!isJira(key)){setErr('Formato inválido — usa PROYECTO-123');return;}
-    if(value.includes(key)){setErr('Ya añadida');return;}
-    onChange([...value,key]); setDraft(''); setErr('');
+// ── Jira Ticket Search (reemplaza JiraTagInput) ──────────────────────────────
+function JiraTicketSearch({ value, onChange }) {
+  const [query, setQuery]       = useState('');
+  const [results, setResults]   = useState([]);
+  const [loading, setLoading]   = useState(false);
+  const [showDrop, setShowDrop] = useState(false);
+  const [ticketMap, setTicketMap] = useState({});
+  const debounceRef = useRef(null);
+  const wrapRef     = useRef(null);
+
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    const handler = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setShowDrop(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Buscar tickets con debounce
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!query.trim() || query.trim().length < 2) { setResults([]); return; }
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const jql = `text ~ "${query.trim()}" ORDER BY updated DESC`;
+        const resp = await jiraSyncAdapter.searchIssues(jql, 15, `summary,issuetype,status,${JIRA_REPO_FIELD}`);
+        const issues = resp?.data ?? resp?.issues ?? [];
+        setResults(issues);
+        setShowDrop(true);
+      } catch (err) {
+        console.error('[JiraTicketSearch] error buscando tickets', err);
+        setResults([]);
+      } finally { setLoading(false); }
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query]);
+
+  const selectTicket = (issue) => {
+    const key = issue.key;
+    if (value.includes(key)) return;
+    const newMap = { ...ticketMap, [key]: issue };
+    setTicketMap(newMap);
+    const newKeys = [...value, key];
+    onChange(newKeys, newKeys.map(k => newMap[k]).filter(Boolean));
+    setQuery('');
+    setResults([]);
+    setShowDrop(false);
   };
+
+  const removeTicket = (key) => {
+    const newKeys = value.filter(k => k !== key);
+    const newMap = { ...ticketMap };
+    delete newMap[key];
+    setTicketMap(newMap);
+    onChange(newKeys, newKeys.map(k => newMap[k]).filter(Boolean));
+  };
+
+  const getSummary = (key) => {
+    const t = ticketMap[key];
+    return t?.fields?.summary ?? t?.summary ?? '';
+  };
+
   return (
-    <div>
+    <div ref={wrapRef} style={{position:'relative'}}>
+      {/* Chips de tickets seleccionados */}
       <div style={{...inpStyle({display:'flex',flexWrap:'wrap',gap:4,minHeight:40,
-        cursor:'text',width:'auto',padding:'6px 10px'})}}
-        onClick={()=>document.getElementById('jtag')?.focus()}>
+        cursor:'text',width:'auto',padding:'6px 10px'})}}>
         {value.map(k=>(
           <span key={k} style={{display:'flex',alignItems:'center',gap:4,padding:'2px 8px',
-            background:'rgba(124,58,237,.15)',color:'#a78bfa',borderRadius:6,fontSize:12,fontFamily:'monospace'}}>
-            {k}<span onClick={()=>onChange(value.filter(v=>v!==k))} style={{cursor:'pointer',opacity:.7}}>×</span>
+            background:'rgba(124,58,237,.15)',color:'#a78bfa',borderRadius:6,fontSize:12,fontFamily:'monospace',
+            maxWidth:260,overflow:'hidden'}}>
+            <strong>{k}</strong>
+            {getSummary(k) && <span style={{fontSize:11,opacity:.8,overflow:'hidden',textOverflow:'ellipsis',
+              whiteSpace:'nowrap',maxWidth:160}}>{getSummary(k)}</span>}
+            <span onClick={()=>removeTicket(k)} style={{cursor:'pointer',opacity:.7,flexShrink:0}}>×</span>
           </span>
         ))}
-        <input id="jtag" value={draft}
-          onChange={e=>{setDraft(e.target.value.toUpperCase());setErr('');}}
-          onKeyDown={e=>{if(['Enter','Tab',',',' '].includes(e.key)){e.preventDefault();add(draft);}
-            if(e.key==='Backspace'&&!draft&&value.length) onChange(value.slice(0,-1));}}
-          onBlur={()=>{if(draft.trim())add(draft);}}
-          placeholder={value.length?'':'PROJ-123 → Enter'}
+        <input value={query}
+          onChange={e=>{setQuery(e.target.value);}}
+          onFocus={()=>{ if(results.length) setShowDrop(true); }}
+          placeholder={value.length?'Buscar mas tickets…':'Buscar tickets Jira…'}
           style={{background:'transparent',border:'none',outline:'none',fontSize:12,
-            color:'var(--tx,#e4e4ef)',fontFamily:'monospace',flex:1,minWidth:120}}/>
+            color:'var(--tx,#e4e4ef)',fontFamily:'inherit',flex:1,minWidth:140}}/>
+        {loading && <span style={{fontSize:11,color:'var(--tx3,#50506a)'}}>…</span>}
       </div>
-      {err&&<p style={{color:'#ef4444',fontSize:11,marginTop:3}}>⚠ {err}</p>}
+
+      {/* Dropdown de resultados */}
+      {showDrop && results.length > 0 && (
+        <div style={{position:'absolute',left:0,right:0,top:'100%',marginTop:4,zIndex:50,
+          background:'var(--sf,#141418)',border:'1px solid var(--bd,#2a2a38)',borderRadius:8,
+          maxHeight:240,overflowY:'auto',boxShadow:'0 8px 24px rgba(0,0,0,.5)'}}>
+          {results.map(issue => {
+            const key = issue.key;
+            const summary = issue.fields?.summary ?? issue.summary ?? '';
+            const type = issue.fields?.issuetype?.name ?? issue.issueType ?? '';
+            const alreadySelected = value.includes(key);
+            return (
+              <div key={key}
+                onClick={()=>!alreadySelected && selectTicket(issue)}
+                style={{padding:'8px 12px',cursor:alreadySelected?'default':'pointer',
+                  display:'flex',alignItems:'center',gap:8,fontSize:12,
+                  borderBottom:'1px solid var(--bd,#2a2a38)',
+                  opacity:alreadySelected?.5:1,
+                  background:alreadySelected?'rgba(124,58,237,.05)':'transparent'}}>
+                <span style={{fontFamily:'monospace',fontWeight:700,color:'#a78bfa',flexShrink:0}}>{key}</span>
+                {type && <span style={{fontSize:10,padding:'1px 6px',borderRadius:4,
+                  background:'var(--sf2,#1b1b22)',color:'var(--tx3,#50506a)',flexShrink:0}}>{type}</span>}
+                <span style={{color:'var(--tx,#e4e4ef)',overflow:'hidden',textOverflow:'ellipsis',
+                  whiteSpace:'nowrap'}}>{summary}</span>
+                {alreadySelected && <span style={{marginLeft:'auto',fontSize:10,color:'var(--tx3,#50506a)'}}>Agregada</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
+}
+
+// ── Extract repos from Jira ticket data ──────────────────────────────────────
+function extractReposFromTickets(ticketData) {
+  const repos = new Set();
+  for (const ticket of ticketData) {
+    const repoField = ticket?.fields?.[JIRA_REPO_FIELD];
+    if (!repoField) continue;
+    // El campo puede ser string (separado por comas), array, u objeto
+    if (Array.isArray(repoField)) {
+      repoField.forEach(r => { if (typeof r === 'string') repos.add(r.trim()); else if (r?.name) repos.add(r.name.trim()); });
+    } else if (typeof repoField === 'string') {
+      repoField.split(',').map(s => s.trim()).filter(Boolean).forEach(r => repos.add(r));
+    }
+  }
+  return [...repos];
 }
 
 // ── Reservation form ──────────────────────────────────────────────────────────
 function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave, onClose }) {
   const isEdit  = !!res;
   const isAdmin = currentUser?.role==='admin';
-  const [envId,setEnvId] = useState(res?.environmentId??'');
-  const [jiras,setJiras] = useState(res?.jiraIssueKeys??[]);
-  const [desc,setDesc]   = useState(res?.description??'');
-  const [start,setStart] = useState(res?.plannedStart?res.plannedStart.slice(0,16):'');
-  const [end,setEnd]     = useState(res?.plannedEnd?res.plannedEnd.slice(0,16):'');
-  const [rids,setRids]   = useState(res?.selectedRepositoryIds??[]);
-  const [error,setError] = useState('');
+  const [envId,setEnvId]           = useState(res?.environmentId??'');
+  const [jiras,setJiras]           = useState(res?.jiraIssueKeys??[]);
+  const [ticketData,setTicketData] = useState([]);
+  const [desc,setDesc]             = useState(res?.description??'');
+  const [start,setStart]           = useState(res?.plannedStart?res.plannedStart.slice(0,16):'');
+  const [end,setEnd]               = useState(res?.plannedEnd?res.plannedEnd.slice(0,16):'');
+  const [error,setError]           = useState('');
   const selEnv = envs.find(e=>e.id===envId);
+
+  const extractedRepos = useMemo(() => extractReposFromTickets(ticketData), [ticketData]);
+
+  const handleJiraChange = (keys, data) => {
+    setJiras(keys);
+    setTicketData(data);
+  };
 
   const submit = () => {
     if(!envId)       {setError('Selecciona un entorno.');return;}
@@ -167,8 +290,9 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
       jiraIssueKeys:jiras, description:desc.trim()||null,
       plannedStart:new Date(start).toISOString(), plannedEnd:new Date(end).toISOString(),
       status:res?.status??(new Date(start)<=new Date()?'InUse':'Reserved'),
-      selectedRepositoryIds:rids, usageSession:res?.usageSession??null,
+      selectedRepositoryIds:[], usageSession:res?.usageSession??null,
       policyFlags:{exceedsMaxDuration:false},
+      extractedRepos,
     };
     const err = upsertUC.validate(draft,allRes,selEnv?.maxReservationDuration??999,policy,isAdmin);
     if(err){setError(err);return;}
@@ -190,8 +314,8 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
           </select>
         </div>
         <div>
-          <label style={lblStyle}>Claves Jira</label>
-          <JiraTagInput value={jiras} onChange={setJiras}/>
+          <label style={lblStyle}>Tickets Jira</label>
+          <JiraTicketSearch value={jiras} onChange={handleJiraChange}/>
         </div>
         <div>
           <label style={lblStyle}>Descripción <span style={{fontWeight:400,textTransform:'none'}}>(opcional)</span></label>
@@ -204,19 +328,17 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
           <div><label style={lblStyle}>Fin</label>
             <input type="datetime-local" value={end} onChange={e=>setEnd(e.target.value)} style={inpStyle()}/></div>
         </div>
-        {repos.filter(r=>!r.isArchived).length>0&&(
+        {/* Repositorios extraidos de los tickets Jira (solo lectura) */}
+        {extractedRepos.length > 0 && (
           <div>
-            <label style={lblStyle}>Repositorios</label>
+            <label style={lblStyle}>Repositorios (desde Jira)</label>
             <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-              {repos.filter(r=>!r.isArchived).map(r=>(
-                <button key={r.id}
-                  onClick={()=>setRids(p=>p.includes(r.id)?p.filter(x=>x!==r.id):[...p,r.id])}
-                  style={{padding:'4px 10px',fontSize:12,borderRadius:20,cursor:'pointer',fontFamily:'inherit',
-                    background:rids.includes(r.id)?'rgba(124,58,237,.15)':'var(--sf2,#1b1b22)',
-                    color:rids.includes(r.id)?'#a78bfa':'var(--tx3,#50506a)',
-                    border:rids.includes(r.id)?'1px solid #a78bfa':'1px solid var(--bd,#2a2a38)'}}>
-                  📦 {r.name}
-                </button>
+              {extractedRepos.map(name => (
+                <span key={name} style={{padding:'4px 10px',fontSize:12,borderRadius:20,fontFamily:'inherit',
+                  background:'rgba(124,58,237,.15)',color:'#a78bfa',
+                  border:'1px solid rgba(124,58,237,.3)'}}>
+                  📦 {name}
+                </span>
               ))}
             </div>
           </div>
@@ -242,11 +364,14 @@ function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEd
   const [branch,setBranch] = useState('');
   const [showB,setShowB]   = useState(false);
   const repoNames = (res.selectedRepositoryIds??[]).map(id=>repos.find(r=>r.id===id)?.name).filter(Boolean);
+  const extractedRepoNames = res.extractedRepos ?? [];
   const canEdit   = (isOwner||isAdmin)&&['Reserved','PolicyViolation','InUse'].includes(res.status);
   const canCI     = isOwner&&res.status==='Reserved';
   const canCO     = isOwner&&res.status==='InUse';
   const canCancel = (isOwner||isAdmin)&&['Reserved','InUse','PolicyViolation'].includes(res.status);
   const cat = CAT[env?.category]??CAT.DEV;
+
+  const allRepos = [...new Set([...repoNames, ...extractedRepoNames])];
 
   return (
     <Modal title="Detalle de reserva" onClose={onClose}>
@@ -281,8 +406,8 @@ function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEd
             </div>
           ))}
         </div>
-        {repoNames.length>0&&<div style={{display:'flex',flexWrap:'wrap',gap:4}}>
-          {repoNames.map(n=><span key={n} style={{padding:'2px 8px',borderRadius:4,fontSize:12,
+        {allRepos.length>0&&<div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+          {allRepos.map(n=><span key={n} style={{padding:'2px 8px',borderRadius:4,fontSize:12,
             background:'var(--sf2,#1b1b22)',color:'var(--tx3,#50506a)'}}>📦 {n}</span>)}
         </div>}
         {(res.usageSession?.branches??[]).length>0&&<div style={{display:'flex',flexWrap:'wrap',gap:4}}>
@@ -348,6 +473,155 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
   );
 }
 
+// ── Gantt view ────────────────────────────────────────────────────────────────
+const GANTT_CAT_COLORS = {
+  DEV:     { color: '#a78bfa', bg: 'rgba(124,58,237,.15)' },
+  PRE:     { color: '#fbbf24', bg: 'rgba(180,83,9,.15)' },
+  STAGING: { color: '#22d3ee', bg: 'rgba(14,116,144,.15)' },
+};
+
+function GanttView({ reservations, envs, onBarClick }) {
+  const bars = useMemo(() => reservations
+    .filter(r => r.plannedStart && r.plannedEnd)
+    .map(r => {
+      const env = envs.find(e => e.id === r.environmentId);
+      const catColors = GANTT_CAT_COLORS[env?.category] ?? GANTT_CAT_COLORS.DEV;
+      const startDate = r.plannedStart.slice(0, 10);
+      const endDate = r.plannedEnd.slice(0, 10);
+      const jiraStr = (r.jiraIssueKeys ?? []).join(', ');
+      return {
+        id: r.id,
+        label: env?.name ?? '—',
+        startDate,
+        endDate,
+        color: catColors.color,
+        bgColor: catColors.bg,
+        status: r.status,
+        meta: `${durH(r.plannedStart, r.plannedEnd)}h${jiraStr ? ' · ' + jiraStr : ''}`,
+      };
+    }), [reservations, envs]);
+
+  if (!bars.length) {
+    return (
+      <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
+        No hay reservas con fechas para mostrar en el Gantt.
+      </div>
+    );
+  }
+
+  return <GanttTimeline bars={bars} onBarClick={onBarClick} />;
+}
+
+// ── History view ──────────────────────────────────────────────────────────────
+function HistoryView() {
+  const [history, setHistory]   = useState([]);
+  const [loading, setLoading]   = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await historyRepo.findRecent(2);
+        if (!cancelled) setHistory(data);
+      } catch (err) {
+        console.error('[HistoryView] error cargando historial', err);
+      } finally { if (!cancelled) setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const thStyle = {
+    padding:'8px 12px', fontSize:11, fontWeight:700, color:'var(--tx3,#50506a)',
+    textTransform:'uppercase', letterSpacing:'.04em', textAlign:'left',
+    borderBottom:'1px solid var(--bd,#2a2a38)', background:'var(--sf2,#1b1b22)',
+  };
+  const tdStyle = {
+    padding:'8px 12px', fontSize:12, color:'var(--tx,#e4e4ef)',
+    borderBottom:'1px solid var(--bd,#2a2a38)',
+  };
+
+  const statusBadge = (status) => {
+    const map = {
+      Reserved:  { color:'#4f6ef7', bg:'rgba(79,110,247,.12)' },
+      InUse:     { color:'#22c55e', bg:'rgba(34,197,94,.12)' },
+      Completed: { color:'#a78bfa', bg:'rgba(124,58,237,.12)' },
+      Cancelled: { color:'#ef4444', bg:'rgba(239,68,68,.12)' },
+    };
+    const s = map[status] ?? map.Reserved;
+    return (
+      <span style={{padding:'2px 8px',borderRadius:12,fontSize:11,fontWeight:600,
+        background:s.bg,color:s.color}}>{status}</span>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
+        Cargando historial…
+      </div>
+    );
+  }
+
+  if (!history.length) {
+    return (
+      <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
+        Sin registros en los últimos 2 meses.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{overflowX:'auto'}}>
+      <table style={{width:'100%',borderCollapse:'collapse',minWidth:800}}>
+        <thead>
+          <tr>
+            <th style={thStyle}>Fecha</th>
+            <th style={thStyle}>Usuario</th>
+            <th style={thStyle}>Entorno</th>
+            <th style={thStyle}>Claves Jira</th>
+            <th style={thStyle}>Repos</th>
+            <th style={thStyle}>Duración</th>
+            <th style={thStyle}>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {history.map(h => (
+            <tr key={h.id}>
+              <td style={tdStyle}>{fmtDt(h.created_at)}</td>
+              <td style={tdStyle}>{h.reserved_by_name || '—'}</td>
+              <td style={tdStyle}>{h.environment_name || '—'}</td>
+              <td style={tdStyle}>
+                <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
+                  {(h.jira_issue_keys??[]).map(k=>(
+                    <span key={k} style={{padding:'1px 6px',borderRadius:4,fontSize:11,fontFamily:'monospace',
+                      background:'rgba(124,58,237,.12)',color:'#a78bfa'}}>{k}</span>
+                  ))}
+                </div>
+              </td>
+              <td style={tdStyle}>
+                <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
+                  {(h.repos??[]).map(r=>(
+                    <span key={r} style={{padding:'1px 6px',borderRadius:4,fontSize:11,
+                      background:'var(--sf2,#1b1b22)',color:'var(--tx3,#50506a)'}}>{r}</span>
+                  ))}
+                  {(!h.repos||!h.repos.length)&&<span style={{color:'var(--tx3,#50506a)'}}>—</span>}
+                </div>
+              </td>
+              <td style={tdStyle}>
+                {h.planned_start && h.planned_end
+                  ? durH(h.planned_start, h.actual_end ?? h.planned_end) + 'h'
+                  : '—'}
+              </td>
+              <td style={tdStyle}>{statusBadge(h.status)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // ── Main view ──────────────────────────────────────────────────────────────────
 export function EnvironmentsView({ currentUser, wsUsers }) {
   const [envs,   setEnvs]   = useState([]);
@@ -363,6 +637,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   const [form,    setForm]    = useState(null);
   const [detail,  setDetail]  = useState(null);
   const [confirm, setConfirm] = useState(null);
+  const [mainTab, setMainTab] = useState('reservas');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -427,28 +702,54 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
     if(reservation) setDetail(reservation);
   };
 
-  const tabs=[{id:'all',label:'Todas'},{id:'active',label:'Activas'},{id:'mine',label:'Mis reservas'}];
+  const handleGanttBarClick = (barId) => {
+    const reservation = res.find(r => r.id === barId);
+    if (reservation) setDetail(reservation);
+  };
+
+  const filterTabs=[{id:'all',label:'Todas'},{id:'active',label:'Activas'},{id:'mine',label:'Mis reservas'}];
+  const mainTabs=[{id:'reservas',label:'Reservas'},{id:'gantt',label:'Gantt'},{id:'historial',label:'Historial'}];
 
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
-      {/* Filter bar */}
+      {/* Main tabs */}
       <div style={{display:'flex',alignItems:'center',gap:10,padding:'12px 20px',
         borderBottom:'1px solid var(--bd,#2a2a38)',background:'var(--sf,#141418)',flexShrink:0}}>
         <div style={{display:'flex',gap:2,background:'var(--sf2,#1b1b22)',
           border:'1px solid var(--bd,#2a2a38)',borderRadius:8,padding:3}}>
-          {tabs.map(t=>(
-            <button key={t.id} onClick={()=>setFilter(t.id)}
-              style={{padding:'4px 12px',fontSize:12,fontWeight:filter===t.id?600:400,borderRadius:6,
+          {mainTabs.map(t=>(
+            <button key={t.id} onClick={()=>setMainTab(t.id)}
+              style={{padding:'4px 12px',fontSize:12,fontWeight:mainTab===t.id?600:400,borderRadius:6,
                 border:'none',cursor:'pointer',fontFamily:'inherit',
-                background:filter===t.id?'var(--sf,#141418)':'transparent',
-                color:filter===t.id?'var(--tx,#e4e4ef)':'var(--tx3,#50506a)',
-                boxShadow:filter===t.id?'0 1px 3px rgba(0,0,0,.15)':'none'}}>
+                background:mainTab===t.id?'var(--ac,#4f6ef7)':'transparent',
+                color:mainTab===t.id?'#fff':'var(--tx3,#50506a)',
+                boxShadow:mainTab===t.id?'0 1px 3px rgba(0,0,0,.15)':'none'}}>
               {t.label}
             </button>
           ))}
         </div>
-        <input placeholder="Buscar Jira, entorno…" value={search} onChange={e=>setSearch(e.target.value)}
-          style={inpStyle({width:200,padding:'6px 10px',fontSize:12})}/>
+
+        {/* Filter bar solo en vista Reservas */}
+        {mainTab==='reservas'&&(
+          <>
+            <div style={{display:'flex',gap:2,background:'var(--sf2,#1b1b22)',
+              border:'1px solid var(--bd,#2a2a38)',borderRadius:8,padding:3,marginLeft:8}}>
+              {filterTabs.map(t=>(
+                <button key={t.id} onClick={()=>setFilter(t.id)}
+                  style={{padding:'4px 12px',fontSize:12,fontWeight:filter===t.id?600:400,borderRadius:6,
+                    border:'none',cursor:'pointer',fontFamily:'inherit',
+                    background:filter===t.id?'var(--sf,#141418)':'transparent',
+                    color:filter===t.id?'var(--tx,#e4e4ef)':'var(--tx3,#50506a)',
+                    boxShadow:filter===t.id?'0 1px 3px rgba(0,0,0,.15)':'none'}}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <input placeholder="Buscar Jira, entorno…" value={search} onChange={e=>setSearch(e.target.value)}
+              style={inpStyle({width:200,padding:'6px 10px',fontSize:12})}/>
+          </>
+        )}
+
         <div style={{marginLeft:'auto'}}>
           <button style={btnStyle('primary',{padding:'7px 14px'})} onClick={()=>setForm('new')}>
             + Nueva reserva
@@ -456,20 +757,38 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
         </div>
       </div>
 
-      {/* Lista — mismo DeployTimeline de Deploy Planner, sin tocarlo */}
+      {/* Tab content */}
       <div style={{flex:1,overflowY:'auto',padding:'16px 20px'}}>
-        {loading ? (
-          <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
-            Cargando reservas…
-          </div>
-        ) : (
-          <div style={{maxWidth:760}}>
-            <DeployTimeline
-              deployments={deploymentShapes}
-              onSelect={handleSelect}
-            />
-          </div>
+        {mainTab==='reservas' && (
+          <>
+            {loading ? (
+              <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
+                Cargando reservas…
+              </div>
+            ) : (
+              <div style={{maxWidth:760}}>
+                <DeployTimeline
+                  deployments={deploymentShapes}
+                  onSelect={handleSelect}
+                />
+              </div>
+            )}
+          </>
         )}
+
+        {mainTab==='gantt' && (
+          <>
+            {loading ? (
+              <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
+                Cargando…
+              </div>
+            ) : (
+              <GanttView reservations={visible} envs={envs} onBarClick={handleGanttBarClick} />
+            )}
+          </>
+        )}
+
+        {mainTab==='historial' && <HistoryView />}
       </div>
 
       {form&&<ReservationForm res={form==='new'?null:form} envs={envs} repos={repos} allRes={res}
