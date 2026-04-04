@@ -356,7 +356,7 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
 }
 
 // ── Reservation detail ────────────────────────────────────────────────────────
-function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEdit, onCheckIn, onCheckOut, onCancel, onAddBranch }) {
+function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEdit, onCheckIn, onCheckOut, onCancel, onAddBranch, jiraBaseUrl="" }) {
   const env     = envs.find(e=>e.id===res.environmentId);
   const isOwner = currentUser?.id===res.reservedByUserId;
   const isAdmin = currentUser?.role==='admin';
@@ -383,8 +383,9 @@ function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEd
         </div>
         <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
           {(res.jiraIssueKeys??[]).map(k=>(
-            <span key={k} style={{padding:'3px 10px',borderRadius:6,fontSize:12,fontFamily:'monospace',
-              background:'rgba(124,58,237,.15)',color:'#a78bfa'}}>{k}</span>
+            <a key={k} href={`${jiraBaseUrl}/browse/${k}`} target="_blank" rel="noopener noreferrer"
+              style={{padding:'3px 10px',borderRadius:6,fontSize:12,fontFamily:'monospace',
+              background:'rgba(124,58,237,.15)',color:'#a78bfa',textDecoration:'none'}}>{k} ↗</a>
           ))}
         </div>
         {res.description&&<p style={{fontSize:13,color:'var(--tx3,#50506a)',lineHeight:1.5}}>{res.description}</p>}
@@ -638,6 +639,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   const [detail,  setDetail]  = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [mainTab, setMainTab] = useState('reservas');
+  const [jiraBaseUrl, setJiraBaseUrl] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -646,6 +648,12 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
         getEnvs.execute(), getRes.execute(),
       ]);
       setEnvs(e); setRes(reservations); setRepos(repositories); setPolicy(pol);
+      // Load Jira base URL
+      try {
+        const connRes = await fetch(`${API_BASE}/jira/connection`, { headers: await getAuthHeaders() });
+        const connData = await connRes.json();
+        if(connData.ok && connData.data?.base_url) setJiraBaseUrl(connData.data.base_url.replace(/\/$/,''));
+      } catch {}
     } catch(err) {
       console.error('[EnvironmentsView]', err);
     } finally { setLoading(false); }
@@ -708,7 +716,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   };
 
   const filterTabs=[{id:'all',label:'Todas'},{id:'active',label:'Activas'},{id:'mine',label:'Mis reservas'}];
-  const mainTabs=[{id:'reservas',label:'Reservas'},{id:'gantt',label:'Gantt'},{id:'historial',label:'Historial'}];
+  const mainTabs=[{id:'reservas',label:'Reservas'},{id:'gantt',label:'Timeline'},{id:'historial',label:'Historial'}];
 
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
@@ -745,7 +753,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
                 </button>
               ))}
             </div>
-            <input placeholder="Buscar Jira, entorno…" value={search} onChange={e=>setSearch(e.target.value)}
+            <input placeholder="Buscar por ticket o entorno…" value={search} onChange={e=>setSearch(e.target.value)}
               style={inpStyle({width:200,padding:'6px 10px',fontSize:12})}/>
           </>
         )}
@@ -798,7 +806,8 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
         currentUser={currentUser} onClose={()=>setDetail(null)}
         onEdit={r=>{setDetail(null);setForm(r);}}
         onCheckIn={()=>handleCheckIn(detail)} onCheckOut={()=>handleCheckOut(detail)}
-        onCancel={()=>handleCancel(detail)} onAddBranch={b=>handleAddBranch(detail,b)}/>}
+        onCancel={()=>handleCancel(detail)} onAddBranch={b=>handleAddBranch(detail,b)}
+        jiraBaseUrl={jiraBaseUrl}/>}
 
       {confirm&&<ConfirmDialog message={confirm.message}
         onConfirm={confirm.onConfirm} onCancel={()=>setConfirm(null)}/>}
