@@ -30,6 +30,7 @@ worksuite/
 │   │       ├── Modal.tsx              (Modal, ConfirmModal)
 │   │       ├── GanttTimeline.tsx      ← Gantt chart interactivo (zoom, drag, groups)
 │   │       ├── JiraTicketSearch.tsx   ← autocomplete de tickets Jira (DI del search)
+│   │       ├── JiraTicketPicker.tsx   ← lista pre-cargada + buscador + multiselect (reutilizable)
 │   │       ├── StatusManager.tsx      ← CRUD + drag-reorder de estados (presentacional, reutilizable)
 │   │       └── TimerBar.tsx
 │   ├── jira-client/           ← cliente HTTP para Jira Cloud API (usado en apps/api)
@@ -124,6 +125,7 @@ fetch() in UI/admin: 0
 ### `@worksuite/ui`
 - `GanttTimeline` — Gantt chart con zoom (días/semanas/meses), drag-to-move/resize, group frames
 - `JiraTicketSearch` — autocomplete de tickets Jira; el `search` callback se inyecta por prop
+- `JiraTicketPicker` — lista pre-filtrada de tickets con buscador y multiselect. El caller le pasa los tickets ya cargados (agnóstico de transport)
 - `StatusManager` — lista drag-to-reorder + CRUD + color + categoría. Presentacional: recibe
   `statuses`, `categories` y callbacks `onCreate/onUpdate/onDelete/onReorder`. Reutilizable para
   cualquier módulo que necesite estados configurables (releases, reservas, tickets…).
@@ -185,7 +187,7 @@ Consumido por Deploy Planner y Environments. El `repoField` se lee de `dp_versio
 | `buildings`, `blueprints` | Planos de oficina |
 | `retro_sessions`, `retro_actionables`, `retro_teams`, `retro_team_members` | RetroBoard |
 | `dp_releases`, `dp_release_statuses`, `dp_version_config` | Deploy Planner |
-| `syn_reservations`, `syn_reservation_statuses`, `syn_reservation_history` | Environments |
+| `syn_reservations`, `syn_reservation_statuses`, `syn_reservation_history`, `syn_jira_filter_config` | Environments |
 | `dp_repo_groups`, `dp_subtask_config` | Config de repos y subtareas |
 | `jira_connections` | Conexiones Jira por usuario |
 | `sso_config` | SSO + deploy Jira statuses |

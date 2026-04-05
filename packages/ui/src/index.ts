@@ -23,6 +23,10 @@ export { TimerBar }                      from './components/TimerBar';
 export { JiraTicketSearch }              from './components/JiraTicketSearch';
 export type { JiraIssueOption, JiraTicketSearchProps } from './components/JiraTicketSearch';
 
+// ── Jira Ticket Picker ────────────────────────────────────────────────────────
+export { JiraTicketPicker }              from './components/JiraTicketPicker';
+export type { JiraTicketOption, JiraTicketPickerProps } from './components/JiraTicketPicker';
+
 // ── Status Manager ────────────────────────────────────────────────────────────
 export { StatusManager }                 from './components/StatusManager';
 export type { StatusItem, StatusCategoryOption, StatusManagerProps } from './components/StatusManager';

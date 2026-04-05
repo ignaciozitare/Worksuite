@@ -3,11 +3,13 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase }                from '@/shared/lib/supabaseClient';
 // Usamos el mismo DeployTimeline de Deploy Planner — sin tocarlo
 import { DeployTimeline }          from '../../deploy-planner/ui/DeployTimeline';
-import { GanttTimeline, JiraTicketSearch } from '@worksuite/ui';
-import { HttpJiraSearchAdapter, extractReposFromTickets } from '@worksuite/jira-service';
+import { GanttTimeline, JiraTicketPicker } from '@worksuite/ui';
+import { useTranslation }                 from '@worksuite/i18n';
+import { extractReposFromTickets }        from '@worksuite/jira-service';
 import { SupabaseReservationHistoryRepo } from '../infra/supabase/SupabaseReservationHistoryRepo';
-import { SupabaseJiraConfigRepo }  from '../infra/supabase/SupabaseJiraConfigRepo';
-import { SupabaseReservationStatusRepo } from '../infra/supabase/SupabaseReservationStatusRepo';
+import { SupabaseJiraConfigRepo }         from '../infra/supabase/SupabaseJiraConfigRepo';
+import { SupabaseReservationStatusRepo }  from '../infra/supabase/SupabaseReservationStatusRepo';
+import { SupabaseJiraFilterConfigRepo }   from '../infra/supabase/SupabaseJiraFilterConfigRepo';
 import type { Environment }        from '../domain/entities/Environment';
 import type { Reservation, Repository, EnvPolicy } from '../domain/entities/Reservation';
 import { SupabaseEnvironmentRepo } from '../infra/supabase/SupabaseEnvironmentRepo';
@@ -31,10 +33,10 @@ async function getAuthHeaders() {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
 }
-const jiraSearchAdapter = new HttpJiraSearchAdapter(API_BASE, getAuthHeaders);
-const historyRepo = new SupabaseReservationHistoryRepo(supabase);
-const jiraConfigRepo = new SupabaseJiraConfigRepo(supabase);
-const statusRepo = new SupabaseReservationStatusRepo(supabase);
+const historyRepo        = new SupabaseReservationHistoryRepo(supabase);
+const jiraConfigRepo     = new SupabaseJiraConfigRepo(supabase);
+const statusRepo         = new SupabaseReservationStatusRepo(supabase);
+const jiraFilterRepo     = new SupabaseJiraFilterConfigRepo(supabase);
 
 // ── Map reservation status category → DeployTimeline's visual vocabulary ────
 const CATEGORY_TO_TIMELINE_STATUS = {
@@ -128,12 +130,13 @@ function Modal({ title, onClose, children, width=520 }) {
 // @worksuite/ui and @worksuite/jira-service (see imports at the top).
 
 // ── Reservation form ──────────────────────────────────────────────────────────
-function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave, onClose, searchJira, repoField, reservedStatus, inUseStatus }) {
+function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave, onClose, availableTickets, ticketsLoading, repoField, reservedStatus, inUseStatus }) {
+  const { t } = useTranslation();
   const isEdit  = !!res;
   const isAdmin = currentUser?.role==='admin';
   const [envId,setEnvId]           = useState(res?.environmentId??'');
   const [jiras,setJiras]           = useState(res?.jiraIssueKeys??[]);
-  const [ticketData,setTicketData] = useState([]);
+  const [selectedTickets,setSelectedTickets] = useState([]);
   const [desc,setDesc]             = useState(res?.description??'');
   const [start,setStart]           = useState(res?.plannedStart?res.plannedStart.slice(0,16):'');
   const [end,setEnd]               = useState(res?.plannedEnd?res.plannedEnd.slice(0,16):'');
@@ -141,13 +144,13 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
   const selEnv = envs.find(e=>e.id===envId);
 
   const extractedRepos = useMemo(
-    () => extractReposFromTickets(ticketData, repoField),
-    [ticketData, repoField],
+    () => extractReposFromTickets(selectedTickets.map(t=>({ fields: t.fields ?? {} })), repoField),
+    [selectedTickets, repoField],
   );
 
-  const handleJiraChange = (keys, data) => {
+  const handleTicketsChange = (keys, tickets) => {
     setJiras(keys);
-    setTicketData(data);
+    setSelectedTickets(tickets);
   };
 
   const submit = () => {
@@ -191,13 +194,18 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
           </select>
         </div>
         <div>
-          <label style={lblStyle}>Tickets Jira</label>
-          <JiraTicketSearch
+          <label style={lblStyle}>{t('admin.envReservationPickerLabel')}</label>
+          <JiraTicketPicker
+            tickets={availableTickets}
             value={jiras}
-            onChange={handleJiraChange}
-            search={searchJira}
-            placeholder="Buscar tickets Jira…"
-            placeholderMore="Buscar mas tickets…"
+            onChange={handleTicketsChange}
+            loading={ticketsLoading}
+            labels={{
+              searchPlaceholder: t('admin.envReservationPickerSearch'),
+              empty:             t('admin.envReservationPickerEmpty'),
+              noMatches:         t('admin.envReservationPickerNoMatches'),
+              loading:           t('admin.envReservationPickerLoading'),
+            }}
           />
         </div>
         <div>
@@ -525,6 +533,8 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   const [jiraBaseUrl, setJiraBaseUrl] = useState('');
   const [repoField, setRepoField] = useState('components');
   const [statuses, setStatuses] = useState([]);
+  const [availableTickets, setAvailableTickets] = useState([]);
+  const [ticketsLoading, setTicketsLoading]     = useState(false);
 
   // Pick the first status of each category — used for lifecycle transitions.
   // If the admin creates multiple statuses per category, the first (lowest ord)
@@ -536,13 +546,38 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   const completedStatus = statusOfCategory('completed');
   const cancelledStatus = statusOfCategory('cancelled');
 
-  // Search callback passed to the shared <JiraTicketSearch>. Requests the
-  // configured repoField so repos can be extracted from the result.
-  const searchJira = useCallback(async (query) => {
-    const jql = `text ~ "${query}" ORDER BY updated DESC`;
-    const fields = `summary,issuetype,status,${repoField}`;
-    const resp = await jiraSearchAdapter.searchIssues(jql, 15, fields);
-    return resp?.data ?? resp?.issues ?? [];
+  // Fetch candidate Jira tickets using the admin-configured filter.
+  // Called when the user opens the reservation modal.
+  const loadAvailableTickets = useCallback(async () => {
+    setTicketsLoading(true);
+    try {
+      const cfg = await jiraFilterRepo.get();
+      const parts = [];
+      if (cfg.projectKeys.length) parts.push(`project in (${cfg.projectKeys.map(k=>`"${k}"`).join(',')})`);
+      if (cfg.issueTypes.length)  parts.push(`issuetype in (${cfg.issueTypes.map(n=>`"${n}"`).join(',')})`);
+      if (cfg.statuses.length)    parts.push(`status in (${cfg.statuses.map(n=>`"${n}"`).join(',')})`);
+      const jql = (parts.length ? parts.join(' AND ') + ' ' : '') + 'ORDER BY updated DESC';
+      const params = new URLSearchParams({
+        jql,
+        maxResults: '200',
+        fields: `summary,issuetype,status,${repoField}`,
+      });
+      const resp = await fetch(`${API_BASE}/jira/search?${params}`, { headers: await getAuthHeaders() });
+      if (!resp.ok) { setAvailableTickets([]); return; }
+      const json = await resp.json();
+      const raw = json?.issues ?? json?.data ?? [];
+      const mapped = raw.map((i) => ({
+        key:       i.key,
+        summary:   i.fields?.summary ?? '',
+        issueType: i.fields?.issuetype?.name ?? '',
+        status:    i.fields?.status?.name ?? '',
+        fields:    i.fields,
+      }));
+      setAvailableTickets(mapped);
+    } catch (err) {
+      console.error('[EnvironmentsView] loadAvailableTickets error', err);
+      setAvailableTickets([]);
+    } finally { setTicketsLoading(false); }
   }, [repoField]);
 
   const load = useCallback(async () => {
@@ -717,7 +752,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
         )}
 
         <div style={{marginLeft:'auto'}}>
-          <button style={btnStyle('primary',{padding:'7px 14px'})} onClick={()=>setForm('new')}>
+          <button style={btnStyle('primary',{padding:'7px 14px'})} onClick={()=>{ setForm('new'); void loadAvailableTickets(); }}>
             + Nueva reserva
           </button>
         </div>
@@ -759,12 +794,13 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
 
       {form&&<ReservationForm res={form==='new'?null:form} envs={envs} repos={repos} allRes={res}
         policy={policy} currentUser={currentUser} onSave={handleSave} onClose={()=>setForm(null)}
-        searchJira={searchJira} repoField={repoField}
+        availableTickets={availableTickets} ticketsLoading={ticketsLoading}
+        repoField={repoField}
         reservedStatus={reservedStatus} inUseStatus={inUseStatus}/>}
 
       {detail&&<ReservationDetail res={detail} envs={envs} repos={repos} users={wsUsers??[]}
         currentUser={currentUser} onClose={()=>setDetail(null)}
-        onEdit={r=>{setDetail(null);setForm(r);}}
+        onEdit={r=>{setDetail(null);setForm(r);void loadAvailableTickets();}}
         onCheckIn={()=>handleCheckIn(detail)} onCheckOut={()=>handleCheckOut(detail)}
         onCancel={()=>handleCancel(detail)} onAddBranch={b=>handleAddBranch(detail,b)}
         jiraBaseUrl={jiraBaseUrl}/>}

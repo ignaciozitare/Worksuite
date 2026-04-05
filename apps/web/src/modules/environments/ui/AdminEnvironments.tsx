@@ -8,10 +8,152 @@ import type { Repository, EnvPolicy } from '../domain/entities/Reservation';
 import { SupabaseEnvironmentRepo } from '../infra/supabase/SupabaseEnvironmentRepo';
 import { SupabaseReservationRepo } from '../infra/supabase/SupabaseReservationRepo';
 import { SupabaseReservationStatusRepo } from '../infra/supabase/SupabaseReservationStatusRepo';
+import { SupabaseJiraFilterConfigRepo } from '../infra/supabase/SupabaseJiraFilterConfigRepo';
 
 const envRepo = new SupabaseEnvironmentRepo(supabase);
 const resRepo = new SupabaseReservationRepo(supabase);
 const statusRepo = new SupabaseReservationStatusRepo(supabase);
+const jiraFilterRepo = new SupabaseJiraFilterConfigRepo(supabase);
+
+const API_BASE = ((import.meta as any).env?.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+async function getAuthHeaders() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
+}
+
+// ── Admin: Filtro Jira (pre-selección de tickets mostrados en reserva) ──────
+export function AdminEnvJiraFilter() {
+  const { t } = useTranslation();
+  const [config, setConfig] = useState({ projectKeys: [], issueTypes: [], statuses: [] });
+  const [projects, setProjects] = useState([]);   // [{key,name}]
+  const [issueTypes, setIssueTypes] = useState([]); // [{id,name,subtask}]
+  const [statuses, setStatuses] = useState([]);     // [{id,name,category}]
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const [cfg, projRes, typesRes, stRes] = await Promise.all([
+          jiraFilterRepo.get(),
+          fetch(`${API_BASE}/jira/projects`, { headers }).then(r => r.json()).catch(() => ({})),
+          fetch(`${API_BASE}/jira/issuetypes`, { headers }).then(r => r.json()).catch(() => ({})),
+          fetch(`${API_BASE}/jira/statuses`, { headers }).then(r => r.json()).catch(() => ({})),
+        ]);
+        if (cancelled) return;
+        setConfig(cfg);
+        setProjects((projRes?.data || []).map(p => ({ key: p.key, name: p.name })));
+        setIssueTypes((typesRes?.issueTypes || []).filter(it => !it.subtask));
+        setStatuses(statusesDedup(stRes?.statuses || []));
+      } catch (err) {
+        console.error('[AdminEnvJiraFilter]', err);
+      } finally { if (!cancelled) setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const toggle = (field, value) => {
+    setConfig(c => {
+      const list = c[field];
+      return { ...c, [field]: list.includes(value) ? list.filter(v => v !== value) : [...list, value] };
+    });
+    setSaved(false);
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await jiraFilterRepo.save(config);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      console.error('[AdminEnvJiraFilter] save error', err);
+    } finally { setSaving(false); }
+  };
+
+  if (loading) return <div style={{fontSize:12,color:'var(--tx3,#50506a)'}}>{t('common.loading')}</div>;
+
+  return (
+    <div>
+      <div style={{fontWeight:700,fontSize:14,color:'var(--tx,#e4e4ef)',marginBottom:6}}>
+        {t('admin.envJiraFilterTitle')}
+      </div>
+      <div style={{fontSize:11,color:'var(--tx3,#50506a)',marginBottom:14}}>
+        {t('admin.envJiraFilterHint')}
+      </div>
+
+      <FilterSection
+        label={t('admin.envJiraFilterProjects')}
+        hint={t('admin.envJiraFilterAllHint')}
+        options={projects.map(p => ({ value: p.key, label: `${p.key} — ${p.name}` }))}
+        selected={config.projectKeys}
+        onToggle={v => toggle('projectKeys', v)}
+      />
+
+      <FilterSection
+        label={t('admin.envJiraFilterIssueTypes')}
+        hint={t('admin.envJiraFilterAllHint')}
+        options={issueTypes.map(it => ({ value: it.name, label: it.name }))}
+        selected={config.issueTypes}
+        onToggle={v => toggle('issueTypes', v)}
+      />
+
+      <FilterSection
+        label={t('admin.envJiraFilterStatuses')}
+        hint={t('admin.envJiraFilterAllHint')}
+        options={statuses.map(s => ({ value: s.name, label: `${s.name}${s.category ? ` (${s.category})` : ''}` }))}
+        selected={config.statuses}
+        onToggle={v => toggle('statuses', v)}
+      />
+
+      <div style={{display:'flex',alignItems:'center',gap:10,marginTop:12}}>
+        <button onClick={save} disabled={saving} style={btn('primary',{padding:'7px 16px'})}>
+          {saving ? t('common.loading') : t('common.save')}
+        </button>
+        {saved && <span style={{fontSize:11,color:'#22c55e'}}>✓ {t('admin.savedOk')}</span>}
+      </div>
+    </div>
+  );
+}
+
+// Dedupe statuses by name (Jira returns the same status per project).
+function statusesDedup(arr) {
+  const seen = new Set();
+  return arr.filter(s => seen.has(s.name) ? false : (seen.add(s.name), true));
+}
+
+function FilterSection({ label, hint, options, selected, onToggle }) {
+  const allOn = selected.length === 0;
+  return (
+    <div style={{marginBottom:14,padding:'10px 12px',background:'var(--sf2,#1b1b22)',borderRadius:8,border:'1px solid var(--bd,#2a2a38)'}}>
+      <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:8}}>
+        <div style={{fontSize:12,fontWeight:700,color:'var(--tx,#e4e4ef)'}}>{label}</div>
+        <div style={{fontSize:10,color:allOn?'#22c55e':'var(--tx3,#50506a)'}}>{allOn ? `✓ ${hint}` : `${selected.length} seleccionado${selected.length!==1?'s':''}`}</div>
+      </div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+        {options.map(opt => {
+          const on = selected.includes(opt.value);
+          return (
+            <button key={opt.value} onClick={()=>onToggle(opt.value)}
+              style={{
+                fontSize:11, padding:'3px 10px', borderRadius:12, cursor:'pointer', fontFamily:'inherit', fontWeight:600,
+                background: on ? 'rgba(79,110,247,.15)' : 'var(--sf,#141418)',
+                color:      on ? '#4f6ef7'              : 'var(--tx3,#50506a)',
+                border: `1px solid ${on ? '#4f6ef7' : 'var(--bd,#2a2a38)'}`,
+                transition: 'all .12s',
+              }}>
+              {opt.label}
+            </button>
+          );
+        })}
+        {options.length === 0 && <div style={{fontSize:10,color:'var(--tx3,#50506a)'}}>—</div>}
+      </div>
+    </div>
+  );
+}
 
 // ── Admin: Estados de reserva ────────────────────────────────────────────────
 export function AdminEnvStatuses() {

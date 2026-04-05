@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from '@worksuite/i18n';
-import { AdminEnvEnvironments, AdminEnvPolicy, AdminEnvStatuses } from '../../modules/environments';
+import { AdminEnvEnvironments, AdminEnvPolicy, AdminEnvStatuses, AdminEnvJiraFilter } from '../../modules/environments';
 
 function AdminEnvTrackerSection() {
   const { t } = useTranslation();
@@ -10,6 +10,7 @@ function AdminEnvTrackerSection() {
   const SUB = [
     { id:"environments", label:t("admin.envTabEnvironments"), icon:"🖥️" },
     { id:"statuses",     label:t("admin.envTabStatuses"),     icon:"🏷️" },
+    { id:"jirafilter",   label:t("admin.envTabJiraFilter"),   icon:"🔎" },
     { id:"policy",       label:t("admin.envTabPolicy"),       icon:"📋" },
   ];
   return (
@@ -26,6 +27,7 @@ function AdminEnvTrackerSection() {
       <div className="a-card">
         {sub==="environments" && <AdminEnvEnvironments/>}
         {sub==="statuses"     && <AdminEnvStatuses/>}
+        {sub==="jirafilter"   && <AdminEnvJiraFilter/>}
         {sub==="policy"       && <AdminEnvPolicy/>}
       </div>
     </div>
