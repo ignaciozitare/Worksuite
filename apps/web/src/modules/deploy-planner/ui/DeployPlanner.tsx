@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../../../shared/lib/supabaseClient";
 import { GanttTimeline } from '@worksuite/ui';
+import { extractReposFromTickets } from '@worksuite/jira-service';
 import { RepoGroupService } from '../domain/services/RepoGroupService';
 import { SubtaskService } from '../domain/services/SubtaskService';
 import { JiraSubtaskAdapter } from '../infra/JiraSubtaskAdapter';
@@ -1101,11 +1102,13 @@ export function DeployPlanner({ currentUser }) {
 
       const newTickets = filtered.map(i => {
         const fields = i.fields || i;
-        // Read the configured repo field
-        const repoFieldValue = fields[repoFieldName] || i[repoFieldName] || i.components || [];
-        const repos = (Array.isArray(repoFieldValue) ? repoFieldValue : [repoFieldValue])
-          .map(v => (typeof v === "string" ? v : v?.name || v?.value || ""))
-          .filter(Boolean);
+        // Use shared extraction util (handles array/string/object shapes + comma-split).
+        // `extractReposFromTickets` accepts raw issues; we also fall back to `components`
+        // to preserve the legacy behaviour of this view.
+        let repos = extractReposFromTickets([i], repoFieldName);
+        if (repos.length === 0 && repoFieldName !== "components") {
+          repos = extractReposFromTickets([i], "components");
+        }
         return {
           key:      i.key || i.id,
           summary:  i.summary || fields.summary || "",

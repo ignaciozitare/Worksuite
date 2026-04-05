@@ -11,7 +11,8 @@ Plataforma unificada de utilidades de trabajo — Jira Tracker, HotDesk, RetroBo
 | Base de datos | Supabase (Postgres + Auth + RLS) |
 | Jira | REST API v3 via JiraCloudAdapter |
 | i18n | @worksuite/i18n (es/en) |
-| UI Components | @worksuite/ui (GanttTimeline, Btn, Modal, etc.) |
+| UI Components | @worksuite/ui (GanttTimeline, JiraTicketSearch, StatusManager, Btn, Modal, etc.) |
+| Jira (frontend) | @worksuite/jira-service (search adapter + repo extraction util) |
 | Deploy | Vercel (web + api auto-deploy on push to main) |
 | Monorepo | npm workspaces |
 
@@ -22,8 +23,9 @@ worksuite/
 ├── packages/
 │   ├── shared-types/    ← Tipos TypeScript compartidos
 │   ├── i18n/            ← Sistema de traducción (es/en)
-│   ├── ui/              ← Componentes reutilizables (GanttTimeline, Btn, Modal, etc.)
-│   └── jira-client/     ← Cliente HTTP para Jira Cloud
+│   ├── ui/              ← Componentes reutilizables (GanttTimeline, JiraTicketSearch, …)
+│   ├── jira-client/     ← Cliente HTTP para Jira Cloud (usado por apps/api)
+│   └── jira-service/    ← Servicio Jira de frontend (search adapter + utils)
 ├── apps/
 │   ├── web/             ← React SPA (Vite)
 │   │   └── src/
@@ -44,7 +46,7 @@ worksuite/
 | **HotDesk** | Mapa de oficina, reservas de puesto, vista mensual, blueprints |
 | **RetroBoard** | Retrospectivas estructuradas, kanban de accionables, historial |
 | **Deploy Planner** | Releases, timeline Gantt, repo groups, subtareas (bugs/tests), métricas |
-| **Environments** | Gestión de entornos de despliegue, reservas, políticas |
+| **Environments** | Gestión de entornos de despliegue, reservas con estados configurables, políticas, historial |
 
 ## Getting started
 

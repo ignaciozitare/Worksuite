@@ -3,9 +3,11 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase }                from '@/shared/lib/supabaseClient';
 // Usamos el mismo DeployTimeline de Deploy Planner — sin tocarlo
 import { DeployTimeline }          from '../../deploy-planner/ui/DeployTimeline';
-import { GanttTimeline }           from '@worksuite/ui';
-import { JiraSyncAdapter }         from '../../jira-tracker/infra/JiraSyncAdapter';
+import { GanttTimeline, JiraTicketSearch } from '@worksuite/ui';
+import { HttpJiraSearchAdapter, extractReposFromTickets } from '@worksuite/jira-service';
 import { SupabaseReservationHistoryRepo } from '../infra/supabase/SupabaseReservationHistoryRepo';
+import { SupabaseJiraConfigRepo }  from '../infra/supabase/SupabaseJiraConfigRepo';
+import { SupabaseReservationStatusRepo } from '../infra/supabase/SupabaseReservationStatusRepo';
 import type { Environment }        from '../domain/entities/Environment';
 import type { Reservation, Repository, EnvPolicy } from '../domain/entities/Reservation';
 import { SupabaseEnvironmentRepo } from '../infra/supabase/SupabaseEnvironmentRepo';
@@ -29,16 +31,18 @@ async function getAuthHeaders() {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
 }
-const jiraSyncAdapter = new JiraSyncAdapter(API_BASE, getAuthHeaders);
+const jiraSearchAdapter = new HttpJiraSearchAdapter(API_BASE, getAuthHeaders);
 const historyRepo = new SupabaseReservationHistoryRepo(supabase);
+const jiraConfigRepo = new SupabaseJiraConfigRepo(supabase);
+const statusRepo = new SupabaseReservationStatusRepo(supabase);
 
-// ── Mapeo Reservation → formato que entiende DeployTimeline ──────────────────
-const STATUS_MAP = {
-  Reserved:        'planned',
-  InUse:           'in-progress',
-  Completed:       'deployed',
-  Cancelled:       'cancelled',
-  PolicyViolation: 'rolled-back',
+// ── Map reservation status category → DeployTimeline's visual vocabulary ────
+const CATEGORY_TO_TIMELINE_STATUS = {
+  reserved:  'planned',
+  in_use:    'in-progress',
+  completed: 'deployed',
+  cancelled: 'cancelled',
+  violation: 'rolled-back',
 };
 const CAT_MAP = {
   DEV:     'development',
@@ -50,7 +54,7 @@ function toDeploymentShape(res, env) {
   return {
     id:          res.id,
     name:        res.jiraIssueKeys.join(', ') || '—',
-    status:      STATUS_MAP[res.status] ?? 'planned',
+    status:      CATEGORY_TO_TIMELINE_STATUS[res.statusCategory] ?? 'planned',
     environment: CAT_MAP[env?.category] ?? 'development',
     version:     env?.name ?? '—',
     planned_at:  res.plannedStart,
@@ -92,9 +96,6 @@ const CAT    = {
   STAGING: {color:'#22d3ee', bg:'rgba(14,116,144,.15)'},
 };
 
-// ── REPO_FIELD: campo personalizado de Jira que contiene repos ───────────────
-const JIRA_REPO_FIELD = 'customfield_10146';
-
 // ── Modal ─────────────────────────────────────────────────────────────────────
 function Modal({ title, onClose, children, width=520 }) {
   useEffect(()=>{
@@ -123,145 +124,11 @@ function Modal({ title, onClose, children, width=520 }) {
   );
 }
 
-// ── Jira Ticket Search (reemplaza JiraTagInput) ──────────────────────────────
-function JiraTicketSearch({ value, onChange }) {
-  const [query, setQuery]       = useState('');
-  const [results, setResults]   = useState([]);
-  const [loading, setLoading]   = useState(false);
-  const [showDrop, setShowDrop] = useState(false);
-  const [ticketMap, setTicketMap] = useState({});
-  const debounceRef = useRef(null);
-  const wrapRef     = useRef(null);
-
-  // Cerrar dropdown al hacer click fuera
-  useEffect(() => {
-    const handler = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setShowDrop(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  // Buscar tickets con debounce
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!query.trim() || query.trim().length < 2) { setResults([]); return; }
-    debounceRef.current = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const jql = `text ~ "${query.trim()}" ORDER BY updated DESC`;
-        const resp = await jiraSyncAdapter.searchIssues(jql, 15, `summary,issuetype,status,${JIRA_REPO_FIELD}`);
-        const issues = resp?.data ?? resp?.issues ?? [];
-        setResults(issues);
-        setShowDrop(true);
-      } catch (err) {
-        console.error('[JiraTicketSearch] error buscando tickets', err);
-        setResults([]);
-      } finally { setLoading(false); }
-    }, 300);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [query]);
-
-  const selectTicket = (issue) => {
-    const key = issue.key;
-    if (value.includes(key)) return;
-    const newMap = { ...ticketMap, [key]: issue };
-    setTicketMap(newMap);
-    const newKeys = [...value, key];
-    onChange(newKeys, newKeys.map(k => newMap[k]).filter(Boolean));
-    setQuery('');
-    setResults([]);
-    setShowDrop(false);
-  };
-
-  const removeTicket = (key) => {
-    const newKeys = value.filter(k => k !== key);
-    const newMap = { ...ticketMap };
-    delete newMap[key];
-    setTicketMap(newMap);
-    onChange(newKeys, newKeys.map(k => newMap[k]).filter(Boolean));
-  };
-
-  const getSummary = (key) => {
-    const t = ticketMap[key];
-    return t?.fields?.summary ?? t?.summary ?? '';
-  };
-
-  return (
-    <div ref={wrapRef} style={{position:'relative'}}>
-      {/* Chips de tickets seleccionados */}
-      <div style={{...inpStyle({display:'flex',flexWrap:'wrap',gap:4,minHeight:40,
-        cursor:'text',width:'auto',padding:'6px 10px'})}}>
-        {value.map(k=>(
-          <span key={k} style={{display:'flex',alignItems:'center',gap:4,padding:'2px 8px',
-            background:'rgba(124,58,237,.15)',color:'#a78bfa',borderRadius:6,fontSize:12,fontFamily:'monospace',
-            maxWidth:260,overflow:'hidden'}}>
-            <strong>{k}</strong>
-            {getSummary(k) && <span style={{fontSize:11,opacity:.8,overflow:'hidden',textOverflow:'ellipsis',
-              whiteSpace:'nowrap',maxWidth:160}}>{getSummary(k)}</span>}
-            <span onClick={()=>removeTicket(k)} style={{cursor:'pointer',opacity:.7,flexShrink:0}}>×</span>
-          </span>
-        ))}
-        <input value={query}
-          onChange={e=>{setQuery(e.target.value);}}
-          onFocus={()=>{ if(results.length) setShowDrop(true); }}
-          placeholder={value.length?'Buscar mas tickets…':'Buscar tickets Jira…'}
-          style={{background:'transparent',border:'none',outline:'none',fontSize:12,
-            color:'var(--tx,#e4e4ef)',fontFamily:'inherit',flex:1,minWidth:140}}/>
-        {loading && <span style={{fontSize:11,color:'var(--tx3,#50506a)'}}>…</span>}
-      </div>
-
-      {/* Dropdown de resultados */}
-      {showDrop && results.length > 0 && (
-        <div style={{position:'absolute',left:0,right:0,top:'100%',marginTop:4,zIndex:50,
-          background:'var(--sf,#141418)',border:'1px solid var(--bd,#2a2a38)',borderRadius:8,
-          maxHeight:240,overflowY:'auto',boxShadow:'0 8px 24px rgba(0,0,0,.5)'}}>
-          {results.map(issue => {
-            const key = issue.key;
-            const summary = issue.fields?.summary ?? issue.summary ?? '';
-            const type = issue.fields?.issuetype?.name ?? issue.issueType ?? '';
-            const alreadySelected = value.includes(key);
-            return (
-              <div key={key}
-                onClick={()=>!alreadySelected && selectTicket(issue)}
-                style={{padding:'8px 12px',cursor:alreadySelected?'default':'pointer',
-                  display:'flex',alignItems:'center',gap:8,fontSize:12,
-                  borderBottom:'1px solid var(--bd,#2a2a38)',
-                  opacity:alreadySelected?.5:1,
-                  background:alreadySelected?'rgba(124,58,237,.05)':'transparent'}}>
-                <span style={{fontFamily:'monospace',fontWeight:700,color:'#a78bfa',flexShrink:0}}>{key}</span>
-                {type && <span style={{fontSize:10,padding:'1px 6px',borderRadius:4,
-                  background:'var(--sf2,#1b1b22)',color:'var(--tx3,#50506a)',flexShrink:0}}>{type}</span>}
-                <span style={{color:'var(--tx,#e4e4ef)',overflow:'hidden',textOverflow:'ellipsis',
-                  whiteSpace:'nowrap'}}>{summary}</span>
-                {alreadySelected && <span style={{marginLeft:'auto',fontSize:10,color:'var(--tx3,#50506a)'}}>Agregada</span>}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Extract repos from Jira ticket data ──────────────────────────────────────
-function extractReposFromTickets(ticketData) {
-  const repos = new Set();
-  for (const ticket of ticketData) {
-    const repoField = ticket?.fields?.[JIRA_REPO_FIELD];
-    if (!repoField) continue;
-    // El campo puede ser string (separado por comas), array, u objeto
-    if (Array.isArray(repoField)) {
-      repoField.forEach(r => { if (typeof r === 'string') repos.add(r.trim()); else if (r?.name) repos.add(r.name.trim()); });
-    } else if (typeof repoField === 'string') {
-      repoField.split(',').map(s => s.trim()).filter(Boolean).forEach(r => repos.add(r));
-    }
-  }
-  return [...repos];
-}
+// NOTE: JiraTicketSearch + extractReposFromTickets now live in
+// @worksuite/ui and @worksuite/jira-service (see imports at the top).
 
 // ── Reservation form ──────────────────────────────────────────────────────────
-function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave, onClose }) {
+function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave, onClose, searchJira, repoField, reservedStatus, inUseStatus }) {
   const isEdit  = !!res;
   const isAdmin = currentUser?.role==='admin';
   const [envId,setEnvId]           = useState(res?.environmentId??'');
@@ -273,7 +140,10 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
   const [error,setError]           = useState('');
   const selEnv = envs.find(e=>e.id===envId);
 
-  const extractedRepos = useMemo(() => extractReposFromTickets(ticketData), [ticketData]);
+  const extractedRepos = useMemo(
+    () => extractReposFromTickets(ticketData, repoField),
+    [ticketData, repoField],
+  );
 
   const handleJiraChange = (keys, data) => {
     setJiras(keys);
@@ -284,12 +154,19 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
     if(!envId)       {setError('Selecciona un entorno.');return;}
     if(!jiras.length){setError('Añade al menos una clave Jira.');return;}
     if(!start||!end) {setError('Inicio y fin son obligatorios.');return;}
+    // When creating a new reservation we pick the right status based on
+    // start time: if it's already past, use an "in_use" status; otherwise
+    // the default "reserved" one. Both are resolved from the dynamic catalog.
+    const isPast = new Date(start) <= new Date();
+    const initialStatus = isPast && inUseStatus ? inUseStatus : reservedStatus;
     const draft = {
       id:res?.id??uid(), environmentId:envId,
       reservedByUserId:res?.reservedByUserId??currentUser?.id,
       jiraIssueKeys:jiras, description:desc.trim()||null,
       plannedStart:new Date(start).toISOString(), plannedEnd:new Date(end).toISOString(),
-      status:res?.status??(new Date(start)<=new Date()?'InUse':'Reserved'),
+      statusId:       res?.statusId       ?? initialStatus?.id,
+      statusCategory: res?.statusCategory ?? initialStatus?.status_category,
+      statusName:     res?.statusName     ?? initialStatus?.name,
       selectedRepositoryIds:[], usageSession:res?.usageSession??null,
       policyFlags:{exceedsMaxDuration:false},
       extractedRepos,
@@ -315,7 +192,13 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
         </div>
         <div>
           <label style={lblStyle}>Tickets Jira</label>
-          <JiraTicketSearch value={jiras} onChange={handleJiraChange}/>
+          <JiraTicketSearch
+            value={jiras}
+            onChange={handleJiraChange}
+            search={searchJira}
+            placeholder="Buscar tickets Jira…"
+            placeholderMore="Buscar mas tickets…"
+          />
         </div>
         <div>
           <label style={lblStyle}>Descripción <span style={{fontWeight:400,textTransform:'none'}}>(opcional)</span></label>
@@ -365,10 +248,10 @@ function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEd
   const [showB,setShowB]   = useState(false);
   const repoNames = (res.selectedRepositoryIds??[]).map(id=>repos.find(r=>r.id===id)?.name).filter(Boolean);
   const extractedRepoNames = res.extractedRepos ?? [];
-  const canEdit   = (isOwner||isAdmin)&&['Reserved','PolicyViolation','InUse'].includes(res.status);
-  const canCI     = isOwner&&res.status==='Reserved';
-  const canCO     = isOwner&&res.status==='InUse';
-  const canCancel = (isOwner||isAdmin)&&['Reserved','InUse','PolicyViolation'].includes(res.status);
+  const canEdit   = (isOwner||isAdmin)&&['reserved','violation','in_use'].includes(res.statusCategory);
+  const canCI     = isOwner&&res.statusCategory==='reserved';
+  const canCO     = isOwner&&res.statusCategory==='in_use';
+  const canCancel = (isOwner||isAdmin)&&['reserved','in_use','violation'].includes(res.statusCategory);
   const cat = CAT[env?.category]??CAT.DEV;
 
   const allRepos = [...new Set([...repoNames, ...extractedRepoNames])];
@@ -415,7 +298,7 @@ function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEd
           {res.usageSession.branches.map(b=><span key={b} style={{padding:'2px 8px',borderRadius:4,
             fontSize:12,fontFamily:'monospace',background:'rgba(124,58,237,.12)',color:'#a78bfa'}}>{b}</span>)}
         </div>}
-        {res.status==='InUse'&&isOwner&&(
+        {res.statusCategory==='in_use'&&isOwner&&(
           <div>
             {showB?(
               <div style={{display:'flex',gap:6}}>
@@ -497,7 +380,7 @@ function GanttView({ reservations, envs, onBarClick }) {
         endDate,
         color: catColors.color,
         bgColor: catColors.bg,
-        status: r.status,
+        status: r.statusCategory,
         meta: `${durH(r.plannedStart, r.plannedEnd)}h${jiraStr ? ' · ' + jiraStr : ''}`,
       };
     }), [reservations, envs]);
@@ -640,14 +523,42 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   const [confirm, setConfirm] = useState(null);
   const [mainTab, setMainTab] = useState('reservas');
   const [jiraBaseUrl, setJiraBaseUrl] = useState('');
+  const [repoField, setRepoField] = useState('components');
+  const [statuses, setStatuses] = useState([]);
+
+  // Pick the first status of each category — used for lifecycle transitions.
+  // If the admin creates multiple statuses per category, the first (lowest ord)
+  // is used as the default for that transition.
+  const statusOfCategory = (cat) =>
+    statuses.find(s => s.status_category === cat) ?? null;
+  const reservedStatus  = statusOfCategory('reserved');
+  const inUseStatus     = statusOfCategory('in_use');
+  const completedStatus = statusOfCategory('completed');
+  const cancelledStatus = statusOfCategory('cancelled');
+
+  // Search callback passed to the shared <JiraTicketSearch>. Requests the
+  // configured repoField so repos can be extracted from the result.
+  const searchJira = useCallback(async (query) => {
+    const jql = `text ~ "${query}" ORDER BY updated DESC`;
+    const fields = `summary,issuetype,status,${repoField}`;
+    const resp = await jiraSearchAdapter.searchIssues(jql, 15, fields);
+    return resp?.data ?? resp?.issues ?? [];
+  }, [repoField]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [e, { reservations, repositories, policy:pol }] = await Promise.all([
-        getEnvs.execute(), getRes.execute(),
+      // Load statuses first so GetReservations can resolve the auto-complete
+      // status id for expired reservations.
+      const sts = await statusRepo.findAll();
+      setStatuses(sts);
+      const completed = sts.find(s => s.status_category === 'completed') ?? null;
+
+      const [e, { reservations, repositories, policy:pol }, rf] = await Promise.all([
+        getEnvs.execute(), getRes.execute(completed?.id ?? null), jiraConfigRepo.getRepoField(),
       ]);
       setEnvs(e); setRes(reservations); setRepos(repositories); setPolicy(pol);
+      setRepoField(rf);
       // Load Jira base URL
       try {
         const connRes = await fetch(`${API_BASE}/jira/connection`, { headers: await getAuthHeaders() });
@@ -662,7 +573,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   useEffect(()=>{ void load(); },[load]);
 
   const visible = res.filter(r=>{
-    if(filter==='active'&&!['Reserved','InUse','PolicyViolation'].includes(r.status)) return false;
+    if(filter==='active'&&!['reserved','in_use','violation'].includes(r.statusCategory)) return false;
     if(filter==='mine'&&r.reservedByUserId!==currentUser?.id) return false;
     if(search){
       const q=search.toLowerCase(), env=envs.find(e=>e.id===r.environmentId);
@@ -678,6 +589,31 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
 
   const patchLocal = (id,patch) => setRes(p=>p.map(x=>x.id===id?{...x,...patch}:x));
 
+  // Append a row to the history table whenever a reservation hits a final
+  // state (completed / cancelled). Fire-and-forget: never block the UI flow.
+  const saveHistory = async (r, finalStatusName, actualEnd) => {
+    try {
+      const env = envs.find(e=>e.id===r.environmentId);
+      const owner = (wsUsers??[]).find(u=>u.id===r.reservedByUserId);
+      await historyRepo.save({
+        reservation_id:      r.id,
+        environment_id:      r.environmentId,
+        environment_name:    env?.name ?? '—',
+        reserved_by_user_id: r.reservedByUserId,
+        reserved_by_name:    owner?.name ?? owner?.email ?? '—',
+        jira_issue_keys:     r.jiraIssueKeys ?? [],
+        description:         r.description ?? undefined,
+        planned_start:       r.plannedStart,
+        planned_end:         r.plannedEnd,
+        actual_end:          actualEnd,
+        status:              finalStatusName,
+        repos:               r.extractedRepos ?? [],
+      });
+    } catch (err) {
+      console.error('[EnvironmentsView] saveHistory error', err);
+    }
+  };
+
   const handleSave = async draft => {
     await upsertUC.execute(draft);
     setRes(prev=>{ const i=prev.findIndex(r=>r.id===draft.id);
@@ -686,15 +622,37 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   };
 
   const handleCheckIn = async r => {
+    if (!inUseStatus) { console.error('[EnvironmentsView] no in_use status configured'); return; }
     const session={actual_start:new Date().toISOString(),actual_end:null,branches:[]};
-    await statusUC.checkIn(r.id); patchLocal(r.id,{status:'InUse',usageSession:session}); setDetail(null);
+    await statusUC.checkIn(r.id, inUseStatus.id);
+    patchLocal(r.id,{
+      statusId: inUseStatus.id, statusCategory: 'in_use', statusName: inUseStatus.name,
+      usageSession:session,
+    });
+    setDetail(null);
   };
   const handleCheckOut = async r => {
-    await statusUC.checkOut(r.id,r); patchLocal(r.id,{status:'Completed'}); setDetail(null);
+    if (!completedStatus) { console.error('[EnvironmentsView] no completed status configured'); return; }
+    const actualEnd = new Date().toISOString();
+    await statusUC.checkOut(r.id, r, completedStatus.id);
+    patchLocal(r.id,{
+      statusId: completedStatus.id, statusCategory: 'completed', statusName: completedStatus.name,
+    });
+    void saveHistory(r, completedStatus.name, actualEnd);
+    setDetail(null);
   };
   const handleCancel = r => setConfirm({
     message:'¿Seguro que quieres cancelar esta reserva?',
-    onConfirm:async()=>{ await statusUC.cancel(r.id); patchLocal(r.id,{status:'Cancelled'}); setDetail(null); },
+    onConfirm:async()=>{
+      if (!cancelledStatus) { console.error('[EnvironmentsView] no cancelled status configured'); return; }
+      const actualEnd = new Date().toISOString();
+      await statusUC.cancel(r.id, cancelledStatus.id);
+      patchLocal(r.id,{
+        statusId: cancelledStatus.id, statusCategory: 'cancelled', statusName: cancelledStatus.name,
+      });
+      void saveHistory(r, cancelledStatus.name, actualEnd);
+      setDetail(null);
+    },
   });
   const handleAddBranch = async (r,branch) => {
     await statusUC.addBranch(r.id,branch,r);
@@ -800,7 +758,9 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
       </div>
 
       {form&&<ReservationForm res={form==='new'?null:form} envs={envs} repos={repos} allRes={res}
-        policy={policy} currentUser={currentUser} onSave={handleSave} onClose={()=>setForm(null)}/>}
+        policy={policy} currentUser={currentUser} onSave={handleSave} onClose={()=>setForm(null)}
+        searchJira={searchJira} repoField={repoField}
+        reservedStatus={reservedStatus} inUseStatus={inUseStatus}/>}
 
       {detail&&<ReservationDetail res={detail} envs={envs} repos={repos} users={wsUsers??[]}
         currentUser={currentUser} onClose={()=>setDetail(null)}

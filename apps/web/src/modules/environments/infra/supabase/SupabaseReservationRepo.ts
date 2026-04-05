@@ -1,8 +1,29 @@
 import type { SupabaseClient }    from '@supabase/supabase-js';
 import type { IReservationRepo }  from '../../domain/ports/IReservationRepo';
 import type { Reservation, Repository, EnvPolicy } from '../../domain/entities/Reservation';
+import type { ReservationStatusCategory } from '../../domain/entities/ReservationStatus';
 
-const toRes = (r: any): Reservation => ({
+// Shape of a row joined with syn_reservation_statuses.
+type RowWithStatus = {
+  id: string;
+  environment_id: string;
+  reserved_by_user_id: string;
+  jira_issue_keys: string[] | null;
+  description: string | null;
+  planned_start: string;
+  planned_end: string;
+  status_id: string;
+  selected_repository_ids: string[] | null;
+  usage_session: any;
+  policy_flags: any;
+  extracted_repos: string[] | null;
+  syn_reservation_statuses: {
+    name: string;
+    status_category: ReservationStatusCategory;
+  } | null;
+};
+
+const toRes = (r: RowWithStatus): Reservation => ({
   id:                    r.id,
   environmentId:         r.environment_id,
   reservedByUserId:      r.reserved_by_user_id,
@@ -10,10 +31,13 @@ const toRes = (r: any): Reservation => ({
   description:           r.description ?? null,
   plannedStart:          r.planned_start,
   plannedEnd:            r.planned_end,
-  status:                r.status,
+  statusId:              r.status_id,
+  statusCategory:        r.syn_reservation_statuses?.status_category ?? 'reserved',
+  statusName:            r.syn_reservation_statuses?.name ?? '—',
   selectedRepositoryIds: r.selected_repository_ids ?? [],
   usageSession:          r.usage_session ?? null,
   policyFlags:           r.policy_flags ?? { exceedsMaxDuration: false },
+  extractedRepos:        r.extracted_repos ?? [],
 });
 
 const fromRes = (r: Reservation) => ({
@@ -24,10 +48,11 @@ const fromRes = (r: Reservation) => ({
   description:             r.description,
   planned_start:           r.plannedStart,
   planned_end:             r.plannedEnd,
-  status:                  r.status,
+  status_id:               r.statusId,
   selected_repository_ids: r.selectedRepositoryIds,
   usage_session:           r.usageSession,
   policy_flags:            r.policyFlags,
+  extracted_repos:         r.extractedRepos ?? [],
 });
 
 const toRepo = (r: any): Repository => ({
@@ -49,9 +74,11 @@ export class SupabaseReservationRepo implements IReservationRepo {
   constructor(private db: SupabaseClient) {}
 
   async getAll(): Promise<Reservation[]> {
-    const { data, error } = await this.db.from('syn_reservations').select('*');
+    const { data, error } = await this.db
+      .from('syn_reservations')
+      .select('*, syn_reservation_statuses(name, status_category)');
     if (error) throw error;
-    return (data ?? []).map(toRes);
+    return (data ?? []).map((r: any) => toRes(r as RowWithStatus));
   }
 
   async getRepositories(): Promise<Repository[]> {
@@ -73,7 +100,7 @@ export class SupabaseReservationRepo implements IReservationRepo {
 
   async patch(id: string, patch: Partial<Reservation>): Promise<void> {
     const dbPatch: any = {};
-    if (patch.status       !== undefined) dbPatch.status        = patch.status;
+    if (patch.statusId     !== undefined) dbPatch.status_id      = patch.statusId;
     if (patch.usageSession !== undefined) dbPatch.usage_session  = patch.usageSession;
     if (patch.policyFlags  !== undefined) dbPatch.policy_flags   = patch.policyFlags;
     const { error } = await this.db.from('syn_reservations').update(dbPatch).eq('id', id);

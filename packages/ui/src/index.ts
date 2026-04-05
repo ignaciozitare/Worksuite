@@ -18,3 +18,11 @@ export type { GanttBar, GanttGroup, GanttZoom, GanttTimelineProps } from './comp
 
 // ── Timer ──────────────────────────────────────────────────────────────────────
 export { TimerBar }                      from './components/TimerBar';
+
+// ── Jira Ticket Search ────────────────────────────────────────────────────────
+export { JiraTicketSearch }              from './components/JiraTicketSearch';
+export type { JiraIssueOption, JiraTicketSearchProps } from './components/JiraTicketSearch';
+
+// ── Status Manager ────────────────────────────────────────────────────────────
+export { StatusManager }                 from './components/StatusManager';
+export type { StatusItem, StatusCategoryOption, StatusManagerProps } from './components/StatusManager';

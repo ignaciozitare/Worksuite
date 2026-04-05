@@ -30,7 +30,7 @@ export class UpsertReservation {
     const overlap = all.find(r =>
       r.id !== res.id &&
       r.environmentId === res.environmentId &&
-      ['Reserved', 'InUse', 'PolicyViolation'].includes(r.status) &&
+      ['reserved', 'in_use', 'violation'].includes(r.statusCategory) &&
       new Date(r.plannedStart) < end &&
       new Date(r.plannedEnd)   > start,
     );

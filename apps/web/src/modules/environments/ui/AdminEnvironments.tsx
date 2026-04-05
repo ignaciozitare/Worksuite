@@ -1,13 +1,73 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { supabase }            from '@/shared/lib/supabaseClient';
+import { StatusManager }       from '@worksuite/ui';
+import { useTranslation }      from '@worksuite/i18n';
 import type { Environment }    from '../domain/entities/Environment';
 import type { Repository, EnvPolicy } from '../domain/entities/Reservation';
 import { SupabaseEnvironmentRepo } from '../infra/supabase/SupabaseEnvironmentRepo';
 import { SupabaseReservationRepo } from '../infra/supabase/SupabaseReservationRepo';
+import { SupabaseReservationStatusRepo } from '../infra/supabase/SupabaseReservationStatusRepo';
 
 const envRepo = new SupabaseEnvironmentRepo(supabase);
 const resRepo = new SupabaseReservationRepo(supabase);
+const statusRepo = new SupabaseReservationStatusRepo(supabase);
+
+// ── Admin: Estados de reserva ────────────────────────────────────────────────
+export function AdminEnvStatuses() {
+  const { t } = useTranslation();
+  const [statuses, setStatuses] = useState([]);
+  const [loading, setLoading]   = useState(true);
+
+  const categories = [
+    { value: 'reserved',  label: t('admin.envStatusCatReserved')  },
+    { value: 'in_use',    label: t('admin.envStatusCatInUse')     },
+    { value: 'completed', label: t('admin.envStatusCatCompleted') },
+    { value: 'cancelled', label: t('admin.envStatusCatCancelled') },
+    { value: 'violation', label: t('admin.envStatusCatViolation') },
+  ];
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await statusRepo.findAll();
+        if (!cancelled) setStatuses(data);
+      } catch (err) { console.error('[AdminEnvStatuses]', err); }
+      finally { if (!cancelled) setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (loading) return <div style={{fontSize:12,color:'var(--tx3,#50506a)'}}>{t('common.loading')}</div>;
+
+  return (
+    <div>
+      <StatusManager
+        statuses={statuses}
+        categories={categories}
+        defaultCategory="reserved"
+        labels={{
+          title:       t('admin.envStatusesTitle'),
+          hint:        t('admin.envStatusesHint'),
+          newStatus:   t('admin.statusNew'),
+          name:        t('common.name'),
+          color:       t('admin.statusColor'),
+          add:         t('admin.statusAdd'),
+          placeholder: t('admin.statusPlaceholder'),
+        }}
+        onCreate={async (draft) => {
+          const ord = statuses.length;
+          return await statusRepo.create({ ...draft, ord });
+        }}
+        onUpdate={(id, patch) => statusRepo.update(id, patch)}
+        onDelete={(id) => statusRepo.delete(id)}
+        onReorder={(items) => statusRepo.reorder(items)}
+        onChange={setStatuses}
+      />
+    </div>
+  );
+}
 
 const uid = () => Math.random().toString(36).slice(2,10);
 

@@ -1,17 +1,21 @@
 import React from 'react';
-import { AdminEnvEnvironments, AdminEnvRepositories, AdminEnvPolicy } from '../../modules/environments';
+import { useTranslation } from '@worksuite/i18n';
+import { AdminEnvEnvironments, AdminEnvPolicy, AdminEnvStatuses } from '../../modules/environments';
 
 function AdminEnvTrackerSection() {
+  const { t } = useTranslation();
   const [sub, setSub] = React.useState("environments");
+  // Repositorios ya no se gestionan aquí: se leen automáticamente del
+  // ticket Jira (campo repoField de @worksuite/jira-service).
   const SUB = [
-    { id:"environments", label:"Entornos",    icon:"🖥️" },
-    { id:"repositories", label:"Repositorios",icon:"📦" },
-    { id:"policy",       label:"Política",    icon:"📋" },
+    { id:"environments", label:t("admin.envTabEnvironments"), icon:"🖥️" },
+    { id:"statuses",     label:t("admin.envTabStatuses"),     icon:"🏷️" },
+    { id:"policy",       label:t("admin.envTabPolicy"),       icon:"📋" },
   ];
   return (
     <div>
-      <div className="sec-t">🖥️ Environments</div>
-      <div className="sec-sub" style={{marginBottom:16}}>Gestiona entornos de despliegue, repositorios y política de reservas.</div>
+      <div className="sec-t">🖥️ {t("admin.envTracker")}</div>
+      <div className="sec-sub" style={{marginBottom:16}}>{t("admin.envTrackerDesc")}</div>
       <div style={{display:"flex",gap:4,marginBottom:20,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:10,padding:4,alignSelf:"flex-start",width:"fit-content"}}>
         {SUB.map(s=>(
           <button key={s.id} onClick={()=>setSub(s.id)} style={{background:sub===s.id?"var(--ac)":"transparent",color:sub===s.id?"#fff":"var(--tx3)",border:"none",borderRadius:7,cursor:"pointer",fontWeight:sub===s.id?600:400,fontSize:12,padding:"5px 14px",transition:"all 0.15s",fontFamily:"inherit"}}>
@@ -21,7 +25,7 @@ function AdminEnvTrackerSection() {
       </div>
       <div className="a-card">
         {sub==="environments" && <AdminEnvEnvironments/>}
-        {sub==="repositories" && <AdminEnvRepositories/>}
+        {sub==="statuses"     && <AdminEnvStatuses/>}
         {sub==="policy"       && <AdminEnvPolicy/>}
       </div>
     </div>

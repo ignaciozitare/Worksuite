@@ -1,3 +1,11 @@
+import type { ReservationStatusCategory } from './ReservationStatus';
+
+/**
+ * Legacy text value kept on the table for backwards-compatibility during the
+ * transition to dynamic statuses. Current code should only read `statusId` /
+ * `statusCategory`.
+ * @deprecated use `statusCategory` instead.
+ */
 export type ReservationStatus =
   | 'Reserved'
   | 'InUse'
@@ -19,10 +27,16 @@ export interface Reservation {
   description:           string | null;
   plannedStart:          string;  // ISO
   plannedEnd:            string;  // ISO
-  status:                ReservationStatus;
+  /** FK to syn_reservation_statuses.id (dynamic catalog, admin-configurable). */
+  statusId:              string;
+  /** Resolved category from the status catalog — drives behavior. */
+  statusCategory:        ReservationStatusCategory;
+  /** Resolved display name for the status (may be customized by admin). */
+  statusName:            string;
   selectedRepositoryIds: string[];
   usageSession:          UsageSession | null;
   policyFlags:           { exceedsMaxDuration: boolean };
+  extractedRepos?:       string[];      // repos auto-extraídos del ticket Jira
 }
 
 export interface Repository {
