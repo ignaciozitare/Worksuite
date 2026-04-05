@@ -203,6 +203,19 @@ export async function jiraRoutes(app: FastifyInstance, opts: JiraRoutesOptions):
     }
   });
 
+  // ── GET /jira/statuses ────────────────────────────────────────────────────
+  app.get('/statuses', async (req: FastifyRequest, reply: FastifyReply) => {
+    const userId = (req.user as { sub: string }).sub;
+    try {
+      const adapter = await adapterForUser(jiraConnectionRepo, userId);
+      const statuses = await adapter.getStatuses();
+      return reply.send({ ok: true, statuses });
+    } catch (err: unknown) {
+      const status = (err as { statusCode?: number }).statusCode ?? 502;
+      return reply.status(status).send({ ok: false, error: String(err) });
+    }
+  });
+
   // ── GET /jira/search?jql=...&maxResults=...&fields=... ────────────────────
   app.get<{ Querystring: { jql: string; maxResults?: string; fields?: string } }>(
     '/search',

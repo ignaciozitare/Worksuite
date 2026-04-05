@@ -156,6 +156,11 @@ export class JiraCloudAdapter implements IJiraApi {
     return data.map(f => ({ id: f.id, name: f.name, custom: f.custom, type: f.schema?.type || 'unknown' }));
   }
 
+  async getStatuses(): Promise<{ id: string; name: string; category: string }[]> {
+    const data = await this.fetch<Array<{ id: string; name: string; statusCategory?: { name: string } }>>('/status');
+    return data.map(s => ({ id: s.id, name: s.name, category: s.statusCategory?.name || '' }));
+  }
+
   async searchIssues(jql: string, maxResults = 50, fields?: string): Promise<any> {
     const fieldList = (fields || 'summary,assignee,priority,issuetype,status,components').split(',');
     const data = await this.fetch<any>('/search/jql', {
