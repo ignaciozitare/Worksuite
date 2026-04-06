@@ -405,9 +405,10 @@ function GanttView({ reservations, envs, onBarClick }) {
 }
 
 // ── History view ──────────────────────────────────────────────────────────────
-function HistoryView() {
+function HistoryView({ onSelect }) {
   const [history, setHistory]   = useState([]);
   const [loading, setLoading]   = useState(true);
+  const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -479,7 +480,10 @@ function HistoryView() {
         </thead>
         <tbody>
           {history.map(h => (
-            <tr key={h.id}>
+            <tr key={h.id} onClick={()=>setSelected(h)}
+              style={{cursor:'pointer',transition:'background .1s'}}
+              onMouseEnter={e=>e.currentTarget.style.background='rgba(79,110,247,.06)'}
+              onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
               <td style={tdStyle}>{fmtDt(h.created_at)}</td>
               <td style={tdStyle}>{h.reserved_by_name || '—'}</td>
               <td style={tdStyle}>{h.environment_name || '—'}</td>
@@ -510,6 +514,63 @@ function HistoryView() {
           ))}
         </tbody>
       </table>
+
+      {/* History detail modal */}
+      {selected && (
+        <Modal title="Detalle de reserva (historial)" onClose={()=>setSelected(null)} width={560}>
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              {statusBadge(selected.status)}
+              <span style={{fontWeight:700,fontSize:16,color:'var(--tx,#e4e4ef)'}}>{selected.environment_name}</span>
+            </div>
+
+            <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+              {(selected.jira_issue_keys??[]).map(k=>(
+                <span key={k} style={{padding:'3px 10px',borderRadius:6,fontSize:12,fontFamily:'monospace',
+                  background:'rgba(124,58,237,.15)',color:'#a78bfa'}}>{k}</span>
+              ))}
+            </div>
+
+            {selected.description&&<p style={{fontSize:13,color:'var(--tx3,#50506a)',lineHeight:1.5}}>{selected.description}</p>}
+
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,fontSize:12}}>
+              {[
+                ['Responsable',  selected.reserved_by_name || '—'],
+                ['Entorno',      selected.environment_name || '—'],
+                ['Inicio plan.', selected.planned_start ? fmtDt(selected.planned_start) : '—'],
+                ['Fin plan.',    selected.planned_end   ? fmtDt(selected.planned_end)   : '—'],
+                ['Fin real',     selected.actual_end    ? fmtDt(selected.actual_end)     : '—'],
+                ['Duración',     selected.planned_start && selected.planned_end
+                                   ? durH(selected.planned_start, selected.actual_end ?? selected.planned_end) + 'h' : '—'],
+                ['Registrado',   selected.created_at ? fmtDt(selected.created_at) : '—'],
+              ].map(([l,v])=>(
+                <div key={l}>
+                  <div style={{fontSize:10,fontWeight:700,color:'var(--tx3,#50506a)',
+                    textTransform:'uppercase',letterSpacing:'.04em',marginBottom:2}}>{l}</div>
+                  <div style={{color:'var(--tx,#e4e4ef)'}}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            {(selected.repos??[]).length>0&&(
+              <div>
+                <div style={{fontSize:10,fontWeight:700,color:'var(--tx3,#50506a)',textTransform:'uppercase',
+                  letterSpacing:'.04em',marginBottom:4}}>Repositorios</div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                  {selected.repos.map(r=>(
+                    <span key={r} style={{padding:'3px 8px',borderRadius:4,fontSize:12,
+                      background:'var(--sf2,#1b1b22)',color:'var(--tx3,#50506a)'}}>📦 {r}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{display:'flex',justifyContent:'flex-end',paddingTop:8,borderTop:'1px solid var(--bd,#2a2a38)'}}>
+              <button style={btnStyle('ghost')} onClick={()=>setSelected(null)}>Cerrar</button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
