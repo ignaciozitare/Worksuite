@@ -30,4 +30,5 @@ export interface ReleaseConfig {
   nextNumber:     number;
   locked:         boolean;
   repoJiraField:  string;
+  issueTypes:     string[];
 }

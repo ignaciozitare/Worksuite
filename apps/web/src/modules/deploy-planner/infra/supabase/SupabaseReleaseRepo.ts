@@ -116,6 +116,7 @@ export class SupabaseReleaseRepo implements IReleaseRepo {
     if(patch.nextNumber    !== undefined) dbPatch.next_number     = patch.nextNumber;
     if(patch.prefix        !== undefined) dbPatch.prefix          = patch.prefix;
     if(patch.locked        !== undefined) dbPatch.locked          = patch.locked;
+    if(patch.issueTypes    !== undefined) dbPatch.issue_types     = patch.issueTypes;
     const { error } = await this.db.from('dp_version_config').update(dbPatch).eq('locked', false);
     if(error) throw error;
   }

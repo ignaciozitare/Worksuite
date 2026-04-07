@@ -59,8 +59,8 @@ function JiraFieldMapping({verCfg,setVerCfg}){
     if(!verCfg?.id)return;
     setSaving(true);
     try{
-      await releaseRepo.saveConfig({repoJiraField:selectedField});
-      setVerCfg(v=>({...v,repo_jira_field:selectedField}));
+      await releaseRepo.saveConfig({repoJiraField:selectedField,issueTypes:selectedTypes});
+      setVerCfg(v=>({...v,repo_jira_field:selectedField,issue_types:selectedTypes}));
     }catch(e){console.error("Save config error:",e);}
     setSaving(false);setSaved(true);setTimeout(()=>setSaved(false),2000);
   };
@@ -104,12 +104,10 @@ function JiraFieldMapping({verCfg,setVerCfg}){
         </div>
       )}
 
-      {(fields.length>0||selectedField!=="components")&&(
-        <button onClick={save} disabled={saving}
-          style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:6,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-          {saving?t("common.loading"):saved?t("common.success"):t("common.save")}
-        </button>
-      )}
+      <button onClick={save} disabled={saving}
+        style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:6,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",marginTop:8}}>
+        {saving?t("common.loading"):saved?t("common.success"):t("common.save")}
+      </button>
     </div>
   );
 }
