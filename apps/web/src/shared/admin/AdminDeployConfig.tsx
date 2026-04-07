@@ -8,6 +8,7 @@ import { GetJiraMetadata } from '../../modules/deploy-planner/domain/useCases/Ge
 import { JiraMetadataAdapter } from '../../modules/deploy-planner/infra/JiraMetadataAdapter';
 import { SupabaseReleaseRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseReleaseRepo';
 import { SupabaseSubtaskConfigRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseSubtaskConfigRepo';
+import { DualPanelPicker } from '@worksuite/ui';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 async function getAuthHeaders() {
@@ -78,20 +79,13 @@ function JiraFieldMapping({verCfg,setVerCfg}){
       {errMsg&&<div style={{padding:"8px 12px",background:"rgba(239,68,68,.08)",border:"1px solid rgba(239,68,68,.25)",borderRadius:6,color:"var(--red)",fontSize:11,marginBottom:14}}>{errMsg}</div>}
 
       {issueTypes.length>0&&(
-        <div style={{marginBottom:14}}>
-          <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:6,letterSpacing:".06em",textTransform:"uppercase"}}>Issue Types disponibles</div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-            {issueTypes.filter(it=>!it.subtask).map(it=>{
-              const on=selectedTypes.includes(it.name);
-              return(
-                <button key={it.id} onClick={()=>toggleType(it.name)}
-                  style={{padding:"4px 10px",borderRadius:20,border:`1px solid ${on?"var(--ac)":"var(--bd)"}`,background:on?"var(--glow,rgba(79,110,247,.1))":"transparent",color:on?"var(--ac2)":"var(--tx3)",cursor:"pointer",fontSize:11,fontWeight:on?700:400,fontFamily:"inherit"}}>
-                  {it.name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <DualPanelPicker
+          label="Issue Types"
+          allItems={issueTypes.map(it=>({value:it.name,label:it.name,hint:it.subtask?'(subtarea)':''}))}
+          selected={selectedTypes}
+          onAdd={name=>setSelectedTypes(prev=>[...prev,name])}
+          onRemove={name=>setSelectedTypes(prev=>prev.filter(x=>x!==name))}
+        />
       )}
 
       {fields.length>0&&(
@@ -322,11 +316,30 @@ function AdminDeployConfig() {
     setRepoGroups(gs=>gs.map(g=>g.id===groupId?{...g,name}:g));
   };
 
+  const [tab, setTab] = React.useState('statuses');
+  const TABS = [
+    { id: 'statuses', label: '🏷️ Estados', icon: '' },
+    { id: 'jira',     label: '🔗 Jira',    icon: '' },
+    { id: 'versions', label: '🔢 Versiones', icon: '' },
+    { id: 'repos',    label: '📦 Repos',   icon: '' },
+    { id: 'subtasks', label: '🐛 Subtareas', icon: '' },
+  ];
+
   return (
     <div style={{maxWidth:700}}>
       <div className="sec-t">🚀 Deploy Planner</div>
-      <div className="sec-sub">Configura los estados de releases y los estados de Jira que se importan.</div>
+      <div className="sec-sub" style={{marginBottom:16}}>Configuración del módulo de despliegues.</div>
 
+      {/* Tab bar */}
+      <div style={{display:'flex',gap:4,marginBottom:20,background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:10,padding:4,alignSelf:'flex-start',width:'fit-content'}}>
+        {TABS.map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{background:tab===t.id?'var(--ac)':'transparent',color:tab===t.id?'#fff':'var(--tx3)',border:'none',borderRadius:7,cursor:'pointer',fontWeight:tab===t.id?600:400,fontSize:12,padding:'5px 14px',transition:'all 0.15s',fontFamily:'inherit'}}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab==='statuses' && <>
       {/* ── Jira statuses ─────────────────────────────────────── */}
       <div className="a-card" style={{marginBottom:16}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
@@ -450,6 +463,14 @@ function AdminDeployConfig() {
         </div>
       </div>
 
+      </>}
+
+      {tab==='jira' && <>
+      {/* ── Jira Field Mapping ─────────────────────────────────── */}
+      <JiraFieldMapping verCfg={verCfg} setVerCfg={setVerCfg}/>
+      </>}
+
+      {tab==='versions' && <>
       {/* ── Version config ─────────────────────────────────────── */}
       <div className="a-card" style={{marginTop:16}}>
         <div className="a-ct">Generador de versiones</div>
@@ -519,9 +540,9 @@ function AdminDeployConfig() {
         )}
       </div>
 
-      {/* ── Jira Field Mapping ─────────────────────────────────── */}
-      <JiraFieldMapping verCfg={verCfg} setVerCfg={setVerCfg}/>
+      </>}
 
+      {tab==='repos' && <>
       {/* ── Repo groups ───────────────────────────────────────── */}
       <div className="a-card" style={{marginTop:16}}>
         <div className="a-ct">Grupos de repositorios con dependencias</div>
@@ -619,8 +640,12 @@ function AdminDeployConfig() {
         </div>
       </div>
 
+      </>}
+
+      {tab==='subtasks' && <>
       {/* ── Subtask Config ──────────────────────────────────────── */}
       <SubtaskConfigSection />
+      </>}
 
     </div>
   );

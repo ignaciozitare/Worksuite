@@ -30,3 +30,7 @@ export type { JiraTicketOption, JiraTicketPickerProps } from './components/JiraT
 // ── Status Manager ────────────────────────────────────────────────────────────
 export { StatusManager }                 from './components/StatusManager';
 export type { StatusItem, StatusCategoryOption, StatusManagerProps } from './components/StatusManager';
+
+// ── Dual Panel Picker ─────────────────────────────────────────────────────────
+export { DualPanelPicker }               from './components/DualPanelPicker';
+export type { DualPanelItem, DualPanelPickerProps } from './components/DualPanelPicker';
