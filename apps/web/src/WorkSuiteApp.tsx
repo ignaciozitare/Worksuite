@@ -97,9 +97,9 @@ function WorkSuiteApp() {
   const [exportModal, setExportModal] = useState<any>(null);
   const [exportPresets, setExportPresets] = useState<any[]>(CURRENT_USER?.export_presets ?? []);
   const handleExport = (f: any) => setExportModal(f);
-  const handleExportConfirm = (columns: string[]) => {
+  const handleExportConfirm = (columns: string[], filename: string) => {
     if (!exportModal) return;
-    exportWithColumns(worklogs, exportModal.from, exportModal.to, exportModal.authorId || null, exportModal.spaceKeys, columns);
+    exportWithColumns(worklogs, exportModal.from, exportModal.to, exportModal.authorId || null, exportModal.spaceKeys, columns, filename);
     setExportModal(null);
   };
   const handleDayClick = (d: string) => { setActiveDay(d); navigate('/jira-tracker/day'); };
@@ -322,6 +322,8 @@ function WorkSuiteApp() {
           currentUserId={CURRENT_USER?.id ?? ''}
           initialPresets={exportPresets}
           onPresetsChange={setExportPresets}
+          dateFrom={exportModal.from}
+          dateTo={exportModal.to}
         />
       )}
       {hdModal && (

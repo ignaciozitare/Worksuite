@@ -36,13 +36,16 @@ export interface ExportPreset {
 
 interface ExportConfigModalProps {
   onClose: () => void;
-  onExport: (columns: string[]) => void;
+  onExport: (columns: string[], filename: string) => void;
   currentUserId: string;
   initialPresets: ExportPreset[];
   onPresetsChange: (presets: ExportPreset[]) => void;
+  /** Date range for display in filename hint. */
+  dateFrom?: string;
+  dateTo?: string;
 }
 
-export function ExportConfigModal({ onClose, onExport, currentUserId, initialPresets, onPresetsChange }: ExportConfigModalProps) {
+export function ExportConfigModal({ onClose, onExport, currentUserId, initialPresets, onPresetsChange, dateFrom = '', dateTo = '' }: ExportConfigModalProps) {
   const { t } = useTranslation();
   const [presets, setPresets] = useState<ExportPreset[]>(initialPresets);
   const [activePresetId, setActivePresetId] = useState<string | null>(presets[0]?.id ?? null);
@@ -52,6 +55,7 @@ export function ExportConfigModal({ onClose, onExport, currentUserId, initialPre
   const [dragging, setDragging] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [filename, setFilename] = useState('worklogs');
 
   const available = useMemo(() => {
     const sel = new Set(columns);
@@ -270,6 +274,22 @@ export function ExportConfigModal({ onClose, onExport, currentUserId, initialPre
             </div>
           )}
 
+          {/* Filename */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--tx3,#50506a)', textTransform: 'uppercase',
+              letterSpacing: '.05em', marginBottom: 6 }}>Nombre del archivo</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input value={filename} onChange={e => setFilename(e.target.value)}
+                placeholder="worklogs"
+                style={{ flex: 1, padding: '7px 10px', fontSize: 13, fontFamily: 'inherit',
+                  background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)',
+                  borderRadius: 6, color: 'var(--tx,#e4e4ef)', outline: 'none' }} />
+              <span style={{ fontSize: 11, color: 'var(--tx3,#50506a)', whiteSpace: 'nowrap' }}>
+                _{dateFrom}_{dateTo}.csv
+              </span>
+            </div>
+          </div>
+
           {/* Save preset controls */}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <input value={presetName} onChange={e => setPresetName(e.target.value)}
@@ -301,7 +321,7 @@ export function ExportConfigModal({ onClose, onExport, currentUserId, initialPre
             borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 600,
             color: 'var(--tx3,#50506a)', cursor: 'pointer', fontFamily: 'inherit',
           }}>Cancelar</button>
-          <button onClick={() => onExport(columns)} disabled={columns.length === 0} style={{
+          <button onClick={() => onExport(columns, `${filename.trim() || 'worklogs'}_${dateFrom}_${dateTo}`)} disabled={columns.length === 0} style={{
             background: 'var(--ac,#4f6ef7)', color: '#fff', border: 'none',
             borderRadius: 8, padding: '8px 20px', fontSize: 12, fontWeight: 700,
             cursor: columns.length ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
@@ -320,6 +340,7 @@ export function exportWithColumns(
   authorId: string | null,
   spaceKeys: string[],
   columns: string[],
+  filename?: string,
 ) {
   // Inline filter — same logic as WorklogService.filterByRange
   const filtered: Record<string, any[]> = {};
@@ -346,6 +367,6 @@ export function exportWithColumns(
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = `worklogs_${from}_${to}.csv`; a.click();
+  a.href = url; a.download = `${filename || `worklogs_${from}_${to}`}.csv`; a.click();
   URL.revokeObjectURL(url);
 }
