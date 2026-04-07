@@ -33,8 +33,14 @@ export function DualPanelPicker({ label, allItems, selected, onAdd, onRemove }: 
   const [searchAvail, setSearchAvail] = useState('');
   const [searchSel, setSearchSel] = useState('');
 
-  const available = allItems.filter(it => !selected.includes(it.value));
-  const selectedItems = selected.map(v => allItems.find(it => it.value === v)).filter(Boolean) as DualPanelItem[];
+  // Deduplicate items by value (Jira returns same type per project)
+  const uniqueItems = (() => {
+    const seen = new Set<string>();
+    return allItems.filter(it => seen.has(it.value) ? false : (seen.add(it.value), true));
+  })();
+
+  const available = uniqueItems.filter(it => !selected.includes(it.value));
+  const selectedItems = selected.map(v => uniqueItems.find(it => it.value === v)).filter(Boolean) as DualPanelItem[];
 
   const filteredAvail = searchAvail
     ? available.filter(it => it.label.toLowerCase().includes(searchAvail.toLowerCase()))
