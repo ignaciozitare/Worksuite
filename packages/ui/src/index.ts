@@ -38,3 +38,6 @@ export type { DualPanelItem, DualPanelPickerProps } from './components/DualPanel
 // ── Date Range Picker ─────────────────────────────────────────────────────────
 export { DateRangePicker }               from './components/DateRangePicker';
 export type { DateRangePickerProps }     from './components/DateRangePicker';
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
+export { BugIcon }                       from './components/BugIcon';

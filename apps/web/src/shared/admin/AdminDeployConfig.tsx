@@ -8,7 +8,7 @@ import { GetJiraMetadata } from '../../modules/deploy-planner/domain/useCases/Ge
 import { JiraMetadataAdapter } from '../../modules/deploy-planner/infra/JiraMetadataAdapter';
 import { SupabaseReleaseRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseReleaseRepo';
 import { SupabaseSubtaskConfigRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseSubtaskConfigRepo';
-import { DualPanelPicker } from '@worksuite/ui';
+import { DualPanelPicker, BugIcon } from '@worksuite/ui';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 async function getAuthHeaders() {
@@ -320,7 +320,7 @@ function AdminDeployConfig() {
     { id: 'jira',     label: '🔗 Jira',    icon: '' },
     { id: 'versions', label: '🔢 Versiones', icon: '' },
     { id: 'repos',    label: '📦 Repos',   icon: '' },
-    { id: 'subtasks', label: '🐛 Subtareas', icon: '' },
+    { id: 'subtasks', label: 'Subtareas', icon: '' },
   ];
 
   return (
@@ -717,7 +717,7 @@ function SubtaskConfigSection() {
 
   return (
     <div className="a-card" style={{marginTop:16}}>
-      <div className="a-ct">🐛 {t('deployPlanner.subtaskConfig')}</div>
+      <div className="a-ct"><BugIcon size={16} color="#ef4444"/> {t('deployPlanner.subtaskConfig')}</div>
       <div style={{fontSize:11,color:"var(--tx3)",marginBottom:14}}>{t('deployPlanner.subtaskDesc')}</div>
 
       {/* Load Jira types button */}
@@ -753,7 +753,7 @@ function SubtaskConfigSection() {
               {/* Category selector */}
               <select value={cfg.category} onChange={e => updateConfig(cfg.id, { category: e.target.value })}
                 style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"2px 8px",fontSize:10,color:"var(--tx)",fontFamily:"inherit"}}>
-                <option value="bug">🐛 Bug</option>
+                <option value="bug">Bug</option>
                 <option value="test">🧪 Test</option>
                 <option value="other">📋 Otro</option>
               </select>

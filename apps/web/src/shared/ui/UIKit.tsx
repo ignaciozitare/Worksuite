@@ -8,6 +8,7 @@ import {
   StatusManager,
   DualPanelPicker,
   DateRangePicker,
+  BugIcon,
 } from '@worksuite/ui';
 
 const Section = ({ title, description, children }) => (
@@ -237,6 +238,28 @@ export function UIKit() {
             <GanttTimeline bars={ganttBars} onBarClick={(id) => alert(`Clicked: ${id}`)} />
           </div>
           <Row label="Import"><Code>{'import { GanttTimeline } from "@worksuite/ui"'}</Code></Row>
+        </Section>
+
+        {/* ── BugIcon ─────────────────────────────────────────────── */}
+        <Section title="BugIcon" description="Icono SVG de bug estilo circuit-board. Usado en Deploy Planner para contadores de bugs y subtareas.">
+          <Row label="Tamaños y colores">
+            <BugIcon size={12} color="#ef4444" />
+            <BugIcon size={16} color="#ef4444" />
+            <BugIcon size={24} color="#ef4444" />
+            <BugIcon size={32} color="#ef4444" />
+            <BugIcon size={24} color="#22c55e" />
+            <BugIcon size={24} color="#4f6ef7" />
+            <BugIcon size={24} color="#f59e0b" />
+          </Row>
+          <Row label="En contexto">
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#ef4444', fontWeight: 600 }}>
+              <BugIcon size={12} color="#ef4444" /> 3/5
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#22c55e', fontWeight: 600 }}>
+              <BugIcon size={12} color="#22c55e" /> 5/5
+            </span>
+          </Row>
+          <Row label="Import"><Code>{'import { BugIcon } from "@worksuite/ui"'}</Code></Row>
         </Section>
 
         {/* ── TimerBar ────────────────────────────────────────────── */}

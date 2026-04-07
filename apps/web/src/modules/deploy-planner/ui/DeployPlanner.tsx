@@ -2,7 +2,7 @@
 // Deploy Planner — v3 — Integrado con Supabase + Jira sync + Timeline zoom + Light mode
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../../../shared/lib/supabaseClient";
-import { GanttTimeline, DateRangePicker } from '@worksuite/ui';
+import { GanttTimeline, DateRangePicker, BugIcon } from '@worksuite/ui';
 import { extractReposFromTickets } from '@worksuite/jira-service';
 import { RepoGroupService } from '../domain/services/RepoGroupService';
 import { SubtaskService } from '../domain/services/SubtaskService';
@@ -428,7 +428,7 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
           <div style={{display:"flex",gap:8,fontSize:10,paddingTop:6,borderTop:"1px solid var(--dp-bd,#0e1520)",marginBottom:4}}>
             {counts.bugs.total > 0 && (
               <span style={{color:counts.bugs.open>0?"#ef4444":"#22c55e",fontWeight:600}}>
-                🐛 {counts.bugs.closed}/{counts.bugs.total}
+                <BugIcon size={12} color="currentColor"/>{counts.bugs.closed}/{counts.bugs.total}
               </span>
             )}
             {counts.tests.total > 0 && (
@@ -675,7 +675,7 @@ function ReleaseDetail({ rel, tickets, statusCfg, repoGroups, allReleases, onBac
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
               <SLabel>Subtareas</SLabel>
               <span style={{fontSize:10,color:"var(--dp-tx2,#94a3b8)"}}>{relSubs.length} total</span>
-              {counts.bugs.total>0&&<span style={{fontSize:10,color:counts.bugs.open>0?"#ef4444":"#22c55e",fontWeight:600}}>🐛 {counts.bugs.closed}/{counts.bugs.total}</span>}
+              {counts.bugs.total>0&&<span style={{fontSize:10,color:counts.bugs.open>0?"#ef4444":"#22c55e",fontWeight:600}}><BugIcon size={12} color="currentColor"/>{counts.bugs.closed}/{counts.bugs.total}</span>}
               {counts.tests.total>0&&<span style={{fontSize:10,color:counts.tests.open>0?"#3b82f6":"#22c55e",fontWeight:600}}>🧪 {counts.tests.closed}/{counts.tests.total}</span>}
               {onRefreshSubtasks&&<button onClick={onRefreshSubtasks}
                 style={{marginLeft:"auto",background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:4,padding:"3px 10px",fontSize:9,color:"var(--dp-tx2,#94a3b8)",cursor:"pointer",fontFamily:"inherit"}}>
@@ -871,7 +871,7 @@ function History({ releases, tickets, setDetail, statusCfg, classifiedSubs=[] })
                 <td style={{padding:"11px 12px"}}>{(()=>{
                   const relSubs=classifiedSubs.filter(s=>(rel.ticket_ids||[]).includes(s.parentKey));
                   const c=SubtaskService.count(relSubs);
-                  return c.bugs.total>0?<span style={{color:c.bugs.open>0?"#ef4444":"#22c55e",fontWeight:600}}>🐛 {c.bugs.closed}/{c.bugs.total}</span>:<span style={{color:"var(--dp-tx3,#64748b)"}}>—</span>;
+                  return c.bugs.total>0?<span style={{color:c.bugs.open>0?"#ef4444":"#22c55e",fontWeight:600}}><BugIcon size={12} color="currentColor"/>{c.bugs.closed}/{c.bugs.total}</span>:<span style={{color:"var(--dp-tx3,#64748b)"}}>—</span>;
                 })()}</td>
                 <td style={{padding:"11px 12px"}}><div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{relRepos.slice(0,3).map(r=><RepoChip key={r} name={r}/>)}{relRepos.length>3&&<span style={{fontSize:9,color:"var(--dp-tx3,#64748b)"}}>+{relRepos.length-3}</span>}</div></td>
               </tr>
