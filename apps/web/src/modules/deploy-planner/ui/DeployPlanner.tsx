@@ -2,7 +2,7 @@
 // Deploy Planner — v3 — Integrado con Supabase + Jira sync + Timeline zoom + Light mode
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../../../shared/lib/supabaseClient";
-import { GanttTimeline } from '@worksuite/ui';
+import { GanttTimeline, DateRangePicker } from '@worksuite/ui';
 import { extractReposFromTickets } from '@worksuite/jira-service';
 import { RepoGroupService } from '../domain/services/RepoGroupService';
 import { SubtaskService } from '../domain/services/SubtaskService';
@@ -331,22 +331,19 @@ function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop,
         </select>
       </div>
 
-      {/* Dates — stacked with labels */}
-      <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:8}}>
-        <div>
-          <div style={{fontSize:9,fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:"var(--dp-tx3,#334155)",marginBottom:3}}>Start Date</div>
-          <input type="date" value={rel.start_date||""}
-            onClick={e=>e.stopPropagation()}
-            onChange={e=>onUpd(rel.id,{start_date:e.target.value})}
-            style={{width:"100%",background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:4,padding:"5px 8px",fontSize:10,color:"var(--dp-tx2,#94a3b8)",outline:"none"}}/>
-        </div>
-        <div>
-          <div style={{fontSize:9,fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:"var(--dp-tx3,#334155)",marginBottom:3}}>End Date</div>
-          <input type="date" value={rel.end_date||""}
-            onClick={e=>e.stopPropagation()}
-            onChange={e=>onUpd(rel.id,{end_date:e.target.value})}
-            style={{width:"100%",background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:4,padding:"5px 8px",fontSize:10,color:"var(--dp-tx2,#94a3b8)",outline:"none"}}/>
-        </div>
+      {/* Dates — single calendar range picker */}
+      <div style={{marginBottom:8}} onClick={e=>e.stopPropagation()}>
+        <DateRangePicker
+          startValue={rel.start_date||""}
+          endValue={rel.end_date||""}
+          onChange={(s, e) => {
+            const startDate = s ? s.slice(0,10) : "";
+            const endDate = e ? e.slice(0,10) : "";
+            onUpd(rel.id, { start_date: startDate, end_date: endDate });
+          }}
+          showTime={false}
+          labels={{ start: "Start", end: "End" }}
+        />
       </div>
 
       {/* Conflicts */}
