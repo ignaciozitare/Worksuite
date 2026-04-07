@@ -47,11 +47,15 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser, theme="dark" }: A
     { id:"deploy",     icon:"🚀", label:"Deploy Planner" },
     { id:"envtracker", icon:"🖥️", label:"Environments" },
   ];
+  const openUIKit = () => window.open('/ui-kit', '_blank');
   return (
     <div className="admin-wrap">
       <nav className="admin-nav">
         <div className="admin-nav-t">{t("admin.sidebar")}</div>
         {NAV.map(item=>(<button key={item.id} className={`an-btn ${mod===item.id ? (item.hd?"active-hd":"active") : ""}`} onClick={()=>setMod(item.id)}><span className="an-icon">{item.icon}</span><span>{item.label}</span>{item.badge&&<span className="an-badge">{item.badge}</span>}</button>))}
+        <div style={{borderTop:'1px solid var(--bd)',marginTop:12,paddingTop:12}}>
+          <button className="an-btn" onClick={openUIKit} style={{opacity:.7}}><span className="an-icon">🎨</span><span>UI Kit</span><span style={{fontSize:9,color:'var(--tx3)',marginLeft:'auto'}}>↗</span></button>
+        </div>
       </nav>
       <div className="admin-content">
         {mod==="settings"  && <AdminSettings/>}

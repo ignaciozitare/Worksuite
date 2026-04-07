@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { LoginPage } from '@/modules/auth/LoginPage';
+import { UIKit } from '@/shared/ui/UIKit';
 import WorkSuiteApp from './WorkSuiteApp';
 
 function ProtectedRoute({ children }: { children: JSX.Element }): JSX.Element {
@@ -44,6 +45,9 @@ export function AppRouter(): JSX.Element {
 
         {/* Admin */}
         <Route path="/admin" element={<Protected />} />
+
+        {/* UI Kit */}
+        <Route path="/ui-kit" element={<ProtectedRoute><UIKit /></ProtectedRoute>} />
 
         {/* Default */}
         <Route path="/" element={<Navigate to="/jira-tracker/calendar" replace />} />
