@@ -9,4 +9,5 @@ export interface Environment {
   maxReservationDuration: number;   // hours
   color:                  string | null;
   url:                    string | null;
+  priority:               number;   // lower = higher in sidebar
 }

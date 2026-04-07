@@ -278,17 +278,19 @@ export function AdminEnvEnvironments() {
   };
 
   function EnvForm({ env, onSave, onClose }) {
-    const [name,setName] = useState(env?.name??'');
-    const [cat,setCat]   = useState(env?.category??'DEV');
-    const [max,setMax]   = useState(env?.maxReservationDuration??8);
-    const [url,setUrl]   = useState(env?.url??'');
-    const [err,setErr]   = useState('');
+    const [name,setName]     = useState(env?.name??'');
+    const [cat,setCat]       = useState(env?.category??'DEV');
+    const [max,setMax]       = useState(env?.maxReservationDuration??8);
+    const [url,setUrl]       = useState(env?.url??'');
+    const [priority,setPrio] = useState(env?.priority??99);
+    const [err,setErr]       = useState('');
 
     const submit = () => {
       if(!name.trim()){setErr('Nombre requerido');return;}
       onSave({ id:env?.id??uid(), name:name.trim(), category:cat,
         maxReservationDuration:Number(max)||8, url:url.trim()||null, color:env?.color??null,
-        isLocked:env?.isLocked??false, isArchived:env?.isArchived??false });
+        isLocked:env?.isLocked??false, isArchived:env?.isArchived??false,
+        priority:Number(priority)||99 });
     };
 
     return (
@@ -300,7 +302,7 @@ export function AdminEnvEnvironments() {
               placeholder="DEV-03" autoFocus/>
             {err&&<p style={{fontSize:11,color:'var(--red,#e05252)',marginTop:3}}>⚠ {err}</p>}
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
             <div>
               <label style={lbl}>Categoría</label>
               <select style={inp()} value={cat} onChange={e=>setCat(e.target.value)}>
@@ -312,6 +314,11 @@ export function AdminEnvEnvironments() {
             <div>
               <label style={lbl}>Max duración (h)</label>
               <input type="number" style={inp()} value={max} onChange={e=>setMax(e.target.value)} min={1}/>
+            </div>
+            <div>
+              <label style={lbl}>Prioridad</label>
+              <input type="number" style={inp()} value={priority} onChange={e=>setPrio(e.target.value)} min={1} max={99}
+                title="Menor = aparece primero en la barra lateral"/>
             </div>
           </div>
           <div>
@@ -350,7 +357,7 @@ export function AdminEnvEnvironments() {
                   {env.isLocked&&<span style={{fontSize:9,color:'var(--amber,#f5a623)',fontWeight:700}}>🔒 BLOQUEADO</span>}
                   {env.isArchived&&<span style={{fontSize:9,color:'var(--tx3,#50506a)'}}>Archivado</span>}
                 </div>
-                <span style={{fontSize:11,color:'var(--tx3,#50506a)'}}>Max {env.maxReservationDuration}h{env.url?' · '+env.url:''}</span>
+                <span style={{fontSize:11,color:'var(--tx3,#50506a)'}}>#{env.priority??99} · Max {env.maxReservationDuration}h{env.url?' · '+env.url:''}</span>
               </div>
               <div style={{display:'flex',gap:6,flexShrink:0}}>
                 <button onClick={()=>toggle(env,'isLocked')} style={btn('ghost',{fontSize:11,padding:'3px 8px'})}>

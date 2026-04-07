@@ -11,6 +11,7 @@ const toEnv = (r: any): Environment => ({
   maxReservationDuration: r.max_reservation_duration,
   color:                  r.color ?? null,
   url:                    r.url ?? null,
+  priority:               r.priority ?? 99,
 });
 
 const fromEnv = (e: Environment) => ({
@@ -22,6 +23,7 @@ const fromEnv = (e: Environment) => ({
   max_reservation_duration:   e.maxReservationDuration,
   color:                      e.color,
   url:                        e.url,
+  priority:                   e.priority ?? 99,
 });
 
 export class SupabaseEnvironmentRepo implements IEnvironmentRepo {

@@ -1219,22 +1219,38 @@ export function DeployPlanner({ currentUser }) {
       <style>{CSS}</style>
 
       {/* Nav */}
-      <nav style={{borderBottom:"1px solid var(--dp-bd,#0e1520)",padding:"0 28px",display:"flex",alignItems:"center",height:52,background:"var(--dp-sf,#07090f)",gap:2,position:"sticky",top:0,zIndex:20}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginRight:24}}>
-          {detail&&<button onClick={()=>setDetail(null)} style={{background:"none",border:"none",color:"var(--dp-tx3,#64748b)",cursor:"pointer",fontSize:18,marginRight:4,lineHeight:1}}>←</button>}
-          <div style={{width:26,height:26,background:"linear-gradient(135deg,#1d4ed8,#0ea5e9)",borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🚀</div>
-          <span style={{fontWeight:700,fontSize:13,color:"var(--dp-tx,#e6edf3)",letterSpacing:".04em"}}>Deploy Planner</span>
-          {detailRel&&<><span style={{color:"var(--dp-tx3,#334155)",fontSize:11}}>→</span><span style={{fontSize:12,color:"#38bdf8",fontWeight:600}}>{detailRel.release_number}</span></>}
-        </div>
-        {!detail&&TABS.map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)} style={{height:52,padding:"0 14px",border:"none",background:"transparent",cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:500,letterSpacing:".08em",textTransform:"uppercase",color:tab===t.id?"#38bdf8":"var(--dp-tx3,#64748b)",borderBottom:tab===t.id?"2px solid #38bdf8":"2px solid transparent",transition:"color .15s",display:"flex",alignItems:"center",gap:6}}>
-            {t.label}
-            {t.badge>0&&<span style={{background:tab===t.id?"#0a1f38":"rgba(56,189,248,.08)",color:tab===t.id?"#38bdf8":"var(--dp-tx3,#475569)",fontSize:9,padding:"1px 6px",borderRadius:10}}>{t.badge}</span>}
-          </button>
-        ))}
+      <nav style={{borderBottom:"1px solid var(--dp-bd,#0e1520)",padding:"0 20px",display:"flex",alignItems:"center",height:52,background:"var(--dp-sf,#07090f)",gap:10,position:"sticky",top:0,zIndex:20}}>
+        {detail ? (
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <button onClick={()=>setDetail(null)} style={{background:"none",border:"none",color:"var(--dp-tx3,#64748b)",cursor:"pointer",fontSize:18,lineHeight:1}}>←</button>
+            <div style={{width:26,height:26,background:"linear-gradient(135deg,#1d4ed8,#0ea5e9)",borderRadius:7,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🚀</div>
+            <span style={{fontWeight:700,fontSize:13,color:"var(--dp-tx,#e6edf3)",letterSpacing:".04em"}}>Deploy Planner</span>
+            <span style={{color:"var(--dp-tx3,#334155)",fontSize:11}}>→</span>
+            <span style={{fontSize:12,color:"#38bdf8",fontWeight:600}}>{detailRel?.release_number}</span>
+          </div>
+        ) : (
+          <>
+            <div style={{display:"flex",gap:2,background:"var(--dp-sf2,#07090f)",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:8,padding:3}}>
+              {TABS.map(t=>(
+                <button key={t.id} onClick={()=>setTab(t.id)}
+                  style={{padding:"4px 12px",fontSize:12,fontWeight:tab===t.id?600:400,borderRadius:6,
+                    border:"none",cursor:"pointer",fontFamily:"inherit",
+                    background:tab===t.id?"#38bdf8":"transparent",
+                    color:tab===t.id?"#000":"var(--dp-tx3,#64748b)",
+                    boxShadow:tab===t.id?"0 1px 3px rgba(0,0,0,.15)":"none",
+                    transition:"all .15s",display:"flex",alignItems:"center",gap:5}}>
+                  {t.label}
+                  {t.badge>0&&<span style={{fontSize:9,padding:"1px 6px",borderRadius:10,
+                    background:tab===t.id?"rgba(0,0,0,.2)":"rgba(56,189,248,.08)",
+                    color:tab===t.id?"rgba(0,0,0,.7)":"var(--dp-tx3,#475569)"}}>{t.badge}</span>}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:10,color:"var(--dp-tx3,#334155)"}}>
-            {fetchingJira ? <><span className="spin" style={{marginRight:4}}>⟳</span>Sincronizando Jira…</> : `${tickets.length} tickets de Jira`}
+            {fetchingJira ? <><span className="spin" style={{marginRight:4}}>⟳</span>Sincronizando Jira…</> : `${tickets.length} tickets`}
           </span>
           <button onClick={()=>fetchJiraTickets()} disabled={fetchingJira} title="Recargar tickets de Jira"
             style={{background:"transparent",border:"1px solid var(--dp-bd,#1e293b)",borderRadius:5,width:28,height:28,color:"var(--dp-tx2,#64748b)",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>

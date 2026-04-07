@@ -772,6 +772,25 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   const filterTabs=[{id:'all',label:'Todas'},{id:'active',label:'Activas'},{id:'mine',label:'Mis reservas'}];
   const mainTabs=[{id:'reservas',label:'Reservas'},{id:'gantt',label:'Timeline'},{id:'historial',label:'Historial'}];
 
+  // ── Environment sidebar data ────────────────────────────────────────────────
+  const [sidebarAvailOnly, setSidebarAvailOnly] = useState(false);
+  const sortedEnvs = useMemo(() => {
+    const active = envs.filter(e => !e.isArchived);
+    const sorted = active.sort((a,b) => (a.priority??99) - (b.priority??99) || a.name.localeCompare(b.name));
+    if (!sidebarAvailOnly) return sorted;
+    return sorted.filter(env => {
+      const activeRes = res.find(r => r.environmentId === env.id && ['reserved','in_use','violation'].includes(r.statusCategory));
+      return !activeRes && !env.isLocked;
+    });
+  }, [envs, res, sidebarAvailOnly]);
+
+  const getEnvStatus = useCallback((env) => {
+    const activeRes = res.find(r => r.environmentId === env.id && ['reserved','in_use','violation'].includes(r.statusCategory));
+    if (env.isLocked) return { occupied: true, label: '🔒', endDate: null };
+    if (activeRes) return { occupied: true, label: activeRes.statusName ?? activeRes.statusCategory, endDate: activeRes.plannedEnd };
+    return { occupied: false, label: '', endDate: null };
+  }, [res]);
+
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
       {/* Main tabs */}
@@ -819,38 +838,86 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
         </div>
       </div>
 
-      {/* Tab content */}
-      <div style={{flex:1,overflowY:'auto',padding:'16px 20px'}}>
-        {mainTab==='reservas' && (
-          <>
-            {loading ? (
-              <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
-                Cargando reservas…
+      {/* Body: sidebar + content */}
+      <div style={{display:'flex',flex:1,overflow:'hidden'}}>
+        {/* ── Environment Sidebar ──────────────────────────────────────── */}
+        <div style={{width:220,flexShrink:0,borderRight:'1px solid var(--bd,#2a2a38)',
+          background:'var(--sf,#141418)',overflowY:'auto',padding:'12px 10px',
+          display:'flex',flexDirection:'column',gap:6}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4,padding:'0 4px'}}>
+            <span style={{fontSize:11,fontWeight:700,color:'var(--tx3,#50506a)',textTransform:'uppercase',letterSpacing:'.05em'}}>Entornos</span>
+            <button onClick={()=>setSidebarAvailOnly(v=>!v)}
+              style={{fontSize:10,padding:'2px 8px',borderRadius:10,cursor:'pointer',fontFamily:'inherit',fontWeight:600,
+                border:`1px solid ${sidebarAvailOnly?'#22c55e':'var(--bd,#2a2a38)'}`,
+                background:sidebarAvailOnly?'rgba(34,197,94,.12)':'transparent',
+                color:sidebarAvailOnly?'#22c55e':'var(--tx3,#50506a)',transition:'all .12s'}}>
+              {sidebarAvailOnly?'✓ Libres':'Todos'}
+            </button>
+          </div>
+          {sortedEnvs.map(env => {
+            const st = getEnvStatus(env);
+            const cc = CAT[env.category] ?? CAT.DEV;
+            return (
+              <div key={env.id} style={{padding:'10px 10px',borderRadius:10,
+                background:'var(--sf2,#1b1b22)',border:`1px solid ${st.occupied?'rgba(239,68,68,.3)':'rgba(34,197,94,.3)'}`,
+                transition:'all .15s',cursor:'default'}}>
+                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+                  <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
+                    background:st.occupied?'#ef4444':'#22c55e'}}/>
+                  <span style={{fontSize:12,fontWeight:700,color:'var(--tx,#e4e4ef)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{env.name}</span>
+                  <span style={{fontSize:9,padding:'1px 5px',borderRadius:8,fontWeight:600,
+                    background:cc.bg,color:cc.color,flexShrink:0}}>{env.category}</span>
+                </div>
+                {st.occupied ? (
+                  <div style={{fontSize:10,color:'#f87171',marginLeft:14}}>
+                    {st.label}{st.endDate ? ` · hasta ${new Date(st.endDate).toLocaleDateString('es-ES',{day:'numeric',month:'short'})}` : ''}
+                  </div>
+                ) : (
+                  <div style={{fontSize:10,color:'#4ade80',marginLeft:14}}>Disponible</div>
+                )}
               </div>
-            ) : (
-              <div style={{maxWidth:760}}>
-                <DeployTimeline
-                  deployments={deploymentShapes}
-                  onSelect={handleSelect}
-                />
-              </div>
-            )}
-          </>
-        )}
+            );
+          })}
+          {sortedEnvs.length===0&&(
+            <div style={{fontSize:11,color:'var(--tx3,#50506a)',textAlign:'center',padding:'20px 0'}}>
+              {sidebarAvailOnly?'No hay entornos libres':'Sin entornos'}
+            </div>
+          )}
+        </div>
 
-        {mainTab==='gantt' && (
-          <>
-            {loading ? (
-              <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
-                Cargando…
-              </div>
-            ) : (
-              <GanttView reservations={visible} envs={envs} onBarClick={handleGanttBarClick} />
-            )}
-          </>
-        )}
+        {/* ── Tab content ──────────────────────────────────────────────── */}
+        <div style={{flex:1,overflowY:'auto',padding:'16px 20px'}}>
+          {mainTab==='reservas' && (
+            <>
+              {loading ? (
+                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
+                  Cargando reservas…
+                </div>
+              ) : (
+                <div style={{maxWidth:760}}>
+                  <DeployTimeline
+                    deployments={deploymentShapes}
+                    onSelect={handleSelect}
+                  />
+                </div>
+              )}
+            </>
+          )}
 
-        {mainTab==='historial' && <HistoryView />}
+          {mainTab==='gantt' && (
+            <>
+              {loading ? (
+                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
+                  Cargando…
+                </div>
+              ) : (
+                <GanttView reservations={visible} envs={envs} onBarClick={handleGanttBarClick} />
+              )}
+            </>
+          )}
+
+          {mainTab==='historial' && <HistoryView />}
+        </div>
       </div>
 
       {form&&<ReservationForm res={form==='new'?null:form} envs={envs} repos={repos} allRes={res}
