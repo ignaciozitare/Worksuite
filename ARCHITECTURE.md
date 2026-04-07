@@ -32,6 +32,7 @@ worksuite/
 │   │       ├── JiraTicketSearch.tsx   ← autocomplete de tickets Jira (DI del search)
 │   │       ├── JiraTicketPicker.tsx   ← lista pre-cargada + buscador + multiselect (reutilizable)
 │   │       ├── StatusManager.tsx      ← CRUD + drag-reorder de estados (presentacional, reutilizable)
+│   │       ├── DualPanelPicker.tsx   ← selector dual-panel con drag & drop (issue types, etc.)
 │   │       └── TimerBar.tsx
 │   ├── jira-client/           ← cliente HTTP para Jira Cloud API (usado en apps/api)
 │   └── jira-service/          ← servicio Jira de frontend (adapter + utils compartidos)
@@ -129,6 +130,9 @@ fetch() in UI/admin: 0
 - `StatusManager` — lista drag-to-reorder + CRUD + color + categoría. Presentacional: recibe
   `statuses`, `categories` y callbacks `onCreate/onUpdate/onDelete/onReorder`. Reutilizable para
   cualquier módulo que necesite estados configurables (releases, reservas, tickets…).
+- `DualPanelPicker` — selector de dos paneles (disponibles / seleccionados) con drag & drop,
+  click-to-move y búsqueda en ambos paneles. Deduplica automáticamente por valor.
+  Usado en Admin Environments (issue types Jira) y Admin Deploy Planner (issue types Jira).
 - `Btn`, `Avatar`, `Badge`, `Modal`, `TimerBar`, `StatBox`
 - Dark/light mode vía CSS variables (`--ws-*`)
 
@@ -167,12 +171,46 @@ Consumido por Deploy Planner y Environments. El `repoField` se lee de `dp_versio
 ### Jira Field Mapping
 - Admin selecciona qué campo de Jira usar como "Repository & Components"
 - Soporta custom fields (ej: `customfield_10146`)
+- Issue types seleccionables con DualPanelPicker (incluye subtareas), persistidos en `dp_version_config.issue_types`
 
-### Vistas
+### Admin (organizado en tabs)
+- **Estados**: Release statuses CRUD + Jira statuses de importación
+- **Jira**: Jira Field Mapping (issue types + repo field)
+- **Versiones**: Generador de versiones (prefix, separator, segments)
+- **Repos**: Repo groups con dependencias
+- **Subtareas**: Configuración de tipos de subtareas
+
+### Vistas (pill-style tabs)
 - **Planning**: Cards con tickets, repos, contadores, filtro por estado
 - **Timeline**: GanttTimeline con zoom, drag-resize, group frames, filtro
 - **History**: Tabla con filtros, ordenar, columna de bugs
 - **Metrics**: Stats de releases, bugs, tests, repos
+
+---
+
+## Environments — Features
+
+### Entornos
+- CRUD de entornos con categoría (DEV/PRE/STAGING), max duración, URL, priority
+- `priority` (integer) controla el orden en la barra lateral (menor = primero)
+
+### Barra lateral de entornos
+- Lista de entornos ordenados por priority, luego por nombre
+- Indicador visual: punto verde + "Disponible" si libre, punto rojo + estado + fecha fin si ocupado
+- Filtro toggle "Todos / Libres"
+- Click en entorno libre → abre modal de nueva reserva
+- Click en entorno ocupado → abre modal de detalle de la reserva activa
+
+### Reservas
+- Check-in/check-out/cancelar disponible para owner Y admin
+- Cards de reserva muestran repos extraídos de Jira como chips
+- Historial de 2 meses con filas clickeables
+
+### Admin (organizado en tabs)
+- **Entornos**: CRUD con priority, lock, archive
+- **Estados**: StatusManager con categorías (reserved, in_use, completed, cancelled, violation)
+- **Filtro Jira**: DualPanelPicker para issue types (incluye subtareas) + chips para proyectos y statuses
+- **Política**: Ventana de reserva, duración mínima, horario laboral
 
 ---
 
@@ -187,6 +225,7 @@ Consumido por Deploy Planner y Environments. El `repoField` se lee de `dp_versio
 | `buildings`, `blueprints` | Planos de oficina |
 | `retro_sessions`, `retro_actionables`, `retro_teams`, `retro_team_members` | RetroBoard |
 | `dp_releases`, `dp_release_statuses`, `dp_version_config` | Deploy Planner |
+| `syn_environments` | Entornos con priority para orden en sidebar |
 | `syn_reservations`, `syn_reservation_statuses`, `syn_reservation_history`, `syn_jira_filter_config` | Environments |
 | `dp_repo_groups`, `dp_subtask_config` | Config de repos y subtareas |
 | `jira_connections` | Conexiones Jira por usuario |

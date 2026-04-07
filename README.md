@@ -11,7 +11,7 @@ Plataforma unificada de utilidades de trabajo — Jira Tracker, HotDesk, RetroBo
 | Base de datos | Supabase (Postgres + Auth + RLS) |
 | Jira | REST API v3 via JiraCloudAdapter |
 | i18n | @worksuite/i18n (es/en) |
-| UI Components | @worksuite/ui (GanttTimeline, JiraTicketSearch, StatusManager, Btn, Modal, etc.) |
+| UI Components | @worksuite/ui (GanttTimeline, JiraTicketSearch, StatusManager, DualPanelPicker, Btn, Modal, etc.) |
 | Jira (frontend) | @worksuite/jira-service (search adapter + repo extraction util) |
 | Deploy | Vercel (web + api auto-deploy on push to main) |
 | Monorepo | npm workspaces |
@@ -45,8 +45,8 @@ worksuite/
 | **Jira Tracker** | Imputación de horas, calendario, vista día, tareas, sync con Jira |
 | **HotDesk** | Mapa de oficina, reservas de puesto, vista mensual, blueprints |
 | **RetroBoard** | Retrospectivas estructuradas, kanban de accionables, historial |
-| **Deploy Planner** | Releases, timeline Gantt, repo groups, subtareas (bugs/tests), métricas |
-| **Environments** | Gestión de entornos de despliegue, reservas con estados configurables, políticas, historial |
+| **Deploy Planner** | Releases, timeline Gantt, repo groups, subtareas (bugs/tests), métricas. Admin en tabs (Estados, Jira, Versiones, Repos, Subtareas) |
+| **Environments** | Gestión de entornos con barra lateral (priority, disponibilidad), reservas, timeline, historial. Admin en tabs (Entornos, Estados, Filtro Jira, Política) |
 
 ## Getting started
 
