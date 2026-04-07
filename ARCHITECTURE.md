@@ -62,7 +62,8 @@ worksuite/
     │           ├── jira-tracker/
     │           │   ├── domain/    ← entities, ports (WorklogPort, JiraSyncPort), useCases, services
     │           │   ├── infra/     ← SupabaseWorklogRepo, JiraSyncAdapter
-    │           │   └── ui/        ← LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView
+    │           │   └── ui/        ← LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView,
+    │           │                     RecentTasksSidebar, ExportConfigModal
     │           ├── hotdesk/
     │           │   ├── domain/    ← entities, ports (SeatReservationPort), useCases, services
     │           │   ├── infra/     ← SupabaseSeatReservationRepo, SupabaseReservationRepository
@@ -151,6 +152,35 @@ Contiene:
 
 Consumido por Deploy Planner y Environments. El `repoField` se lee de `dp_version_config.repo_jira_field`
 (configurable en Admin → Deploy Config), evitando hardcodear `customfield_10146` en cada módulo.
+
+---
+
+## Jira Tracker — Features
+
+### Vistas
+- **Calendario**: Vista mensual con horas por día, click abre vista día
+- **Vista día**: Worklogs agrupados por épica, resumen por tarea
+- **Tareas**: Solo muestra tareas con horas en el rango de fechas seleccionado.
+  Horas filtradas por rango + autor. Filtros por tipo, búsqueda, ordenación.
+
+### Barra lateral derecha "Recientes"
+- Componente `RecentTasksSidebar` compartido entre las 3 vistas
+- Últimas 20 tareas únicas con worklogs (independiente de filtros)
+- Click abre modal de imputar horas
+- Colapsable (220px abierta, 32px cerrada)
+
+### Exportación CSV configurable
+- Modal `ExportConfigModal` con dual-panel para seleccionar/reordenar campos
+- 16 campos disponibles (fecha, clave, resumen, tipo, estado, etc.)
+- Drag & drop para reordenar columnas
+- Presets guardados por usuario en `users.export_presets` (jsonb)
+- Campo de nombre personalizado del archivo + rango de fechas automático
+
+### Filtros (sidebar izquierda)
+- Rango de fechas (por defecto mes actual)
+- Filtro por usuario Jira (recarga issues de todos los proyectos)
+- Filtro por usuario WorkSuite (filtra worklogs por autor)
+- Proyectos/espacios (multi-select)
 
 ---
 

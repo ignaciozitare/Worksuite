@@ -42,7 +42,7 @@ worksuite/
 
 | Módulo | Descripción |
 |--------|------------|
-| **Jira Tracker** | Imputación de horas, calendario, vista día, tareas, sync con Jira |
+| **Jira Tracker** | Imputación de horas, calendario, vista día, tareas (filtradas por rango), sidebar recientes, export CSV configurable con presets |
 | **HotDesk** | Mapa de oficina, reservas de puesto, vista mensual, blueprints |
 | **RetroBoard** | Retrospectivas estructuradas, kanban de accionables, historial |
 | **Deploy Planner** | Releases, timeline Gantt, repo groups, subtareas (bugs/tests), métricas. Admin en tabs (Estados, Jira, Versiones, Repos, Subtareas) |

@@ -39,7 +39,7 @@ worksuite/
 
 | Módulo | Descripción |
 |--------|------------|
-| **Jira Tracker** | Imputación de horas, calendario, vista día, tareas, sync con Jira. Filtro por usuario Jira, hide done tasks. |
+| **Jira Tracker** | Imputación de horas, calendario, vista día, tareas (solo con horas en rango), sidebar recientes, export CSV configurable con presets. Filtro por usuario Jira, hide done tasks. |
 | **HotDesk** | Mapa de oficina SVG, reservas de puesto, vista mensual, blueprints editables |
 | **RetroBoard** | Retrospectivas estructuradas (lobby, fases, kanban de accionables, historial, equipos) |
 | **Deploy Planner** | Releases con versiones auto-generadas, timeline Gantt, repo groups con dependencias, subtareas (bugs/tests/other), métricas |
@@ -154,7 +154,7 @@ Cada módulo sigue: `domain/` (entities, ports, useCases) + `infra/` (repos, ada
 
 | Tabla | Descripción |
 |-------|------------|
-| `users` | role, desk_type, modules (jsonb), jira_api_token |
+| `users` | role, desk_type, modules (jsonb), jira_api_token, export_presets (jsonb) |
 | `worklogs` | Imputaciones de tiempo |
 | `seats`, `seat_reservations`, `fixed_assignments` | HotDesk |
 | `buildings`, `blueprints` | Planos de oficina |

@@ -19,7 +19,6 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues, jiraProjec
   const [tf, stf] = useState<string[]>([]);
   const [sr, ssr] = useState("");
   const [so, sso] = useState({key:"key",dir:"asc"});
-  const [recentOpen, setRecentOpen] = useState(true);
 
   // ── Filter worklogs by date range + author ──────────────────────────────────
   const rangeWorklogs = useMemo(() => {
@@ -70,28 +69,6 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues, jiraProjec
     return { totalH, actD };
   }, [rangeWorklogs]);
 
-  // ── Recent 20 tasks (independent of filters) ───────────────────────────────
-  const recentTasks = useMemo(() => {
-    const all: { issue: string; summary: string; date: string; seconds: number }[] = [];
-    for (const [date, dayWls] of Object.entries(worklogs || {})) {
-      for (const wl of dayWls) {
-        all.push({ issue: wl.issue, summary: wl.summary || wl.issue, date, seconds: wl.seconds });
-      }
-    }
-    // Sort by date desc, then deduplicate by issue key (keep most recent)
-    all.sort((a, b) => b.date.localeCompare(a.date));
-    const seen = new Set<string>();
-    const unique: typeof all = [];
-    for (const item of all) {
-      if (!seen.has(item.issue)) {
-        seen.add(item.issue);
-        unique.push(item);
-      }
-      if (unique.length >= 20) break;
-    }
-    return unique;
-  }, [worklogs]);
-
   const ts = (k: string) => sso(s => s.key === k ? { ...s, dir: s.dir === "asc" ? "desc" : "asc" } : { key: k, dir: "asc" });
   const A = ({ k }: { k: string }) => so.key !== k ? <span style={{ fontSize: 9, color: "var(--tx3)" }}>⇅</span> : <span style={{ fontSize: 9, color: "var(--ac2)" }}>{so.dir === "asc" ? "↑" : "↓"}</span>;
   const pc = (p: string) => p === "Critical" ? "p-crit" : p === "High" ? "p-high" : p === "Medium" ? "p-med" : "p-low";
@@ -105,9 +82,7 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues, jiraProjec
   };
 
   return (
-    <div style={{ display: 'flex', gap: 0, height: '100%' }}>
-      {/* ── Main content ──────────────────────────────────────────── */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+    <div>
         <div className="tk-h">
           <div className="tk-t">{t("nav.tasks")}</div>
           <div className="c-bdg">{filteredIssues.length}</div>
@@ -149,46 +124,6 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues, jiraProjec
             <td><button className="btn-log btn-log-sm" onClick={() => onOpenLog({ issueKey: i.key })}>{t("jiraTracker.btnHours")}</button></td>
           </tr>;
         })}</tbody></table></div>}
-      </div>
-
-      {/* ── Right sidebar: recent tasks ───────────────────────────── */}
-      <div style={{
-        width: recentOpen ? 220 : 32, flexShrink: 0, transition: 'width .2s',
-        borderLeft: '1px solid var(--bd)', background: 'var(--sf)',
-        display: 'flex', flexDirection: 'column', overflow: 'hidden',
-      }}>
-        <button onClick={() => setRecentOpen(v => !v)} style={{
-          background: 'none', border: 'none', borderBottom: '1px solid var(--bd)',
-          cursor: 'pointer', padding: '10px 8px', color: 'var(--tx3)',
-          fontSize: 11, fontWeight: 700, fontFamily: 'inherit', textAlign: 'center',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-        }}>
-          {recentOpen ? '›' : '‹'}
-          {recentOpen && <span style={{ letterSpacing: '.04em', textTransform: 'uppercase' }}>Recientes</span>}
-        </button>
-        {recentOpen && (
-          <div style={{ flex: 1, overflowY: 'auto', padding: '6px 6px' }}>
-            {recentTasks.map(rt => (
-              <div key={rt.issue}
-                onClick={() => onOpenLog({ issueKey: rt.issue })}
-                style={{
-                  padding: '8px 8px', borderRadius: 6, cursor: 'pointer',
-                  marginBottom: 4, transition: 'background .1s',
-                  borderLeft: '2px solid var(--ac,#4f6ef7)',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--sf2)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--ac2,#7c9aff)', fontFamily: 'var(--mono)' }}>{rt.issue}</div>
-                <div style={{ fontSize: 10, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>{rt.summary}</div>
-                <div style={{ fontSize: 9, color: 'var(--tx3)', marginTop: 2, opacity: 0.7 }}>{rt.date}</div>
-              </div>
-            ))}
-            {recentTasks.length === 0 && (
-              <div style={{ fontSize: 10, color: 'var(--tx3)', textAlign: 'center', padding: '16px 0' }}>Sin imputaciones</div>
-            )}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

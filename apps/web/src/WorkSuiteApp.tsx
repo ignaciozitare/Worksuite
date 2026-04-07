@@ -11,7 +11,7 @@ import { useHotDesk } from './shared/hooks/useHotDesk';
 import './WorkSuiteApp.css';
 
 // Module UI — eagerly loaded (always visible)
-import { LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView } from './modules/jira-tracker/ui';
+import { LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView, RecentTasksSidebar } from './modules/jira-tracker/ui';
 import { ExportConfigModal, exportWithColumns } from './modules/jira-tracker/ui/ExportConfigModal';
 import { BlueprintHDMap, HDTableView, HDReserveModal } from './modules/hotdesk/ui';
 import { BuildingFloorSelectors } from './shared/admin';
@@ -273,9 +273,9 @@ function WorkSuiteApp() {
             {mod === "jt" && view !== "admin" && (
               <JTFilterSidebar filters={filters} onApply={f => { setFilters(f); setSbOpen(false); }} onExport={handleExport} mobileOpen={sbOpen} onMobileClose={() => setSbOpen(false)} users={users} onProjectChange={handleLoadJiraIssues} jiraProjects={jiraProjects} jiraUsers={jiraUsers} jiraUserFilter={jiraUserFilter} onJiraUserFilter={setJiraUserFilter} />
             )}
-            {mod === "jt" && view === "calendar" && <main className="content"><CalendarView filters={filters} worklogs={worklogs} onDayClick={handleDayClick} onOpenLog={handleOpenLog} /></main>}
-            {mod === "jt" && view === "day" && <main className="content"><DayView date={activeDay} filters={filters} worklogs={worklogs} onDateChange={setActiveDay} onOpenLog={handleOpenLog} onDeleteWorklog={handleDeleteWorklog} /></main>}
-            {mod === "jt" && view === "tasks" && <main className="content"><TasksView filters={filters} onOpenLog={handleOpenLog} worklogs={worklogs} jiraIssues={jiraIssues} jiraProjects={jiraProjects} /></main>}
+            {mod === "jt" && view === "calendar" && <main className="content" style={{display:'flex'}}><div style={{flex:1,minWidth:0,overflow:'auto'}}><CalendarView filters={filters} worklogs={worklogs} onDayClick={handleDayClick} onOpenLog={handleOpenLog} /></div><RecentTasksSidebar worklogs={worklogs} onOpenLog={handleOpenLog} /></main>}
+            {mod === "jt" && view === "day" && <main className="content" style={{display:'flex'}}><div style={{flex:1,minWidth:0,overflow:'auto'}}><DayView date={activeDay} filters={filters} worklogs={worklogs} onDateChange={setActiveDay} onOpenLog={handleOpenLog} onDeleteWorklog={handleDeleteWorklog} /></div><RecentTasksSidebar worklogs={worklogs} onOpenLog={handleOpenLog} /></main>}
+            {mod === "jt" && view === "tasks" && <main className="content" style={{display:'flex'}}><div style={{flex:1,minWidth:0,overflow:'auto'}}><TasksView filters={filters} onOpenLog={handleOpenLog} worklogs={worklogs} jiraIssues={jiraIssues} jiraProjects={jiraProjects} /></div><RecentTasksSidebar worklogs={worklogs} onOpenLog={handleOpenLog} /></main>}
             {mod === "hd" && view === "map" && (
               <main className="content">
                 {selectedBlueprint
