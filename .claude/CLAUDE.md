@@ -65,10 +65,11 @@
 6. **No secrets**: confirm no tokens, keys, or passwords are hardcoded in any source file.
 
 ## Deployment Rules
-- **Never merge a feature branch to `main` without first verifying the build compiles cleanly on a Vercel preview deploy.**
-- A passing local build is not enough — the preview deploy is the real gate.
-- If the preview deploy fails, fix it on the branch before merging. Never promote a broken deploy.
-- To promote a deploy to production, use the Vercel dashboard UI — there is no automated endpoint for this.
+- After committing, always push to `main` and verify the Vercel deploy succeeds (state = READY).
+- If the deploy fails, fix it immediately and push again.
+- Use `git push origin main` to trigger deploys. Vercel auto-deploys from the GitHub integration.
+- If `git push` hangs or fails due to credentials, retry — do not leave commits unpushed.
+- After pushing, verify the deploy via the Vercel MCP tool (`list_deployments`) and report the result.
 
 ## Working Style
 - Be direct and practical.

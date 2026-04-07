@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(do echo:*)",
+      "Bash(find /Users/ignaciozitare/Documents/Trabajo/Desarrollo/Worksuite-1/apps/web/src/shared -type f -name *.ts*)",
+      "Bash(echo \"=== $module/infra ===\")",
+      "Read(//Users/ignaciozitare/Documents/Trabajo/Desarrollo/Worksuite-1/apps/web/src/modules/$module/**)",
+      "Bash(git reset:*)",
+      "Bash(gh run:*)",
+      "Bash(command -v vercel)",
+      "Bash(vercel ls:*)"
+    ]
+  }
+}
