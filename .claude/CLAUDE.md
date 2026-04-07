@@ -23,6 +23,7 @@
 - Reuse the existing component library (`packages/ui`) whenever possible.
 - Do not create new components if an existing one can solve the need with reasonable changes.
 - If a new component is created and it is reusable, add it to the component library following the project conventions.
+- **When adding a new component to `packages/ui`, also add it to the UI Kit page** (`apps/web/src/shared/ui/UIKit.tsx`) with a live interactive example, description, and import statement. The UI Kit is accessible at `/ui-kit` from the Admin sidebar.
 
 ## Before Writing Code
 - First, briefly summarize what is going to be built.
