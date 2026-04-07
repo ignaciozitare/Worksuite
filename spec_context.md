@@ -55,6 +55,7 @@ worksuite/
 - `JiraTicketPicker` — lista pre-cargada + buscador + multiselect
 - `StatusManager` — CRUD + drag-reorder de estados (presentacional, reutilizable)
 - `DualPanelPicker` — selector dual-panel con drag & drop, click-to-move, búsqueda, dedup automático
+- `DateRangePicker` — campos compactos con calendario popover, rango visual, maxDurationHours, showTime, bordes dorados
 - `Btn`, `Avatar`, `Badge`, `Modal`, `ConfirmModal`, `TimerBar`, `StatBox`, `Divider`, `Chip`
 
 ### @worksuite/i18n

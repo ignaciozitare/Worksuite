@@ -33,6 +33,7 @@ worksuite/
 │   │       ├── JiraTicketPicker.tsx   ← lista pre-cargada + buscador + multiselect (reutilizable)
 │   │       ├── StatusManager.tsx      ← CRUD + drag-reorder de estados (presentacional, reutilizable)
 │   │       ├── DualPanelPicker.tsx   ← selector dual-panel con drag & drop (issue types, etc.)
+│   │       ├── DateRangePicker.tsx  ← calendario popover para rango de fechas (reservas, releases)
 │   │       └── TimerBar.tsx
 │   ├── jira-client/           ← cliente HTTP para Jira Cloud API (usado en apps/api)
 │   └── jira-service/          ← servicio Jira de frontend (adapter + utils compartidos)
@@ -133,6 +134,10 @@ fetch() in UI/admin: 0
 - `DualPanelPicker` — selector de dos paneles (disponibles / seleccionados) con drag & drop,
   click-to-move y búsqueda en ambos paneles. Deduplica automáticamente por valor.
   Usado en Admin Environments (issue types Jira) y Admin Deploy Planner (issue types Jira).
+- `DateRangePicker` — selector de rango de fechas con calendario popover. Campos compactos
+  que se abren al click. Soporta `showTime` (con/sin hora), `maxDurationHours` (limita rango),
+  range highlight, hover preview. Bordes dorados. Usado en Environments (reservas) y Deploy
+  Planner (release dates).
 - `Btn`, `Avatar`, `Badge`, `Modal`, `TimerBar`, `StatBox`
 - Dark/light mode vía CSS variables (`--ws-*`)
 

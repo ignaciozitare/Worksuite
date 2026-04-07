@@ -11,7 +11,7 @@ Plataforma unificada de utilidades de trabajo — Jira Tracker, HotDesk, RetroBo
 | Base de datos | Supabase (Postgres + Auth + RLS) |
 | Jira | REST API v3 via JiraCloudAdapter |
 | i18n | @worksuite/i18n (es/en) |
-| UI Components | @worksuite/ui (GanttTimeline, JiraTicketSearch, StatusManager, DualPanelPicker, Btn, Modal, etc.) |
+| UI Components | @worksuite/ui (GanttTimeline, JiraTicketSearch, StatusManager, DualPanelPicker, DateRangePicker, Btn, Modal, etc.) |
 | Jira (frontend) | @worksuite/jira-service (search adapter + repo extraction util) |
 | Deploy | Vercel (web + api auto-deploy on push to main) |
 | Monorepo | npm workspaces |

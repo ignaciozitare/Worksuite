@@ -145,12 +145,14 @@ export function DateRangePicker({
   };
 
   // ── Styles ──────────────────────────────────────────────────────────────────
+  const GOLD = '#d4a843';
+  const GOLD_DIM = 'rgba(212,168,67,.35)';
   const inputStyle: React.CSSProperties = {
     flex: 1, padding: showTime ? '7px 10px' : '5px 8px',
     fontSize: showTime ? 13 : 10,
     fontFamily: 'inherit', cursor: 'pointer',
     background: 'var(--sf2,var(--dp-sf2,#1b1b22))',
-    border: '1px solid var(--bd,var(--dp-bd,#2a2a38))',
+    border: `1px solid ${GOLD_DIM}`,
     borderRadius: showTime ? 8 : 4,
     color: 'var(--tx,var(--dp-tx2,#e4e4ef))',
     outline: 'none', textAlign: 'left',
@@ -179,7 +181,7 @@ export function DateRangePicker({
           <label style={labelStyle}>{labels.start ?? 'Inicio'}</label>
           <div onClick={() => openFor('start')} style={{
             ...inputStyle,
-            borderColor: open && phase === 'start' ? '#4f6ef7' : inputStyle.borderColor,
+            borderColor: open && phase === 'start' ? GOLD : GOLD_DIM,
           }}>
             {startDate ? fmtShort(startDate) : '—'}
             {showTime && startDate && <span style={{ color: 'var(--tx3,#50506a)', marginLeft: 6, fontSize: 11 }}>{startTime}</span>}
@@ -189,7 +191,7 @@ export function DateRangePicker({
           <label style={labelStyle}>{labels.end ?? 'Fin'}</label>
           <div onClick={() => { if (startDate) openFor('end'); }} style={{
             ...inputStyle,
-            borderColor: open && phase === 'end' ? '#4f6ef7' : inputStyle.borderColor,
+            borderColor: open && phase === 'end' ? GOLD : GOLD_DIM,
             opacity: startDate ? 1 : 0.5,
           }}>
             {endDate ? fmtShort(endDate) : '—'}
@@ -203,12 +205,12 @@ export function DateRangePicker({
         <div style={{
           position: 'absolute', top: '100%', left: 0, marginTop: 6, zIndex: 100,
           background: 'var(--sf,var(--dp-sf,#141418))',
-          border: '1px solid var(--bd,var(--dp-bd,#2a2a38))',
+          border: `1px solid ${GOLD_DIM}`,
           borderRadius: 12, padding: 14, minWidth: 280,
           boxShadow: '0 12px 40px rgba(0,0,0,.5)',
         }}>
           {/* Phase hint */}
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#4f6ef7', marginBottom: 8, textAlign: 'center' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: GOLD, marginBottom: 8, textAlign: 'center' }}>
             {phase === 'start' ? `Selecciona ${(labels.start ?? 'inicio').toLowerCase()}` : `Selecciona ${(labels.end ?? 'fin').toLowerCase()}`}
           </div>
 
