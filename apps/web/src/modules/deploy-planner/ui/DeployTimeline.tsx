@@ -51,6 +51,15 @@ export function DeployTimeline({ deployments, onSelect }: { deployments: any[]; 
             {d.jira_issues?.length > 0 && (
               <p style={{fontSize:11,color:"var(--tx3)",marginTop:4,margin:0}}>🔗 {d.jira_issues.join(", ")}</p>
             )}
+            {d.repos?.length > 0 && (
+              <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:4}}>
+                {d.repos.map((r: string) => (
+                  <span key={r} style={{fontSize:10,padding:"1px 7px",borderRadius:4,
+                    background:"rgba(124,58,237,.12)",color:"#a78bfa",
+                    border:"1px solid rgba(124,58,237,.25)"}}>📦 {r}</span>
+                ))}
+              </div>
+            )}
           </div>
         );
       })}

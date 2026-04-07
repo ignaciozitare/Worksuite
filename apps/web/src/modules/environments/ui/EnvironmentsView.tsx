@@ -62,6 +62,7 @@ function toDeploymentShape(res, env) {
     planned_at:  res.plannedStart,
     notes:       res.description ?? undefined,
     jira_issues: res.jiraIssueKeys,
+    repos:       res.extractedRepos ?? [],
   };
 }
 
@@ -257,8 +258,8 @@ function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEd
   const repoNames = (res.selectedRepositoryIds??[]).map(id=>repos.find(r=>r.id===id)?.name).filter(Boolean);
   const extractedRepoNames = res.extractedRepos ?? [];
   const canEdit   = (isOwner||isAdmin)&&['reserved','violation','in_use'].includes(res.statusCategory);
-  const canCI     = isOwner&&res.statusCategory==='reserved';
-  const canCO     = isOwner&&res.statusCategory==='in_use';
+  const canCI     = (isOwner||isAdmin)&&res.statusCategory==='reserved';
+  const canCO     = (isOwner||isAdmin)&&res.statusCategory==='in_use';
   const canCancel = (isOwner||isAdmin)&&['reserved','in_use','violation'].includes(res.statusCategory);
   const cat = CAT[env?.category]??CAT.DEV;
 
@@ -857,10 +858,26 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
           {sortedEnvs.map(env => {
             const st = getEnvStatus(env);
             const cc = CAT[env.category] ?? CAT.DEV;
+            const activeRes = res.find(r => r.environmentId === env.id && ['reserved','in_use','violation'].includes(r.statusCategory));
+            const handleClick = () => {
+              if (st.occupied && activeRes) {
+                setDetail(activeRes);
+              } else if (!st.occupied) {
+                setForm('new');
+                void loadAvailableTickets();
+                // Pre-select this environment after form renders
+                setTimeout(() => {
+                  const sel = document.querySelector('select') as HTMLSelectElement;
+                  if (sel) { sel.value = env.id; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+                }, 100);
+              }
+            };
             return (
-              <div key={env.id} style={{padding:'10px 10px',borderRadius:10,
+              <div key={env.id} onClick={handleClick} style={{padding:'10px 10px',borderRadius:10,
                 background:'var(--sf2,#1b1b22)',border:`1px solid ${st.occupied?'rgba(239,68,68,.3)':'rgba(34,197,94,.3)'}`,
-                transition:'all .15s',cursor:'default'}}>
+                transition:'all .15s',cursor:'pointer'}}
+                onMouseEnter={e=>(e.currentTarget.style.background='var(--sf,#141418)')}
+                onMouseLeave={e=>(e.currentTarget.style.background='var(--sf2,#1b1b22)')}>
                 <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
                   <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
                     background:st.occupied?'#ef4444':'#22c55e'}}/>

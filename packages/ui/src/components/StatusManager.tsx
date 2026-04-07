@@ -111,8 +111,12 @@ export function StatusManager({
   };
 
   const del = async (id: string) => {
-    await onDelete(id);
-    onChange(statuses.filter(s => s.id !== id));
+    try {
+      await onDelete(id);
+      onChange(statuses.filter(s => s.id !== id));
+    } catch (err: any) {
+      alert(err?.message ?? 'No se pudo eliminar. Puede estar en uso.');
+    }
   };
 
   const onDragEnd = async () => {
@@ -208,10 +212,12 @@ export function StatusManager({
                   fontSize: 9, color: 'var(--tx3,#50506a)', background: 'var(--sf,#141418)',
                   border: '1px solid var(--bd,#2a2a38)', borderRadius: 10, padding: '1px 6px', flexShrink: 0,
                 }}>{st.status_category}</span>
-                <button onClick={() => setEditing({ ...st })}
-                  style={{ background: 'none', border: 'none', color: 'var(--tx3,#50506a)', cursor: 'pointer', fontSize: 13 }}>✎</button>
-                <button onClick={() => del(st.id)}
-                  style={{ background: 'none', border: 'none', color: 'var(--red,#e05252)', cursor: 'pointer', fontSize: 14 }}>×</button>
+                <button onClick={() => setEditing({ ...st })} title="Editar"
+                  style={{ background: 'var(--sf,#141418)', border: '1px solid var(--bd,#2a2a38)', borderRadius: 5,
+                    color: 'var(--tx3,#50506a)', cursor: 'pointer', fontSize: 12, padding: '3px 8px', fontFamily: 'inherit' }}>✏️</button>
+                <button onClick={() => { if (confirm('¿Eliminar este estado?')) del(st.id); }} title="Eliminar"
+                  style={{ background: 'rgba(224,82,82,.1)', border: '1px solid rgba(224,82,82,.25)', borderRadius: 5,
+                    color: 'var(--red,#e05252)', cursor: 'pointer', fontSize: 12, padding: '3px 8px', fontFamily: 'inherit' }}>🗑</button>
               </>
             )}
           </div>
