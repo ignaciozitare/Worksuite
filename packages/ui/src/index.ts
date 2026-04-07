@@ -34,3 +34,7 @@ export type { StatusItem, StatusCategoryOption, StatusManagerProps } from './com
 // ── Dual Panel Picker ─────────────────────────────────────────────────────────
 export { DualPanelPicker }               from './components/DualPanelPicker';
 export type { DualPanelItem, DualPanelPickerProps } from './components/DualPanelPicker';
+
+// ── Date Range Picker ─────────────────────────────────────────────────────────
+export { DateRangePicker }               from './components/DateRangePicker';
+export type { DateRangePickerProps }     from './components/DateRangePicker';

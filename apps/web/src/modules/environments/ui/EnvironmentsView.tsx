@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase }                from '@/shared/lib/supabaseClient';
 // Usamos el mismo DeployTimeline de Deploy Planner — sin tocarlo
 import { DeployTimeline }          from '../../deploy-planner/ui/DeployTimeline';
-import { GanttTimeline, JiraTicketPicker } from '@worksuite/ui';
+import { GanttTimeline, JiraTicketPicker, DateRangePicker } from '@worksuite/ui';
 import { useTranslation }                 from '@worksuite/i18n';
 import { extractReposFromTickets }        from '@worksuite/jira-service';
 import { SupabaseReservationHistoryRepo } from '../infra/supabase/SupabaseReservationHistoryRepo';
@@ -214,12 +214,13 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
           <textarea value={desc} onChange={e=>setDesc(e.target.value)} rows={2}
             style={inpStyle({resize:'vertical'})} placeholder="Propósito de la reserva…"/>
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-          <div><label style={lblStyle}>Inicio</label>
-            <input type="datetime-local" value={start} onChange={e=>setStart(e.target.value)} style={inpStyle()}/></div>
-          <div><label style={lblStyle}>Fin</label>
-            <input type="datetime-local" value={end} onChange={e=>setEnd(e.target.value)} style={inpStyle()}/></div>
-        </div>
+        <DateRangePicker
+          startValue={start}
+          endValue={end}
+          onChange={(s, e) => { setStart(s); setEnd(e); }}
+          maxDurationHours={selEnv?.maxReservationDuration ?? 0}
+          labels={{ start: 'Inicio', end: 'Fin', time: 'Hora' }}
+        />
         {/* Repositorios extraidos de los tickets Jira (solo lectura) */}
         {extractedRepos.length > 0 && (
           <div>
