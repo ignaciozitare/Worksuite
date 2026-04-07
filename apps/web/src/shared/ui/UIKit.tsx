@@ -30,6 +30,13 @@ const Code = ({ children }) => (
   <code style={{ fontSize: 11, padding: '2px 6px', borderRadius: 4, background: 'var(--sf2,#1b1b22)', color: '#a78bfa', fontFamily: 'monospace' }}>{children}</code>
 );
 
+function TimerBarDemo() {
+  const [timer, setTimer] = useState(180);
+  const [running, setRunning] = useState(false);
+  const [mins, setMins] = useState(5);
+  return <TimerBar timer={timer} setTimer={setTimer} running={running} setRunning={setRunning} isMod={true} phaseMins={mins} setPhaseMins={setMins} />;
+}
+
 export function UIKit() {
   const [modal, setModal] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -159,8 +166,7 @@ export function UIKit() {
           )}
           {confirm && (
             <ConfirmModal
-              title="¿Confirmar acción?"
-              message="Esta acción no se puede deshacer."
+              message="Esta acción no se puede deshacer. ¿Continuar?"
               onConfirm={() => { setConfirm(false); alert('Confirmado!'); }}
               onCancel={() => setConfirm(false)}
             />
@@ -263,8 +269,8 @@ export function UIKit() {
         </Section>
 
         {/* ── TimerBar ────────────────────────────────────────────── */}
-        <Section title="TimerBar" description="Barra de progreso temporal.">
-          <TimerBar />
+        <Section title="TimerBar" description="Barra de progreso temporal con controles de moderador. Usada en RetroBoard para fases temporizadas.">
+          <TimerBarDemo />
           <Row label="Import"><Code>{'import { TimerBar } from "@worksuite/ui"'}</Code></Row>
         </Section>
 
