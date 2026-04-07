@@ -12,6 +12,7 @@ import './WorkSuiteApp.css';
 
 // Module UI — eagerly loaded (always visible)
 import { LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView } from './modules/jira-tracker/ui';
+import { ExportConfigModal, exportWithColumns } from './modules/jira-tracker/ui/ExportConfigModal';
 import { BlueprintHDMap, HDTableView, HDReserveModal } from './modules/hotdesk/ui';
 import { BuildingFloorSelectors } from './shared/admin';
 
@@ -66,7 +67,8 @@ function WorkSuiteApp() {
     role: authUser.role, deskType: authUser.desk_type || 'hotdesk',
     active: authUser.active !== false,
     modules: authUser.modules || ["jt", "hd", "retro", "deploy"],
-  } : { id: '', name: 'Loading...', email: '', avatar: '..', role: 'user', deskType: 'hotdesk', active: true, modules: ["jt", "hd", "retro", "deploy"] };
+    export_presets: authUser.export_presets || [],
+  } : { id: '', name: 'Loading...', email: '', avatar: '..', role: 'user', deskType: 'hotdesk', active: true, modules: ["jt", "hd", "retro", "deploy"], export_presets: [] };
 
   // Toast
   const [toast, setToast] = useState<any>(null);
@@ -92,7 +94,14 @@ function WorkSuiteApp() {
     setLogModal(openLogModal(opts));
   }, [openLogModal]);
 
-  const handleExport = (f: any) => CsvService.exportWorklogs(worklogs, f.from, f.to, f.authorId || null, f.spaceKeys);
+  const [exportModal, setExportModal] = useState<any>(null);
+  const [exportPresets, setExportPresets] = useState<any[]>(CURRENT_USER?.export_presets ?? []);
+  const handleExport = (f: any) => setExportModal(f);
+  const handleExportConfirm = (columns: string[]) => {
+    if (!exportModal) return;
+    exportWithColumns(worklogs, exportModal.from, exportModal.to, exportModal.authorId || null, exportModal.spaceKeys, columns);
+    setExportModal(null);
+  };
   const handleDayClick = (d: string) => { setActiveDay(d); navigate('/jira-tracker/day'); };
   const handleLoadJiraIssues = useCallback((pk: string) => loadJiraIssues(pk, setJiraIssues), [loadJiraIssues, setJiraIssues]);
 
@@ -305,6 +314,15 @@ function WorkSuiteApp() {
       {/* ── Modals & Toast ────────────────────────────────────── */}
       {logModal && (
         <LogWorklogModal initialDate={logModal.date} initialIssueKey={logModal.issueKey} onClose={() => setLogModal(null)} onSave={handleSaveWorklog} currentUser={CURRENT_USER} jiraIssues={jiraIssues} />
+      )}
+      {exportModal && (
+        <ExportConfigModal
+          onClose={() => setExportModal(null)}
+          onExport={handleExportConfirm}
+          currentUserId={CURRENT_USER?.id ?? ''}
+          initialPresets={exportPresets}
+          onPresetsChange={setExportPresets}
+        />
       )}
       {hdModal && (
         <HDReserveModal seatId={hdModal.seatId} initDate={hdModal.date} hd={hd} onConfirm={handleHdConfirm} onRelease={handleHdRelease} onClose={() => setHdModal(null)} currentUser={CURRENT_USER} />
