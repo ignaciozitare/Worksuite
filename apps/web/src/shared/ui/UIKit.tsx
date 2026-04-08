@@ -96,22 +96,23 @@ export function UIKit() {
         </div>
 
         {/* ── Btn ─────────────────────────────────────────────────── */}
-        <Section title="Btn" description="Botón principal con variantes, tamaños y estado loading.">
+        <Section title="Btn" description="Botón principal con variantes, tamaños y estado loading. Usa style como string inline (zero-dependency CSS).">
           <Row label="Variantes">
-            <Btn variant="primary">Primary</Btn>
-            <Btn variant="ghost">Ghost</Btn>
-            <Btn variant="success">Success</Btn>
-            <Btn variant="warn">Warn</Btn>
-            <Btn variant="danger">Danger</Btn>
-            <Btn variant="outline">Outline</Btn>
+            {[
+              { v: 'primary', bg: 'var(--ws-accent,#6366f1)', c: '#fff', bd: 'none' },
+              { v: 'ghost', bg: 'var(--ws-surface-2,#1e2438)', c: 'var(--ws-text-2,#94a3b8)', bd: '1px solid var(--ws-border)' },
+              { v: 'success', bg: 'var(--ws-green-bg)', c: 'var(--ws-green,#4ade80)', bd: '1px solid rgba(74,222,128,.3)' },
+              { v: 'warn', bg: 'var(--ws-amber-bg)', c: 'var(--ws-amber,#fbbf24)', bd: '1px solid rgba(251,191,36,.3)' },
+              { v: 'danger', bg: 'var(--ws-red-bg)', c: 'var(--ws-red,#f87171)', bd: '1px solid rgba(248,113,113,.3)' },
+              { v: 'outline', bg: 'transparent', c: 'var(--ws-accent,#6366f1)', bd: '1px solid var(--ws-accent,#6366f1)' },
+            ].map(b => (
+              <button key={b.v} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 8, fontWeight: 600, fontSize: 13, padding: '8px 16px', cursor: 'pointer', fontFamily: 'inherit', background: b.bg, color: b.c, border: b.bd }}>{b.v}</button>
+            ))}
           </Row>
-          <Row label="Tamaños">
-            <Btn size="sm">Small</Btn>
-            <Btn size="md">Medium</Btn>
-            <Btn size="lg">Large</Btn>
-          </Row>
-          <Row label="Loading">
-            <Btn loading>Guardando…</Btn>
+          <Row label="Tamaños (sm / md / lg)">
+            {[{s:'sm',f:11,p:'4px 11px'},{s:'md',f:13,p:'8px 16px'},{s:'lg',f:14,p:'10px 20px'}].map(b=>(
+              <button key={b.s} style={{display:'inline-flex',alignItems:'center',gap:5,borderRadius:8,fontWeight:600,fontSize:b.f,padding:b.p,cursor:'pointer',fontFamily:'inherit',background:'var(--ws-accent,#6366f1)',color:'#fff',border:'none'}}>{b.s}</button>
+            ))}
           </Row>
           <Row label="Import"><Code>{'import { Btn } from "@worksuite/ui"'}</Code></Row>
         </Section>
