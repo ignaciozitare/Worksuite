@@ -43,6 +43,10 @@ export function AppRouter(): JSX.Element {
         {/* Env Tracker */}
         <Route path="/envtracker" element={<Protected />} />
 
+        {/* Chrono */}
+        <Route path="/chrono" element={<Protected />} />
+        <Route path="/chrono-admin" element={<Protected />} />
+
         {/* Admin */}
         <Route path="/admin" element={<Protected />} />
 

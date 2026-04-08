@@ -21,6 +21,8 @@ const AdminShell = lazy(() => import('./shared/admin/AdminShell').then(m => ({ d
 const RetroBoard = lazy(() => import(/* webpackChunkName: "retro" */ './modules/retro/ui/RetroBoard').then(m => ({ default: m.RetroBoard })));
 const DeployPlanner = lazy(() => import('./modules/deploy-planner/ui/DeployPlanner').then(m => ({ default: m.DeployPlanner })));
 const EnvTracker = lazy(() => import('./modules/environments/ui/EnvironmentsView').then(m => ({ default: m.EnvironmentsView })));
+const ChronoPage = lazy(() => import('./modules/chrono').then(m => ({ default: m.ChronoPage })));
+const ChronoAdminPage = lazy(() => import('./modules/chrono-admin').then(m => ({ default: m.ChronoAdminPage })));
 
 // Domain
 import { CsvService } from './modules/jira-tracker/domain/services/CsvService';
@@ -38,11 +40,13 @@ function WorkSuiteApp() {
   const navigate = useNavigate();
   const { view: urlView } = useParams();
 
-  const mod = location.pathname.startsWith('/hotdesk')    ? 'hd'
-            : location.pathname.startsWith('/retro')      ? 'retro'
-            : location.pathname.startsWith('/deploy')     ? 'deploy'
-            : location.pathname.startsWith('/envtracker') ? 'envtracker'
-            : location.pathname.startsWith('/admin')      ? 'admin'
+  const mod = location.pathname.startsWith('/hotdesk')       ? 'hd'
+            : location.pathname.startsWith('/retro')         ? 'retro'
+            : location.pathname.startsWith('/deploy')        ? 'deploy'
+            : location.pathname.startsWith('/envtracker')    ? 'envtracker'
+            : location.pathname.startsWith('/chrono-admin')  ? 'chrono-admin'
+            : location.pathname.startsWith('/chrono')        ? 'chrono'
+            : location.pathname.startsWith('/admin')         ? 'admin'
             : 'jt';
 
   const view = mod === 'admin' ? 'admin'
@@ -212,6 +216,12 @@ function WorkSuiteApp() {
               {(CURRENT_USER.modules || []).includes("envtracker") && (
                 <button className={`sw-btn ${mod === "envtracker" ? "active" : ""}`} onClick={() => navigate('/envtracker')}>🖥️ Environments</button>
               )}
+              {(CURRENT_USER.modules || []).includes("chrono") && (
+                <button className={`sw-btn ${mod === "chrono" ? "active" : ""}`} onClick={() => navigate('/chrono')}>⏱️ {t("chrono.title")}</button>
+              )}
+              {(CURRENT_USER.modules || []).includes("chrono-admin") && (
+                <button className={`sw-btn ${mod === "chrono-admin" ? "active" : ""}`} onClick={() => navigate('/chrono-admin')}>👥 {t("chrono.admin")}</button>
+              )}
             </div>
             <div className="top-right">
               <div className="sw-group">
@@ -303,6 +313,16 @@ function WorkSuiteApp() {
               {mod === "envtracker" && view !== "admin" && (
                 <main className="content" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
                   <EnvTracker currentUser={CURRENT_USER} wsUsers={users} />
+                </main>
+              )}
+              {mod === "chrono" && (
+                <main className="content" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
+                  <ChronoPage currentUser={CURRENT_USER} />
+                </main>
+              )}
+              {mod === "chrono-admin" && (
+                <main className="content" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
+                  <ChronoAdminPage currentUser={CURRENT_USER} />
                 </main>
               )}
               {view === "admin" && <AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER} theme={theme} />}

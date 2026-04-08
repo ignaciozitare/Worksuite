@@ -8,6 +8,7 @@ import { AdminRoles } from './AdminRoles';
 import { AdminRetroTeamsShell } from './AdminRetroTeamsShell';
 import { AdminDeployConfig } from './AdminDeployConfig';
 import { AdminEnvTrackerSection } from './AdminEnvTrackerSection';
+import { ChronoConfigSection } from '../../modules/chrono-admin/ui/sections/ChronoConfigSection';
 
 interface AdminShellProps {
   users: any[];
@@ -46,6 +47,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser, theme="dark" }: A
     { id:"retroteams", icon:"🔁", label:"Retro Teams" },
     { id:"deploy",     icon:"🚀", label:"Deploy Planner" },
     { id:"envtracker", icon:"🖥️", label:"Environments" },
+    { id:"chrono",     icon:"⏱️", label:"Chrono Config" },
   ];
   const openUIKit = () => window.open('/ui-kit', '_blank');
   return (
@@ -66,6 +68,7 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser, theme="dark" }: A
         {mod==="retroteams" && <AdminRetroTeamsShell users={users}/>}
         {mod==="deploy"     && <AdminDeployConfig/>}
         {mod==="envtracker" && <AdminEnvTrackerSection/>}
+        {mod==="chrono"     && <ChronoConfigSection/>}
       </div>
     </div>
   );

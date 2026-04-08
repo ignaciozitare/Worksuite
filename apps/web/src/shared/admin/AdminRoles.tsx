@@ -11,6 +11,8 @@ const ALL_MODULES = [
   { id:"retro",  label:"RetroBoard",     color:"#818cf8"     },
   { id:"deploy", label:"Deploy Planner", color:"#f59e0b"     },
   { id:"envtracker", label:"Environments", color:"#22d3ee"   },
+  { id:"chrono",     label:"Control Horario", color:"#ec4899" },
+  { id:"chrono-admin", label:"RRHH",         color:"#8b5cf6" },
 ];
 
 const ALL_ADMIN_PERMS = [
@@ -22,6 +24,7 @@ const ALL_ADMIN_PERMS = [
   { id:"manage_deploy",    label:"Manage Deploy"     },
   { id:"manage_roles",     label:"Manage Roles"      },
   { id:"manage_envs",      label:"Manage Environments" },
+  { id:"manage_chrono",    label:"Manage Chrono"       },
 ];
 
 function AdminRoles() {

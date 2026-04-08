@@ -16,6 +16,8 @@ const MODULES = [
   { id:"retro",  label:"RetroBoard",    color:"#818cf8"      },
   { id:"deploy", label:"Deploy Planner",color:"#f59e0b"      },
   { id:"envtracker", label:"Environments",  color:"#22d3ee"  },
+  { id:"chrono",     label:"Control Horario", color:"#ec4899" },
+  { id:"chrono-admin", label:"RRHH",         color:"#8b5cf6" },
 ];
 
 const DESK_COLORS = { [DeskType.NONE]: "var(--tx3)", [DeskType.HOTDESK]: "var(--green)", [DeskType.FIXED]: "var(--amber)" };
