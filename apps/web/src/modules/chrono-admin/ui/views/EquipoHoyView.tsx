@@ -157,7 +157,7 @@ export function EquipoHoyView({ fichajeRepo }: Props) {
                         {fmtHours(emp.minutosHoy)}
                       </div>
                       <div className="mono" style={{ fontSize: 10, color: C.txMuted, marginTop: 2 }}>
-                        {emp.fichajeHoyId ? fmtTime(emp.fichajeHoyId) : '--:--'}
+                        {emp.minutosHoy != null ? t('chronoAdmin.entrada') : '--:--'}
                       </div>
                     </div>
                   </div>

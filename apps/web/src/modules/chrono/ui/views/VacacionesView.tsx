@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { CHRONO_COLORS as C } from '../ChronoPage';
+import { DateRangePicker } from '@worksuite/ui';
 import type { IVacacionRepository } from '../../domain/ports/IVacacionRepository';
 import type { Vacacion, SaldoVacaciones, TipoVacacion } from '../../domain/entities/Vacacion';
 
@@ -27,12 +28,6 @@ const ESTADO_BADGE: Record<string, string> = {
   cancelado: 'ch-badge ch-badge-muted',
 };
 
-/* mock team data for equipo tab */
-const TEAM_MOCK = [
-  { initials: 'MG', name: 'Marina G.', from: '2026-04-13', to: '2026-04-17', type: 'vacaciones' },
-  { initials: 'JR', name: 'Juan R.', from: '2026-04-20', to: '2026-04-24', type: 'asunto_propio' },
-  { initials: 'LM', name: 'Laura M.', from: '2026-05-04', to: '2026-05-08', type: 'baja_medica' },
-];
 
 export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProps) {
   const { t } = useTranslation();
@@ -270,20 +265,13 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
                 ))}
               </select>
             </div>
-            <div>
-              <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
-                {t('chrono.fechaInicio')}
-              </label>
-              <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)}
-                style={{ background: C.bg, border: `1px solid ${C.bd}`, color: C.tx, padding: '8px 12px', borderRadius: 5, fontSize: 13, fontFamily: "'IBM Plex Mono',monospace", outline: 'none', width: '100%' }}
-              />
-            </div>
-            <div>
-              <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
-                {t('chrono.fechaFin')}
-              </label>
-              <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)}
-                style={{ background: C.bg, border: `1px solid ${C.bd}`, color: C.tx, padding: '8px 12px', borderRadius: 5, fontSize: 13, fontFamily: "'IBM Plex Mono',monospace", outline: 'none', width: '100%' }}
+            <div style={{ gridColumn: 'span 2' }}>
+              <DateRangePicker
+                startValue={fechaInicio}
+                endValue={fechaFin}
+                onChange={(s, e) => { setFechaInicio(s); setFechaFin(e); }}
+                showTime={false}
+                labels={{ start: t('chrono.fechaInicio'), end: t('chrono.fechaFin') }}
               />
             </div>
             <div>
@@ -401,32 +389,8 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
 
       {/* ── Tab: Calendario equipo ─────────────────────────────────────────── */}
       {tab === 'equipo' && (
-        <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {TEAM_MOCK.map((m, i) => (
-            <div key={i} className="ch-card" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              {/* Avatar */}
-              <div style={{
-                width: 38, height: 38, borderRadius: '50%',
-                background: `linear-gradient(135deg,${C.amberDim},#78350f)`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 700, color: C.amber, fontSize: 13,
-                fontFamily: "'IBM Plex Mono',monospace", flexShrink: 0,
-              }}>
-                {m.initials}
-              </div>
-              {/* Info */}
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: C.tx }}>{m.name}</div>
-                <div className="mono" style={{ fontSize: 12, color: C.txDim, marginTop: 2 }}>
-                  {m.from} &rarr; {m.to}
-                </div>
-              </div>
-              {/* Type badge */}
-              <span className={`ch-badge ${m.type === 'vacaciones' ? 'ch-badge-amber' : m.type === 'baja_medica' ? 'ch-badge-red' : 'ch-badge-blue'}`}>
-                {t(TIPO_LABELS[m.type as TipoVacacion] as any)}
-              </span>
-            </div>
-          ))}
+        <div className="ch-card fade-in" style={{ textAlign: 'center', padding: 40, color: C.txMuted }}>
+          <span className="mono" style={{ fontSize: 12, letterSpacing: '.08em' }}>{t('chrono.proximaVista')}</span>
         </div>
       )}
     </div>

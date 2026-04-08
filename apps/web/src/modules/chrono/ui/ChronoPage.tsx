@@ -120,19 +120,6 @@ export function ChronoPage({ currentUser }: Props) {
           </div>
         </div>
 
-        {/* User */}
-        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.bd}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: `linear-gradient(135deg,${C.amberDim},#78350f)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: C.amber, fontFamily: "'IBM Plex Mono',monospace", fontSize: 14 }}>
-              {(currentUser.name || currentUser.email || 'U').slice(0, 2).toUpperCase()}
-            </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>{currentUser.name || currentUser.email}</div>
-              <div style={{ fontSize: 11, color: C.txDim }}>{currentUser.role || 'employee'}</div>
-            </div>
-          </div>
-        </div>
-
         {/* Nav */}
         <nav style={{ padding: '12px 10px', flex: 1 }}>
           {NAV_ITEMS.map(item => (
@@ -178,18 +165,18 @@ function InformesPlaceholder() {
       <div style={{ fontSize: 13, color: C.txDim, marginBottom: 20 }}>{t('chrono.proximaVista')}</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {[
-          { icon: '📄', title: 'Horas mensuales', fmt: 'PDF / Excel' },
-          { icon: '🏖️', title: 'Vacaciones', fmt: 'PDF' },
-          { icon: '📋', title: 'Incidencias', fmt: 'PDF / Excel' },
-          { icon: '⚖️', title: 'Bolsa de horas', fmt: 'PDF / Excel' },
+          { icon: '📄', titleKey: 'chrono.horasTotales', fmt: 'PDF / Excel' },
+          { icon: '🏖️', titleKey: 'chrono.vacaciones', fmt: 'PDF' },
+          { icon: '📋', titleKey: 'chrono.incidenciasCount', fmt: 'PDF / Excel' },
+          { icon: '⚖️', titleKey: 'chrono.bolsaHoras', fmt: 'PDF / Excel' },
         ].map((r, i) => (
           <div key={i} className="ch-card" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <span style={{ fontSize: 28 }}>{r.icon}</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 600 }}>{r.title}</div>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>{t(r.titleKey)}</div>
               <span className="ch-badge ch-badge-muted" style={{ marginTop: 6 }}>{r.fmt}</span>
             </div>
-            <button className="ch-btn ch-btn-amber">⬇ Generar</button>
+            <button className="ch-btn ch-btn-amber">⬇ {t('chrono.exportarPdf')}</button>
           </div>
         ))}
       </div>

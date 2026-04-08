@@ -23,7 +23,15 @@ const TIPO_LABELS: Record<TipoAlarma, string> = {
 const DAYS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'] as const;
 const DAY_SHORT = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
-const SONIDO_OPTIONS = ['default', 'bell', 'chime', 'alert', 'none'];
+const SONIDO_OPTIONS = ['default', 'bell', 'chime', 'alert', 'none'] as const;
+
+const SONIDO_LABELS: Record<string, string> = {
+  default: 'chrono.sonidoDefault',
+  bell: 'chrono.sonidoBell',
+  chime: 'chrono.sonidoChime',
+  alert: 'chrono.sonidoAlert',
+  none: 'chrono.sonidoNone',
+};
 
 const CHANNEL_ICONS: Record<string, string> = {
   push: '🔔',
@@ -277,7 +285,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
                 onChange={e => setForm(p => ({ ...p, sonido: e.target.value }))}
               >
                 {SONIDO_OPTIONS.map(s => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s}>{t(SONIDO_LABELS[s])}</option>
                 ))}
               </select>
             </div>
@@ -410,7 +418,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
                 style={{ width: 100, opacity: 0.7 }}
               >
                 {SONIDO_OPTIONS.map(s => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s}>{t(SONIDO_LABELS[s])}</option>
                 ))}
               </select>
 

@@ -259,13 +259,8 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, currentU
     alerts.push({ color: C.amber, text: t('chrono.horasExcedidas') });
   }
 
-  /* ── Mock team (placeholder until real data) ────────────────────────────── */
-  const mockTeam = [
-    { name: 'Ana G.', status: 'working' as const },
-    { name: 'Luis M.', status: 'lunch' as const },
-    { name: 'Maria R.', status: 'working' as const },
-    { name: 'Pedro S.', status: 'off' as const },
-  ];
+  /* ── Team data — should come from admin fichaje repo in the future ─────── */
+  const teamMembers: { name: string; status: 'working' | 'lunch' | 'off' }[] = [];
 
   /* ── Stat cards data ────────────────────────────────────────────────────── */
   const stats = [
@@ -464,33 +459,37 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, currentU
           }}>
             {t('chrono.equipoHoy')}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 12 }}>
-            {mockTeam.map((m, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${C.amberDim}, #78350f)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 700, color: C.amber,
-                  fontFamily: "'IBM Plex Mono', monospace",
-                  position: 'relative',
-                }}>
-                  {m.name.slice(0, 2).toUpperCase()}
-                  <span style={{ position: 'absolute', bottom: -1, right: -1 }}>
-                    <StatusDot status={m.status} />
-                  </span>
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: C.tx }}>{m.name}</div>
-                  <div style={{ fontSize: 10, color: C.txDim }}>
-                    {m.status === 'working' ? t('chrono.trabajando')
-                      : m.status === 'lunch' ? t('chrono.enPausa')
-                      : t('chrono.noFichado')}
+          {teamMembers.length === 0 ? (
+            <div style={{ fontSize: 13, color: C.txMuted }}>{t('chrono.proximaVista')}</div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 12 }}>
+              {teamMembers.map((m, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    background: `linear-gradient(135deg, ${C.amberDim}, #78350f)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 700, color: C.amber,
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    position: 'relative',
+                  }}>
+                    {m.name.slice(0, 2).toUpperCase()}
+                    <span style={{ position: 'absolute', bottom: -1, right: -1 }}>
+                      <StatusDot status={m.status} />
+                    </span>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: C.tx }}>{m.name}</div>
+                    <div style={{ fontSize: 10, color: C.txDim }}>
+                      {m.status === 'working' ? t('chrono.trabajando')
+                        : m.status === 'lunch' ? t('chrono.enPausa')
+                        : t('chrono.noFichado')}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

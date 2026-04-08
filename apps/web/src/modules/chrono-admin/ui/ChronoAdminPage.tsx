@@ -99,19 +99,6 @@ export function ChronoAdminPage({ currentUser }: Props) {
           </div>
         </div>
 
-        {/* User */}
-        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.bd}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: `linear-gradient(135deg,${C.amberDim},#78350f)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: C.amber, fontFamily: "'IBM Plex Mono',monospace", fontSize: 14 }}>
-              {(currentUser.name || currentUser.email || 'A').slice(0, 2).toUpperCase()}
-            </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>{currentUser.name || currentUser.email}</div>
-              <div style={{ fontSize: 11, color: C.txDim }}>{currentUser.role || 'admin'}</div>
-            </div>
-          </div>
-        </div>
-
         {/* Nav */}
         <nav style={{ padding: '12px 10px', flex: 1 }}>
           {NAV_ITEMS.map(item => (
