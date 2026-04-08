@@ -1,10 +1,9 @@
 // @ts-nocheck
 import React, { useState } from 'react';
 import {
-  Btn, Avatar, Badge, StatBox, Divider, Chip,
+  Avatar, Badge, StatBox, Divider, Chip,
   Modal, ConfirmModal,
   GanttTimeline,
-  TimerBar,
   StatusManager,
   DualPanelPicker,
   DateRangePicker,
@@ -44,13 +43,6 @@ const Row = ({ label, children }) => (
 const Code = ({ children }) => (
   <code style={{ fontSize: 11, padding: '2px 6px', borderRadius: 4, background: 'var(--sf2,#1b1b22)', color: '#a78bfa', fontFamily: 'monospace' }}>{children}</code>
 );
-
-function TimerBarDemo() {
-  const [timer, setTimer] = useState(180);
-  const [running, setRunning] = useState(false);
-  const [mins, setMins] = useState(5);
-  return <TimerBar timer={timer} setTimer={setTimer} running={running} setRunning={setRunning} isMod={true} phaseMins={mins} setPhaseMins={setMins} />;
-}
 
 export function UIKit() {
   const [modal, setModal] = useState(false);
@@ -285,8 +277,24 @@ export function UIKit() {
         </Section>
 
         {/* ── TimerBar ────────────────────────────────────────────── */}
-        <Section title="TimerBar" description="Barra de progreso temporal con controles de moderador. Usada en RetroBoard para fases temporizadas.">
-          <TimerBarDemo />
+        <Section title="TimerBar" description="Barra de progreso temporal con controles de moderador. Usada en RetroBoard para fases temporizadas. Usa Btn internamente (style-as-string).">
+          <Row label="Preview">
+            <div style={{ width: '100%', padding: '10px 16px', background: 'var(--sf2,#1b1b22)', borderRadius: 8, border: '1px solid var(--bd,#2a2a38)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <span style={{ fontSize: 22, fontWeight: 700, color: '#4ade80', fontFamily: 'monospace' }}>03:00</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ background: 'var(--sf,#141418)', borderRadius: 4, height: 5, overflow: 'hidden' }}>
+                    <div style={{ width: '60%', height: '100%', background: '#4ade80', borderRadius: 4 }} />
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--tx3,#50506a)', marginTop: 4 }}>Duration: 5 min</div>
+                </div>
+                <button style={{ padding: '4px 11px', borderRadius: 8, fontWeight: 600, fontSize: 11, background: 'rgba(74,222,128,.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,.3)', cursor: 'pointer', fontFamily: 'inherit' }}>Start</button>
+              </div>
+            </div>
+          </Row>
+          <Row label="Props">
+            <div style={{ fontSize: 11, color: 'var(--tx3,#50506a)' }}>timer, setTimer, running, setRunning, isMod, phaseMins, setPhaseMins, onNext?, nextLabel?</div>
+          </Row>
           <Row label="Import"><Code>{'import { TimerBar } from "@worksuite/ui"'}</Code></Row>
         </Section>
 
