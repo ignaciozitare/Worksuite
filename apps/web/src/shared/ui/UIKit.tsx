@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Btn, Avatar, Badge, StatBox, Divider, Chip,
   Modal, ConfirmModal,
@@ -10,12 +10,27 @@ import {
   DateRangePicker,
   BugIcon,
 } from '@worksuite/ui';
+import '../../WorkSuiteApp.css';
+
+// Error boundary to prevent one broken component from crashing the page
+class SafeRender extends React.Component {
+  state = { error: null };
+  static getDerivedStateFromError(error) { return { error }; }
+  render() {
+    if (this.state.error) return (
+      <div style={{ padding: 12, background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.3)', borderRadius: 8, fontSize: 12, color: '#ef4444' }}>
+        Error rendering component: {this.state.error?.message || 'Unknown'}
+      </div>
+    );
+    return this.props.children;
+  }
+}
 
 const Section = ({ title, description, children }) => (
   <div style={{ marginBottom: 40 }}>
     <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--tx,#e4e4ef)', marginBottom: 4, borderBottom: '1px solid var(--bd,#2a2a38)', paddingBottom: 8 }}>{title}</h2>
     {description && <p style={{ fontSize: 12, color: 'var(--tx3,#50506a)', marginBottom: 14 }}>{description}</p>}
-    <div style={{ padding: '16px 0' }}>{children}</div>
+    <div style={{ padding: '16px 0' }}><SafeRender>{children}</SafeRender></div>
   </div>
 );
 
