@@ -260,7 +260,7 @@ function WorkSuiteApp() {
           </header>
 
           {/* ── Sub-nav ─────────────────────────────────────────── */}
-          {mod !== "retro" && mod !== "deploy" && mod !== "envtracker" && (
+          {mod !== "retro" && mod !== "deploy" && mod !== "envtracker" && mod !== "chrono" && mod !== "chrono-admin" && (
             <nav className="nav-bar">
               {currentNavItems.map(item => (
                 <button key={item.id}
