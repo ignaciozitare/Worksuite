@@ -254,25 +254,28 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
             {t('chrono.solicitarVacacion')}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 14, marginBottom: 14, alignItems: 'end' }}>
             <div>
               <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
                 {t('chrono.tipoVacacion')}
               </label>
-              <select value={tipo} onChange={e => setTipo(e.target.value as TipoVacacion)}>
+              <select value={tipo} onChange={e => setTipo(e.target.value as TipoVacacion)} style={{ width: '100%' }}>
                 {TIPO_OPTIONS.map(opt => (
                   <option key={opt} value={opt}>{t(TIPO_LABELS[opt] as any)}</option>
                 ))}
               </select>
             </div>
-            <div style={{ gridColumn: 'span 2' }}>
-              <DateRangePicker
-                startValue={fechaInicio}
-                endValue={fechaFin}
-                onChange={(s, e) => { setFechaInicio(s); setFechaFin(e); }}
-                showTime={false}
-                labels={{ start: t('chrono.fechaInicio'), end: t('chrono.fechaFin') }}
-              />
+            <div>
+              <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
+                {t('chrono.fechaInicio')}
+              </label>
+              <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={{ width: '100%' }} />
+            </div>
+            <div>
+              <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
+                {t('chrono.fechaFin')}
+              </label>
+              <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} style={{ width: '100%' }} />
             </div>
             <div>
               <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
