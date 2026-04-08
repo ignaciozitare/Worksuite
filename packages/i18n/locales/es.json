@@ -611,7 +611,12 @@
     "avisoAnticipado":    "Aviso anticipado",
     "calendarioEquipo":   "Calendario del equipo",
     "distribucionAnual":  "Distribución anual",
-    "misSolicitudes":     "Mis solicitudes"
+    "misSolicitudes":     "Mis solicitudes",
+    "sonidoDefault":      "Por defecto",
+    "sonidoBell":         "Campana",
+    "sonidoChime":        "Campanilla",
+    "sonidoAlert":        "Alerta",
+    "sonidoNone":         "Ninguno"
   },
   "chronoAdmin": {
     "equipoHoy":          "Equipo hoy",

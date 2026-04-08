@@ -611,7 +611,12 @@
     "avisoAnticipado":    "Early warning",
     "calendarioEquipo":   "Team calendar",
     "distribucionAnual":  "Annual distribution",
-    "misSolicitudes":     "My requests"
+    "misSolicitudes":     "My requests",
+    "sonidoDefault":      "Default",
+    "sonidoBell":         "Bell",
+    "sonidoChime":        "Chime",
+    "sonidoAlert":        "Alert",
+    "sonidoNone":         "None"
   },
   "chronoAdmin": {
     "equipoHoy":          "Team today",
