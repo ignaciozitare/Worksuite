@@ -163,13 +163,13 @@ export function UIKit() {
         {/* ── Modal ───────────────────────────────────────────────── */}
         <Section title="Modal + ConfirmModal" description="Overlays modales para formularios y confirmaciones.">
           <Row label="Ejemplo">
-            <Btn variant="primary" onClick={() => setModal(true)}>Abrir Modal</Btn>
-            <Btn variant="danger" onClick={() => setConfirm(true)}>Abrir ConfirmModal</Btn>
+            <button onClick={() => setModal(true)} style={{padding:'8px 16px',borderRadius:8,fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit',background:'var(--ws-accent,#6366f1)',color:'#fff',border:'none'}}>Abrir Modal</button>
+            <button onClick={() => setConfirm(true)} style={{padding:'8px 16px',borderRadius:8,fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit',background:'var(--ws-red-bg,rgba(248,113,113,.12))',color:'var(--ws-red,#f87171)',border:'1px solid rgba(248,113,113,.3)'}}>Abrir ConfirmModal</button>
           </Row>
           {modal && (
             <Modal title="Modal de ejemplo" onClose={() => setModal(false)}>
               <p style={{ color: 'var(--tx3)', fontSize: 13 }}>Contenido del modal. Haz click fuera o en ✕ para cerrar.</p>
-              <div style={{ marginTop: 12 }}><Btn variant="primary" onClick={() => setModal(false)}>Aceptar</Btn></div>
+              <div style={{ marginTop: 12 }}><button onClick={() => setModal(false)} style={{padding:'8px 16px',borderRadius:8,fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit',background:'var(--ws-accent,#6366f1)',color:'#fff',border:'none'}}>Aceptar</button></div>
             </Modal>
           )}
           {confirm && (
