@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { CHRONO_COLORS as C } from '../ChronoPage';
 import type { IFichajeRepository } from '../../domain/ports/IFichajeRepository';
 import type { Fichaje, ResumenMes } from '../../domain/entities/Fichaje';
 
@@ -9,23 +10,7 @@ interface RegistrosViewProps {
   currentUser: { id: string };
 }
 
-const TIPO_COLORS: Record<string, string> = {
-  normal: 'var(--ac, #4f6ef7)',
-  teletrabajo: '#8b5cf6',
-  medico: '#ef4444',
-  formacion: '#f59e0b',
-  viaje: '#06b6d4',
-  asunto_propio: '#ec4899',
-};
-
-const ESTADO_COLORS: Record<string, string> = {
-  abierto: '#f59e0b',
-  completo: '#22c55e',
-  incompleto: '#ef4444',
-  pendiente_aprobacion: '#a78bfa',
-  aprobado: '#22c55e',
-  rechazado: '#ef4444',
-};
+const DAY_ABBR = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export function RegistrosView({ fichajeRepo, currentUser }: RegistrosViewProps) {
   const { t } = useTranslation();
@@ -36,7 +21,6 @@ export function RegistrosView({ fichajeRepo, currentUser }: RegistrosViewProps) 
   const [fichajes, setFichajes] = useState<Fichaje[]>([]);
   const [resumen, setResumen] = useState<ResumenMes | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -67,7 +51,7 @@ export function RegistrosView({ fichajeRepo, currentUser }: RegistrosViewProps) 
   const mesLabel = useMemo(() => {
     const [y, m] = mes.split('-').map(Number);
     const d = new Date(y, m - 1, 1);
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+    return d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
   }, [mes]);
 
   const fmtTime = (v: string | null) => {
@@ -83,117 +67,149 @@ export function RegistrosView({ fichajeRepo, currentUser }: RegistrosViewProps) 
     return `${h}h ${m > 0 ? m + 'm' : ''}`.trim();
   };
 
-  /* ── Styles ─────────────────────────────────────────────────────────────────── */
-  const card: React.CSSProperties = {
-    background: 'var(--sf2, #1b1b22)', borderRadius: 12,
-    border: '1px solid var(--bd, #2a2a38)', padding: 16, marginBottom: 16,
+  const fmtDate = (fecha: string) => {
+    const d = new Date(fecha + 'T00:00:00');
+    const day = DAY_ABBR[d.getDay()];
+    const num = d.getDate();
+    const month = d.toLocaleDateString('es-ES', { month: 'short' });
+    return { day, full: `${num} ${month}` };
   };
-  const badge = (color: string): React.CSSProperties => ({
-    display: 'inline-block', padding: '2px 8px', borderRadius: 6, fontSize: 11,
-    fontWeight: 600, background: `${color}22`, color, whiteSpace: 'nowrap',
-  });
-  const statBox: React.CSSProperties = {
-    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-    padding: '8px 14px', borderRadius: 8, background: 'var(--sf, #14141b)',
-    border: '1px solid var(--bd, #2a2a38)', minWidth: 80,
+
+  const estadoBadge = (estado: string) => {
+    switch (estado) {
+      case 'completo':
+      case 'aprobado':
+        return 'ch-badge ch-badge-green';
+      case 'incompleto':
+      case 'rechazado':
+        return 'ch-badge ch-badge-red';
+      case 'abierto':
+      case 'pendiente_aprobacion':
+        return 'ch-badge ch-badge-amber';
+      default:
+        return 'ch-badge ch-badge-muted';
+    }
   };
-  const navBtn: React.CSSProperties = {
-    background: 'var(--sf2, #1b1b22)', color: 'var(--tx, #e2e2e8)',
-    border: '1px solid var(--bd, #2a2a38)', borderRadius: 8,
-    padding: '6px 12px', cursor: 'pointer', fontWeight: 600, fontSize: 13,
+
+  const tipoBadge = (tipo: string) => {
+    switch (tipo) {
+      case 'teletrabajo': return 'ch-badge ch-badge-blue';
+      case 'medico': return 'ch-badge ch-badge-red';
+      case 'formacion': return 'ch-badge ch-badge-amber';
+      default: return 'ch-badge ch-badge-muted';
+    }
   };
+
+  const stats = resumen ? [
+    { label: t('chrono.diasTrabajados'), value: resumen.diasTrabajados, color: C.amber },
+    { label: t('chrono.horasTotales'), value: fmtHours(resumen.minutosTotales), color: C.amber },
+    { label: t('chrono.horasExtra'), value: fmtHours(resumen.minutosExtra), color: C.amber },
+    { label: t('chrono.incidenciasCount'), value: resumen.incidencias, color: C.orange },
+    { label: t('chrono.incompletosCount'), value: resumen.incompletos, color: C.red },
+  ] : [];
 
   return (
-    <div>
-      {/* ── Month selector ─────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <button style={navBtn} onClick={() => cambiarMes(-1)} title={t('chrono.mesAnterior')}>&#8249;</button>
-        <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--tx, #e2e2e8)', textTransform: 'capitalize' }}>
-          {mesLabel}
-        </span>
-        <button style={navBtn} onClick={() => cambiarMes(1)} title={t('chrono.mesSiguiente')}>&#8250;</button>
+    <div className="fade-in">
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: C.tx, marginBottom: 2 }}>
+            {t('chrono.registroFichajes')}
+          </div>
+          <div className="mono" style={{ fontSize: 13, color: C.txDim, textTransform: 'capitalize' }}>
+            {mesLabel}
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button className="ch-btn ch-btn-ghost" onClick={() => cambiarMes(-1)} title={t('chrono.mesAnterior')}>
+            &#8249;
+          </button>
+          <button className="ch-btn ch-btn-ghost" onClick={() => cambiarMes(1)} title={t('chrono.mesSiguiente')}>
+            &#8250;
+          </button>
+          <button className="ch-btn ch-btn-amber" style={{ marginLeft: 8 }}>
+            ⬇ {t('chrono.exportarPdf')}
+          </button>
+        </div>
       </div>
 
-      {/* ── Summary ────────────────────────────────────────────────────────── */}
+      {/* ── Stats ──────────────────────────────────────────────────────────── */}
       {resumen && (
-        <div style={{ ...card, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <div style={statBox}>
-            <span style={{ fontSize: 11, color: 'var(--tx3, #50506a)' }}>{t('chrono.diasTrabajados')}</span>
-            <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--ac, #4f6ef7)' }}>{resumen.diasTrabajados}</span>
-          </div>
-          <div style={statBox}>
-            <span style={{ fontSize: 11, color: 'var(--tx3, #50506a)' }}>{t('chrono.horasTotales')}</span>
-            <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--tx, #e2e2e8)' }}>{fmtHours(resumen.minutosTotales)}</span>
-          </div>
-          <div style={statBox}>
-            <span style={{ fontSize: 11, color: 'var(--tx3, #50506a)' }}>{t('chrono.horasExtra')}</span>
-            <span style={{ fontSize: 18, fontWeight: 700, color: resumen.minutosExtra > 0 ? '#f59e0b' : 'var(--tx, #e2e2e8)' }}>
-              {fmtHours(resumen.minutosExtra)}
-            </span>
-          </div>
-          <div style={statBox}>
-            <span style={{ fontSize: 11, color: 'var(--tx3, #50506a)' }}>{t('chrono.incidenciasCount')}</span>
-            <span style={{ fontSize: 18, fontWeight: 700, color: resumen.incidencias > 0 ? '#ef4444' : 'var(--tx, #e2e2e8)' }}>
-              {resumen.incidencias}
-            </span>
-          </div>
-          <div style={statBox}>
-            <span style={{ fontSize: 11, color: 'var(--tx3, #50506a)' }}>{t('chrono.incompletosCount')}</span>
-            <span style={{ fontSize: 18, fontWeight: 700, color: resumen.incompletos > 0 ? '#ef4444' : 'var(--tx, #e2e2e8)' }}>
-              {resumen.incompletos}
-            </span>
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 24 }}>
+          {stats.map((s, i) => (
+            <div key={i} className="ch-stat" style={{ '--accent': s.color } as React.CSSProperties}>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginBottom: 8 }}>
+                {s.label}
+              </div>
+              <div className="mono" style={{ fontSize: 20, fontWeight: 700, color: s.color }}>
+                {s.value}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
       {/* ── Table ──────────────────────────────────────────────────────────── */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 32, color: 'var(--tx3, #50506a)' }}>{t('chrono.cargando')}</div>
+        <div style={{ textAlign: 'center', padding: 48, color: C.txMuted }}>{t('chrono.cargando')}</div>
       ) : fichajes.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 32, color: 'var(--tx3, #50506a)' }}>{t('chrono.sinRegistros')}</div>
+        <div style={{ textAlign: 'center', padding: 48, color: C.txMuted }}>{t('chrono.sinRegistros')}</div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+        <div className="ch-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <table>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--bd, #2a2a38)' }}>
-                <th style={{ textAlign: 'left', padding: '8px 6px', color: 'var(--tx3, #50506a)', fontWeight: 600, fontSize: 11 }}>{t('chrono.fecha')}</th>
-                <th style={{ textAlign: 'left', padding: '8px 6px', color: 'var(--tx3, #50506a)', fontWeight: 600, fontSize: 11 }}>{t('chrono.entrada')}</th>
-                <th style={{ textAlign: 'left', padding: '8px 6px', color: 'var(--tx3, #50506a)', fontWeight: 600, fontSize: 11 }}>{t('chrono.comidaIni')}</th>
-                <th style={{ textAlign: 'left', padding: '8px 6px', color: 'var(--tx3, #50506a)', fontWeight: 600, fontSize: 11 }}>{t('chrono.comidaFin')}</th>
-                <th style={{ textAlign: 'left', padding: '8px 6px', color: 'var(--tx3, #50506a)', fontWeight: 600, fontSize: 11 }}>{t('chrono.salida')}</th>
-                <th style={{ textAlign: 'left', padding: '8px 6px', color: 'var(--tx3, #50506a)', fontWeight: 600, fontSize: 11 }}>{t('chrono.horas')}</th>
-                <th style={{ textAlign: 'left', padding: '8px 6px', color: 'var(--tx3, #50506a)', fontWeight: 600, fontSize: 11 }}>{t('chrono.tipo')}</th>
-                <th style={{ textAlign: 'left', padding: '8px 6px', color: 'var(--tx3, #50506a)', fontWeight: 600, fontSize: 11 }}>{t('chrono.estado')}</th>
+              <tr>
+                <th>{t('chrono.fecha')}</th>
+                <th>{t('chrono.entrada')}</th>
+                <th>{t('chrono.comidaIni')}</th>
+                <th>{t('chrono.comidaFin')}</th>
+                <th>{t('chrono.salida')}</th>
+                <th>{t('chrono.horas')}</th>
+                <th>{t('chrono.tipo')}</th>
+                <th>{t('chrono.estado')}</th>
               </tr>
             </thead>
             <tbody>
               {fichajes.map(f => {
-                const isIncomplete = f.estado === 'incompleto';
-                const isSelected = selectedId === f.id;
+                const { day, full } = fmtDate(f.fecha);
                 return (
-                  <tr
-                    key={f.id}
-                    onClick={() => isIncomplete && setSelectedId(isSelected ? null : f.id)}
-                    style={{
-                      borderBottom: '1px solid var(--bd, #2a2a38)',
-                      cursor: isIncomplete ? 'pointer' : 'default',
-                      background: isSelected ? 'rgba(239,68,68,.08)' : 'transparent',
-                      transition: 'background .15s',
-                    }}
-                  >
-                    <td style={{ padding: '8px 6px', color: 'var(--tx, #e2e2e8)', fontFamily: 'var(--mono)', fontSize: 12 }}>{f.fecha}</td>
-                    <td style={{ padding: '8px 6px', color: f.entradaAt ? 'var(--tx, #e2e2e8)' : 'var(--tx3, #50506a)' }}>{fmtTime(f.entradaAt)}</td>
-                    <td style={{ padding: '8px 6px', color: f.comidaIniAt ? 'var(--tx, #e2e2e8)' : 'var(--tx3, #50506a)' }}>{fmtTime(f.comidaIniAt)}</td>
-                    <td style={{ padding: '8px 6px', color: f.comidaFinAt ? 'var(--tx, #e2e2e8)' : 'var(--tx3, #50506a)' }}>{fmtTime(f.comidaFinAt)}</td>
-                    <td style={{ padding: '8px 6px', color: f.salidaAt ? 'var(--tx, #e2e2e8)' : 'var(--tx3, #50506a)' }}>{fmtTime(f.salidaAt)}</td>
-                    <td style={{ padding: '8px 6px', color: 'var(--tx, #e2e2e8)', fontWeight: 600 }}>{fmtHours(f.minutosTrabajados)}</td>
-                    <td style={{ padding: '8px 6px' }}>
-                      <span style={badge(TIPO_COLORS[f.tipo] || 'var(--ac, #4f6ef7)')}>
+                  <tr key={f.id}>
+                    <td>
+                      <span className="mono" style={{ color: C.amber, fontWeight: 600, marginRight: 6 }}>{day}</span>
+                      <span style={{ color: C.txDim }}>{full}</span>
+                    </td>
+                    <td>
+                      <span className="mono" style={{ color: f.entradaAt ? C.tx : C.txMuted }}>
+                        {fmtTime(f.entradaAt)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="mono" style={{ color: f.comidaIniAt ? C.tx : C.txMuted }}>
+                        {fmtTime(f.comidaIniAt)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="mono" style={{ color: f.comidaFinAt ? C.tx : C.txMuted }}>
+                        {fmtTime(f.comidaFinAt)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="mono" style={{ color: f.salidaAt ? C.tx : C.txMuted }}>
+                        {fmtTime(f.salidaAt)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="mono" style={{ color: C.amber, fontWeight: 700, fontSize: 14 }}>
+                        {fmtHours(f.minutosTrabajados)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={tipoBadge(f.tipo)}>
                         {t(`chrono.${f.tipo}` as any)}
                       </span>
                     </td>
-                    <td style={{ padding: '8px 6px' }}>
-                      <span style={badge(ESTADO_COLORS[f.estado] || 'var(--tx3, #50506a)')}>
+                    <td>
+                      <span className={estadoBadge(f.estado)}>
                         {t(`chrono.${f.estado}` as any)}
                       </span>
                     </td>

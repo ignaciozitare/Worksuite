@@ -1,9 +1,12 @@
 // @ts-nocheck
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { CHRONO_COLORS as C } from '../ChronoPage';
 import type { IFichajeRepository } from '../../domain/ports/IFichajeRepository';
 import type { IBolsaHorasRepository } from '../../domain/ports/IBolsaHorasRepository';
+import type { IIncidenciaRepository } from '../../domain/ports/IIncidenciaRepository';
 import type { Fichaje } from '../../domain/entities/Fichaje';
+import type { CategoriaIncidencia } from '../../domain/entities/Incidencia';
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 
@@ -14,17 +17,36 @@ function minutesWorkedSoFar(f: Fichaje | null): number {
   const now = new Date();
   const entrada = new Date(f.entradaAt);
   let totalMs = now.getTime() - entrada.getTime();
-
-  // Subtract completed lunch
   if (f.comidaIniAt && f.comidaFinAt) {
     totalMs -= new Date(f.comidaFinAt).getTime() - new Date(f.comidaIniAt).getTime();
-  }
-  // Subtract ongoing lunch
-  else if (f.comidaIniAt && !f.comidaFinAt) {
+  } else if (f.comidaIniAt && !f.comidaFinAt) {
     totalMs -= now.getTime() - new Date(f.comidaIniAt).getTime();
   }
-
   return Math.max(0, Math.round(totalMs / 60000));
+}
+
+function secondsWorkedSoFar(f: Fichaje | null): number {
+  if (!f?.entradaAt) return 0;
+  const now = new Date();
+  const entrada = new Date(f.entradaAt);
+  let totalMs = now.getTime() - entrada.getTime();
+  if (f.comidaIniAt && f.comidaFinAt) {
+    totalMs -= new Date(f.comidaFinAt).getTime() - new Date(f.comidaIniAt).getTime();
+  } else if (f.comidaIniAt && !f.comidaFinAt) {
+    totalMs -= now.getTime() - new Date(f.comidaIniAt).getTime();
+  }
+  return Math.max(0, Math.round(totalMs / 1000));
+}
+
+function fmtHMS(totalSec: number): { h: string; m: string; s: string } {
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return {
+    h: String(h).padStart(2, '0'),
+    m: String(m).padStart(2, '0'),
+    s: String(s).padStart(2, '0'),
+  };
 }
 
 function fmtHM(mins: number): string {
@@ -33,74 +55,79 @@ function fmtHM(mins: number): string {
   return `${h}h ${String(m).padStart(2, '0')}m`;
 }
 
-/* ── Inline style helpers (matching existing app pattern) ─────────────── */
+/* ── StatusDot ────────────────────────────────────────────────────────────── */
 
-const cardStyle: React.CSSProperties = {
-  background: 'var(--sf,#141418)',
-  border: '1px solid var(--bd,#2a2a38)',
-  borderRadius: 14,
-  padding: 20,
-};
+function StatusDot({ status }: { status: 'working' | 'lunch' | 'off' }) {
+  const color = status === 'working' ? C.green : status === 'lunch' ? C.amber : C.txMuted;
+  const cls = status === 'working' ? 'pulse-green' : '';
+  return (
+    <span
+      className={cls}
+      style={{
+        display: 'inline-block',
+        width: 8,
+        height: 8,
+        borderRadius: '50%',
+        background: color,
+      }}
+    />
+  );
+}
 
-const actionBtn = (
-  variant: 'green' | 'red' | 'amber' | 'disabled',
-  extra: React.CSSProperties = {},
-): React.CSSProperties => {
-  const base: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    padding: '14px 24px',
-    borderRadius: 12,
-    fontSize: 15,
-    fontWeight: 700,
-    fontFamily: 'inherit',
-    cursor: 'pointer',
-    border: 'none',
-    transition: 'all .15s',
-    flex: 1,
-    minWidth: 160,
-  };
-  if (variant === 'green')
-    return { ...base, background: 'rgba(34,197,94,.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,.35)', ...extra };
-  if (variant === 'red')
-    return { ...base, background: 'rgba(239,68,68,.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,.35)', ...extra };
-  if (variant === 'amber')
-    return { ...base, background: 'rgba(245,158,11,.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,.35)', ...extra };
-  return { ...base, background: 'var(--sf2,#1b1b22)', color: 'var(--tx3,#50506a)', cursor: 'not-allowed', border: '1px solid var(--bd,#2a2a38)', ...extra };
-};
+/* ── Modal backdrop ───────────────────────────────────────────────────────── */
 
-const statLabel: React.CSSProperties = {
-  fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const,
-  letterSpacing: '.05em', color: 'var(--tx3,#50506a)', marginBottom: 4,
-};
-
-const statValue: React.CSSProperties = {
-  fontSize: 26, fontWeight: 800, color: 'var(--tx,#e4e4ef)',
-};
+function Modal({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
+  if (!open) return null;
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <div
+        className="ch-card fade-in"
+        onClick={e => e.stopPropagation()}
+        style={{ minWidth: 380, maxWidth: 480, padding: 28 }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 /* ── Component ────────────────────────────────────────────────────────────── */
 
 interface DashboardViewProps {
   fichajeRepo: IFichajeRepository;
   bolsaRepo: IBolsaHorasRepository;
-  currentUser: { id: string; [key: string]: unknown };
+  incidenciaRepo: IIncidenciaRepository;
+  currentUser: { id: string; name?: string; [key: string]: unknown };
 }
 
-export function DashboardView({ fichajeRepo, bolsaRepo, currentUser }: DashboardViewProps) {
+export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, currentUser }: DashboardViewProps) {
   const { t } = useTranslation();
+
+  /* ── State ──────────────────────────────────────────────────────────────── */
   const [fichaje, setFichaje] = useState<Fichaje | null>(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [minutesNow, setMinutesNow] = useState(0);
+  const [secondsNow, setSecondsNow] = useState(0);
   const [weekMinutes, setWeekMinutes] = useState(0);
   const [incompletosCount, setIncompletosCount] = useState(0);
   const [saldoBolsa, setSaldoBolsa] = useState(0);
+  const [clockTime, setClockTime] = useState(new Date());
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [showIncModal, setShowIncModal] = useState(false);
+  const [incCategoria, setIncCategoria] = useState<CategoriaIncidencia>('medico');
+  const [incDescripcion, setIncDescripcion] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const clockRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  /* ── Load today's fichaje ──────────────────────────────────────────────── */
+  /* ── Load data ──────────────────────────────────────────────────────────── */
   const loadData = useCallback(async () => {
     try {
       const [hoy, incompletos, saldo] = await Promise.all([
@@ -111,7 +138,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, currentUser }: Dashboard
       setFichaje(hoy);
       setIncompletosCount(incompletos.length);
       setSaldoBolsa(saldo.saldoNeto);
-      if (hoy) setMinutesNow(minutesWorkedSoFar(hoy));
+      if (hoy) setSecondsNow(secondsWorkedSoFar(hoy));
     } catch {
       // silent
     } finally {
@@ -121,7 +148,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, currentUser }: Dashboard
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  /* ── Load weekly summary ───────────────────────────────────────────────── */
+  /* ── Weekly summary ─────────────────────────────────────────────────────── */
   useEffect(() => {
     (async () => {
       try {
@@ -135,26 +162,35 @@ export function DashboardView({ fichajeRepo, bolsaRepo, currentUser }: Dashboard
     })();
   }, [fichajeRepo, currentUser.id]);
 
-  /* ── Live timer ─────────────────────────────────────────────────────────── */
+  /* ── Live clock + timer ─────────────────────────────────────────────────── */
+  useEffect(() => {
+    clockRef.current = setInterval(() => setClockTime(new Date()), 1000);
+    return () => { if (clockRef.current) clearInterval(clockRef.current); };
+  }, []);
+
   useEffect(() => {
     if (fichaje?.entradaAt && !fichaje.salidaAt) {
       timerRef.current = setInterval(() => {
-        setMinutesNow(minutesWorkedSoFar(fichaje));
+        setSecondsNow(secondsWorkedSoFar(fichaje));
       }, 1000);
     }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [fichaje]);
 
-  /* ── State derivations ──────────────────────────────────────────────────── */
+  /* ── Derived state ──────────────────────────────────────────────────────── */
   const isOpen = !!fichaje?.entradaAt && !fichaje.salidaAt;
   const isOnLunch = isOpen && !!fichaje?.comidaIniAt && !fichaje.comidaFinAt;
   const canClockIn = !fichaje || !!fichaje.salidaAt;
   const canStartLunch = isOpen && !fichaje.comidaIniAt && !isOnLunch;
-  const canEndLunch = isOnLunch;
   const canClockOut = isOpen && !isOnLunch;
+  const minutesNow = Math.floor(secondsNow / 60);
   const pct = Math.min(100, Math.round((minutesNow / JORNADA_MIN) * 100));
+  const timer = fmtHMS(secondsNow);
+
+  /* Clock formatting */
+  const clockHH = String(clockTime.getHours()).padStart(2, '0');
+  const clockMM = String(clockTime.getMinutes()).padStart(2, '0');
+  const clockDate = clockTime.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   /* ── Actions ────────────────────────────────────────────────────────────── */
   const act = async (fn: () => Promise<Fichaje>) => {
@@ -163,7 +199,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, currentUser }: Dashboard
     try {
       const updated = await fn();
       setFichaje(updated);
-      setMinutesNow(minutesWorkedSoFar(updated));
+      setSecondsNow(secondsWorkedSoFar(updated));
     } catch {
       setError(t('chrono.errorAccion'));
     } finally {
@@ -172,142 +208,198 @@ export function DashboardView({ fichajeRepo, bolsaRepo, currentUser }: Dashboard
   };
 
   const clockIn = () => act(() => fichajeRepo.ficharEntrada(currentUser.id));
-  const clockOut = () => act(() => fichajeRepo.ficharSalida(fichaje!.id));
+  const clockOut = () => {
+    setShowExitModal(false);
+    act(() => fichajeRepo.ficharSalida(fichaje!.id));
+  };
   const startLunch = () => act(() => fichajeRepo.iniciarComida(fichaje!.id));
   const endLunch = () => act(() => fichajeRepo.finalizarComida(fichaje!.id));
+
+  const handleMainButton = () => {
+    if (canClockIn) { clockIn(); return; }
+    if (isOnLunch) { endLunch(); return; }
+    if (canClockOut) { setShowExitModal(true); return; }
+  };
+
+  const handleCreateIncidencia = async () => {
+    if (!fichaje?.id) return;
+    setActing(true);
+    try {
+      await incidenciaRepo.crear({
+        fichajeId: fichaje.id,
+        userId: currentUser.id,
+        categoria: incCategoria,
+        inicioAt: new Date().toISOString(),
+        descripcion: incDescripcion || undefined,
+      });
+      setShowIncModal(false);
+      setIncDescripcion('');
+    } catch {
+      setError(t('chrono.errorAccion'));
+    } finally {
+      setActing(false);
+    }
+  };
+
+  /* ── Main button style ──────────────────────────────────────────────────── */
+  const mainBtnBg = canClockIn ? C.amber : isOnLunch ? C.green : C.red;
+  const mainBtnLabel = canClockIn
+    ? t('chrono.ficharEntradaBtn')
+    : isOnLunch
+      ? t('chrono.volverComida')
+      : t('chrono.ficharSalidaBtn');
+  const mainBtnClass = canClockIn ? '' : isOnLunch ? '' : 'pulse-ring';
+
+  /* ── Alerts ─────────────────────────────────────────────────────────────── */
+  const alerts: { color: string; text: string }[] = [];
+  if (incompletosCount > 0) {
+    alerts.push({ color: C.red, text: `${t('chrono.fichajePendienteAlert')} (${incompletosCount})` });
+  }
+  if (minutesNow > JORNADA_MIN) {
+    alerts.push({ color: C.amber, text: t('chrono.horasExcedidas') });
+  }
+
+  /* ── Mock team (placeholder until real data) ────────────────────────────── */
+  const mockTeam = [
+    { name: 'Ana G.', status: 'working' as const },
+    { name: 'Luis M.', status: 'lunch' as const },
+    { name: 'Maria R.', status: 'working' as const },
+    { name: 'Pedro S.', status: 'off' as const },
+  ];
+
+  /* ── Stat cards data ────────────────────────────────────────────────────── */
+  const stats = [
+    { icon: '◷', label: t('chrono.horasHoy'), value: fmtHM(minutesNow), accent: C.amber },
+    { icon: '▤', label: t('chrono.estaSemana'), value: fmtHM(weekMinutes), accent: C.blue },
+    { icon: '⚖', label: t('chrono.bolsaHoras'), value: `${saldoBolsa >= 0 ? '+' : ''}${fmtHM(Math.abs(saldoBolsa))}`, accent: saldoBolsa >= 0 ? C.green : C.red },
+    { icon: '◈', label: t('chrono.vacRestantes'), value: '—', accent: C.purple || '#a855f7' },
+  ];
 
   /* ── Render ─────────────────────────────────────────────────────────────── */
   if (loading) {
     return (
-      <div style={{ color: 'var(--tx3,#50506a)', padding: 40, textAlign: 'center' }}>
-        {t('chrono.cargando')}
+      <div style={{ color: C.txDim, padding: 60, textAlign: 'center' }}>
+        <span className="mono" style={{ letterSpacing: '.1em' }}>{t('chrono.cargando')}</span>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Incomplete alert banner */}
-      {incompletosCount > 0 && (
-        <div
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+
+      {/* ── Top amber line ─────────────────────────────────────────────────── */}
+      <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, #f59e0b, transparent)', marginBottom: -12 }} />
+
+      {/* ── Giant clock + main button area ─────────────────────────────────── */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: '40px 0 20px',
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.05) 0%, transparent 60%)',
+        }}
+      >
+        {/* Giant clock */}
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div className="mono" style={{ fontSize: 52, fontWeight: 300, color: C.amber, letterSpacing: '.04em' }}>
+            {clockHH}<span className="blink">:</span>{clockMM}
+          </div>
+          <div style={{ fontSize: 13, color: C.txDim, marginTop: 4, textTransform: 'capitalize' }}>
+            {clockDate}
+          </div>
+        </div>
+
+        {/* Big circular button */}
+        <button
+          className={mainBtnClass}
+          disabled={acting}
+          onClick={handleMainButton}
           style={{
-            background: 'rgba(245,158,11,.1)',
-            border: '1px solid rgba(245,158,11,.3)',
-            borderRadius: 12,
-            padding: '12px 18px',
-            color: '#f59e0b',
-            fontSize: 13,
-            fontWeight: 600,
+            width: 160,
+            height: 160,
+            borderRadius: '50%',
+            background: mainBtnBg,
+            border: 'none',
+            cursor: acting ? 'wait' : 'pointer',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            gap: 8,
+            justifyContent: 'center',
+            gap: 6,
+            transition: 'transform .15s, box-shadow .15s',
+            boxShadow: `0 0 40px ${mainBtnBg}33`,
+            opacity: acting ? 0.7 : 1,
           }}
+          onMouseEnter={e => { if (!acting) e.currentTarget.style.transform = 'scale(1.05)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
         >
-          <span style={{ fontSize: 18 }}>!</span>
-          {t('chrono.fichajePendiente')} ({incompletosCount})
-        </div>
-      )}
+          <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: '#000', letterSpacing: '.08em', textAlign: 'center', lineHeight: 1.3, padding: '0 12px' }}>
+            {mainBtnLabel}
+          </span>
+        </button>
 
-      {/* Status + timer card */}
-      <div style={{ ...cardStyle, display: 'flex', gap: 32, flexWrap: 'wrap', alignItems: 'center' }}>
-        {/* Current status */}
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={statLabel}>
-            {t('chrono.estado')}
+        {/* Live timer */}
+        <div style={{ textAlign: 'center', marginTop: 24 }}>
+          <div className="mono" style={{ fontSize: 28, fontWeight: 500, color: C.green, letterSpacing: '.02em' }}>
+            {timer.h}:{timer.m}:{timer.s}
           </div>
-          <div style={{ ...statValue, color: isOpen ? '#22c55e' : 'var(--tx3,#50506a)', fontSize: 18 }}>
-            {isOnLunch
-              ? t('chrono.enComida')
-              : isOpen
-                ? t('chrono.jornadaActiva')
-                : t('chrono.sinFichar')}
-          </div>
-          {fichaje?.entradaAt && (
-            <div style={{ fontSize: 12, color: 'var(--tx3,#50506a)', marginTop: 4 }}>
-              {t('chrono.entrada')}: {new Date(fichaje.entradaAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </div>
-          )}
-        </div>
-
-        {/* Timer */}
-        <div style={{ textAlign: 'center', minWidth: 160 }}>
-          <div style={statLabel}>{t('chrono.tiempoTrabajado')}</div>
-          <div style={{ ...statValue, fontSize: 36, fontVariantNumeric: 'tabular-nums' }}>
-            {fmtHM(minutesNow)}
+          <div style={{ fontSize: 11, color: C.txDim, marginTop: 4, letterSpacing: '.08em', textTransform: 'uppercase' }}>
+            {t('chrono.tiempoTrabajadoHoy')}
           </div>
         </div>
 
         {/* Progress bar */}
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ ...statLabel, marginBottom: 8 }}>
-            {t('chrono.progresoDia')} - {pct}%
+        <div style={{ width: '100%', maxWidth: 400, marginTop: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <span style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.08em', textTransform: 'uppercase' }}>
+              {t('chrono.jornadaLabel')}
+            </span>
+            <span className="mono" style={{ fontSize: 10, color: C.txDim }}>{pct}%</span>
           </div>
-          <div
-            style={{
-              height: 10,
-              background: 'var(--sf2,#1b1b22)',
-              borderRadius: 6,
-              overflow: 'hidden',
-              border: '1px solid var(--bd,#2a2a38)',
-            }}
-          >
+          <div className="tl-bar">
             <div
+              className="tl-fill"
               style={{
-                height: '100%',
                 width: `${pct}%`,
-                background: pct >= 100 ? '#22c55e' : 'var(--ac,#4f6ef7)',
-                borderRadius: 6,
-                transition: 'width .3s',
+                background: pct >= 100
+                  ? `linear-gradient(90deg, ${C.green}, #34d399)`
+                  : `linear-gradient(90deg, ${C.amber}, #fbbf24)`,
               }}
             />
           </div>
-          <div style={{ fontSize: 12, color: 'var(--tx3,#50506a)', marginTop: 4 }}>
-            {t('chrono.horasRestantes')}: {fmtHM(Math.max(0, JORNADA_MIN - minutesNow))}
-          </div>
+        </div>
+
+        {/* Quick action buttons */}
+        <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+          <button
+            className="ch-btn ch-btn-ghost"
+            disabled={!canStartLunch || acting}
+            onClick={startLunch}
+            style={{ opacity: canStartLunch ? 1 : 0.4 }}
+          >
+            {t('chrono.iniciarComida')}
+          </button>
+          <button
+            className="ch-btn ch-btn-ghost"
+            disabled={!isOpen || acting}
+            onClick={() => setShowIncModal(true)}
+            style={{ opacity: isOpen ? 1 : 0.4 }}
+          >
+            {t('chrono.anadirIncidencia')}
+          </button>
         </div>
       </div>
 
-      {/* Action buttons */}
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <button
-          disabled={!canClockIn || acting}
-          onClick={clockIn}
-          style={actionBtn(canClockIn ? 'green' : 'disabled')}
-        >
-          {t('chrono.ficharEntrada')}
-        </button>
-        <button
-          disabled={!canStartLunch || acting}
-          onClick={startLunch}
-          style={actionBtn(canStartLunch ? 'amber' : 'disabled')}
-        >
-          {t('chrono.iniciarComida')}
-        </button>
-        <button
-          disabled={!canEndLunch || acting}
-          onClick={endLunch}
-          style={actionBtn(canEndLunch ? 'amber' : 'disabled')}
-        >
-          {t('chrono.finComida')}
-        </button>
-        <button
-          disabled={!canClockOut || acting}
-          onClick={clockOut}
-          style={actionBtn(canClockOut ? 'red' : 'disabled')}
-        >
-          {t('chrono.ficharSalida')}
-        </button>
-      </div>
-
-      {/* Error banner */}
+      {/* ── Error banner ──────────────────────────────────────────────────── */}
       {error && (
         <div
           style={{
-            background: 'rgba(239,68,68,.1)',
-            border: '1px solid rgba(239,68,68,.3)',
-            borderRadius: 10,
+            background: C.redDim,
+            border: `1px solid rgba(239,68,68,0.3)`,
+            borderRadius: 8,
             padding: '10px 16px',
-            color: '#ef4444',
+            color: C.red,
             fontSize: 13,
           }}
         >
@@ -315,35 +407,151 @@ export function DashboardView({ fichajeRepo, bolsaRepo, currentUser }: Dashboard
         </div>
       )}
 
-      {/* Weekly summary + hours bank */}
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-        <div style={{ ...cardStyle, flex: 1, minWidth: 220 }}>
-          <div style={statLabel}>{t('chrono.resumenSemana')}</div>
-          <div style={statValue}>{fmtHM(weekMinutes)}</div>
-        </div>
-        <div style={{ ...cardStyle, flex: 1, minWidth: 220 }}>
-          <div style={statLabel}>{t('chrono.saldoBolsa')}</div>
+      {/* ── 4 stat cards ──────────────────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+        {stats.map((s, i) => (
           <div
-            style={{
-              ...statValue,
-              color: saldoBolsa >= 0 ? '#22c55e' : '#ef4444',
-            }}
+            key={i}
+            className="ch-stat"
+            style={{ '--accent': s.accent } as React.CSSProperties}
           >
-            {saldoBolsa >= 0 ? '+' : ''}{fmtHM(Math.abs(saldoBolsa))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <span className="mono" style={{ fontSize: 18, color: s.accent }}>{s.icon}</span>
+              <span style={{
+                fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+                letterSpacing: '.08em', color: C.txMuted,
+              }}>
+                {s.label}
+              </span>
+            </div>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 600, color: C.tx }}>
+              {s.value}
+            </div>
           </div>
+        ))}
+      </div>
+
+      {/* ── Two columns: Alerts + Team ────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
+        {/* Alerts */}
+        <div className="ch-card">
+          <div style={{
+            fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
+            letterSpacing: '.08em', color: C.txMuted, marginBottom: 14,
+          }}>
+            {t('chrono.alertas')}
+          </div>
+          {alerts.length === 0 ? (
+            <div style={{ fontSize: 13, color: C.txMuted }}>—</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {alerts.map((a, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: a.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, color: a.color }}>{a.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <div style={{ ...cardStyle, flex: 1, minWidth: 220 }}>
-          <div style={statLabel}>{t('chrono.incompletosCount')}</div>
-          <div
-            style={{
-              ...statValue,
-              color: incompletosCount > 0 ? '#f59e0b' : 'var(--tx,#e4e4ef)',
-            }}
-          >
-            {incompletosCount}
+
+        {/* Team today */}
+        <div className="ch-card">
+          <div style={{
+            fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
+            letterSpacing: '.08em', color: C.txMuted, marginBottom: 14,
+          }}>
+            {t('chrono.equipoHoy')}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 12 }}>
+            {mockTeam.map((m, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${C.amberDim}, #78350f)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 700, color: C.amber,
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  position: 'relative',
+                }}>
+                  {m.name.slice(0, 2).toUpperCase()}
+                  <span style={{ position: 'absolute', bottom: -1, right: -1 }}>
+                    <StatusDot status={m.status} />
+                  </span>
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 500, color: C.tx }}>{m.name}</div>
+                  <div style={{ fontSize: 10, color: C.txDim }}>
+                    {m.status === 'working' ? t('chrono.trabajando')
+                      : m.status === 'lunch' ? t('chrono.enPausa')
+                      : t('chrono.noFichado')}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
+
+      {/* ── Exit confirmation modal ───────────────────────────────────────── */}
+      <Modal open={showExitModal} onClose={() => setShowExitModal(false)}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: C.tx, marginBottom: 12 }}>
+          {t('chrono.confirmarSalida')}
+        </div>
+        <div style={{ fontSize: 13, color: C.txDim, marginBottom: 24 }}>
+          {t('chrono.confirmarSalidaMsg', { hours: fmtHM(minutesNow) })}
+        </div>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <button className="ch-btn ch-btn-ghost" onClick={() => setShowExitModal(false)}>
+            {t('chrono.cancelarBtn')}
+          </button>
+          <button className="ch-btn ch-btn-red" onClick={clockOut} disabled={acting}>
+            {t('chrono.confirmar')}
+          </button>
+        </div>
+      </Modal>
+
+      {/* ── Incident creation modal ───────────────────────────────────────── */}
+      <Modal open={showIncModal} onClose={() => setShowIncModal(false)}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: C.tx, marginBottom: 18 }}>
+          {t('chrono.nuevaIncidencia')}
+        </div>
+
+        {/* Category */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: C.txMuted, marginBottom: 6 }}>
+            {t('chrono.categoriaInc')}
+          </label>
+          <select value={incCategoria} onChange={e => setIncCategoria(e.target.value as CategoriaIncidencia)}>
+            {(['medico', 'comida', 'gestion', 'formacion', 'teletrabajo', 'viaje'] as CategoriaIncidencia[]).map(cat => (
+              <option key={cat} value={cat}>{t(`chrono.${cat}`)}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Description */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: C.txMuted, marginBottom: 6 }}>
+            {t('chrono.descripcionInc')}
+          </label>
+          <textarea
+            value={incDescripcion}
+            onChange={e => setIncDescripcion(e.target.value)}
+            rows={3}
+            style={{ width: '100%', resize: 'vertical' }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <button className="ch-btn ch-btn-ghost" onClick={() => setShowIncModal(false)}>
+            {t('chrono.cancelarBtn')}
+          </button>
+          <button className="ch-btn ch-btn-amber" onClick={handleCreateIncidencia} disabled={acting}>
+            {t('chrono.crearIncidencia')}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

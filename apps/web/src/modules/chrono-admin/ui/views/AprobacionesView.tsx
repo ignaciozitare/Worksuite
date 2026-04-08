@@ -4,34 +4,21 @@ import { useTranslation } from '@worksuite/i18n';
 import type { IAdminFichajeRepository } from '../../domain/ports/IAdminFichajeRepository';
 import type { IAdminVacacionRepository } from '../../domain/ports/IAdminVacacionRepository';
 
-const thStyle = {
-  textAlign: 'left', padding: '8px 12px', fontSize: 11, fontWeight: 700,
-  color: 'var(--tx3,#50506a)', textTransform: 'uppercase',
-  letterSpacing: '.05em', borderBottom: '1px solid var(--bd,#2a2a38)',
-};
-const tdStyle = {
-  padding: '10px 12px', fontSize: 13, color: 'var(--tx,#e4e4ef)',
-  borderBottom: '1px solid var(--bd,#2a2a38)',
-};
-const btnApprove = {
-  display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px',
-  borderRadius: 6, fontWeight: 600, fontSize: 11, cursor: 'pointer', border: 'none',
-  fontFamily: 'inherit', background: 'rgba(34,197,94,.12)', color: '#22c55e',
-  border: '1px solid rgba(34,197,94,.3)', transition: 'all .15s',
-};
-const btnReject = {
-  display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px',
-  borderRadius: 6, fontWeight: 600, fontSize: 11, cursor: 'pointer', border: 'none',
-  fontFamily: 'inherit', background: 'rgba(239,68,68,.12)', color: '#ef4444',
-  border: '1px solid rgba(239,68,68,.3)', transition: 'all .15s',
+const C = {
+  bg:'#0d0d0d', sf:'#161616', sfHover:'#1e1e1e', bd:'#2a2a2a',
+  amber:'#f59e0b', amberDim:'#92400e', amberGlow:'rgba(245,158,11,0.12)',
+  tx:'#e8e8e8', txDim:'#888', txMuted:'#555',
+  green:'#10b981', greenDim:'rgba(16,185,129,0.15)',
+  red:'#ef4444', redDim:'rgba(239,68,68,0.15)',
+  purple:'#a855f7',
 };
 
 function fmtDate(iso) {
-  if (!iso) return '—';
+  if (!iso) return '--';
   return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 function fmtTime(iso) {
-  if (!iso) return '—';
+  if (!iso) return '--:--';
   return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 }
 
@@ -47,41 +34,31 @@ function RejectModal({ onConfirm, onCancel, t }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center',
-      justifyContent: 'center', padding: 20, background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(2px)',
+      justifyContent: 'center', padding: 20, background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(4px)',
     }} onClick={e => e.target === e.currentTarget && onCancel()}>
-      <div style={{
-        background: 'var(--sf,#141418)', border: '1px solid var(--bd,#2a2a38)',
-        borderRadius: 16, width: '100%', maxWidth: 400, padding: 20,
-        boxShadow: '0 24px 80px rgba(0,0,0,.6)',
+      <div className="ch-card fade-in" style={{
+        width: '100%', maxWidth: 420, padding: 24,
+        boxShadow: '0 24px 80px rgba(0,0,0,.6)', borderRadius: 10,
       }}>
-        <h3 style={{ margin: '0 0 12px', fontSize: 15, fontWeight: 700, color: 'var(--tx,#e4e4ef)' }}>
+        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>
           {t('chronoAdmin.razonRechazo')}
-        </h3>
+        </div>
+        <div style={{ fontSize: 12, color: C.txDim, marginBottom: 16 }}>
+          {t('chronoAdmin.razonRechazoDesc')}
+        </div>
         <textarea
           value={reason}
           onChange={e => { setReason(e.target.value); setError(''); }}
           rows={3}
-          style={{
-            width: '100%', padding: '8px 10px', fontSize: 13, fontFamily: 'inherit',
-            background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)',
-            borderRadius: 8, color: 'var(--tx,#e4e4ef)', outline: 'none', resize: 'vertical',
-            boxSizing: 'border-box',
-          }}
+          placeholder={t('chronoAdmin.motivoPlaceholder')}
+          style={{ width: '100%', resize: 'vertical' }}
         />
-        {error && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 6 }}>{error}</div>}
-        <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
-          <button onClick={onCancel} style={{
-            padding: '6px 14px', borderRadius: 8, fontWeight: 600, fontSize: 13,
-            cursor: 'pointer', border: '1px solid var(--bd,#2a2a38)',
-            background: 'var(--sf2,#1b1b22)', color: 'var(--tx3,#50506a)', fontFamily: 'inherit',
-          }}>
-            Cancel
+        {error && <div style={{ color: C.red, fontSize: 12, marginTop: 6 }}>{error}</div>}
+        <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
+          <button className="ch-btn ch-btn-ghost" onClick={onCancel}>
+            {t('chronoAdmin.cancelar')}
           </button>
-          <button onClick={handleConfirm} style={{
-            padding: '6px 14px', borderRadius: 8, fontWeight: 600, fontSize: 13,
-            cursor: 'pointer', border: 'none', background: 'rgba(239,68,68,.12)',
-            color: '#ef4444', border: '1px solid rgba(239,68,68,.3)', fontFamily: 'inherit',
-          }}>
+          <button className="ch-btn ch-btn-red" onClick={handleConfirm}>
             {t('chronoAdmin.rechazar')}
           </button>
         </div>
@@ -102,7 +79,7 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
   const [fichajesPend, setFichajesPend] = useState([]);
   const [vacacionesPend, setVacacionesPend] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [rejectTarget, setRejectTarget] = useState(null); // { type: 'fichaje'|'vacacion', id: string }
+  const [rejectTarget, setRejectTarget] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -156,83 +133,106 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
   ];
 
   return (
-    <div>
-      <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: 'var(--tx,#e4e4ef)' }}>
-        {t('chronoAdmin.aprobaciones')}
-      </h3>
+    <div className="fade-in">
+      {/* ── Header ─── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 700 }}>{t('chronoAdmin.aprobaciones')}</div>
+          <div style={{ fontSize: 12, color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.aprobacionesDesc')}</div>
+        </div>
+        <button className="ch-btn ch-btn-ghost" onClick={load}>
+          ↻ {t('chronoAdmin.recargar')}
+        </button>
+      </div>
 
-      {/* Sub-tabs */}
-      <div style={{
-        display: 'flex', gap: 2, background: 'var(--sf2,#1b1b22)',
-        border: '1px solid var(--bd,#2a2a38)', borderRadius: 8, padding: 3,
-        marginBottom: 16, width: 'fit-content',
-      }}>
+      {/* ── Stat badges ─── */}
+      <div style={{ display: 'flex', gap: 14, marginBottom: 24 }}>
+        <div className="ch-stat" style={{ flex: 1, '--accent': C.amber }}>
+          <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+            {t('chronoAdmin.fichajesPendientes')}
+          </div>
+          <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: C.amber, marginTop: 6 }}>
+            {fichajesPend.length}
+          </div>
+        </div>
+        <div className="ch-stat" style={{ flex: 1, '--accent': C.purple }}>
+          <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+            {t('chronoAdmin.vacacionesPendientes')}
+          </div>
+          <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: C.purple, marginTop: 6 }}>
+            {vacacionesPend.length}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Sub-tabs ─── */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
         {subTabs.map(st => (
           <button
             key={st.id}
             onClick={() => setSubTab(st.id)}
-            style={{
-              padding: '4px 12px', fontSize: 12, borderRadius: 6,
-              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-              fontWeight: subTab === st.id ? 600 : 400,
-              background: subTab === st.id ? 'var(--ac,#4f6ef7)' : 'transparent',
-              color: subTab === st.id ? '#fff' : 'var(--tx3,#50506a)',
-              boxShadow: subTab === st.id ? '0 1px 3px rgba(0,0,0,.15)' : 'none',
-              transition: 'all .15s',
-            }}
+            className={`nav-item ${subTab === st.id ? 'active' : ''}`}
+            style={{ padding: '8px 16px', borderRadius: 6 }}
           >
-            {st.label} ({st.count})
+            <span>{st.label}</span>
+            <span className="ch-badge ch-badge-amber" style={{ fontSize: 10, padding: '2px 6px' }}>{st.count}</span>
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--tx3,#50506a)', fontSize: 13 }}>
-          Loading...
+        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 13 }}>
+          {t('chronoAdmin.cargando')}
         </div>
       ) : (
         <>
-          {/* Fichajes pendientes */}
+          {/* ── Fichajes pendientes ─── */}
           {subTab === 'fichajes' && (
             fichajesPend.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--tx3,#50506a)', fontSize: 13 }}>
-                —
+              <div className="ch-card" style={{ textAlign: 'center', padding: '40px 0', color: C.txDim }}>
+                {t('chronoAdmin.sinPendientes')}
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+              <div className="ch-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <table>
                   <thead>
                     <tr>
-                      <th style={thStyle}>{t('chronoAdmin.empleado')}</th>
-                      <th style={thStyle}>Fecha</th>
-                      <th style={thStyle}>Entrada</th>
-                      <th style={thStyle}>Comida</th>
-                      <th style={thStyle}>Salida</th>
-                      <th style={thStyle}>Justificacion</th>
-                      <th style={thStyle}>Acciones</th>
+                      <th>{t('chronoAdmin.empleado')}</th>
+                      <th>{t('chronoAdmin.fecha')}</th>
+                      <th>{t('chronoAdmin.entrada')}</th>
+                      <th>{t('chronoAdmin.comida')}</th>
+                      <th>{t('chronoAdmin.salida')}</th>
+                      <th>{t('chronoAdmin.justificacion')}</th>
+                      <th>{t('chronoAdmin.acciones')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {fichajesPend.map(f => (
                       <tr key={f.id}>
-                        <td style={tdStyle}>{f.userName}</td>
-                        <td style={tdStyle}>{fmtDate(f.fecha)}</td>
-                        <td style={tdStyle}>{fmtTime(f.entradaAt)}</td>
-                        <td style={tdStyle}>
-                          {fmtTime(f.comidaIniAt)} - {fmtTime(f.comidaFinAt)}
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{
+                              width: 28, height: 28, borderRadius: '50%',
+                              background: `linear-gradient(135deg,${C.amberDim},#78350f)`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontWeight: 700, color: C.amber, fontSize: 11, fontFamily: "'IBM Plex Mono',monospace",
+                            }}>
+                              {(f.userName || '?').charAt(0).toUpperCase()}
+                            </div>
+                            <span style={{ fontWeight: 600 }}>{f.userName}</span>
+                          </div>
                         </td>
-                        <td style={tdStyle}>{fmtTime(f.salidaAt)}</td>
-                        <td style={tdStyle}>
-                          <span style={{ fontSize: 12, color: 'var(--tx3,#50506a)' }}>
-                            {f.justificacion || '—'}
-                          </span>
-                        </td>
-                        <td style={tdStyle}>
+                        <td><span className="mono" style={{ color: C.txDim }}>{fmtDate(f.fecha)}</span></td>
+                        <td><span className="mono">{fmtTime(f.entradaAt)}</span></td>
+                        <td><span className="mono" style={{ color: C.txDim }}>{fmtTime(f.comidaIniAt)} - {fmtTime(f.comidaFinAt)}</span></td>
+                        <td><span className="mono">{fmtTime(f.salidaAt)}</span></td>
+                        <td><span style={{ fontSize: 12, color: C.txDim }}>{f.justificacion || '--'}</span></td>
+                        <td>
                           <div style={{ display: 'flex', gap: 6 }}>
-                            <button style={btnApprove} onClick={() => handleAproveFichaje(f.id)}>
+                            <button className="ch-btn ch-btn-green" onClick={() => handleAproveFichaje(f.id)}>
                               {t('chronoAdmin.aprobar')}
                             </button>
-                            <button style={btnReject} onClick={() => setRejectTarget({ type: 'fichaje', id: f.id })}>
+                            <button className="ch-btn ch-btn-red" onClick={() => setRejectTarget({ type: 'fichaje', id: f.id })}>
                               {t('chronoAdmin.rechazar')}
                             </button>
                           </div>
@@ -245,53 +245,55 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
             )
           )}
 
-          {/* Vacaciones pendientes */}
+          {/* ── Vacaciones pendientes ─── */}
           {subTab === 'vacaciones' && (
             vacacionesPend.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--tx3,#50506a)', fontSize: 13 }}>
-                —
+              <div className="ch-card" style={{ textAlign: 'center', padding: '40px 0', color: C.txDim }}>
+                {t('chronoAdmin.sinPendientes')}
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+              <div className="ch-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <table>
                   <thead>
                     <tr>
-                      <th style={thStyle}>{t('chronoAdmin.empleado')}</th>
-                      <th style={thStyle}>Tipo</th>
-                      <th style={thStyle}>Desde</th>
-                      <th style={thStyle}>Hasta</th>
-                      <th style={thStyle}>Dias</th>
-                      <th style={thStyle}>Motivo</th>
-                      <th style={thStyle}>Acciones</th>
+                      <th>{t('chronoAdmin.empleado')}</th>
+                      <th>{t('chronoAdmin.tipo')}</th>
+                      <th>{t('chronoAdmin.desde')}</th>
+                      <th>{t('chronoAdmin.hasta')}</th>
+                      <th>{t('chronoAdmin.dias')}</th>
+                      <th>{t('chronoAdmin.motivo')}</th>
+                      <th>{t('chronoAdmin.acciones')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {vacacionesPend.map(v => (
                       <tr key={v.id}>
-                        <td style={tdStyle}>{v.userName}</td>
-                        <td style={tdStyle}>
-                          <span style={{
-                            display: 'inline-block', padding: '2px 8px', borderRadius: 12,
-                            fontSize: 11, fontWeight: 600,
-                            background: 'rgba(168,85,247,.12)', color: '#a855f7',
-                          }}>
-                            {v.tipo}
-                          </span>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{
+                              width: 28, height: 28, borderRadius: '50%',
+                              background: `linear-gradient(135deg,${C.amberDim},#78350f)`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontWeight: 700, color: C.amber, fontSize: 11, fontFamily: "'IBM Plex Mono',monospace",
+                            }}>
+                              {(v.userName || '?').charAt(0).toUpperCase()}
+                            </div>
+                            <span style={{ fontWeight: 600 }}>{v.userName}</span>
+                          </div>
                         </td>
-                        <td style={tdStyle}>{fmtDate(v.fechaInicio)}</td>
-                        <td style={tdStyle}>{fmtDate(v.fechaFin)}</td>
-                        <td style={tdStyle}>{v.diasHabiles}</td>
-                        <td style={tdStyle}>
-                          <span style={{ fontSize: 12, color: 'var(--tx3,#50506a)' }}>
-                            {v.motivo || '—'}
-                          </span>
+                        <td>
+                          <span className="ch-badge" style={{ background: 'rgba(168,85,247,0.15)', color: C.purple }}>{v.tipo}</span>
                         </td>
-                        <td style={tdStyle}>
+                        <td><span className="mono" style={{ color: C.txDim }}>{fmtDate(v.fechaInicio)}</span></td>
+                        <td><span className="mono" style={{ color: C.txDim }}>{fmtDate(v.fechaFin)}</span></td>
+                        <td><span className="mono" style={{ fontWeight: 600, color: C.amber }}>{v.diasHabiles}</span></td>
+                        <td><span style={{ fontSize: 12, color: C.txDim }}>{v.motivo || '--'}</span></td>
+                        <td>
                           <div style={{ display: 'flex', gap: 6 }}>
-                            <button style={btnApprove} onClick={() => handleApproveVacacion(v.id)}>
+                            <button className="ch-btn ch-btn-green" onClick={() => handleApproveVacacion(v.id)}>
                               {t('chronoAdmin.aprobar')}
                             </button>
-                            <button style={btnReject} onClick={() => setRejectTarget({ type: 'vacacion', id: v.id })}>
+                            <button className="ch-btn ch-btn-red" onClick={() => setRejectTarget({ type: 'vacacion', id: v.id })}>
                               {t('chronoAdmin.rechazar')}
                             </button>
                           </div>
@@ -307,11 +309,7 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
       )}
 
       {rejectTarget && (
-        <RejectModal
-          t={t}
-          onConfirm={handleReject}
-          onCancel={() => setRejectTarget(null)}
-        />
+        <RejectModal t={t} onConfirm={handleReject} onCancel={() => setRejectTarget(null)} />
       )}
     </div>
   );

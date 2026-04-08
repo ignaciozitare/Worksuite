@@ -3,51 +3,54 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import type { IAdminFichajeRepository } from '../../domain/ports/IAdminFichajeRepository';
 
-const thStyle = {
-  textAlign: 'left', padding: '8px 12px', fontSize: 11, fontWeight: 700,
-  color: 'var(--tx3,#50506a)', textTransform: 'uppercase',
-  letterSpacing: '.05em', borderBottom: '1px solid var(--bd,#2a2a38)',
+const C = {
+  bg:'#0d0d0d', sf:'#161616', sfHover:'#1e1e1e', bd:'#2a2a2a',
+  amber:'#f59e0b', amberDim:'#92400e', amberGlow:'rgba(245,158,11,0.12)',
+  tx:'#e8e8e8', txDim:'#888', txMuted:'#555',
+  green:'#10b981', greenDim:'rgba(16,185,129,0.15)',
+  red:'#ef4444', redDim:'rgba(239,68,68,0.15)',
+  blue:'#3b82f6', blueDim:'rgba(59,130,246,0.15)',
+  orange:'#f97316',
 };
-const tdStyle = {
-  padding: '10px 12px', fontSize: 13, color: 'var(--tx,#e4e4ef)',
-  borderBottom: '1px solid var(--bd,#2a2a38)',
-};
-const inpStyle = (extra = {}) => ({
-  padding: '7px 10px', fontSize: 13, fontFamily: 'inherit',
-  background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)',
-  borderRadius: 8, color: 'var(--tx,#e4e4ef)', outline: 'none', ...extra,
-});
-const lblStyle = {
-  fontSize: 11, fontWeight: 700, color: 'var(--tx3,#50506a)',
-  textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 5,
+
+const ESTADO_BADGE = {
+  abierto:              { bg: 'rgba(59,130,246,0.15)',  color: C.blue },
+  completo:             { bg: 'rgba(16,185,129,0.15)',  color: C.green },
+  incompleto:           { bg: 'rgba(249,115,22,0.15)',  color: C.orange },
+  pendiente_aprobacion: { bg: C.amberGlow,              color: C.amber },
+  aprobado:             { bg: 'rgba(16,185,129,0.15)',  color: C.green },
+  rechazado:            { bg: 'rgba(239,68,68,0.15)',   color: C.red },
 };
 
 function fmtDate(iso) {
-  if (!iso) return '—';
+  if (!iso) return '--';
   return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 function fmtTime(iso) {
-  if (!iso) return '—';
+  if (!iso) return '--:--';
   return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 }
 function fmtHours(minutos) {
-  if (minutos == null) return '—';
+  if (minutos == null) return '0h 00m';
   const h = Math.floor(minutos / 60);
   const m = minutos % 60;
   return `${h}h ${m.toString().padStart(2, '0')}m`;
 }
 
-const ESTADO_COLORS = {
-  abierto:              { bg: 'rgba(96,165,250,.12)', color: '#60a5fa' },
-  completo:             { bg: 'rgba(34,197,94,.12)', color: '#22c55e' },
-  incompleto:           { bg: 'rgba(251,146,60,.12)', color: '#fb923c' },
-  pendiente_aprobacion: { bg: 'rgba(251,191,36,.12)', color: '#fbbf24' },
-  aprobado:             { bg: 'rgba(34,197,94,.12)', color: '#22c55e' },
-  rechazado:            { bg: 'rgba(239,68,68,.12)', color: '#ef4444' },
-};
-
 function getCurrentMonth() {
   const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function getMonthLabel(ym: string) {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y, m - 1);
+  return d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+}
+
+function shiftMonth(ym: string, delta: number) {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
@@ -68,8 +71,6 @@ export function FichajesEquipoView({ fichajeRepo }: Props) {
     try {
       const data = await fichajeRepo.getFichajesEquipo(mes, filterUserId || undefined);
       setFichajes(data);
-
-      // Extract unique employees for filter dropdown
       const map = new Map();
       for (const f of data) {
         if (!map.has(f.userId)) {
@@ -86,31 +87,36 @@ export function FichajesEquipoView({ fichajeRepo }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  return (
-    <div>
-      <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: 'var(--tx,#e4e4ef)' }}>
-        {t('chronoAdmin.fichajesEquipo')}
-      </h3>
+  /* ── Stats ─── */
+  const totalHoras = fichajes.reduce((s, f) => s + (f.minutosTrabajados || 0), 0);
+  const totalRegistros = fichajes.length;
 
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', marginBottom: 16, flexWrap: 'wrap' }}>
+  return (
+    <div className="fade-in">
+      {/* ── Header ─── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <label style={lblStyle}>Mes</label>
-          <input
-            type="month"
-            value={mes}
-            onChange={e => setMes(e.target.value)}
-            style={inpStyle({ width: 180 })}
-          />
+          <div style={{ fontSize: 20, fontWeight: 700 }}>{t('chronoAdmin.fichajesEquipo')}</div>
+          <div style={{ fontSize: 12, color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.fichajesEquipoDesc')}</div>
         </div>
-        <div>
-          <label style={lblStyle}>{t('chronoAdmin.empleado')}</label>
-          <select
-            value={filterUserId}
-            onChange={e => setFilterUserId(e.target.value)}
-            style={inpStyle({ width: 220 })}
-          >
-            <option value="">— Todos —</option>
+      </div>
+
+      {/* ── Month navigation ─── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+        <button className="ch-btn ch-btn-ghost" onClick={() => setMes(shiftMonth(mes, -1))}>
+          ← {t('chronoAdmin.mesAnterior')}
+        </button>
+        <div className="mono" style={{ fontSize: 15, fontWeight: 600, color: C.amber, letterSpacing: '.02em', textTransform: 'capitalize' }}>
+          {getMonthLabel(mes)}
+        </div>
+        <button className="ch-btn ch-btn-ghost" onClick={() => setMes(shiftMonth(mes, 1))}>
+          {t('chronoAdmin.mesSiguiente')} →
+        </button>
+
+        {/* Employee filter */}
+        <div style={{ marginLeft: 'auto' }}>
+          <select value={filterUserId} onChange={e => setFilterUserId(e.target.value)} style={{ width: 220 }}>
+            <option value="">— {t('chronoAdmin.todos')} —</option>
             {employees.map(emp => (
               <option key={emp.userId} value={emp.userId}>{emp.userName}</option>
             ))}
@@ -118,58 +124,79 @@ export function FichajesEquipoView({ fichajeRepo }: Props) {
         </div>
       </div>
 
+      {/* ── Stat cards ─── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
+        <div className="ch-stat" style={{ '--accent': C.amber }}>
+          <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+            {t('chronoAdmin.totalRegistros')}
+          </div>
+          <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: C.amber, marginTop: 6 }}>{totalRegistros}</div>
+        </div>
+        <div className="ch-stat" style={{ '--accent': C.green }}>
+          <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+            {t('chronoAdmin.horasTotales')}
+          </div>
+          <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: C.green, marginTop: 6 }}>{fmtHours(totalHoras)}</div>
+        </div>
+        <div className="ch-stat" style={{ '--accent': C.blue }}>
+          <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+            {t('chronoAdmin.empleadosActivos')}
+          </div>
+          <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: C.blue, marginTop: 6 }}>{employees.length}</div>
+        </div>
+      </div>
+
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--tx3,#50506a)', fontSize: 13 }}>
-          Loading...
+        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 13 }}>
+          {t('chronoAdmin.cargando')}
         </div>
       ) : fichajes.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--tx3,#50506a)', fontSize: 13 }}>
-          —
+        <div className="ch-card" style={{ textAlign: 'center', padding: '40px 0', color: C.txDim }}>
+          {t('chronoAdmin.sinDatos')}
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
+        <div className="ch-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <table>
             <thead>
               <tr>
-                <th style={thStyle}>{t('chronoAdmin.empleado')}</th>
-                <th style={thStyle}>Fecha</th>
-                <th style={thStyle}>Entrada</th>
-                <th style={thStyle}>Comida</th>
-                <th style={thStyle}>Salida</th>
-                <th style={thStyle}>Horas</th>
-                <th style={thStyle}>Tipo</th>
-                <th style={thStyle}>{t('chronoAdmin.estadoPresencia')}</th>
+                <th>{t('chronoAdmin.empleado')}</th>
+                <th>{t('chronoAdmin.fecha')}</th>
+                <th>{t('chronoAdmin.entrada')}</th>
+                <th>{t('chronoAdmin.comida')}</th>
+                <th>{t('chronoAdmin.salida')}</th>
+                <th>{t('chronoAdmin.horas')}</th>
+                <th>{t('chronoAdmin.tipo')}</th>
+                <th>{t('chronoAdmin.estado')}</th>
               </tr>
             </thead>
             <tbody>
               {fichajes.map(f => {
-                const ec = ESTADO_COLORS[f.estado] ?? ESTADO_COLORS.abierto;
+                const ec = ESTADO_BADGE[f.estado] ?? ESTADO_BADGE.abierto;
                 return (
                   <tr key={f.id}>
-                    <td style={tdStyle}>{f.userName}</td>
-                    <td style={tdStyle}>{fmtDate(f.fecha)}</td>
-                    <td style={tdStyle}>{fmtTime(f.entradaAt)}</td>
-                    <td style={tdStyle}>
-                      {fmtTime(f.comidaIniAt)} - {fmtTime(f.comidaFinAt)}
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{
+                          width: 28, height: 28, borderRadius: '50%',
+                          background: `linear-gradient(135deg,${C.amberDim},#78350f)`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 700, color: C.amber, fontSize: 11, fontFamily: "'IBM Plex Mono',monospace",
+                        }}>
+                          {(f.userName || '?').charAt(0).toUpperCase()}
+                        </div>
+                        <span style={{ fontWeight: 600 }}>{f.userName}</span>
+                      </div>
                     </td>
-                    <td style={tdStyle}>{fmtTime(f.salidaAt)}</td>
-                    <td style={tdStyle}>{fmtHours(f.minutosTrabajados)}</td>
-                    <td style={tdStyle}>
-                      <span style={{
-                        display: 'inline-block', padding: '2px 8px', borderRadius: 12,
-                        fontSize: 11, fontWeight: 600,
-                        background: 'rgba(96,165,250,.12)', color: '#60a5fa',
-                      }}>
-                        {f.tipo}
-                      </span>
+                    <td><span className="mono" style={{ color: C.txDim }}>{fmtDate(f.fecha)}</span></td>
+                    <td><span className="mono">{fmtTime(f.entradaAt)}</span></td>
+                    <td><span className="mono" style={{ color: C.txDim }}>{fmtTime(f.comidaIniAt)} - {fmtTime(f.comidaFinAt)}</span></td>
+                    <td><span className="mono">{fmtTime(f.salidaAt)}</span></td>
+                    <td><span className="mono" style={{ fontWeight: 600, color: C.amber }}>{fmtHours(f.minutosTrabajados)}</span></td>
+                    <td>
+                      <span className="ch-badge ch-badge-blue">{f.tipo}</span>
                     </td>
-                    <td style={tdStyle}>
-                      <span style={{
-                        display: 'inline-block', padding: '2px 8px', borderRadius: 12,
-                        fontSize: 11, fontWeight: 600, background: ec.bg, color: ec.color,
-                      }}>
-                        {f.estado}
-                      </span>
+                    <td>
+                      <span className="ch-badge" style={{ background: ec.bg, color: ec.color }}>{f.estado}</span>
                     </td>
                   </tr>
                 );

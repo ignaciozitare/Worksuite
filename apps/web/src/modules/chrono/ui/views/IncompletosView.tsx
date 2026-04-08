@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { CHRONO_COLORS as C } from '../ChronoPage';
 import type { IFichajeRepository } from '../../domain/ports/IFichajeRepository';
 import type { Fichaje } from '../../domain/entities/Fichaje';
 
@@ -18,6 +19,8 @@ const FIELD_LABELS: Record<FieldKey, string> = {
   comidaFinAt: 'chrono.comidaFin',
   salidaAt: 'chrono.salida',
 };
+
+const DAY_ABBR = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 
 export function IncompletosView({ fichajeRepo, currentUser }: IncompletosViewProps) {
   const { t } = useTranslation();
@@ -78,130 +81,215 @@ export function IncompletosView({ fichajeRepo, currentUser }: IncompletosViewPro
     }
   }, [fichajeRepo, form, justificacion, loadData, t]);
 
-  /* ── Styles ─────────────────────────────────────────────────────────────────── */
-  const card: React.CSSProperties = {
-    background: 'var(--sf2, #1b1b22)', borderRadius: 12,
-    border: '1px solid var(--bd, #2a2a38)', padding: 16, marginBottom: 12,
+  const fmtTime = (v: string | null) => {
+    if (!v) return null;
+    const d = new Date(v);
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   };
-  const fieldDot = (filled: boolean): React.CSSProperties => ({
-    display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px',
-    borderRadius: 6, fontSize: 11, fontWeight: 600,
-    background: filled ? 'rgba(34,197,94,.12)' : 'rgba(239,68,68,.12)',
-    color: filled ? '#22c55e' : '#ef4444',
-  });
-  const inputStyle: React.CSSProperties = {
-    background: 'var(--sf, #14141b)', border: '1px solid var(--bd, #2a2a38)',
-    borderRadius: 8, padding: '6px 10px', color: 'var(--tx, #e2e2e8)',
-    fontSize: 13, fontFamily: 'inherit', width: '100%',
-  };
-  const btnPrimary: React.CSSProperties = {
-    background: 'var(--ac, #4f6ef7)', color: '#fff', border: 'none',
-    borderRadius: 8, padding: '8px 18px', fontWeight: 600, fontSize: 13,
-    cursor: 'pointer', fontFamily: 'inherit',
-  };
-  const btnGhost: React.CSSProperties = {
-    background: 'var(--sf2, #1b1b22)', color: 'var(--tx3, #50506a)',
-    border: '1px solid var(--bd, #2a2a38)', borderRadius: 8,
-    padding: '8px 18px', fontWeight: 600, fontSize: 13,
-    cursor: 'pointer', fontFamily: 'inherit',
-  };
-  const pendingBadge: React.CSSProperties = {
-    display: 'inline-block', padding: '2px 8px', borderRadius: 6,
-    fontSize: 11, fontWeight: 600, background: 'rgba(167,139,250,.12)',
-    color: '#a78bfa',
+
+  const fmtDate = (fecha: string) => {
+    const d = new Date(fecha + 'T00:00:00');
+    const day = DAY_ABBR[d.getDay()];
+    const num = d.getDate();
+    const month = d.toLocaleDateString('es-ES', { month: 'long' });
+    const year = d.getFullYear();
+    return { day, full: `${num} de ${month}, ${year}` };
   };
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: 32, color: 'var(--tx3, #50506a)' }}>{t('chrono.cargando')}</div>;
+    return <div style={{ textAlign: 'center', padding: 48, color: C.txMuted }}>{t('chrono.cargando')}</div>;
   }
 
   if (fichajes.length === 0) {
-    return <div style={{ textAlign: 'center', padding: 32, color: 'var(--tx3, #50506a)' }}>{t('chrono.sinIncompletos')}</div>;
+    return (
+      <div className="fade-in" style={{ textAlign: 'center', padding: 48, color: C.txMuted }}>
+        {t('chrono.sinIncompletos')}
+      </div>
+    );
   }
 
   return (
-    <div>
+    <div className="fade-in">
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <div style={{ fontSize: 20, fontWeight: 700, color: C.tx }}>
+          {t('chrono.fichajesIncompletos')}
+        </div>
+        <span className="ch-badge ch-badge-red">{fichajes.length}</span>
+      </div>
+
+      {/* ── Warning banner ─────────────────────────────────────────────────── */}
+      <div style={{
+        background: C.redDim,
+        border: `1px solid rgba(239,68,68,.3)`,
+        borderRadius: 8,
+        padding: '14px 20px',
+        marginBottom: 24,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+      }}>
+        <span style={{ fontSize: 18 }}>⚠</span>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: C.red }}>
+            {t('chrono.deadlineWarning')}
+          </div>
+          <div style={{ fontSize: 12, color: C.txDim, marginTop: 2 }}>
+            {t('chrono.deadlineDetail')}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Message toast ──────────────────────────────────────────────────── */}
       {message && (
-        <div style={{
-          ...card,
-          background: message.type === 'ok' ? 'rgba(34,197,94,.08)' : 'rgba(239,68,68,.08)',
-          borderColor: message.type === 'ok' ? 'rgba(34,197,94,.3)' : 'rgba(239,68,68,.3)',
-          color: message.type === 'ok' ? '#22c55e' : '#ef4444',
+        <div className="ch-card" style={{
+          marginBottom: 16,
+          background: message.type === 'ok' ? C.greenDim : C.redDim,
+          borderColor: message.type === 'ok' ? 'rgba(16,185,129,.3)' : 'rgba(239,68,68,.3)',
+          color: message.type === 'ok' ? C.green : C.red,
           fontSize: 13, fontWeight: 600,
         }}>
           {message.text}
         </div>
       )}
 
+      {/* ── Fichaje cards ──────────────────────────────────────────────────── */}
       {fichajes.map(f => {
         const isPending = f.estado === 'pendiente_aprobacion';
         const isEditing = editId === f.id;
+        const { day, full } = fmtDate(f.fecha);
+        const missingFields = FIELDS.filter(k => !f[k]);
 
         return (
-          <div key={f.id} style={card}>
-            {/* ── Header ───────────────────────────────────────────────────── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <span style={{ fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 700, color: 'var(--tx, #e2e2e8)' }}>
-                {f.fecha}
-              </span>
-              {isPending && <span style={pendingBadge}>{t('chrono.pendienteAprobacion')}</span>}
-            </div>
-
-            {/* ── Field status dots ────────────────────────────────────────── */}
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-              {FIELDS.map(key => (
-                <span key={key} style={fieldDot(!!f[key])}>
-                  {t(FIELD_LABELS[key] as any)}: {f[key] ? t('chrono.campoCompleto') : t('chrono.campoFaltante')}
+          <div
+            key={f.id}
+            className="ch-card"
+            style={{
+              marginBottom: 16,
+              borderColor: `rgba(239,68,68,.35)`,
+              borderLeft: `3px solid ${C.red}`,
+            }}
+          >
+            {/* ── Card header ─────────────────────────────────────────────── */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span className="mono" style={{ fontSize: 18, fontWeight: 700, color: C.amber }}>
+                  {day}
                 </span>
-              ))}
+                <span style={{ fontSize: 14, color: C.txDim }}>{full}</span>
+                {isPending ? (
+                  <span className="ch-badge ch-badge-amber">{t('chrono.pendienteAprobacion')}</span>
+                ) : (
+                  <span className="ch-badge ch-badge-red">{t('chrono.incompleto')}</span>
+                )}
+              </div>
+              {!isPending && !isEditing && (
+                <button className="ch-btn ch-btn-amber" onClick={() => openEdit(f)}>
+                  {t('chrono.completar')}
+                </button>
+              )}
             </div>
 
-            {/* ── Edit form ────────────────────────────────────────────────── */}
-            {!isPending && !isEditing && (
-              <button style={btnPrimary} onClick={() => openEdit(f)}>
-                {t('chrono.completar')}
-              </button>
-            )}
+            {/* ── Field cards grid ────────────────────────────────────────── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: isEditing ? 16 : 0 }}>
+              {FIELDS.map(key => {
+                const filled = !!f[key];
+                const time = fmtTime(f[key]);
+                const isEditingThis = isEditing && !filled;
+                const cardBg = filled ? C.sf : C.redDim;
+                const cardBorder = filled ? C.bd : 'rgba(239,68,68,.3)';
 
-            {isEditing && (
-              <div style={{ marginTop: 8 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10, marginBottom: 12 }}>
-                  {FIELDS.map(key => (
-                    <div key={key}>
-                      <label style={{ fontSize: 11, color: 'var(--tx3, #50506a)', display: 'block', marginBottom: 4 }}>
-                        {t(FIELD_LABELS[key] as any)}
-                      </label>
-                      <input
-                        type="datetime-local"
-                        style={inputStyle}
-                        value={form[key] ? form[key].slice(0, 16) : ''}
-                        onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))}
-                      />
+                return (
+                  <div key={key} style={{
+                    background: cardBg,
+                    border: `1px solid ${cardBorder}`,
+                    borderRadius: 6,
+                    padding: '12px 14px',
+                    position: 'relative',
+                  }}>
+                    <div className="mono" style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      letterSpacing: '.1em',
+                      textTransform: 'uppercase',
+                      color: filled ? C.txMuted : C.red,
+                      marginBottom: 6,
+                    }}>
+                      {t(FIELD_LABELS[key] as any)}
                     </div>
-                  ))}
-                </div>
 
+                    {isEditingThis ? (
+                      <input
+                        type="time"
+                        style={{
+                          width: '100%',
+                          fontSize: 16,
+                          padding: '4px 8px',
+                        }}
+                        value={form[key] ? form[key].slice(11, 16) : ''}
+                        onChange={e => {
+                          const base = f.fecha + 'T' + e.target.value + ':00';
+                          setForm(prev => ({ ...prev, [key]: base }));
+                        }}
+                      />
+                    ) : (
+                      <div className="mono" style={{
+                        fontSize: 18,
+                        fontWeight: 700,
+                        color: filled ? C.tx : C.red,
+                      }}>
+                        {time || '——:——'}
+                      </div>
+                    )}
+
+                    {!filled && !isEditing && (
+                      <div style={{ fontSize: 10, color: C.red, marginTop: 4, fontWeight: 500 }}>
+                        {t('chrono.faltaRegistro')}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── Edit form: justification + submit ───────────────────────── */}
+            {isEditing && (
+              <div style={{ marginTop: 4 }}>
                 <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 11, color: 'var(--tx3, #50506a)', display: 'block', marginBottom: 4 }}>
+                  <label className="mono" style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    letterSpacing: '.1em',
+                    textTransform: 'uppercase',
+                    color: C.txMuted,
+                    display: 'block',
+                    marginBottom: 6,
+                  }}>
                     {t('chrono.justificacion')} *
                   </label>
-                  <textarea
-                    style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }}
+                  <input
+                    type="text"
+                    style={{ width: '100%' }}
                     value={justificacion}
                     onChange={e => setJustificacion(e.target.value)}
-                    placeholder={t('chrono.justificacion')}
+                    placeholder={t('chrono.justificacionPlaceholder')}
                   />
                 </div>
 
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <button
-                    style={{ ...btnPrimary, opacity: submitting ? 0.6 : 1 }}
+                    className="ch-btn ch-btn-green"
                     disabled={submitting}
+                    style={{ opacity: submitting ? 0.6 : 1 }}
                     onClick={() => handleSubmit(f.id)}
                   >
-                    {t('chrono.enviarAprobacion')}
+                    {t('chrono.guardarYEnviar')}
                   </button>
-                  <button style={btnGhost} onClick={() => setEditId(null)} disabled={submitting}>
+                  <button
+                    className="ch-btn ch-btn-ghost"
+                    onClick={() => setEditId(null)}
+                    disabled={submitting}
+                  >
                     {t('chrono.cancelarBtn')}
                   </button>
                 </div>
