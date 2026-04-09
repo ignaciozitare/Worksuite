@@ -3,6 +3,11 @@ import type { IAdminFichajeRepository } from '../../domain/ports/IAdminFichajeRe
 import type { EmpleadoResumen, EstadoPresencia } from '../../domain/entities/EmpleadoResumen';
 import type { Fichaje, ResumenMes } from '../../../chrono/domain/entities/Fichaje';
 
+function lastDayOfMonth(mes: string): string {
+  const [y, m] = mes.split('-').map(Number) as [number, number];
+  return `${mes}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`;
+}
+
 function toFichaje(row: any): Fichaje {
   return {
     id: row.id, userId: row.user_id, fecha: row.fecha,
@@ -80,7 +85,7 @@ export class AdminFichajeSupabaseRepository implements IAdminFichajeRepository {
     userId?: string,
   ): Promise<(Fichaje & { userName: string; userEmail: string })[]> {
     let query = this.db.from('ch_fichajes').select('*')
-      .gte('fecha', `${mes}-01`).lte('fecha', `${mes}-31`)
+      .gte('fecha', `${mes}-01`).lte('fecha', lastDayOfMonth(mes))
       .order('fecha', { ascending: false });
 
     if (userId) query = query.eq('user_id', userId);
@@ -155,7 +160,7 @@ export class AdminFichajeSupabaseRepository implements IAdminFichajeRepository {
     mes: string,
   ): Promise<{ userId: string; userName: string; resumen: ResumenMes }[]> {
     const { data: fichajes, error } = await this.db.from('ch_fichajes').select('*')
-      .gte('fecha', `${mes}-01`).lte('fecha', `${mes}-31`);
+      .gte('fecha', `${mes}-01`).lte('fecha', lastDayOfMonth(mes));
     if (error) throw error;
 
     const userIds = [...new Set((fichajes ?? []).map((f: any) => f.user_id))];

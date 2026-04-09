@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { supabase } from '@/shared/lib/supabaseClient';
 import { AdminFichajeSupabaseRepository } from '../infra/supabase/AdminFichajeSupabaseRepository';
@@ -118,19 +118,19 @@ interface Props {
 function ChronoAdminPage({ currentUser }: Props) {
   const { t } = useTranslation();
   const [view, setView] = useState<Tab>('dashboard');
+  const [users, setUsers] = useState<any[]>([]);
+
+  // Load all users for team/employee management
+  useEffect(() => {
+    supabase.from('users').select('id, name, email, role, active').eq('active', true)
+      .then(({ data }) => { if (data) setUsers(data); });
+  }, []);
 
   return (
     <div className="ch">
       <style>{CSS}</style>
 
       <div style={{ padding: '28px 32px' }}>
-        {/* ── Header ─────────────────────────────────────────── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-          <span className="mono" style={{ fontSize: 17, fontWeight: 700, color: C.amber, letterSpacing: '.05em' }}>
-            CHRONO<span style={{ color: C.txDim }}>.</span>ADMIN
-          </span>
-        </div>
-
         {/* ── Tab bar ────────────────────────────────────────── */}
         <div style={{
           display: 'flex', gap: 4, marginBottom: 20,
@@ -172,7 +172,7 @@ function ChronoAdminPage({ currentUser }: Props) {
           )}
 
           {view === 'equipos' && (
-            <EquiposView equipoRepo={equipoRepo} />
+            <EquiposView equipoRepo={equipoRepo} users={users} />
           )}
 
           {view === 'aprobaciones' && (
