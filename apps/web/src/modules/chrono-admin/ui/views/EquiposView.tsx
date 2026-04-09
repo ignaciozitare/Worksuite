@@ -19,6 +19,8 @@ export function EquiposView({ equipoRepo, users }: Props) {
   const [showNewForm, setShowNewForm] = useState(false);
   const [newTeam, setNewTeam] = useState({ nombre: '', descripcion: '', managerId: '' });
   const [creating, setCreating] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<string | null>(null);
+  const [editTeamDraft, setEditTeamDraft] = useState({ nombre: '', descripcion: '', managerId: '' });
   const [addMemberSearch, setAddMemberSearch] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -229,9 +231,37 @@ export function EquiposView({ equipoRepo, users }: Props) {
                     <div style={{ fontSize: 10, color: C.txMuted, textTransform: 'uppercase' }}>{t('chronoAdmin.miembros')}</div>
                   </div>
 
+                  {/* Edit + Delete */}
+                  <button className="ch-btn ch-btn-ghost" onClick={e => { e.stopPropagation(); setEditingTeam(editingTeam === equipo.id ? null : equipo.id); setEditTeamDraft({ nombre: equipo.nombre, descripcion: equipo.descripcion || '', managerId: equipo.managerId || '' }); }} style={{ fontSize: 11, padding: '4px 10px' }}>✏️</button>
+                  <button className="ch-btn ch-btn-ghost" onClick={e => { e.stopPropagation(); if (confirm(t('chronoAdmin.confirmarEliminar'))) handleDelete(equipo.id); }} style={{ fontSize: 11, padding: '4px 10px', color: C.red, borderColor: `${C.red}44` }}>🗑</button>
+
                   {/* Chevron */}
                   <div style={{ fontSize: 14, color: C.txMuted, transition: 'transform .2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)' }}>▼</div>
                 </div>
+
+                {/* ── Edit team inline ─── */}
+                {editingTeam === equipo.id && (
+                  <div className="fade-in" style={{ borderTop: `1px solid ${C.bd}`, padding: '14px 20px', background: C.sfHover }}>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: 10, color: C.txMuted, display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '.08em' }}>{t('chronoAdmin.nombreEquipo')}</label>
+                        <input type="text" value={editTeamDraft.nombre} onChange={e => setEditTeamDraft(p => ({ ...p, nombre: e.target.value }))} style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none' }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: 10, color: C.txMuted, display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '.08em' }}>{t('chronoAdmin.descripcion')}</label>
+                        <input type="text" value={editTeamDraft.descripcion} onChange={e => setEditTeamDraft(p => ({ ...p, descripcion: e.target.value }))} style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none' }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: 10, color: C.txMuted, display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '.08em' }}>{t('chronoAdmin.manager')}</label>
+                        <select value={editTeamDraft.managerId} onChange={e => setEditTeamDraft(p => ({ ...p, managerId: e.target.value }))} style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none' }}>
+                          <option value="">{t('chronoAdmin.seleccionarManager')}</option>
+                          {users.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
+                        </select>
+                      </div>
+                      <button className="ch-btn ch-btn-amber" style={{ height: 34, fontSize: 12 }} onClick={async () => { await equipoRepo.update(equipo.id, { nombre: editTeamDraft.nombre, descripcion: editTeamDraft.descripcion || null, managerId: editTeamDraft.managerId || null }); setEditingTeam(null); load(); }}>{t('chronoAdmin.guardar')}</button>
+                    </div>
+                  </div>
+                )}
 
                 {/* ── Expanded members ─── */}
                 {isExpanded && (

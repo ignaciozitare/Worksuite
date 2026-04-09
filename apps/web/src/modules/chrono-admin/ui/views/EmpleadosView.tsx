@@ -5,6 +5,8 @@ import type { IAdminFichajeRepository } from '../../domain/ports/IAdminFichajeRe
 import type { IEmpleadoConfigRepository } from '../../domain/ports/IEmpleadoConfigRepository';
 import type { EmpleadoResumen, EstadoPresencia } from '../../domain/entities/EmpleadoResumen';
 import type { EmpleadoConfig } from '../../domain/entities/EmpleadoConfig';
+import type { IEquipoRepository } from '../../domain/ports/IEquipoRepository';
+import type { Equipo } from '../../domain/entities/Equipo';
 
 const C = { amber:'#f59e0b', amberDim:'#92400e', amberGlow:'rgba(245,158,11,0.12)', tx:'#e8e8e8', txDim:'#888', txMuted:'#555', green:'#10b981', greenDim:'rgba(16,185,129,0.15)', red:'#ef4444', redDim:'rgba(239,68,68,0.15)', blue:'#3b82f6', blueDim:'rgba(59,130,246,0.15)', orange:'#f97316', purple:'#a855f7', sf:'#161616', sfHover:'#1e1e1e', bd:'#2a2a2a', bg:'#0d0d0d' };
 
@@ -37,16 +39,20 @@ function fmtHours(min: number | null): string {
 interface Props {
   fichajeRepo: IAdminFichajeRepository;
   empleadoConfigRepo: IEmpleadoConfigRepository;
+  equipoRepo: IEquipoRepository;
   users: any[];
 }
 
-export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, users }: Props) {
+export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, users }: Props) {
   const { t } = useTranslation();
   const [equipo, setEquipo] = useState<EmpleadoResumen[]>([]);
   const [configs, setConfigs] = useState<EmpleadoConfig[]>([]);
+  const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [resumenMes, setResumenMes] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterKey>('all');
+  const [filterEquipo, setFilterEquipo] = useState('');
+  const [filterRole, setFilterRole] = useState('');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<{ horasJornadaMinutos: number | null; diasVacaciones: number | null; jornadaDias: string[] }>({ horasJornadaMinutos: null, diasVacaciones: null, jornadaDias: [] });
@@ -60,13 +66,15 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, users }: Props)
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [equipoData, configData, resumenData] = await Promise.all([
+      const [equipoData, configData, resumenData, equiposData] = await Promise.all([
         fichajeRepo.getEquipoHoy(),
         empleadoConfigRepo.getAll(),
         fichajeRepo.getResumenPorEmpleado(mesActual),
+        equipoRepo.getAll(),
       ]);
       setEquipo(equipoData);
       setConfigs(configData);
+      setEquipos(equiposData);
       const map: Record<string, number> = {};
       resumenData.forEach(r => { map[r.userId] = r.resumen.minutosTotales; });
       setResumenMes(map);
@@ -80,17 +88,31 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, users }: Props)
   useEffect(() => { load(); }, [load]);
 
   /* ── Filter + search ─── */
+  // Helper: get team name for a user
+  const getUserTeam = useCallback((userId: string): string => {
+    const team = equipos.find(eq => eq.miembros.some(m => m.userId === userId));
+    return team?.nombre ?? '';
+  }, [equipos]);
+
+  // Helper: get user role
+  const getUserRole = useCallback((userId: string): string => {
+    const u = users.find(u => u.id === userId);
+    return u?.role ?? 'user';
+  }, [users]);
+
   const filtered = useMemo(() => {
     let list = equipo;
     if (filter === 'complete') list = list.filter(e => e.fichajesIncompletos === 0 && e.estadoHoy !== 'sin_fichar');
     else if (filter === 'incomplete') list = list.filter(e => e.fichajesIncompletos > 0);
     else if (filter === 'vacation') list = list.filter(e => e.estadoHoy === 'vacaciones');
+    if (filterEquipo) list = list.filter(e => getUserTeam(e.userId) === filterEquipo);
+    if (filterRole) list = list.filter(e => getUserRole(e.userId) === filterRole);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(e => e.nombre.toLowerCase().includes(q) || e.email.toLowerCase().includes(q));
     }
     return list;
-  }, [equipo, filter, search]);
+  }, [equipo, filter, filterEquipo, filterRole, search, getUserTeam, getUserRole]);
 
   const filterButtons: { key: FilterKey; label: string }[] = [
     { key: 'all', label: t('chronoAdmin.filtroTodos') },
@@ -156,6 +178,17 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, users }: Props)
             {fb.label}
           </button>
         ))}
+        <select value={filterEquipo} onChange={e => setFilterEquipo(e.target.value)}
+          style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '6px 10px', color: C.tx, fontSize: 12, fontFamily: "'IBM Plex Mono',monospace" }}>
+          <option value="">{t('chronoAdmin.equipos')}: {t('chronoAdmin.todos')}</option>
+          {equipos.map(eq => <option key={eq.id} value={eq.nombre}>{eq.nombre}</option>)}
+        </select>
+        <select value={filterRole} onChange={e => setFilterRole(e.target.value)}
+          style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '6px 10px', color: C.tx, fontSize: 12, fontFamily: "'IBM Plex Mono',monospace" }}>
+          <option value="">Rol: {t('chronoAdmin.todos')}</option>
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+        </select>
         <div style={{ flex: 1 }} />
         <input
           type="text"
@@ -194,6 +227,9 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, users }: Props)
                 <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.horasMes')}
                 </th>
+                <th style={{ padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                  {t('chronoAdmin.equipos')}
+                </th>
                 <th style={{ textAlign: 'center', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.estado')}
                 </th>
@@ -231,6 +267,9 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, users }: Props)
                       <td style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, fontSize: 12, color: C.txDim }}>{emp.email}</td>
                       <td className="mono" style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'right', fontSize: 14, fontWeight: 600, color: C.amber }}>{fmtHours(emp.minutosHoy)}</td>
                       <td className="mono" style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'right', fontSize: 14, fontWeight: 600, color: C.tx }}>{fmtHours(resumenMes[emp.userId] ?? null)}</td>
+                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, fontSize: 11, color: C.txDim }}>
+                        {getUserTeam(emp.userId) || '—'}
+                      </td>
                       <td style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'center' }}>
                         <span className="ch-badge" style={{ background: badge.bg, color: badge.color, fontSize: 10, padding: '3px 8px' }}>
                           {t(STATUS_I18N[emp.estadoHoy] ?? 'chronoAdmin.sinFicharLabel')}
@@ -244,67 +283,56 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, users }: Props)
                     {/* ── Inline config editor ─── */}
                     {isExpanded && (
                       <tr>
-                        <td colSpan={6} style={{ padding: '16px 24px', borderBottom: `1px solid ${C.bd}`, background: C.sfHover }}>
-                          <div className="fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 16, alignItems: 'end' }}>
+                        <td colSpan={7} style={{ padding: '16px 24px', borderBottom: `1px solid ${C.bd}`, background: C.sfHover }}>
+                          <div className="fade-in" style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
                             {/* Horas jornada */}
-                            <div>
-                              <label style={{ fontSize: 11, color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
-                                {t('chronoAdmin.horasJornada')}
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: 10, color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                                {t('chronoAdmin.horasJornada')} ({t('chronoAdmin.enMinutos')})
                               </label>
                               <input
                                 type="number"
                                 value={editDraft.horasJornadaMinutos ?? ''}
                                 onChange={e => setEditDraft(prev => ({ ...prev, horasJornadaMinutos: e.target.value ? Number(e.target.value) : null }))}
-                                style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none', fontFamily: "'IBM Plex Mono',monospace" }}
+                                style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '8px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none', fontFamily: "'IBM Plex Mono',monospace" }}
                               />
-                              <div style={{ fontSize: 10, color: C.txMuted, marginTop: 2 }}>{t('chronoAdmin.enMinutos')}</div>
                             </div>
 
                             {/* Dias vacaciones */}
-                            <div>
-                              <label style={{ fontSize: 11, color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: 10, color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
                                 {t('chronoAdmin.diasVacaciones')}
                               </label>
                               <input
                                 type="number"
                                 value={editDraft.diasVacaciones ?? ''}
                                 onChange={e => setEditDraft(prev => ({ ...prev, diasVacaciones: e.target.value ? Number(e.target.value) : null }))}
-                                style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none', fontFamily: "'IBM Plex Mono',monospace" }}
+                                style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '8px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none', fontFamily: "'IBM Plex Mono',monospace" }}
                               />
                             </div>
 
                             {/* Jornada dias */}
                             <div>
-                              <label style={{ fontSize: 11, color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                              <label style={{ fontSize: 10, color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
                                 {t('chronoAdmin.jornadaDias')}
                               </label>
-                              <div style={{ display: 'flex', gap: 4 }}>
+                              <div style={{ display: 'flex', gap: 3 }}>
                                 {DIAS_SEMANA.map(dia => (
-                                  <button
-                                    key={dia}
-                                    onClick={() => toggleDia(dia)}
-                                    style={{
-                                      width: 30, height: 30, borderRadius: 6, fontSize: 11, fontWeight: 600,
-                                      border: editDraft.jornadaDias.includes(dia) ? `1px solid ${C.amber}` : `1px solid ${C.bd}`,
-                                      background: editDraft.jornadaDias.includes(dia) ? C.amberGlow : C.sf,
-                                      color: editDraft.jornadaDias.includes(dia) ? C.amber : C.txMuted,
-                                      cursor: 'pointer',
-                                    }}
-                                  >
-                                    {dia}
-                                  </button>
+                                  <button key={dia} onClick={() => toggleDia(dia)} style={{
+                                    width: 32, height: 34, borderRadius: 6, fontSize: 11, fontWeight: 600,
+                                    border: editDraft.jornadaDias.includes(dia) ? `1px solid ${C.amber}` : `1px solid ${C.bd}`,
+                                    background: editDraft.jornadaDias.includes(dia) ? C.amberGlow : C.sf,
+                                    color: editDraft.jornadaDias.includes(dia) ? C.amber : C.txMuted,
+                                    cursor: 'pointer', fontFamily: "'IBM Plex Mono',monospace",
+                                  }}>{dia}</button>
                                 ))}
                               </div>
                             </div>
 
                             {/* Save */}
-                            <button
-                              className="ch-btn ch-btn-amber"
-                              onClick={() => handleSave(emp.userId)}
-                              disabled={saving}
-                              style={{ height: 36, fontSize: 12 }}
-                            >
-                              {saving ? t('chronoAdmin.guardando') : t('chronoAdmin.guardar')}
+                            <button className="ch-btn ch-btn-amber" onClick={() => handleSave(emp.userId)} disabled={saving}
+                              style={{ height: 34, fontSize: 12, whiteSpace: 'nowrap' }}>
+                              {saving ? '...' : t('chronoAdmin.guardar')}
                             </button>
                           </div>
                         </td>

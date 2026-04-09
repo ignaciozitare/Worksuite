@@ -92,7 +92,6 @@ const TABS: { id: Tab; labelKey: string }[] = [
   { id: 'aprobaciones', labelKey: 'chronoAdmin.aprobaciones' },
   { id: 'jira',         labelKey: 'chronoAdmin.jira' },
   { id: 'informes',     labelKey: 'chronoAdmin.informes' },
-  { id: 'config',       labelKey: 'chronoAdmin.configuracion' },
 ];
 
 /* ─── Placeholder for views not yet implemented ───────────────────────────── */
@@ -168,7 +167,7 @@ function ChronoAdminPage({ currentUser }: Props) {
           )}
 
           {view === 'empleados' && (
-            <EmpleadosView fichajeRepo={fichajeRepo} empleadoConfigRepo={empleadoConfigRepo} />
+            <EmpleadosView fichajeRepo={fichajeRepo} empleadoConfigRepo={empleadoConfigRepo} equipoRepo={equipoRepo} users={users} />
           )}
 
           {view === 'equipos' && (
@@ -187,9 +186,6 @@ function ChronoAdminPage({ currentUser }: Props) {
             <InformesEmpresaView fichajeRepo={fichajeRepo} vacacionRepo={vacacionRepo} jiraRepo={jiraResumenRepo} />
           )}
 
-          {view === 'config' && (
-            <ChronoConfigSection />
-          )}
         </div>
       </div>
     </div>
