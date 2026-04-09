@@ -18,9 +18,9 @@ export class JiraResumenSupabaseRepository implements IJiraResumenRepository {
     const [worklogsRes, fichajesRes, usersRes] = await Promise.all([
       this.db
         .from('worklogs')
-        .select('author_id, seconds, project_key')
-        .gte('started_at', desde)
-        .lte('started_at', `${hasta}T23:59:59`),
+        .select('author_id, seconds, project_key, issue_key, issue_summary')
+        .gte('date', desde)
+        .lte('date', hasta),
       this.db
         .from('ch_fichajes')
         .select('user_id, minutos_trabajados')
@@ -97,10 +97,10 @@ export class JiraResumenSupabaseRepository implements IJiraResumenRepository {
     const [worklogsRes, fichajesRes, userRes] = await Promise.all([
       this.db
         .from('worklogs')
-        .select('seconds, project_key')
+        .select('seconds, project_key, issue_key, issue_summary')
         .eq('author_id', userId)
-        .gte('started_at', desde)
-        .lte('started_at', `${hasta}T23:59:59`),
+        .gte('date', desde)
+        .lte('date', hasta),
       this.db
         .from('ch_fichajes')
         .select('minutos_trabajados')
