@@ -184,7 +184,7 @@ function ChronoAdminPage({ currentUser }: Props) {
           )}
 
           {view === 'informes' && (
-            <InformesEmpresaView />
+            <InformesEmpresaView fichajeRepo={fichajeRepo} vacacionRepo={vacacionRepo} jiraRepo={jiraResumenRepo} />
           )}
 
           {view === 'config' && (
