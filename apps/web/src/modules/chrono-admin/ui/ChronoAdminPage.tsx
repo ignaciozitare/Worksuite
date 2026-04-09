@@ -11,6 +11,11 @@ import { NotificacionSupabaseRepository } from '../infra/supabase/NotificacionSu
 import { JiraResumenSupabaseRepository } from '../infra/supabase/JiraResumenSupabaseRepository';
 import { AprobacionesView } from './views/AprobacionesView';
 import { InformesEmpresaView } from './views/InformesEmpresaView';
+import { DashboardAdminView } from './views/DashboardAdminView';
+import { EmpleadosView } from './views/EmpleadosView';
+import { EquiposView } from './views/EquiposView';
+import { JiraView } from './views/JiraView';
+import { ChronoConfigSection } from './sections/ChronoConfigSection';
 
 /* ─── Repository instances ────────────────────────────────────────────────── */
 const fichajeRepo = new AdminFichajeSupabaseRepository(supabase);
@@ -159,27 +164,23 @@ function ChronoAdminPage({ currentUser }: Props) {
         {/* ── View content ───────────────────────────────────── */}
         <div className="fade-in" key={view}>
           {view === 'dashboard' && (
-            <ComingSoonPlaceholder label={t('chronoAdmin.dashboard')} />
+            <DashboardAdminView fichajeRepo={fichajeRepo} />
           )}
 
           {view === 'empleados' && (
-            <ComingSoonPlaceholder label={t('chronoAdmin.empleados')} />
+            <EmpleadosView fichajeRepo={fichajeRepo} empleadoConfigRepo={empleadoConfigRepo} />
           )}
 
           {view === 'equipos' && (
-            <ComingSoonPlaceholder label={t('chronoAdmin.equipos')} />
+            <EquiposView equipoRepo={equipoRepo} />
           )}
 
           {view === 'aprobaciones' && (
-            <AprobacionesView
-              fichajeRepo={fichajeRepo}
-              vacacionRepo={vacacionRepo}
-              currentUser={currentUser}
-            />
+            <AprobacionesView fichajeRepo={fichajeRepo} vacacionRepo={vacacionRepo} currentUser={currentUser} />
           )}
 
           {view === 'jira' && (
-            <ComingSoonPlaceholder label={t('chronoAdmin.jira')} />
+            <JiraView jiraRepo={jiraResumenRepo} notifRepo={notificacionRepo} />
           )}
 
           {view === 'informes' && (
@@ -187,7 +188,7 @@ function ChronoAdminPage({ currentUser }: Props) {
           )}
 
           {view === 'config' && (
-            <ComingSoonPlaceholder label={t('chronoAdmin.configuracion')} />
+            <ChronoConfigSection />
           )}
         </div>
       </div>
