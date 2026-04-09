@@ -13,6 +13,13 @@ function toFichaje(row: any): Fichaje {
   };
 }
 
+/** Calculate the last day of a YYYY-MM month string */
+function lastDayOfMonth(mes: string): string {
+  const [y, m] = mes.split('-').map(Number) as [number, number];
+  const last = new Date(y, m, 0).getDate();
+  return `${mes}-${String(last).padStart(2, '0')}`;
+}
+
 function calcMinutos(row: any, salidaAt: string): number {
   if (!row?.entrada_at) return 0;
   const totalMs = new Date(salidaAt).getTime() - new Date(row.entrada_at).getTime();
@@ -34,7 +41,9 @@ export class FichajeSupabaseRepository implements IFichajeRepository {
 
   async getFichajesMes(userId: string, mes: string): Promise<Fichaje[]> {
     const { data, error } = await this.db.from('ch_fichajes').select('*')
-      .eq('user_id', userId).gte('fecha', `${mes}-01`).lte('fecha', `${mes}-31`)
+      .eq('user_id', userId)
+      .gte('fecha', `${mes}-01`)
+      .lte('fecha', lastDayOfMonth(mes))
       .order('fecha', { ascending: false });
     if (error) throw error;
     return (data ?? []).map(toFichaje);
@@ -63,6 +72,25 @@ export class FichajeSupabaseRepository implements IFichajeRepository {
 
   async ficharEntrada(userId: string, geo?: GeoData): Promise<Fichaje> {
     const today = new Date().toISOString().split('T')[0];
+
+    // Check if fichaje already exists for today
+    const existing = await this.getFichajeHoy(userId);
+    if (existing) {
+      // If already clocked out, reset for a new shift
+      if (existing.salidaAt) {
+        const { data, error } = await this.db.from('ch_fichajes').update({
+          entrada_at: new Date().toISOString(),
+          salida_at: null, comida_ini_at: null, comida_fin_at: null,
+          minutos_trabajados: null, estado: 'abierto',
+          geo_entrada: geo ?? null, geo_salida: null,
+        }).eq('id', existing.id).select().single();
+        if (error) throw error;
+        return toFichaje(data);
+      }
+      // Already clocked in and not clocked out — return existing
+      return existing;
+    }
+
     const { data, error } = await this.db.from('ch_fichajes').insert({
       user_id: userId, fecha: today, entrada_at: new Date().toISOString(),
       estado: 'abierto', geo_entrada: geo ?? null,
@@ -73,8 +101,10 @@ export class FichajeSupabaseRepository implements IFichajeRepository {
 
   async ficharSalida(fichajeId: string, geo?: GeoData): Promise<Fichaje> {
     const salidaAt = new Date().toISOString();
-    const { data: current } = await this.db.from('ch_fichajes')
+    const { data: current, error: fetchErr } = await this.db.from('ch_fichajes')
       .select('entrada_at, comida_ini_at, comida_fin_at').eq('id', fichajeId).single();
+    if (fetchErr) throw fetchErr;
+    if (!current) throw new Error('Fichaje not found');
     const minutos = calcMinutos(current, salidaAt);
     const { data, error } = await this.db.from('ch_fichajes').update({
       salida_at: salidaAt, estado: 'completo', geo_salida: geo ?? null, minutos_trabajados: minutos,

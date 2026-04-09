@@ -17,8 +17,8 @@ export class IncidenciaSupabaseRepository implements IIncidenciaRepository {
   async getIncidenciasMes(userId: string, mes: string): Promise<Incidencia[]> {
     const { data, error } = await this.db.from('ch_incidencias').select('*')
       .eq('user_id', userId)
-      .gte('inicio_at', `${mes}-01`)
-      .lte('inicio_at', `${mes}-31`)
+      .gte('inicio_at', `${mes}-01T00:00:00`)
+      .lt('inicio_at', (() => { const [y,m] = mes.split('-').map(Number) as [number,number]; const nm = m === 12 ? 1 : m + 1; const ny = m === 12 ? y + 1 : y; return `${ny}-${String(nm).padStart(2,'0')}-01T00:00:00`; })())
       .order('inicio_at', { ascending: false });
     if (error) throw error;
     return (data ?? []).map(toIncidencia);
