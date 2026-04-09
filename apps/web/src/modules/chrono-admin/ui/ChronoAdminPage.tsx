@@ -4,30 +4,39 @@ import { useTranslation } from '@worksuite/i18n';
 import { supabase } from '@/shared/lib/supabaseClient';
 import { AdminFichajeSupabaseRepository } from '../infra/supabase/AdminFichajeSupabaseRepository';
 import { AdminVacacionSupabaseRepository } from '../infra/supabase/AdminVacacionSupabaseRepository';
-import { EquipoHoyView } from './views/EquipoHoyView';
-import { FichajesEquipoView } from './views/FichajesEquipoView';
+import { ConfigSupabaseRepository } from '../infra/supabase/ConfigSupabaseRepository';
+import { EquipoSupabaseRepository } from '../infra/supabase/EquipoSupabaseRepository';
+import { EmpleadoConfigSupabaseRepository } from '../infra/supabase/EmpleadoConfigSupabaseRepository';
+import { NotificacionSupabaseRepository } from '../infra/supabase/NotificacionSupabaseRepository';
+import { JiraResumenSupabaseRepository } from '../infra/supabase/JiraResumenSupabaseRepository';
 import { AprobacionesView } from './views/AprobacionesView';
-import { GestionVacacionesView } from './views/GestionVacacionesView';
 import { InformesEmpresaView } from './views/InformesEmpresaView';
 
+/* ─── Repository instances ────────────────────────────────────────────────── */
 const fichajeRepo = new AdminFichajeSupabaseRepository(supabase);
 const vacacionRepo = new AdminVacacionSupabaseRepository(supabase);
+const configRepo = new ConfigSupabaseRepository(supabase);
+const equipoRepo = new EquipoSupabaseRepository(supabase);
+const empleadoConfigRepo = new EmpleadoConfigSupabaseRepository(supabase);
+const notificacionRepo = new NotificacionSupabaseRepository(supabase);
+const jiraResumenRepo = new JiraResumenSupabaseRepository(supabase);
 
-/* ─── Design tokens (same as ChronoPage) ───────────────────────────────────── */
+/* ─── Design tokens ───────────────────────────────────────────────────────── */
 const C = {
-  bg:'#0d0d0d', sf:'#161616', sfHover:'#1e1e1e', bd:'#2a2a2a',
-  amber:'#f59e0b', amberDim:'#92400e', amberGlow:'rgba(245,158,11,0.12)',
-  tx:'#e8e8e8', txDim:'#888', txMuted:'#555',
-  green:'#10b981', greenDim:'rgba(16,185,129,0.15)',
-  red:'#ef4444', redDim:'rgba(239,68,68,0.15)',
-  blue:'#3b82f6', blueDim:'rgba(59,130,246,0.15)',
-  orange:'#f97316', purple:'#a855f7',
+  bg: '#0d0d0d', sf: '#161616', sfHover: '#1e1e1e', bd: '#2a2a2a',
+  amber: '#f59e0b', amberDim: '#92400e', amberGlow: 'rgba(245,158,11,0.12)',
+  tx: '#e8e8e8', txDim: '#888', txMuted: '#555',
+  green: '#10b981', greenDim: 'rgba(16,185,129,0.15)',
+  red: '#ef4444', redDim: 'rgba(239,68,68,0.15)',
+  blue: '#3b82f6', blueDim: 'rgba(59,130,246,0.15)',
+  orange: '#f97316', purple: '#a855f7',
 };
 export { C as CHRONO_ADMIN_COLORS };
 
+/* ─── CSS ─────────────────────────────────────────────────────────────────── */
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
-.ch{font-family:'IBM Plex Sans',sans-serif;background:${C.bg};color:${C.tx};height:100%;overflow:hidden;display:flex;}
+.ch{font-family:'IBM Plex Sans',sans-serif;background:${C.bg};color:${C.tx};min-height:100%;}
 .ch *{box-sizing:border-box;margin:0;padding:0;}
 .ch ::-webkit-scrollbar{width:4px;height:4px;}
 .ch ::-webkit-scrollbar-track{background:${C.sf};}
@@ -39,9 +48,6 @@ const CSS = `
 @keyframes chBlink{0%,100%{opacity:1}50%{opacity:0}}
 .ch .pulse-ring{animation:chPulse 2s cubic-bezier(.215,.61,.355,1) infinite;}
 @keyframes chPulse{0%{transform:scale(.95);box-shadow:0 0 0 0 rgba(245,158,11,.5)}70%{transform:scale(1);box-shadow:0 0 0 20px rgba(245,158,11,0)}100%{transform:scale(.95);box-shadow:0 0 0 0 rgba(245,158,11,0)}}
-.ch .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;color:${C.txDim};transition:all .15s;border:1px solid transparent;letter-spacing:.02em;}
-.ch .nav-item:hover{background:${C.sfHover};color:${C.tx};}
-.ch .nav-item.active{background:${C.amberGlow};color:${C.amber};border-color:${C.amberDim};}
 .ch .ch-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;text-transform:uppercase;}
 .ch .ch-badge-green{background:${C.greenDim};color:${C.green};}
 .ch .ch-badge-red{background:${C.redDim};color:${C.red};}
@@ -65,79 +71,128 @@ const CSS = `
 .ch tr:hover td{background:${C.sfHover};}
 .ch select,.ch input[type="time"],.ch input[type="text"],.ch input[type="number"],.ch input[type="month"],.ch textarea{background:${C.bg};border:1px solid ${C.bd};color:${C.tx};padding:8px 12px;border-radius:5px;font-size:13px;font-family:'IBM Plex Mono',monospace;outline:none;transition:border-color .15s;}
 .ch select:focus,.ch input:focus,.ch textarea:focus{border-color:${C.amber};}
+.ch .ch-toggle{position:relative;width:36px;height:20px;background:${C.bd};border-radius:10px;cursor:pointer;transition:background .2s;}
+.ch .ch-toggle.active{background:${C.amber};}
+.ch .ch-toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s;}
+.ch .ch-toggle.active::after{transform:translateX(16px);}
 `;
 
-type Tab = 'equipo' | 'fichajes' | 'aprobaciones' | 'vacaciones' | 'informes';
+/* ─── Tab definitions ─────────────────────────────────────────────────────── */
+type Tab = 'dashboard' | 'empleados' | 'equipos' | 'aprobaciones' | 'jira' | 'informes' | 'config';
 
-const NAV_ITEMS: { id: Tab; labelKey: string; icon: string }[] = [
-  { id: 'equipo',       labelKey: 'chronoAdmin.equipoHoy',           icon: '◎' },
-  { id: 'fichajes',     labelKey: 'chronoAdmin.fichajesEquipo',      icon: '◷' },
-  { id: 'aprobaciones', labelKey: 'chronoAdmin.aprobaciones',        icon: '✓' },
-  { id: 'vacaciones',   labelKey: 'chronoAdmin.gestionVacaciones',   icon: '◈' },
-  { id: 'informes',     labelKey: 'chronoAdmin.informesEmpresa',     icon: '▤' },
+const TABS: { id: Tab; labelKey: string }[] = [
+  { id: 'dashboard',    labelKey: 'chronoAdmin.dashboard' },
+  { id: 'empleados',    labelKey: 'chronoAdmin.empleados' },
+  { id: 'equipos',      labelKey: 'chronoAdmin.equipos' },
+  { id: 'aprobaciones', labelKey: 'chronoAdmin.aprobaciones' },
+  { id: 'jira',         labelKey: 'chronoAdmin.jira' },
+  { id: 'informes',     labelKey: 'chronoAdmin.informes' },
+  { id: 'config',       labelKey: 'chronoAdmin.configuracion' },
 ];
 
-interface Props { currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown }; }
-
-export function ChronoAdminPage({ currentUser }: Props) {
+/* ─── Placeholder for views not yet implemented ───────────────────────────── */
+function ComingSoonPlaceholder({ label }: { label: string }) {
   const { t } = useTranslation();
-  const [view, setView] = useState<Tab>('equipo');
+  return (
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
+      <div className="mono" style={{ fontSize: 40, color: C.amberDim, marginBottom: 16 }}>{ '◎' }</div>
+      <div style={{ fontSize: 18, fontWeight: 600, color: C.tx, marginBottom: 6 }}>{label}</div>
+      <div className="mono" style={{ fontSize: 13, color: C.txDim, letterSpacing: '.05em' }}>
+        {t('chronoAdmin.comingSoon')}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Props ────────────────────────────────────────────────────────────────── */
+interface Props {
+  currentUser: { id: string; name?: string; email: string; role?: string };
+}
+
+/* ─── Main component ──────────────────────────────────────────────────────── */
+function ChronoAdminPage({ currentUser }: Props) {
+  const { t } = useTranslation();
+  const [view, setView] = useState<Tab>('dashboard');
 
   return (
     <div className="ch">
       <style>{CSS}</style>
 
-      {/* ── Sidebar ─────────────────────────────────────────── */}
-      <div style={{ width: 220, flexShrink: 0, background: C.sf, borderRight: `1px solid ${C.bd}`, display: 'flex', flexDirection: 'column' }}>
-        {/* Logo */}
-        <div style={{ padding: '22px 20px', borderBottom: `1px solid ${C.bd}` }}>
-          <div className="mono" style={{ fontSize: 15, fontWeight: 700, color: C.amber, letterSpacing: '.05em' }}>
+      <div style={{ padding: '28px 32px' }}>
+        {/* ── Header ─────────────────────────────────────────── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <span className="mono" style={{ fontSize: 17, fontWeight: 700, color: C.amber, letterSpacing: '.05em' }}>
             CHRONO<span style={{ color: C.txDim }}>.</span>ADMIN
-          </div>
-          <div style={{ fontSize: 10, color: C.txMuted, marginTop: 3, letterSpacing: '.12em', textTransform: 'uppercase' }}>
-            {t('chronoAdmin.panelAdmin')}
-          </div>
+          </span>
         </div>
 
-        {/* Nav */}
-        <nav style={{ padding: '12px 10px', flex: 1 }}>
-          {NAV_ITEMS.map(item => (
-            <div key={item.id} className={`nav-item ${view === item.id ? 'active' : ''}`} onClick={() => setView(item.id)}>
-              <span className="mono" style={{ fontSize: 16 }}>{item.icon}</span>
-              <span style={{ flex: 1 }}>{t(item.labelKey)}</span>
-            </div>
+        {/* ── Tab bar ────────────────────────────────────────── */}
+        <div style={{
+          display: 'flex', gap: 4, marginBottom: 20,
+          background: C.sf, border: `1px solid ${C.bd}`,
+          borderRadius: 10, padding: 4, width: 'fit-content',
+        }}>
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setView(tab.id)}
+              style={{
+                background: view === tab.id ? C.amber : 'transparent',
+                color: view === tab.id ? '#000' : C.txDim,
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: 7,
+                fontSize: 13,
+                fontWeight: view === tab.id ? 600 : 500,
+                cursor: 'pointer',
+                fontFamily: "'IBM Plex Sans', sans-serif",
+                letterSpacing: '.02em',
+                transition: 'all .15s',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t(tab.labelKey)}
+            </button>
           ))}
-        </nav>
-
-        {/* Footer */}
-        <div style={{ padding: '14px 20px', borderTop: `1px solid ${C.bd}` }}>
-          <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.08em' }}>v1.0 · WorkSuite</div>
-        </div>
-      </div>
-
-      {/* ── Main ────────────────────────────────────────────── */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '28px 32px' }}>
-        {/* Breadcrumb */}
-        <div style={{ fontSize: 11, color: C.txMuted, fontFamily: "'IBM Plex Mono',monospace", letterSpacing: '.1em', marginBottom: 24 }}>
-          CHRONO.ADMIN / {t(NAV_ITEMS.find(n => n.id === view)?.labelKey || '').toUpperCase()}
         </div>
 
-        {view === 'equipo' && (
-          <EquipoHoyView fichajeRepo={fichajeRepo} />
-        )}
-        {view === 'fichajes' && (
-          <FichajesEquipoView fichajeRepo={fichajeRepo} />
-        )}
-        {view === 'aprobaciones' && (
-          <AprobacionesView fichajeRepo={fichajeRepo} vacacionRepo={vacacionRepo} currentUser={currentUser} />
-        )}
-        {view === 'vacaciones' && (
-          <GestionVacacionesView vacacionRepo={vacacionRepo} />
-        )}
-        {view === 'informes' && (
-          <InformesEmpresaView />
-        )}
+        {/* ── View content ───────────────────────────────────── */}
+        <div className="fade-in" key={view}>
+          {view === 'dashboard' && (
+            <ComingSoonPlaceholder label={t('chronoAdmin.dashboard')} />
+          )}
+
+          {view === 'empleados' && (
+            <ComingSoonPlaceholder label={t('chronoAdmin.empleados')} />
+          )}
+
+          {view === 'equipos' && (
+            <ComingSoonPlaceholder label={t('chronoAdmin.equipos')} />
+          )}
+
+          {view === 'aprobaciones' && (
+            <AprobacionesView
+              fichajeRepo={fichajeRepo}
+              vacacionRepo={vacacionRepo}
+              currentUser={currentUser}
+            />
+          )}
+
+          {view === 'jira' && (
+            <ComingSoonPlaceholder label={t('chronoAdmin.jira')} />
+          )}
+
+          {view === 'informes' && (
+            <InformesEmpresaView />
+          )}
+
+          {view === 'config' && (
+            <ComingSoonPlaceholder label={t('chronoAdmin.configuracion')} />
+          )}
+        </div>
       </div>
     </div>
   );
 }
+
+export { ChronoAdminPage };

@@ -12,6 +12,7 @@ import { RegistrosView } from './views/RegistrosView';
 import { IncompletosView } from './views/IncompletosView';
 import { VacacionesView } from './views/VacacionesView';
 import { AlarmasView } from './views/AlarmasView';
+import { useNotificaciones } from './hooks/useNotificaciones';
 
 const fichajeRepo = new FichajeSupabaseRepository(supabase);
 const bolsaRepo = new BolsaHorasSupabaseRepository(supabase);
@@ -98,6 +99,8 @@ export function ChronoPage({ currentUser }: Props) {
   const { t } = useTranslation();
   const [view, setView] = useState<Tab>('dashboard');
   const [incompletosCount, setIncompletosCount] = useState(0);
+  const [showNotifs, setShowNotifs] = useState(false);
+  const { notifs, unread, marcarLeida } = useNotificaciones(currentUser?.id);
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -110,14 +113,20 @@ export function ChronoPage({ currentUser }: Props) {
 
       {/* ── Sidebar ─────────────────────────────────────────── */}
       <div style={{ width: 220, flexShrink: 0, background: C.sf, borderRight: `1px solid ${C.bd}`, display: 'flex', flexDirection: 'column' }}>
-        {/* Logo */}
-        <div style={{ padding: '22px 20px', borderBottom: `1px solid ${C.bd}` }}>
-          <div className="mono" style={{ fontSize: 15, fontWeight: 700, color: C.amber, letterSpacing: '.05em' }}>
-            CHRONO<span style={{ color: C.txDim }}>.</span>WORK
+        {/* Logo + Notification bell */}
+        <div style={{ padding: '18px 20px', borderBottom: `1px solid ${C.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div className="mono" style={{ fontSize: 15, fontWeight: 700, color: C.amber, letterSpacing: '.05em' }}>
+              CHRONO<span style={{ color: C.txDim }}>.</span>WORK
+            </div>
+            <div style={{ fontSize: 10, color: C.txMuted, marginTop: 3, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+              {t('chrono.title')}
+            </div>
           </div>
-          <div style={{ fontSize: 10, color: C.txMuted, marginTop: 3, letterSpacing: '.12em', textTransform: 'uppercase' }}>
-            {t('chrono.title')}
-          </div>
+          <button onClick={() => setShowNotifs(v => !v)} style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: C.txDim, padding: 4 }}>
+            🔔
+            {unread > 0 && <span style={{ position: 'absolute', top: -2, right: -4, width: 16, height: 16, borderRadius: '50%', background: C.red, color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unread}</span>}
+          </button>
         </div>
 
         {/* Nav */}
@@ -153,6 +162,33 @@ export function ChronoPage({ currentUser }: Props) {
         {view === 'alarmas' && <AlarmasView alarmaRepo={alarmaRepo} currentUser={currentUser} />}
         {view === 'informes' && <InformesPlaceholder />}
       </div>
+
+      {/* ── Notifications panel ────────────────────────────── */}
+      {showNotifs && (
+        <div style={{ position: 'fixed', top: 0, right: 0, width: 340, height: '100vh', background: C.sf, borderLeft: `1px solid ${C.bd}`, zIndex: 100, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 30px rgba(0,0,0,.4)' }}>
+          <div style={{ padding: '16px 18px', borderBottom: `1px solid ${C.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: C.amber, letterSpacing: '.05em' }}>
+              {t('chrono.alertas')} ({unread})
+            </span>
+            <button onClick={() => setShowNotifs(false)} style={{ background: 'none', border: 'none', color: C.txDim, cursor: 'pointer', fontSize: 18 }}>×</button>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: 10 }}>
+            {notifs.length === 0 && <div style={{ textAlign: 'center', padding: 30, color: C.txMuted, fontSize: 12 }}>{t('chrono.sinAlarmas')}</div>}
+            {notifs.map(n => (
+              <div key={n.id} onClick={() => { marcarLeida(n.id); if (n.link) setView(n.link.replace('/chrono?view=', '') as Tab); setShowNotifs(false); }}
+                style={{ padding: '12px 14px', borderRadius: 6, marginBottom: 6, cursor: 'pointer', background: n.leida ? 'transparent' : C.amberGlow, border: `1px solid ${n.leida ? C.bd : C.amberDim}`, transition: 'background .15s' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: n.tipo === 'warning' ? C.red : n.tipo === 'action' ? C.amber : C.txDim, textTransform: 'uppercase', letterSpacing: '.08em', fontFamily: "'IBM Plex Mono',monospace" }}>{n.tipo}</span>
+                  {!n.leida && <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.amber }} />}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.tx, marginBottom: 2 }}>{n.titulo}</div>
+                <div style={{ fontSize: 11, color: C.txDim, lineHeight: 1.4 }}>{n.mensaje}</div>
+                <div className="mono" style={{ fontSize: 9, color: C.txMuted, marginTop: 6 }}>{new Date(n.createdAt).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
