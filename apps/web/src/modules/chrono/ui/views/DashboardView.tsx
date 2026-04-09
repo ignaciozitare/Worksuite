@@ -7,10 +7,9 @@ import type { IBolsaHorasRepository } from '../../domain/ports/IBolsaHorasReposi
 import type { IIncidenciaRepository } from '../../domain/ports/IIncidenciaRepository';
 import type { Fichaje } from '../../domain/entities/Fichaje';
 import type { CategoriaIncidencia } from '../../domain/entities/Incidencia';
+import { supabase } from '@/shared/lib/supabaseClient';
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
-
-const JORNADA_MIN = 480; // 8 h in minutes
 
 function minutesWorkedSoFar(f: Fichaje | null): number {
   if (!f?.entradaAt) return 0;
@@ -124,20 +123,23 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, currentU
   const [showIncModal, setShowIncModal] = useState(false);
   const [incCategoria, setIncCategoria] = useState<CategoriaIncidencia>('medico');
   const [incDescripcion, setIncDescripcion] = useState('');
+  const [jornadaMin, setJornadaMin] = useState(480);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const clockRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /* ── Load data ──────────────────────────────────────────────────────────── */
   const loadData = useCallback(async () => {
     try {
-      const [hoy, incompletos, saldo] = await Promise.all([
+      const [hoy, incompletos, saldo, cfgRes] = await Promise.all([
         fichajeRepo.getFichajeHoy(currentUser.id),
         fichajeRepo.getFichajesIncompletos(currentUser.id),
         bolsaRepo.getSaldo(currentUser.id),
+        supabase.from('ch_config_empresa').select('horas_jornada_minutos').limit(1).single(),
       ]);
       setFichaje(hoy);
       setIncompletosCount(incompletos.length);
       setSaldoBolsa(saldo.saldoNeto);
+      if (cfgRes.data?.horas_jornada_minutos) setJornadaMin(cfgRes.data.horas_jornada_minutos);
       if (hoy) setSecondsNow(secondsWorkedSoFar(hoy));
     } catch {
       // silent
@@ -184,7 +186,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, currentU
   const canStartLunch = isOpen && !fichaje.comidaIniAt && !isOnLunch;
   const canClockOut = isOpen && !isOnLunch;
   const minutesNow = Math.floor(secondsNow / 60);
-  const pct = Math.min(100, Math.round((minutesNow / JORNADA_MIN) * 100));
+  const pct = Math.min(100, Math.round((minutesNow / jornadaMin) * 100));
   const timer = fmtHMS(secondsNow);
 
   /* Clock formatting */
@@ -255,7 +257,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, currentU
   if (incompletosCount > 0) {
     alerts.push({ color: C.red, text: `${t('chrono.fichajePendienteAlert')} (${incompletosCount})` });
   }
-  if (minutesNow > JORNADA_MIN) {
+  if (minutesNow > jornadaMin) {
     alerts.push({ color: C.amber, text: t('chrono.horasExcedidas') });
   }
 

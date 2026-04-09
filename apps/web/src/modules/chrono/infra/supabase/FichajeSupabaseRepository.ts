@@ -51,7 +51,8 @@ export class FichajeSupabaseRepository implements IFichajeRepository {
 
   async getResumenMes(userId: string, mes: string): Promise<ResumenMes> {
     const fichajes = await this.getFichajesMes(userId, mes);
-    const JORNADA = 480;
+    const { data: cfg } = await this.db.from('ch_config_empresa').select('horas_jornada_minutos').limit(1).single();
+    const JORNADA = cfg?.horas_jornada_minutos ?? 480;
     const completos = fichajes.filter(f => f.estado === 'completo' || f.estado === 'aprobado');
     const minutosTotales = completos.reduce((acc, f) => acc + (f.minutosTrabajados ?? 0), 0);
     return {
@@ -106,8 +107,15 @@ export class FichajeSupabaseRepository implements IFichajeRepository {
     if (fetchErr) throw fetchErr;
     if (!current) throw new Error('Fichaje not found');
     const minutos = calcMinutos(current, salidaAt);
+
+    // Read jornada config to determine if shift is complete
+    const { data: cfg } = await this.db.from('ch_config_empresa').select('horas_jornada_minutos').limit(1).single();
+    const jornadaMin = cfg?.horas_jornada_minutos ?? 480;
+    // If worked less than jornada (with 10min tolerance), mark as incompleto
+    const estado = minutos >= (jornadaMin - 10) ? 'completo' : 'incompleto';
+
     const { data, error } = await this.db.from('ch_fichajes').update({
-      salida_at: salidaAt, estado: 'completo', geo_salida: geo ?? null, minutos_trabajados: minutos,
+      salida_at: salidaAt, estado, geo_salida: geo ?? null, minutos_trabajados: minutos,
     }).eq('id', fichajeId).select().single();
     if (error) throw error;
     return toFichaje(data);

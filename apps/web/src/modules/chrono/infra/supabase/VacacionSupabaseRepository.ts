@@ -61,6 +61,12 @@ export class VacacionSupabaseRepository implements IVacacionRepository {
   async solicitar(
     data: Omit<Vacacion, 'id' | 'estado' | 'aprobadoPor' | 'aprobadoAt' | 'rechazadoRazon'>,
   ): Promise<Vacacion> {
+    // Validate: only current year or next year allowed
+    const currentYear = new Date().getFullYear();
+    const requestYear = new Date(data.fechaInicio).getFullYear();
+    if (requestYear < currentYear || requestYear > currentYear + 1) {
+      throw new Error('Solo se pueden solicitar vacaciones del año en curso o el siguiente.');
+    }
     const { data: row, error } = await this.db.from('ch_vacaciones').insert({
       user_id: data.userId,
       tipo: data.tipo,
