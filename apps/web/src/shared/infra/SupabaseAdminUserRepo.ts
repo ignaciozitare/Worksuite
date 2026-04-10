@@ -35,6 +35,11 @@ export class SupabaseAdminUserRepo implements AdminUserPort {
     if (error) throw error;
   }
 
+  async updateExportPresets(userId: string, presets: unknown[]): Promise<void> {
+    const { error } = await this.db.from('users').update({ export_presets: presets }).eq('id', userId);
+    if (error) throw error;
+  }
+
   async createUser(payload: { name: string; email: string; password: string; role: string; desk_type: string }): Promise<any> {
     const session = await this.db.auth.getSession();
     const token = session.data.session?.access_token;

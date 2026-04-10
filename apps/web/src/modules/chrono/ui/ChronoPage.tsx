@@ -8,6 +8,7 @@ import { BolsaHorasSupabaseRepository } from '../infra/supabase/BolsaHorasSupaba
 import { VacacionSupabaseRepository } from '../infra/supabase/VacacionSupabaseRepository';
 import { IncidenciaSupabaseRepository } from '../infra/supabase/IncidenciaSupabaseRepository';
 import { AlarmaSupabaseRepository } from '../infra/supabase/AlarmaSupabaseRepository';
+import { ConfigEmpresaSupabaseRepository } from '../infra/supabase/ConfigEmpresaSupabaseRepository';
 import { DashboardView } from './views/DashboardView';
 import { RegistrosView } from './views/RegistrosView';
 import { IncompletosView } from './views/IncompletosView';
@@ -19,6 +20,7 @@ const bolsaRepo = new BolsaHorasSupabaseRepository(supabase);
 const vacacionRepo = new VacacionSupabaseRepository(supabase);
 const incidenciaRepo = new IncidenciaSupabaseRepository(supabase);
 const alarmaRepo = new AlarmaSupabaseRepository(supabase);
+const configEmpresaRepo = new ConfigEmpresaSupabaseRepository(supabase);
 
 /* ─── Design tokens ─────────────────────────────────────────────────────────── */
 const C = {
@@ -168,7 +170,7 @@ export function ChronoPage({ currentUser }: Props) {
           CHRONO.WORK / {t(NAV_ITEMS.find(n => n.id === view)?.labelKey || '').toUpperCase()}
         </div>
 
-        {view === 'dashboard' && <DashboardView fichajeRepo={fichajeRepo} bolsaRepo={bolsaRepo} incidenciaRepo={incidenciaRepo} currentUser={currentUser} />}
+        {view === 'dashboard' && <DashboardView fichajeRepo={fichajeRepo} bolsaRepo={bolsaRepo} incidenciaRepo={incidenciaRepo} configEmpresaRepo={configEmpresaRepo} currentUser={currentUser} />}
         {view === 'registros' && <RegistrosView fichajeRepo={fichajeRepo} currentUser={currentUser} />}
         {view === 'incompletos' && <IncompletosView fichajeRepo={fichajeRepo} currentUser={currentUser} />}
         {view === 'vacaciones' && <VacacionesView vacacionRepo={vacacionRepo} currentUser={currentUser} />}

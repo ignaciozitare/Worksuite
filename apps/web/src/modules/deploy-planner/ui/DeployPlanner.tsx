@@ -8,6 +8,8 @@ import { RepoGroupService } from '../domain/services/RepoGroupService';
 import { SubtaskService } from '../domain/services/SubtaskService';
 import { JiraSubtaskAdapter } from '../infra/JiraSubtaskAdapter';
 import { SupabaseSubtaskConfigRepo } from '../infra/supabase/SupabaseSubtaskConfigRepo';
+import { SupabaseDeployConfigRepo } from '../infra/supabase/SupabaseDeployConfigRepo';
+import { SupabaseDeployReleaseRawRepo } from '../infra/supabase/SupabaseDeployReleaseRawRepo';
 
 /* ─── CSS ────────────────────────────────────────────────────── */
 const CSS = `
@@ -64,6 +66,8 @@ const datesOverlap = (s1, e1, s2, e2) => {
 
 const subtaskAdapter = new JiraSubtaskAdapter(API_BASE, authHeaders);
 const subtaskConfigRepo = new SupabaseSubtaskConfigRepo(supabase);
+const deployConfigRepo = new SupabaseDeployConfigRepo(supabase);
+const releaseRawRepo = new SupabaseDeployReleaseRawRepo(supabase);
 
 const SLabel = ({children, style={}}) => (
   <div style={{fontSize:9,fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"var(--dp-tx3,#334155)",...style}}>{children}</div>
@@ -492,8 +496,8 @@ function ReleaseDetail({ rel, tickets, statusCfg, repoGroups, allReleases, onBac
     setTicketStatuses(updated);
     setSyncing(s=>({...s,[key]:true}));
 
-    // Persist to Supabase
-    await supabase.from("dp_releases").update({ticket_statuses:updated}).eq("id",rel.id);
+    // Persist via repo (snake_case raw)
+    await releaseRawRepo.updateRaw(rel.id, { ticket_statuses: updated });
     onUpdRelease({ticket_statuses:updated});
 
     // Sync to Jira
@@ -1022,12 +1026,12 @@ export function DeployPlanner({ currentUser }) {
 
   async function load() {
     setLoading(true);
-    const [{ data:rels }, { data:statuses }, { data:ssoData }, { data:groups }, { data:verCfg }] = await Promise.all([
-      supabase.from("dp_releases").select("*").order("start_date",{ascending:true}),
-      supabase.from("dp_release_statuses").select("*").order("ord",{ascending:true}),
-      supabase.from("sso_config").select("deploy_jira_statuses").limit(1).single(),
-      supabase.from("dp_repo_groups").select("*").order("name"),
-      supabase.from("dp_version_config").select("*").limit(1).single(),
+    const [rels, statuses, deployJiraStatuses, groups, verCfg] = await Promise.all([
+      releaseRawRepo.listRaw(),
+      deployConfigRepo.findAllStatuses(),
+      deployConfigRepo.getJiraDeployStatuses(),
+      deployConfigRepo.findAllRepoGroups(),
+      deployConfigRepo.getVersionConfig(),
     ]);
     setRepoGroups(groups||[]);
     setVersionCfg(verCfg || { prefix:"v", segments:[{name:"major",value:1},{name:"minor",value:0},{name:"patch",value:0}], separator:"." });
@@ -1044,7 +1048,7 @@ export function DeployPlanner({ currentUser }) {
     setStatusCfg(cfg);
     setLoading(false);
     // Load Jira connection + tickets in parallel
-    fetchJiraTickets(ssoData?.deploy_jira_statuses, verCfg);
+    fetchJiraTickets(deployJiraStatuses, verCfg);
   }
 
   async function fetchJiraTickets(rawStatuses, cfgOverride) {
@@ -1053,8 +1057,7 @@ export function DeployPlanner({ currentUser }) {
     try {
       // Si no hay args (refresh manual), leer de DB
       if(rawStatuses === undefined) {
-        const { data:sso } = await supabase.from("sso_config").select("deploy_jira_statuses").limit(1).single();
-        rawStatuses = sso?.deploy_jira_statuses;
+        rawStatuses = await deployConfigRepo.getJiraDeployStatuses();
       }
       const targetStatuses = (rawStatuses || "Ready to Production")
         .split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
@@ -1147,21 +1150,21 @@ export function DeployPlanner({ currentUser }) {
 
   const upd = async (id, patch) => {
     setReleases(rs=>rs.map(r=>r.id===id?{...r,...patch}:r));
-    await supabase.from("dp_releases").update(patch).eq("id",id);
+    await releaseRawRepo.updateRaw(id, patch);
   };
 
   const addRelease = async () => {
     const last=releases[releases.length-1];
     const firstStatus=Object.keys(statusCfg)[0]||"Planned";
     const newRel={ release_number:"", description:"", status:firstStatus, start_date:last?addD(last.end_date||fmt(today),2):fmt(today), end_date:last?addD(last.end_date||fmt(today),7):addD(fmt(today),5), ticket_ids:[], ticket_statuses:{}, created_by:currentUser.id };
-    const { data } = await supabase.from("dp_releases").insert(newRel).select().single();
+    const data = await releaseRawRepo.insertRaw(newRel);
     if(data) setReleases(rs=>[...rs,data]);
   };
 
   const delRelease = async (id) => {
     if(!confirm("¿Eliminar esta release?")) return;
     setReleases(rs=>rs.filter(r=>r.id!==id));
-    await supabase.from("dp_releases").delete().eq("id",id);
+    await releaseRawRepo.deleteRaw(id);
   };
 
   const handleDrop = (targetId) => {

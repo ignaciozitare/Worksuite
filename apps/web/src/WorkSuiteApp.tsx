@@ -18,9 +18,11 @@ import { BuildingFloorSelectors } from './shared/admin';
 import { NotificationsBell } from './shared/ui/NotificationsBell';
 import { UserMenu } from './shared/ui/UserMenu';
 import { SupabaseNotificationRepo } from './shared/infra/SupabaseNotificationRepo';
+import { SupabaseAdminUserRepo } from './shared/infra/SupabaseAdminUserRepo';
 import { supabase as supabaseClient } from './shared/lib/supabaseClient';
 
 const notificationRepo = new SupabaseNotificationRepo(supabaseClient);
+const adminUserRepo = new SupabaseAdminUserRepo(supabaseClient);
 
 // Module UI — lazy loaded (per-route)
 const AdminShell = lazy(() => import('./shared/admin/AdminShell').then(m => ({ default: m.AdminShell })));
@@ -357,6 +359,7 @@ function WorkSuiteApp() {
           currentUserId={CURRENT_USER?.id ?? ''}
           initialPresets={exportPresets}
           onPresetsChange={setExportPresets}
+          adminUserRepo={adminUserRepo}
           dateFrom={exportModal.from}
           dateTo={exportModal.to}
         />

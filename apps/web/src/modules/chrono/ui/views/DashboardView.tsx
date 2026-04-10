@@ -5,9 +5,9 @@ import { CHRONO_COLORS as C } from '../ChronoPage';
 import type { IFichajeRepository } from '../../domain/ports/IFichajeRepository';
 import type { IBolsaHorasRepository } from '../../domain/ports/IBolsaHorasRepository';
 import type { IIncidenciaRepository } from '../../domain/ports/IIncidenciaRepository';
+import type { IConfigEmpresaRepository } from '../../domain/ports/IConfigEmpresaRepository';
 import type { Fichaje } from '../../domain/entities/Fichaje';
 import type { CategoriaIncidencia } from '../../domain/entities/Incidencia';
-import { supabase } from '@/shared/lib/supabaseClient';
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 
@@ -103,10 +103,11 @@ interface DashboardViewProps {
   fichajeRepo: IFichajeRepository;
   bolsaRepo: IBolsaHorasRepository;
   incidenciaRepo: IIncidenciaRepository;
+  configEmpresaRepo: IConfigEmpresaRepository;
   currentUser: { id: string; name?: string; [key: string]: unknown };
 }
 
-export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, currentUser }: DashboardViewProps) {
+export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEmpresaRepo, currentUser }: DashboardViewProps) {
   const { t } = useTranslation();
 
   /* ── State ──────────────────────────────────────────────────────────────── */
@@ -130,23 +131,23 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, currentU
   /* ── Load data ──────────────────────────────────────────────────────────── */
   const loadData = useCallback(async () => {
     try {
-      const [hoy, incompletos, saldo, cfgRes] = await Promise.all([
+      const [hoy, incompletos, saldo, horasJornada] = await Promise.all([
         fichajeRepo.getFichajeHoy(currentUser.id),
         fichajeRepo.getFichajesIncompletos(currentUser.id),
         bolsaRepo.getSaldo(currentUser.id),
-        supabase.from('ch_config_empresa').select('horas_jornada_minutos').limit(1).single(),
+        configEmpresaRepo.getHorasJornadaMinutos(),
       ]);
       setFichaje(hoy);
       setIncompletosCount(incompletos.length);
       setSaldoBolsa(saldo.saldoNeto);
-      if (cfgRes.data?.horas_jornada_minutos) setJornadaMin(cfgRes.data.horas_jornada_minutos);
+      if (horasJornada != null) setJornadaMin(horasJornada);
       if (hoy) setSecondsNow(secondsWorkedSoFar(hoy));
     } catch {
       // silent
     } finally {
       setLoading(false);
     }
-  }, [fichajeRepo, bolsaRepo, currentUser.id]);
+  }, [fichajeRepo, bolsaRepo, configEmpresaRepo, currentUser.id]);
 
   useEffect(() => { loadData(); }, [loadData]);
 

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
-import { supabase } from '@/shared/lib/supabaseClient';
+import type { AdminUserPort } from '@/shared/domain/ports/AdminUserPort';
 
 // ── All available export fields ───────────────────────────────────────────────
 const ALL_FIELDS = [
@@ -40,12 +40,13 @@ interface ExportConfigModalProps {
   currentUserId: string;
   initialPresets: ExportPreset[];
   onPresetsChange: (presets: ExportPreset[]) => void;
+  adminUserRepo: AdminUserPort;
   /** Date range for display in filename hint. */
   dateFrom?: string;
   dateTo?: string;
 }
 
-export function ExportConfigModal({ onClose, onExport, currentUserId, initialPresets, onPresetsChange, dateFrom = '', dateTo = '' }: ExportConfigModalProps) {
+export function ExportConfigModal({ onClose, onExport, currentUserId, initialPresets, onPresetsChange, adminUserRepo, dateFrom = '', dateTo = '' }: ExportConfigModalProps) {
   const { t } = useTranslation();
   const [presets, setPresets] = useState<ExportPreset[]>(initialPresets);
   const [activePresetId, setActivePresetId] = useState<string | null>(presets[0]?.id ?? null);
@@ -92,7 +93,7 @@ export function ExportConfigModal({ onClose, onExport, currentUserId, initialPre
   const persistPresets = async (next: ExportPreset[]) => {
     setSaving(true);
     try {
-      await supabase.from('users').update({ export_presets: next }).eq('id', currentUserId);
+      await adminUserRepo.updateExportPresets(currentUserId, next);
       setPresets(next);
       onPresetsChange(next);
     } catch (e) { console.error('Save presets error', e); }

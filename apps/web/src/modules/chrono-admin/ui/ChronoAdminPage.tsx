@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { supabase } from '@/shared/lib/supabaseClient';
+import { SupabaseUserRepo } from '@/shared/infra/SupabaseUserRepo';
 import { AdminFichajeSupabaseRepository } from '../infra/supabase/AdminFichajeSupabaseRepository';
 import { AdminVacacionSupabaseRepository } from '../infra/supabase/AdminVacacionSupabaseRepository';
 import { ConfigSupabaseRepository } from '../infra/supabase/ConfigSupabaseRepository';
@@ -27,6 +28,7 @@ const empleadoConfigRepo = new EmpleadoConfigSupabaseRepository(supabase);
 const fichaEmpleadoRepo = new FichaEmpleadoSupabaseRepository(supabase);
 const notificacionRepo = new NotificacionSupabaseRepository(supabase);
 const jiraResumenRepo = new JiraResumenSupabaseRepository(supabase);
+const userRepo = new SupabaseUserRepo(supabase);
 
 /* ─── Design tokens ───────────────────────────────────────────────────────── */
 const C = {
@@ -123,8 +125,9 @@ function ChronoAdminPage({ currentUser }: Props) {
 
   // Load all users for team/employee management
   useEffect(() => {
-    supabase.from('users').select('id, name, email, role, active').eq('active', true)
-      .then(({ data }) => { if (data) setUsers(data); });
+    userRepo.findAll()
+      .then(rows => setUsers(rows.filter(u => u.active)))
+      .catch(err => console.error('Error loading users:', err));
   }, []);
 
   return (

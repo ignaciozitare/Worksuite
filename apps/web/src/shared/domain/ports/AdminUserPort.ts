@@ -5,5 +5,6 @@ export interface AdminUserPort {
   updateActive(userId: string, active: boolean): Promise<void>;
   updateDeskType(userId: string, deskType: string): Promise<void>;
   updateModules(userId: string, modules: string[]): Promise<void>;
+  updateExportPresets(userId: string, presets: unknown[]): Promise<void>;
   createUser(payload: { name: string; email: string; password: string; role: string; desk_type: string }): Promise<any>;
 }
