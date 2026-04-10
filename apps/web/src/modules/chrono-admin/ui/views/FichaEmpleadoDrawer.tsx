@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from '@worksuite/i18n';
 import type { IFichaEmpleadoRepository } from '../../domain/ports/IFichaEmpleadoRepository';
 import type { FichaEmpleado } from '../../domain/entities/FichaEmpleado';
@@ -92,7 +93,7 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
     textTransform: 'uppercase', letterSpacing: '.08em', fontWeight: 600,
   };
 
-  return (
+  return createPortal(
     <>
       {/* Overlay */}
       <div
@@ -260,6 +261,7 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
           </button>
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 }
