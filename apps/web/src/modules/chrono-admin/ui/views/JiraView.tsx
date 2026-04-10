@@ -78,6 +78,7 @@ export function JiraView({ jiraRepo, notifRepo }: Props) {
         tipo: 'warning',
         titulo: t('chronoAdmin.reminderTitle'),
         mensaje: t('chronoAdmin.reminderMessage', { nombre: emp.nombre, horas: fmtHours(Math.abs(emp.diferencia)) }),
+        link: '/chrono?view=incompletos',
       });
     } catch (err) {
       console.error('Error sending reminder:', err);
@@ -97,6 +98,7 @@ export function JiraView({ jiraRepo, notifRepo }: Props) {
           tipo: 'warning',
           titulo: t('chronoAdmin.reminderTitle'),
           mensaje: t('chronoAdmin.reminderBulkMessage'),
+          link: '/chrono?view=incompletos',
         },
       );
     } catch (err) {

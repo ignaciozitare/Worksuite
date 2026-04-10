@@ -16,6 +16,7 @@ import { ExportConfigModal, exportWithColumns } from './modules/jira-tracker/ui/
 import { BlueprintHDMap, HDTableView, HDReserveModal } from './modules/hotdesk/ui';
 import { BuildingFloorSelectors } from './shared/admin';
 import { NotificationsBell } from './shared/ui/NotificationsBell';
+import { UserMenu } from './shared/ui/UserMenu';
 
 // Module UI — lazy loaded (per-route)
 const AdminShell = lazy(() => import('./shared/admin/AdminShell').then(m => ({ default: m.AdminShell })));
@@ -24,6 +25,7 @@ const DeployPlanner = lazy(() => import('./modules/deploy-planner/ui/DeployPlann
 const EnvTracker = lazy(() => import('./modules/environments/ui/EnvironmentsView').then(m => ({ default: m.EnvironmentsView })));
 const ChronoPage = lazy(() => import('./modules/chrono').then(m => ({ default: m.ChronoPage })));
 const ChronoAdminPage = lazy(() => import('./modules/chrono-admin').then(m => ({ default: m.ChronoAdminPage })));
+const ProfilePage = lazy(() => import('./modules/profile').then(m => ({ default: m.ProfilePage })));
 
 // Domain
 import { CsvService } from './modules/jira-tracker/domain/services/CsvService';
@@ -47,6 +49,7 @@ function WorkSuiteApp() {
             : location.pathname.startsWith('/envtracker')    ? 'envtracker'
             : location.pathname.startsWith('/chrono-admin')  ? 'chrono-admin'
             : location.pathname.startsWith('/chrono')        ? 'chrono'
+            : location.pathname.startsWith('/profile')       ? 'profile'
             : location.pathname.startsWith('/admin')         ? 'admin'
             : 'jt';
 
@@ -225,21 +228,24 @@ function WorkSuiteApp() {
               )}
             </div>
             <div className="top-right">
-              <div className="sw-group">
-                <button className={`sw-btn ${theme === "dark" ? "active-theme" : ""}`} onClick={() => setTheme("dark")}>🌙</button>
-                <button className={`sw-btn ${theme === "light" ? "active-theme" : ""}`} onClick={() => setTheme("light")}>☀️</button>
-              </div>
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                title={theme === "dark" ? t("theme.switchToLight") : t("theme.switchToDark")}
+                style={{
+                  background: 'transparent', border: '1px solid var(--bd)',
+                  borderRadius: 'var(--r)', cursor: 'pointer', fontSize: 14,
+                  color: 'var(--tx2)', padding: '4px 10px', height: 28,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                {theme === "dark" ? "🌙" : "☀️"}
+              </button>
               <div className="sw-group">
                 <button className={`sw-btn ${locale === "en" ? "active" : ""}`} onClick={() => setLocale("en")}>EN</button>
                 <button className={`sw-btn ${locale === "es" ? "active" : ""}`} onClick={() => setLocale("es")}>ES</button>
               </div>
               <NotificationsBell userId={CURRENT_USER.id} />
               <div className="o-dot" />
-              <div className="avatar">{CURRENT_USER.avatar}</div>
-              <span className="u-name">{CURRENT_USER.name}</span>
-              <span className={`r-tag ${CURRENT_USER.role === "admin" ? "r-admin" : "r-user"}`}>
-                {CURRENT_USER.role === "admin" ? t("admin.roleAdmin") : t("admin.roleUser")}
-              </span>
               <button onClick={() => navigate('/admin')}
                 style={{
                   background: view === "admin" ? "var(--ac)" : "rgba(79,110,247,.15)",
@@ -255,14 +261,12 @@ function WorkSuiteApp() {
                 </svg>
                 {isAdmin ? t('nav.admin') : t('nav.config')}
               </button>
-              <button onClick={logout} style={{ background: "transparent", border: "1px solid var(--bd)", borderRadius: "var(--r)", color: "var(--tx3)", fontSize: 10, padding: "3px 8px", cursor: "pointer", fontWeight: 600 }}>
-                {t('auth.logout')}
-              </button>
+              <UserMenu user={CURRENT_USER} onLogout={logout} />
             </div>
           </header>
 
           {/* ── Sub-nav ─────────────────────────────────────────── */}
-          {mod !== "retro" && mod !== "deploy" && mod !== "envtracker" && mod !== "chrono" && mod !== "chrono-admin" && (
+          {mod !== "retro" && mod !== "deploy" && mod !== "envtracker" && mod !== "chrono" && mod !== "chrono-admin" && mod !== "profile" && (
             <nav className="nav-bar">
               {currentNavItems.map(item => (
                 <button key={item.id}
@@ -325,6 +329,11 @@ function WorkSuiteApp() {
               {mod === "chrono-admin" && (
                 <main className="content" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
                   <ChronoAdminPage currentUser={CURRENT_USER} />
+                </main>
+              )}
+              {mod === "profile" && (
+                <main className="content" style={{ padding: 0, overflow: "auto" }}>
+                  <ProfilePage />
                 </main>
               )}
               {view === "admin" && <AdminShell users={users} setUsers={setUsers} hd={hd} setHd={setHd} currentUser={CURRENT_USER} theme={theme} />}

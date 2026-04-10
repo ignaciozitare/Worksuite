@@ -618,6 +618,25 @@
     "sonidoAlert":        "Alerta",
     "sonidoNone":         "Ninguno"
   },
+  "userMenu": {
+    "profile":  "Mi perfil",
+    "settings": "Ajustes",
+    "logout":   "Cerrar sesión"
+  },
+  "theme": {
+    "switchToLight": "Cambiar a modo claro",
+    "switchToDark":  "Cambiar a modo oscuro"
+  },
+  "profile": {
+    "title":          "Mi perfil",
+    "subtitle":       "Tu información personal y de cuenta",
+    "detailsSection": "Detalles",
+    "name":           "Nombre",
+    "email":          "Email",
+    "role":           "Rol",
+    "deskType":       "Tipo de puesto",
+    "comingSoon":     "Pronto: estadísticas de horas, vacaciones y más"
+  },
   "chronoAdmin": {
     "equipoHoy":          "Equipo hoy",
     "fichajesEquipo":     "Fichajes equipo",
@@ -769,6 +788,7 @@
     "quitar":             "Quitar",
     "reminderBulkMessage":"Se enviarán recordatorios a todos los empleados con déficit",
     "reminderTitle":      "Recordatorio",
+    "reminderMessage":    "Tienes {{horas}} de fichajes incompletos. Por favor revísalos.",
     "seleccionarManager": "Seleccionar manager",
     "sinAlertas":         "Sin alertas",
     "sinConfigurar":      "Sin configurar",

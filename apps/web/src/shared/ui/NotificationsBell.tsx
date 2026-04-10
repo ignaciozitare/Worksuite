@@ -27,8 +27,8 @@ export function NotificationsBell({ userId }: Props) {
   function handleClick(n: any) {
     marcarLeida(n.id);
     if (n.link) {
-      const path = n.link.split('?')[0];
-      if (path) navigate(path);
+      // navigate accepts "/path?query=value" — preserves search params
+      navigate(n.link);
     }
     setOpen(false);
   }

@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from '@worksuite/i18n';
 import { supabase } from '@/shared/lib/supabaseClient';
 import { FichajeSupabaseRepository } from '../infra/supabase/FichajeSupabaseRepository';
@@ -94,10 +95,31 @@ const NAV_ITEMS: { id: Tab; labelKey: string; icon: string; badge?: boolean }[] 
 
 interface Props { currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown }; }
 
+const VALID_TABS: Tab[] = ['dashboard', 'registros', 'incompletos', 'vacaciones', 'alarmas', 'informes'];
+
 export function ChronoPage({ currentUser }: Props) {
   const { t } = useTranslation();
-  const [view, setView] = useState<Tab>('dashboard');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialView: Tab = (() => {
+    const v = searchParams.get('view');
+    return v && (VALID_TABS as string[]).includes(v) ? (v as Tab) : 'dashboard';
+  })();
+  const [view, setViewState] = useState<Tab>(initialView);
   const [incompletosCount, setIncompletosCount] = useState(0);
+
+  // Sync URL → state when navigating to a new ?view
+  useEffect(() => {
+    const v = searchParams.get('view');
+    if (v && (VALID_TABS as string[]).includes(v) && v !== view) {
+      setViewState(v as Tab);
+    }
+  }, [searchParams]);
+
+  // Sync state → URL when user clicks tabs
+  const setView = (next: Tab) => {
+    setViewState(next);
+    setSearchParams(next === 'dashboard' ? {} : { view: next }, { replace: true });
+  };
 
   useEffect(() => {
     if (!currentUser?.id) return;

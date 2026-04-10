@@ -618,6 +618,25 @@
     "sonidoAlert":        "Alert",
     "sonidoNone":         "None"
   },
+  "userMenu": {
+    "profile":  "My profile",
+    "settings": "Settings",
+    "logout":   "Log out"
+  },
+  "theme": {
+    "switchToLight": "Switch to light mode",
+    "switchToDark":  "Switch to dark mode"
+  },
+  "profile": {
+    "title":          "My profile",
+    "subtitle":       "Your personal and account information",
+    "detailsSection": "Details",
+    "name":           "Name",
+    "email":          "Email",
+    "role":           "Role",
+    "deskType":       "Desk type",
+    "comingSoon":     "Coming soon: hour stats, vacation balance and more"
+  },
   "chronoAdmin": {
     "equipoHoy":          "Team today",
     "fichajesEquipo":     "Team records",
@@ -769,6 +788,7 @@
     "quitar":             "Remove",
     "reminderBulkMessage":"Reminders will be sent to all employees with a deficit",
     "reminderTitle":      "Reminder",
+    "reminderMessage":    "You have {{horas}} of incomplete clock-ins. Please review them.",
     "seleccionarManager": "Select manager",
     "sinAlertas":         "No alerts",
     "sinConfigurar":      "Not configured",
