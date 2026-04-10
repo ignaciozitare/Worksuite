@@ -15,6 +15,7 @@ import { LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView, Rec
 import { ExportConfigModal, exportWithColumns } from './modules/jira-tracker/ui/ExportConfigModal';
 import { BlueprintHDMap, HDTableView, HDReserveModal } from './modules/hotdesk/ui';
 import { BuildingFloorSelectors } from './shared/admin';
+import { NotificationsBell } from './shared/ui/NotificationsBell';
 
 // Module UI — lazy loaded (per-route)
 const AdminShell = lazy(() => import('./shared/admin/AdminShell').then(m => ({ default: m.AdminShell })));
@@ -232,6 +233,7 @@ function WorkSuiteApp() {
                 <button className={`sw-btn ${locale === "en" ? "active" : ""}`} onClick={() => setLocale("en")}>EN</button>
                 <button className={`sw-btn ${locale === "es" ? "active" : ""}`} onClick={() => setLocale("es")}>ES</button>
               </div>
+              <NotificationsBell userId={CURRENT_USER.id} />
               <div className="o-dot" />
               <div className="avatar">{CURRENT_USER.avatar}</div>
               <span className="u-name">{CURRENT_USER.name}</span>
