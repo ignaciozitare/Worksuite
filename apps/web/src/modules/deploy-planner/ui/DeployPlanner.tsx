@@ -10,6 +10,7 @@ import { JiraSubtaskAdapter } from '../infra/JiraSubtaskAdapter';
 import { SupabaseSubtaskConfigRepo } from '../infra/supabase/SupabaseSubtaskConfigRepo';
 import { SupabaseDeployConfigRepo } from '../infra/supabase/SupabaseDeployConfigRepo';
 import { SupabaseDeployReleaseRawRepo } from '../infra/supabase/SupabaseDeployReleaseRawRepo';
+import { HttpJiraApiAdapter } from '@/shared/infra/HttpJiraApiAdapter';
 
 /* ─── CSS ────────────────────────────────────────────────────── */
 const CSS = `
@@ -68,6 +69,7 @@ const subtaskAdapter = new JiraSubtaskAdapter(API_BASE, authHeaders);
 const subtaskConfigRepo = new SupabaseSubtaskConfigRepo(supabase);
 const deployConfigRepo = new SupabaseDeployConfigRepo(supabase);
 const releaseRawRepo = new SupabaseDeployReleaseRawRepo(supabase);
+const jiraApi = new HttpJiraApiAdapter(API_BASE, authHeaders);
 
 const SLabel = ({children, style={}}) => (
   <div style={{fontSize:9,fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"var(--dp-tx3,#334155)",...style}}>{children}</div>
@@ -101,13 +103,7 @@ async function jiraTransition(issueKey, appStatus) {
   const statusMap = { in_progress:"In Progress", in_review:"In Review", done:"Done", merged:"Merged" };
   const targetName = statusMap[appStatus];
   if (!targetName) return { ok:false, error:"Unknown status" };
-  try {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_BASE}/jira/issue/${issueKey}/transition`, {
-      method:"POST", headers, body: JSON.stringify({ targetStatus: targetName })
-    });
-    return res.ok ? { ok:true } : { ok:false, error:`HTTP ${res.status}` };
-  } catch(e) { return { ok:false, error:e.message }; }
+  return jiraApi.transitionIssue(issueKey, targetName);
 }
 
 /* ─── PLANNING — Release Card ────────────────────────────────── */
@@ -1062,33 +1058,25 @@ export function DeployPlanner({ currentUser }) {
       const targetStatuses = (rawStatuses || "Ready to Production")
         .split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
 
-      const headers = await authHeaders();
-
       // Paso 1: obtener proyectos + conexión Jira en paralelo
-      const [projRes, connRes] = await Promise.all([
-        fetch(`${API_BASE}/jira/projects`, { headers }),
-        fetch(`${API_BASE}/jira/connection`, { headers }).catch(() => null),
+      const [projectRows, connection] = await Promise.all([
+        jiraApi.listProjects(),
+        jiraApi.getConnection(),
       ]);
-      if(!projRes.ok) throw new Error(`No se pudieron cargar proyectos: HTTP ${projRes.status}`);
-      const projData = await projRes.json();
-      const projects = (projData.data || []).map(p => p.key || p.id).filter(Boolean);
+      const projects = projectRows.map(p => p.key || (p as any).id).filter(Boolean);
       // Set Jira base URL from connection
-      try {
-        if(connRes?.ok) { const cd = await connRes.json(); if(cd.ok && cd.data?.base_url) setJiraBaseUrl(cd.data.base_url.replace(/\/$/,"")); }
-      } catch {}
+      if(connection?.base_url) setJiraBaseUrl(connection.base_url.replace(/\/$/,""));
 
       if(projects.length === 0) throw new Error("No hay proyectos Jira configurados");
 
       // Paso 2: cargar issues de cada proyecto con el campo repo configurado
       const repoFieldName = cfg?.repo_jira_field || "components";
-      const extraFieldsParam = repoFieldName !== "components" ? `&extraFields=${repoFieldName}` : "";
+      const extraFields = repoFieldName !== "components" ? repoFieldName : undefined;
       const allIssues = [];
       await Promise.all(projects.map(async (project) => {
         try {
-          const res = await fetch(`${API_BASE}/jira/issues?project=${project}${extraFieldsParam}`, { headers });
-          if(!res.ok) return;
-          const data = await res.json();
-          allIssues.push(...(data.data || []));
+          const issues = await jiraApi.listIssues(project, extraFields);
+          allIssues.push(...issues);
         } catch { /* proyecto sin acceso, ignorar */ }
       }));
 

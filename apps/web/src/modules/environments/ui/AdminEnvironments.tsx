@@ -9,6 +9,7 @@ import { SupabaseEnvironmentRepo } from '../infra/supabase/SupabaseEnvironmentRe
 import { SupabaseReservationRepo } from '../infra/supabase/SupabaseReservationRepo';
 import { SupabaseReservationStatusRepo } from '../infra/supabase/SupabaseReservationStatusRepo';
 import { SupabaseJiraFilterConfigRepo } from '../infra/supabase/SupabaseJiraFilterConfigRepo';
+import { HttpJiraApiAdapter } from '@/shared/infra/HttpJiraApiAdapter';
 
 const envRepo = new SupabaseEnvironmentRepo(supabase);
 const resRepo = new SupabaseReservationRepo(supabase);
@@ -20,6 +21,7 @@ async function getAuthHeaders() {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
 }
+const jiraApi = new HttpJiraApiAdapter(API_BASE, getAuthHeaders);
 
 // ── Admin: Filtro Jira (pre-selección de tickets mostrados en reserva) ──────
 export function AdminEnvJiraFilter() {
@@ -36,19 +38,18 @@ export function AdminEnvJiraFilter() {
     let cancelled = false;
     (async () => {
       try {
-        const headers = await getAuthHeaders();
-        const [cfg, projRes, typesRes, stRes] = await Promise.all([
+        const [cfg, projects, issueTypes, statuses] = await Promise.all([
           jiraFilterRepo.get(),
-          fetch(`${API_BASE}/jira/projects`, { headers }).then(r => r.json()).catch(() => ({})),
-          fetch(`${API_BASE}/jira/issuetypes`, { headers }).then(r => r.json()).catch(() => ({})),
-          fetch(`${API_BASE}/jira/statuses`, { headers }).then(r => r.json()).catch(() => ({})),
+          jiraApi.listProjects().catch(() => []),
+          jiraApi.listIssueTypes().catch(() => []),
+          jiraApi.listStatuses().catch(() => []),
         ]);
         if (cancelled) return;
         setConfig(cfg);
-        setProjects((projRes?.data || []).map(p => ({ key: p.key, name: p.name })));
+        setProjects(projects.map(p => ({ key: p.key, name: p.name })));
         // Include ALL issue types (including subtasks)
-        setIssueTypes((typesRes?.issueTypes || []));
-        setStatuses(statusesDedup(stRes?.statuses || []));
+        setIssueTypes(issueTypes);
+        setStatuses(statusesDedup(statuses));
       } catch (err) {
         console.error('[AdminEnvJiraFilter]', err);
       } finally { if (!cancelled) setLoading(false); }

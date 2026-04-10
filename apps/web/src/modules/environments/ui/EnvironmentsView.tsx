@@ -18,6 +18,7 @@ import { GetEnvironments }         from '../domain/useCases/GetEnvironments';
 import { GetReservations }         from '../domain/useCases/GetReservations';
 import { UpsertReservation }       from '../domain/useCases/UpsertReservation';
 import { UpdateReservationStatus } from '../domain/useCases/UpdateReservationStatus';
+import { HttpJiraApiAdapter }      from '@/shared/infra/HttpJiraApiAdapter';
 
 // ── Use-cases ────────────────────────────────────────────────────────────────
 const envRepo  = new SupabaseEnvironmentRepo(supabase);
@@ -33,6 +34,7 @@ async function getAuthHeaders() {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
 }
+const jiraApi = new HttpJiraApiAdapter(API_BASE, getAuthHeaders);
 const historyRepo        = new SupabaseReservationHistoryRepo(supabase);
 const jiraConfigRepo     = new SupabaseJiraConfigRepo(supabase);
 const statusRepo         = new SupabaseReservationStatusRepo(supabase);
@@ -620,15 +622,11 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
       if (cfg.issueTypes.length)  parts.push(`issuetype in (${cfg.issueTypes.map(n=>`"${n}"`).join(',')})`);
       if (cfg.statuses.length)    parts.push(`status in (${cfg.statuses.map(n=>`"${n}"`).join(',')})`);
       const jql = (parts.length ? parts.join(' AND ') + ' ' : '') + 'ORDER BY updated DESC';
-      const params = new URLSearchParams({
+      const raw = await jiraApi.searchIssues({
         jql,
-        maxResults: '200',
+        maxResults: 200,
         fields: `summary,issuetype,status,${repoField}`,
       });
-      const resp = await fetch(`${API_BASE}/jira/search?${params}`, { headers: await getAuthHeaders() });
-      if (!resp.ok) { setAvailableTickets([]); return; }
-      const json = await resp.json();
-      const raw = json?.issues ?? json?.data ?? [];
       const mapped = raw.map((i) => ({
         key:       i.key,
         summary:   i.fields?.summary ?? '',
@@ -659,9 +657,8 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
       setRepoField(rf);
       // Load Jira base URL
       try {
-        const connRes = await fetch(`${API_BASE}/jira/connection`, { headers: await getAuthHeaders() });
-        const connData = await connRes.json();
-        if(connData.ok && connData.data?.base_url) setJiraBaseUrl(connData.data.base_url.replace(/\/$/,''));
+        const conn = await jiraApi.getConnection();
+        if(conn?.base_url) setJiraBaseUrl(conn.base_url.replace(/\/$/,''));
       } catch {}
     } catch(err) {
       console.error('[EnvironmentsView]', err);
