@@ -776,6 +776,22 @@
     "sinMiembros":        "Sin miembros",
     "sinResultados":      "Sin resultados",
     "totalHorasFichaje":  "Total horas fichaje",
-    "totalHorasJira":     "Total horas Jira"
+    "totalHorasJira":     "Total horas Jira",
+    "fichaTitle":              "Ficha",
+    "fichaVerFicha":           "Ver ficha",
+    "fichaSeccionProfesional": "Datos profesionales",
+    "fichaSeccionContacto":    "Contacto",
+    "fichaSeccionLegal":       "Seguridad social",
+    "fichaSeccionBaja":        "Baja",
+    "fichaClienteAsignado":    "Cliente asignado",
+    "fichaValorHora":          "Valor hora",
+    "fichaSeniority":          "Seniority",
+    "fichaFechaIncorporacion": "Fecha de incorporación",
+    "fichaTelefono":           "Teléfono",
+    "fichaEmailPersonal":      "Email personal",
+    "fichaNSS":                "Nº Seguridad Social",
+    "fichaFechaBaja":          "Fecha de baja",
+    "fichaRazonBaja":          "Razón de baja",
+    "fichaNotas":              "Notas"
   }
 }

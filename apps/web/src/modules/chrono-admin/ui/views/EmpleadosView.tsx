@@ -3,10 +3,12 @@ import { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import type { IAdminFichajeRepository } from '../../domain/ports/IAdminFichajeRepository';
 import type { IEmpleadoConfigRepository } from '../../domain/ports/IEmpleadoConfigRepository';
+import type { IFichaEmpleadoRepository } from '../../domain/ports/IFichaEmpleadoRepository';
 import type { EmpleadoResumen, EstadoPresencia } from '../../domain/entities/EmpleadoResumen';
 import type { EmpleadoConfig } from '../../domain/entities/EmpleadoConfig';
 import type { IEquipoRepository } from '../../domain/ports/IEquipoRepository';
 import type { Equipo } from '../../domain/entities/Equipo';
+import { FichaEmpleadoDrawer } from './FichaEmpleadoDrawer';
 
 const C = { amber:'#f59e0b', amberDim:'#92400e', amberGlow:'rgba(245,158,11,0.12)', tx:'#e8e8e8', txDim:'#888', txMuted:'#555', green:'#10b981', greenDim:'rgba(16,185,129,0.15)', red:'#ef4444', redDim:'rgba(239,68,68,0.15)', blue:'#3b82f6', blueDim:'rgba(59,130,246,0.15)', orange:'#f97316', purple:'#a855f7', sf:'#161616', sfHover:'#1e1e1e', bd:'#2a2a2a', bg:'#0d0d0d' };
 
@@ -40,10 +42,11 @@ interface Props {
   fichajeRepo: IAdminFichajeRepository;
   empleadoConfigRepo: IEmpleadoConfigRepository;
   equipoRepo: IEquipoRepository;
+  fichaEmpleadoRepo: IFichaEmpleadoRepository;
   users: any[];
 }
 
-export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, users }: Props) {
+export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, fichaEmpleadoRepo, users }: Props) {
   const { t } = useTranslation();
   const [equipo, setEquipo] = useState<EmpleadoResumen[]>([]);
   const [configs, setConfigs] = useState<EmpleadoConfig[]>([]);
@@ -57,6 +60,7 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, use
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<{ horasJornadaMinutos: number | null; diasVacaciones: number | null; jornadaDias: string[] }>({ horasJornadaMinutos: null, diasVacaciones: null, jornadaDias: [] });
   const [saving, setSaving] = useState(false);
+  const [fichaUserId, setFichaUserId] = useState<string | null>(null);
 
   const mesActual = useMemo(() => {
     const d = new Date();
@@ -236,6 +240,9 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, use
                 <th style={{ textAlign: 'center', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.jornada')}
                 </th>
+                <th style={{ textAlign: 'center', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                  {t('chronoAdmin.fichaTitle')}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -278,12 +285,21 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, use
                       <td className="mono" style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'center', fontSize: 11, color: C.txDim }}>
                         {cfg ? `${(cfg.horasJornadaMinutos ?? 480) / 60}h · ${(cfg.jornadaDias ?? []).join('')}` : t('chronoAdmin.sinConfigurar')}
                       </td>
+                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'center' }}>
+                        <button
+                          className="ch-btn ch-btn-ghost"
+                          onClick={e => { e.stopPropagation(); setFichaUserId(emp.userId); }}
+                          style={{ fontSize: 11, padding: '4px 10px' }}
+                        >
+                          {t('chronoAdmin.fichaVerFicha')}
+                        </button>
+                      </td>
                     </tr>
 
                     {/* ── Inline config editor ─── */}
                     {isExpanded && (
                       <tr>
-                        <td colSpan={7} style={{ padding: '16px 24px', borderBottom: `1px solid ${C.bd}`, background: C.sfHover }}>
+                        <td colSpan={8} style={{ padding: '16px 24px', borderBottom: `1px solid ${C.bd}`, background: C.sfHover }}>
                           <div className="fade-in" style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
                             {/* Horas jornada */}
                             <div style={{ flex: 1 }}>
@@ -345,6 +361,19 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, use
           </table>
         </div>
       )}
+
+      {fichaUserId && (() => {
+        const emp = equipo.find(e => e.userId === fichaUserId);
+        return emp ? (
+          <FichaEmpleadoDrawer
+            userId={emp.userId}
+            userName={emp.nombre}
+            userEmail={emp.email}
+            fichaRepo={fichaEmpleadoRepo}
+            onClose={() => setFichaUserId(null)}
+          />
+        ) : null;
+      })()}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { AdminVacacionSupabaseRepository } from '../infra/supabase/AdminVacacion
 import { ConfigSupabaseRepository } from '../infra/supabase/ConfigSupabaseRepository';
 import { EquipoSupabaseRepository } from '../infra/supabase/EquipoSupabaseRepository';
 import { EmpleadoConfigSupabaseRepository } from '../infra/supabase/EmpleadoConfigSupabaseRepository';
+import { FichaEmpleadoSupabaseRepository } from '../infra/supabase/FichaEmpleadoSupabaseRepository';
 import { NotificacionSupabaseRepository } from '../infra/supabase/NotificacionSupabaseRepository';
 import { JiraResumenSupabaseRepository } from '../infra/supabase/JiraResumenSupabaseRepository';
 import { AprobacionesView } from './views/AprobacionesView';
@@ -23,6 +24,7 @@ const vacacionRepo = new AdminVacacionSupabaseRepository(supabase);
 const configRepo = new ConfigSupabaseRepository(supabase);
 const equipoRepo = new EquipoSupabaseRepository(supabase);
 const empleadoConfigRepo = new EmpleadoConfigSupabaseRepository(supabase);
+const fichaEmpleadoRepo = new FichaEmpleadoSupabaseRepository(supabase);
 const notificacionRepo = new NotificacionSupabaseRepository(supabase);
 const jiraResumenRepo = new JiraResumenSupabaseRepository(supabase);
 
@@ -167,7 +169,7 @@ function ChronoAdminPage({ currentUser }: Props) {
           )}
 
           {view === 'empleados' && (
-            <EmpleadosView fichajeRepo={fichajeRepo} empleadoConfigRepo={empleadoConfigRepo} equipoRepo={equipoRepo} users={users} />
+            <EmpleadosView fichajeRepo={fichajeRepo} empleadoConfigRepo={empleadoConfigRepo} equipoRepo={equipoRepo} fichaEmpleadoRepo={fichaEmpleadoRepo} users={users} />
           )}
 
           {view === 'equipos' && (

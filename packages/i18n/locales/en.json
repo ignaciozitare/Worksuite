@@ -776,6 +776,22 @@
     "sinMiembros":        "No members",
     "sinResultados":      "No results",
     "totalHorasFichaje":  "Total clock hours",
-    "totalHorasJira":     "Total Jira hours"
+    "totalHorasJira":     "Total Jira hours",
+    "fichaTitle":              "Profile",
+    "fichaVerFicha":           "View profile",
+    "fichaSeccionProfesional": "Professional data",
+    "fichaSeccionContacto":    "Contact",
+    "fichaSeccionLegal":       "Social security",
+    "fichaSeccionBaja":        "Termination",
+    "fichaClienteAsignado":    "Assigned client",
+    "fichaValorHora":          "Hourly rate",
+    "fichaSeniority":          "Seniority",
+    "fichaFechaIncorporacion": "Start date",
+    "fichaTelefono":           "Phone",
+    "fichaEmailPersonal":      "Personal email",
+    "fichaNSS":                "Social Security No.",
+    "fichaFechaBaja":          "Termination date",
+    "fichaRazonBaja":          "Termination reason",
+    "fichaNotas":              "Notes"
   }
 }
