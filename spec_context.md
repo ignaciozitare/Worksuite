@@ -1,6 +1,6 @@
 # WorkSuite — SPEC_CONTEXT
 
-> Snapshot del **estado real** del proyecto al 2026-04-07. No describe el estado ideal sino lo que existe hoy en el código.
+> Snapshot del **estado real** del proyecto al 2026-04-10. No describe el estado ideal sino lo que existe hoy en el código.
 > Fuente: lectura directa de `apps/`, `packages/`, `ARCHITECTURE.md`, `README.md`.
 
 ---
@@ -44,6 +44,9 @@ worksuite/
 | **RetroBoard** | Retrospectivas estructuradas (lobby, fases, kanban de accionables, historial, equipos) |
 | **Deploy Planner** | Releases con versiones auto-generadas, timeline Gantt, repo groups con dependencias, subtareas (bugs/tests/other), métricas |
 | **Environments** | Gestión de entornos de despliegue con barra lateral, reservas con estados configurables, timeline, historial |
+| **Chrono** | Control horario del usuario (autoservicio): dashboard, registros, fichajes incompletos, vacaciones, alarmas, informes. Sincroniza tab con `?view=` query param para deep links. |
+| **Chrono Admin (RRHH)** | Administración del chrono: empleados, equipos, aprobaciones, comparativa Jira vs fichaje, ficha del empleado con datos sensibles encriptados, informes con CSV export y gráficos |
+| **Profile** | Página `/profile` de identidad del usuario actual (lee de `useAuth`, sin repo propio) |
 
 ---
 
@@ -150,6 +153,97 @@ Cada módulo sigue: `domain/` (entities, ports, useCases) + `infra/` (repos, ada
 
 ---
 
+## 6.5 Chrono — detalle (control horario del usuario)
+
+### Entidades
+- `Fichaje` — id, userId, fecha, entradaAt, comidaIniAt, comidaFinAt, salidaAt, minutosTrabajados, tipo (normal/teletrabajo/medico/formacion/viaje/asunto_propio), estado (abierto/completo/incompleto/pendiente_aprobacion/aprobado/rechazado), justificacion, geoEntrada, geoSalida
+- `Vacacion` — id, userId, tipo, fechaInicio, fechaFin, diasHabiles, estado
+- `Incidencia` — fichajes incompletos pasado el plazo de 48h
+- `Alarma` — id, userId, tipo, hora, sonido, activa
+- `BolsaHoras` — saldo de horas extra por empleado
+
+### Vistas (sidebar tabs)
+- **Dashboard** — Estado del fichaje hoy + resumen del mes (horas trabajadas, días, incidencias, bolsa)
+- **Registros** — Listado de fichajes históricos por mes con detalles entrada/comida/salida
+- **Incompletos** — Fichajes con datos faltantes. Plazo de 48h antes de pasar a incidencia
+- **Vacaciones** — Solicitud y consulta de vacaciones, saldo del año
+- **Alarmas** — Alarmas configurables (recordatorio entrada, salida, comida) con sonido elegible
+- **Informes** — Reportes de horas, vacaciones, incidencias, bolsa de horas
+
+### Routing
+- Ruta: `/chrono` con `?view=` query param sincronizado con la tab activa
+- Permite deep links: `/chrono?view=incompletos` (usado por notificaciones de Chrono Admin)
+- `setView` actualiza el estado y la URL en paralelo (replace)
+
+---
+
+## 6.6 Chrono Admin — detalle (RRHH)
+
+### Entidades
+- `EmpleadoConfig` — userId, horasJornadaMinutos, diasVacaciones, jornadaDias (`['L','M','X','J','V']`)
+- `EmpleadoResumen` — userId, nombre, email, estadoHoy (oficina/teletrabajo/vacaciones/medico/ausente/sin_fichar), minutosHoy, fichajesIncompletos, saldoVacacionesDias, saldoBolsaMinutos
+- `Equipo` — id, nombre, descripcion, managerId, miembros[]
+- `ConfigEmpresa` — horasJornadaMinutos, pausaComidaMin/Max, toleranciaEntrada, diasVacacionesBase, requiereGeo, geoWhitelist, ipWhitelist, requiereAprobacionFichaje, slackWebhookUrl
+- `JiraResumen` — comparativa horas Jira vs horas fichadas por empleado
+- `Notificacion` — id, userId, tipo, titulo, mensaje, leida, link, createdAt
+- **`FichaEmpleado`** — datos sensibles del empleado **encriptados en DB**:
+  - clienteAsignado, valorHora, seniority (encriptados)
+  - contactoTelefono, contactoEmailPersonal (encriptados)
+  - nss — número de seguridad social (encriptado)
+  - notas, razonBaja (encriptados)
+  - fechaIncorporacion, fechaBaja (sin encriptar, tipo `date`)
+
+### Vistas (top tabs)
+- **Dashboard** — Resumen del equipo: total empleados, fichando hoy, incompletos, vacaciones, alertas
+- **Empleados** — Tabla con horas hoy/mes, equipo, estado, jornada. Edición inline de config.
+  Columna **Ficha** con botón "Ver ficha" → `FichaEmpleadoDrawer` (drawer lateral renderizado vía
+  React Portal para escapar contextos transformados)
+- **Equipos** — CRUD con manager y miembros
+- **Aprobaciones** — Aprobar/rechazar fichajes pendientes y solicitudes de vacaciones
+- **Jira** — Comparativa horas Jira vs horas fichadas. Botón "Enviar recordatorio" genera notificación
+  con `link: '/chrono?view=incompletos'` que el bell del topbar abre al hacer click
+- **Informes** — Reportes mensuales con charts, tablas y CSV export
+
+### Encriptación de la ficha
+- **Algoritmo**: AES-256-GCM via Web Crypto API
+- **Derivación de clave**: PBKDF2 (100k iteraciones, SHA-256) sobre `VITE_ENCRYPTION_KEY`
+- **Formato ciphertext**: `base64(iv(12) || ciphertext || tag)`
+- **Encrypt/decrypt transparente** en `FichaEmpleadoSupabaseRepository` — el consumidor del puerto
+  `IFichaEmpleadoRepository` siempre recibe los datos en claro
+- **Utilidad**: `apps/web/src/shared/lib/crypto.ts`
+- ⚠️ Si la `VITE_ENCRYPTION_KEY` cambia, los datos previamente cifrados quedan ilegibles
+
+---
+
+## 6.7 Topbar global y notificaciones cross-módulo
+
+### Topbar (`apps/web/src/WorkSuiteApp.tsx`)
+```
+[Logo] [Module switcher] ··· [🌙/☀️] [EN/ES] [🔔 Bell] · [● Admin] [Avatar+Name ▾]
+```
+
+- **Theme toggle**: un solo botón que alterna 🌙/☀️ (no dos botones separados)
+- **NotificationsBell**: visible siempre (no solo dentro de chrono)
+- **Admin button**: a la izquierda del avatar
+- **UserMenu**: avatar+nombre con dropdown — Mi perfil, Ajustes, ─── separador ───, Cerrar sesión (rojo, último)
+
+### Notificaciones (NotificationsBell shared)
+- **Componente**: `apps/web/src/shared/ui/NotificationsBell.tsx`
+- **Render**: panel slide-in vía `createPortal(document.body)` para escapar el `transform` del padre
+  (que crea containing block y rompe `position: fixed`)
+- **Hook**: `useNotificaciones(repo, userId)` en `apps/web/src/shared/hooks/`
+- **Puerto**: `NotificationPort` en `apps/web/src/shared/domain/ports/`
+- **Adapter**: `SupabaseNotificationRepo` en `apps/web/src/shared/infra/`
+- **Tabla DB**: `ch_notificaciones`
+- Click en notificación → marca como leída → navega al `link` (incluye query params)
+
+### UserMenu y Profile
+- `UserMenu` — `apps/web/src/shared/ui/UserMenu.tsx`. Cierra por click fuera. Documentado en UI Kit
+- Profile — módulo `apps/web/src/modules/profile/`. Solo `ui/ProfilePage.tsx` (KISS, sin repo propio)
+- Ruta `/profile` lazy-loaded en `WorkSuiteApp.tsx`
+
+---
+
 ## 7. Base de datos (tablas principales)
 
 | Tabla | Descripción |
@@ -170,6 +264,15 @@ Cada módulo sigue: `domain/` (entities, ports, useCases) + `infra/` (repos, ada
 | `syn_reservation_history` | Historial de reservas (2 meses) |
 | `syn_jira_filter_config` | Config singleton de filtro Jira (projectKeys, issueTypes, statuses) |
 | `syn_reservation_policy` | Política de reservas (booking_window, min_duration, business_hours) |
+| `ch_fichajes` | Fichajes diarios del Chrono (entrada, comida, salida, geo, estado, tipo) |
+| `ch_empleado_config` | Config por empleado: horas jornada, días vacaciones, jornada_dias |
+| `ch_config_empresa` | Config global: jornada, pausas, tolerancia, geo/IP whitelist, requiere aprobación |
+| `ch_equipos`, `ch_equipo_miembros` | Equipos del chrono-admin |
+| `ch_vacaciones`, `ch_saldo_vacaciones` | Vacaciones y saldo anual |
+| `ch_bolsa_horas` | Bolsa de horas extra |
+| `ch_alarmas` | Alarmas personalizadas del usuario (recordatorios entrada/salida/comida) |
+| `ch_notificaciones` | Notificaciones del bell del topbar (cross-módulo). Campos: `user_id`, `tipo`, `titulo`, `mensaje`, `link`, `leida`, `created_at` |
+| `ch_ficha_empleado` | **Datos sensibles del empleado encriptados (AES-256-GCM)**: cliente, valor hora, contacto, NSS, seniority, notas, razón baja. Fechas (incorporación/baja) en plano. |
 | `jira_connections` | Conexiones Jira por usuario |
 | `sso_config` | SSO + deploy_jira_statuses |
 | `roles` | Roles y permisos |

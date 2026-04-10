@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@worksuite/i18n';
 import { useNotificaciones } from '@/shared/hooks/useNotificaciones';
+import type { NotificationPort } from '@/shared/domain/ports/NotificationPort';
 
 const C = {
   amber: '#f59e0b', amberDim: '#92400e', amberGlow: 'rgba(245,158,11,0.12)',
@@ -14,13 +15,14 @@ const C = {
 
 interface Props {
   userId: string;
+  repo: NotificationPort;
 }
 
-export function NotificationsBell({ userId }: Props) {
+export function NotificationsBell({ userId, repo }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const { notifs, unread, marcarLeida } = useNotificaciones(userId);
+  const { notifs, unread, marcarLeida } = useNotificaciones(repo, userId);
 
   if (!userId) return null;
 

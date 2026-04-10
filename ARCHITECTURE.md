@@ -45,20 +45,27 @@ worksuite/
 └── apps/
     ├── web/                   ← React frontend
     │   └── src/
-    │       ├── WorkSuiteApp.tsx   ← Root orchestrator (~296 líneas, routing + layout)
+    │       ├── WorkSuiteApp.tsx   ← Root orchestrator (routing + layout + global topbar)
     │       ├── main.tsx           ← Entry point con I18nProvider
     │       ├── AppRouter.tsx      ← React Router con lazy loading
     │       ├── shared/
-    │       │   ├── admin/         ← Panel admin (9 archivos: Settings, Users, HotDesk, Blueprint,
+    │       │   ├── admin/         ← Panel admin (Settings, Users, HotDesk, Blueprint,
     │       │   │                     Roles, RetroTeams, DeployConfig, EnvTracker, Shell)
-    │       │   ├── hooks/         ← useAuth, useWorkSuiteData, useWorklogs, useHotDesk
+    │       │   ├── hooks/         ← useAuth, useWorkSuiteData, useWorklogs, useHotDesk,
+    │       │   │                     useNotificaciones (DI: recibe NotificationPort)
     │       │   ├── domain/ports/  ← UserPort, SsoConfigPort, RolePort, BuildingPort,
-    │       │   │                     AdminUserPort, HotDeskAdminPort, JiraConnectionPort
-    │       │   ├── infra/         ← Supabase repos + JiraConnectionAdapter (7 archivos)
-    │       │   ├── lib/           ← supabaseClient, utils, constants, fallbackData
-    │       │   └── ui/            ← MiniCalendar, PasswordStrength
+    │       │   │                     AdminUserPort, HotDeskAdminPort, JiraConnectionPort,
+    │       │   │                     NotificationPort
+    │       │   ├── infra/         ← Supabase repos: User, AdminUser, Building, HotDeskAdmin,
+    │       │   │                     Role, SsoConfig, Notification + JiraConnectionAdapter
+    │       │   ├── lib/           ← supabaseClient, utils, constants, fallbackData,
+    │       │   │                     crypto (AES-256-GCM via Web Crypto + PBKDF2)
+    │       │   └── ui/            ← MiniCalendar, PasswordStrength, NotificationsBell,
+    │       │                       UserMenu, UIKit
     │       └── modules/
     │           ├── auth/          ← LoginPage
+    │           ├── profile/       ← Página de perfil del usuario actual
+    │           │   └── ui/        ← ProfilePage (lee del useAuth, sin repo propio)
     │           ├── jira-tracker/
     │           │   ├── domain/    ← entities, ports (WorklogPort, JiraSyncPort), useCases, services
     │           │   ├── infra/     ← SupabaseWorklogRepo, JiraSyncAdapter
@@ -81,10 +88,24 @@ worksuite/
     │           │   │                 SupabaseSubtaskConfigRepo, JiraMetadataAdapter, JiraSubtaskAdapter
     │           │   └── ui/        ← DeployPlanner (planning, timeline, detail, history, metrics),
     │           │                     DeployTimeline, ReleaseDetail
-    │           └── environments/
-    │               ├── domain/    ← entities, ports, useCases
-    │               ├── infra/     ← SupabaseEnvironmentRepo, SupabaseReservationRepo
-    │               └── ui/        ← EnvironmentsView, AdminEnvironments
+    │           ├── environments/
+    │           │   ├── domain/    ← entities, ports, useCases
+    │           │   ├── infra/     ← SupabaseEnvironmentRepo, SupabaseReservationRepo
+    │           │   └── ui/        ← EnvironmentsView, AdminEnvironments
+    │           ├── chrono/        ← Control horario del usuario (fichaje propio)
+    │           │   ├── domain/    ← entities (Fichaje, Vacacion, Incidencia, Alarma, BolsaHoras),
+    │           │   │                 ports
+    │           │   ├── infra/     ← Supabase{Fichaje,Vacacion,Incidencia,Alarma,BolsaHoras}Repository
+    │           │   └── ui/        ← ChronoPage (sidebar tabs: dashboard, registros, incompletos,
+    │           │                     vacaciones, alarmas, informes), reads ?view= from URL
+    │           └── chrono-admin/  ← Administración del chrono (RRHH)
+    │               ├── domain/    ← entities (EmpleadoConfig, EmpleadoResumen, Equipo, ConfigEmpresa,
+    │               │                 FichaEmpleado, JiraResumen, Notificacion), ports
+    │               ├── infra/     ← AdminFichajeRepo, EmpleadoConfigRepo, EquipoRepo, ConfigRepo,
+    │               │                 FichaEmpleadoRepo (encrypt/decrypt), JiraResumenRepo,
+    │               │                 NotificacionRepo, AdminVacacionRepo
+    │               └── ui/        ← ChronoAdminPage (tabs: dashboard, empleados, equipos,
+    │                                 aprobaciones, jira, informes), FichaEmpleadoDrawer
     │
     └── api/                   ← Fastify backend
         └── src/
@@ -249,6 +270,97 @@ Consumido por Deploy Planner y Environments. El `repoField` se lee de `dp_versio
 
 ---
 
+## Chrono — Control horario (autoservicio)
+
+Módulo para que cada usuario gestione su propio fichaje y tiempos.
+
+### Vistas (sidebar tabs)
+- **Dashboard** — Estado del fichaje hoy + resumen del mes (horas trabajadas, días, incidencias, bolsa)
+- **Registros** — Listado de fichajes históricos por mes con detalles entrada/comida/salida
+- **Incompletos** — Fichajes con datos faltantes (entrada sin salida, etc.). Plazo de 48h antes de pasar a incidencia
+- **Vacaciones** — Solicitud y consulta de vacaciones, saldo del año
+- **Alarmas** — Alarmas configurables (recordatorio entrada, salida, comida) con sonido
+- **Informes** — Reportes de horas, vacaciones, incidencias, bolsa de horas
+
+### Routing
+- `/chrono` con `?view=` query param sincronizado con el estado de tab
+- Permite deep links: `/chrono?view=incompletos` (usado por notificaciones)
+
+### Domain
+- `Fichaje` — id, userId, fecha, entradaAt, comidaIniAt, comidaFinAt, salidaAt, minutosTrabajados, tipo, estado, geoEntrada, geoSalida
+- `Vacacion` — id, userId, tipo, fechaInicio, fechaFin, diasHabiles, estado
+- `Incidencia` — fichajes incompletos pasado el plazo
+- `Alarma` — id, userId, tipo, hora, sonido, activa
+- `BolsaHoras` — saldo de horas extra
+
+---
+
+## Chrono Admin — RRHH
+
+Módulo de administración de RRHH sobre el chrono.
+
+### Vistas (top tabs)
+- **Dashboard** — Resumen del equipo: total empleados, fichando hoy, incompletos, vacaciones, alertas
+- **Empleados** — Tabla de empleados con horas hoy/mes, equipo, estado, jornada. Edición inline de config.
+  Botón "Ver ficha" → abre `FichaEmpleadoDrawer` con datos sensibles encriptados
+- **Equipos** — CRUD de equipos con manager y miembros
+- **Aprobaciones** — Aprobar/rechazar fichajes pendientes y solicitudes de vacaciones
+- **Jira** — Comparativa horas Jira vs horas fichadas. Enviar recordatorios a empleados con déficit
+  (genera notificación con `link: /chrono?view=incompletos`)
+- **Informes** — Reportes mensuales de empresa (CSV export, charts)
+
+### Ficha del empleado (encriptada)
+Datos sensibles guardados en `ch_ficha_empleado` con cifrado AES-256-GCM aplicado en el repositorio
+(`FichaEmpleadoSupabaseRepository`). El cifrado/descifrado se hace transparente al consumidor del puerto
+`IFichaEmpleadoRepository`. Campos encriptados:
+- `clienteAsignado`, `valorHora`, `seniority`
+- `contactoTelefono`, `contactoEmailPersonal`
+- `nss` (número de seguridad social)
+- `notas`, `razonBaja`
+
+Campos sin encriptar (fechas):
+- `fechaIncorporacion`, `fechaBaja`
+
+La clave maestra se deriva de `VITE_ENCRYPTION_KEY` vía PBKDF2 (100k iteraciones, SHA-256). La utilidad
+de cifrado vive en `apps/web/src/shared/lib/crypto.ts` (Web Crypto API, sin dependencias externas).
+
+### Notificaciones
+Sistema cross-módulo. La campanita 🔔 está en el topbar global (`apps/web/src/shared/ui/NotificationsBell.tsx`).
+- **Puerto**: `apps/web/src/shared/domain/ports/NotificationPort.ts`
+- **Adapter**: `apps/web/src/shared/infra/SupabaseNotificationRepo.ts`
+- **Hook**: `useNotificaciones(repo, userId)` — recibe el repo por DI
+- Las notificaciones tienen `link` opcional → el bell navega ahí al hacer click
+
+---
+
+## Profile
+
+Página `/profile` (módulo `apps/web/src/modules/profile/`). Muestra la información del usuario autenticado
+leída de `useAuth()`. Sin repositorio propio (KISS — solo lee). Accesible desde el `UserMenu` del topbar.
+
+---
+
+## Topbar global (apps/web/src/WorkSuiteApp.tsx)
+
+```
+[Logo] [Module switcher] ··· [🌙/☀️] [EN/ES] [🔔 Bell] [● Admin] [Avatar+Name ▾]
+```
+
+- **Theme toggle**: un solo botón que alterna 🌙/☀️
+- **Language switcher**: EN/ES
+- **NotificationsBell**: shared component, recibe `NotificationPort` por DI
+- **Admin button**: navega a `/admin`. Visible solo si `role === 'admin'`
+- **UserMenu**: avatar + nombre con dropdown
+  - Mi perfil (`/profile`)
+  - Ajustes (`/admin`)
+  - ─── separador ───
+  - Cerrar sesión (en rojo, último item)
+
+Componentes shared del shell viven en `apps/web/src/shared/ui/` (no en `packages/ui` porque dependen
+de routing/auth de la app web). Se documentan en el UI Kit (`/ui-kit`).
+
+---
+
 ## Base de datos (Supabase)
 
 ### Tablas principales
@@ -263,6 +375,15 @@ Consumido por Deploy Planner y Environments. El `repoField` se lee de `dp_versio
 | `syn_environments` | Entornos con priority para orden en sidebar |
 | `syn_reservations`, `syn_reservation_statuses`, `syn_reservation_history`, `syn_jira_filter_config` | Environments |
 | `dp_repo_groups`, `dp_subtask_config` | Config de repos y subtareas |
+| `ch_fichajes` | Fichajes diarios (entrada, comida, salida, geo, estado) |
+| `ch_empleado_config` | Config por empleado: horas jornada, días vacaciones, días de jornada |
+| `ch_config_empresa` | Config global: jornada, pausas, tolerancia, geo whitelist, IP whitelist |
+| `ch_equipos`, `ch_equipo_miembros` | Equipos del chrono-admin |
+| `ch_vacaciones`, `ch_saldo_vacaciones` | Vacaciones y saldo anual |
+| `ch_bolsa_horas` | Bolsa de horas extra por empleado |
+| `ch_alarmas` | Alarmas personalizadas del usuario |
+| `ch_notificaciones` | Notificaciones cross-módulo (campanita topbar) |
+| `ch_ficha_empleado` | **Datos sensibles del empleado encriptados** (cliente, valor hora, contacto, NSS, etc.) |
 | `jira_connections` | Conexiones Jira por usuario |
 | `sso_config` | SSO + deploy Jira statuses |
 | `roles` | Roles y permisos |

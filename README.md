@@ -1,6 +1,6 @@
 # WorkSuite
 
-Plataforma unificada de utilidades de trabajo — Jira Tracker, HotDesk, RetroBoard, Deploy Planner, Environments.
+Plataforma unificada de utilidades de trabajo — Jira Tracker, HotDesk, RetroBoard, Deploy Planner, Environments, Chrono (Time Clock) y Chrono Admin (RRHH).
 
 ## Stack
 
@@ -29,7 +29,8 @@ worksuite/
 ├── apps/
 │   ├── web/             ← React SPA (Vite)
 │   │   └── src/
-│   │       ├── modules/ ← jira-tracker, hotdesk, retro, deploy-planner, environments
+│   │       ├── modules/ ← jira-tracker, hotdesk, retro, deploy-planner,
+│   │       │             environments, chrono, chrono-admin, profile, auth
 │   │       └── shared/  ← admin, hooks, domain/ports, infra, lib, ui
 │   └── api/             ← Fastify backend (hexagonal)
 │       └── src/
@@ -47,6 +48,9 @@ worksuite/
 | **RetroBoard** | Retrospectivas estructuradas, kanban de accionables, historial |
 | **Deploy Planner** | Releases, timeline Gantt, repo groups, subtareas (bugs/tests), métricas. Admin en tabs (Estados, Jira, Versiones, Repos, Subtareas) |
 | **Environments** | Gestión de entornos con barra lateral (priority, disponibilidad), reservas, timeline, historial. Admin en tabs (Entornos, Estados, Filtro Jira, Política) |
+| **Chrono** | Control horario del usuario: dashboard, registros, fichajes incompletos, vacaciones, alarmas, informes. Soporta deep links vía `?view=` |
+| **Chrono Admin (RRHH)** | Administración de empleados, equipos, aprobaciones, comparativa Jira vs fichaje, ficha del empleado con datos sensibles encriptados (AES-256-GCM), informes con CSV export |
+| **Profile** | Página de perfil del usuario actual accesible desde el menú del avatar |
 
 ## Getting started
 
@@ -55,7 +59,11 @@ worksuite/
 npm install
 
 # 2. Variables de entorno
-# apps/web necesita: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL
+# apps/web necesita:
+#   VITE_SUPABASE_URL
+#   VITE_SUPABASE_ANON_KEY
+#   VITE_API_URL
+#   VITE_ENCRYPTION_KEY    ← clave maestra (32+ chars) para AES-256-GCM de la ficha del empleado
 # apps/api necesita: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET
 
 # 3. Desarrollo local
@@ -98,6 +106,21 @@ const { t } = useTranslation();
 ```
 
 Idioma se persiste en localStorage. Switchear con botones EN/ES en el topbar.
+
+## Seguridad — Cifrado de datos sensibles
+
+La ficha del empleado (`ch_ficha_empleado`) guarda campos sensibles encriptados con **AES-256-GCM** vía
+Web Crypto API. La clave se deriva de `VITE_ENCRYPTION_KEY` con PBKDF2 (100k iteraciones, SHA-256).
+
+Genera una clave aleatoria con:
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
+```
+
+⚠️ **No cambies la clave en producción** — los datos cifrados con la clave anterior quedarán ilegibles.
+⚠️ **Guárdala en un gestor de secretos** (Vercel env vars, 1Password, Bitwarden).
+
+Utilidad: [apps/web/src/shared/lib/crypto.ts](apps/web/src/shared/lib/crypto.ts)
 
 ## Base de datos
 

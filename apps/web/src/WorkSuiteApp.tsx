@@ -17,6 +17,10 @@ import { BlueprintHDMap, HDTableView, HDReserveModal } from './modules/hotdesk/u
 import { BuildingFloorSelectors } from './shared/admin';
 import { NotificationsBell } from './shared/ui/NotificationsBell';
 import { UserMenu } from './shared/ui/UserMenu';
+import { SupabaseNotificationRepo } from './shared/infra/SupabaseNotificationRepo';
+import { supabase as supabaseClient } from './shared/lib/supabaseClient';
+
+const notificationRepo = new SupabaseNotificationRepo(supabaseClient);
 
 // Module UI — lazy loaded (per-route)
 const AdminShell = lazy(() => import('./shared/admin/AdminShell').then(m => ({ default: m.AdminShell })));
@@ -244,7 +248,7 @@ function WorkSuiteApp() {
                 <button className={`sw-btn ${locale === "en" ? "active" : ""}`} onClick={() => setLocale("en")}>EN</button>
                 <button className={`sw-btn ${locale === "es" ? "active" : ""}`} onClick={() => setLocale("es")}>ES</button>
               </div>
-              <NotificationsBell userId={CURRENT_USER.id} />
+              <NotificationsBell userId={CURRENT_USER.id} repo={notificationRepo} />
               <div className="o-dot" />
               <button onClick={() => navigate('/admin')}
                 style={{

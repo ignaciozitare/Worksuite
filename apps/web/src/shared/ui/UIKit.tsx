@@ -9,7 +9,20 @@ import {
   DateRangePicker,
   BugIcon,
 } from '@worksuite/ui';
+import { NotificationsBell } from './NotificationsBell';
+import { UserMenu } from './UserMenu';
+import type { NotificationPort, Notification } from '../domain/ports/NotificationPort';
 import '../../WorkSuiteApp.css';
+
+// In-memory fake repo for the UI Kit demo (no Supabase calls)
+const demoNotifications: Notification[] = [
+  { id: '1', tipo: 'warning', titulo: 'Reminder', mensaje: 'You have 2h of incomplete clock-ins.', leida: false, link: '/chrono?view=incompletos', createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString() },
+  { id: '2', tipo: 'info',    titulo: 'Welcome',  mensaje: 'Your account is now active.',          leida: true,  link: null, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
+];
+const demoRepo: NotificationPort = {
+  listByUser: async () => demoNotifications,
+  markAsRead: async () => undefined,
+};
 
 // Error boundary to prevent one broken component from crashing the page
 class SafeRender extends React.Component {
@@ -311,6 +324,41 @@ export function UIKit() {
             </div>
           </Row>
           <Row label="Import"><Code>{'import { JiraTicketSearch, JiraTicketPicker } from "@worksuite/ui"'}</Code></Row>
+        </Section>
+
+        {/* ── App shell components (apps/web/src/shared/ui) ───────── */}
+        <div style={{ marginTop: 60, marginBottom: 20, padding: '12px 16px', background: 'var(--sf2,#1b1b22)', borderRadius: 8, border: '1px solid var(--bd,#2a2a38)' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--tx,#e4e4ef)', marginBottom: 4 }}>Shell components</h2>
+          <p style={{ fontSize: 12, color: 'var(--tx3,#50506a)' }}>
+            Top-level layout components used by the WorkSuite shell. Located in <Code>apps/web/src/shared/ui/</Code> (not in <Code>packages/ui</Code> because they depend on app-level state like routing and auth).
+          </p>
+        </div>
+
+        {/* ── NotificationsBell ───────────────────────────────────── */}
+        <Section title="NotificationsBell" description="Bell icon with unread badge + slide-in panel rendered via portal. Receives a NotificationPort via DI so it can be wired to any backend (Supabase, REST, fake repo for tests).">
+          <Row label="Demo (in-memory repo, 2 notifications, 1 unread)">
+            <NotificationsBell userId="demo-user" repo={demoRepo} />
+          </Row>
+          <Row label="Props">
+            <Code>{'userId: string'}</Code>
+            <Code>{'repo: NotificationPort'}</Code>
+          </Row>
+          <Row label="Import"><Code>{"import { NotificationsBell } from '@/shared/ui/NotificationsBell'"}</Code></Row>
+        </Section>
+
+        {/* ── UserMenu ────────────────────────────────────────────── */}
+        <Section title="UserMenu" description="Avatar + name button with dropdown menu (Profile / Settings / Log out). Closes on outside click. Logout is the last item, separated and red.">
+          <Row label="Demo">
+            <UserMenu
+              user={{ id: 'demo', name: 'Ignacio Zitare', email: 'ignacio@example.com', avatar: 'IZ' }}
+              onLogout={() => alert('Logout clicked')}
+            />
+          </Row>
+          <Row label="Props">
+            <Code>{'user: { id, name, email, avatar }'}</Code>
+            <Code>{'onLogout: () => void'}</Code>
+          </Row>
+          <Row label="Import"><Code>{"import { UserMenu } from '@/shared/ui/UserMenu'"}</Code></Row>
         </Section>
 
         {/* Footer */}
