@@ -58,8 +58,7 @@ worksuite/
     │       │   │                     NotificationPort
     │       │   ├── infra/         ← Supabase repos: User, AdminUser, Building, HotDeskAdmin,
     │       │   │                     Role, SsoConfig, Notification + JiraConnectionAdapter
-    │       │   ├── lib/           ← supabaseClient, utils, constants, fallbackData,
-    │       │   │                     crypto (AES-256-GCM via Web Crypto + PBKDF2)
+    │       │   ├── lib/           ← supabaseClient, utils, constants, fallbackData
     │       │   └── ui/            ← MiniCalendar, PasswordStrength, NotificationsBell,
     │       │                       UserMenu, UIKit
     │       └── modules/
@@ -309,10 +308,19 @@ Módulo de administración de RRHH sobre el chrono.
   (genera notificación con `link: /chrono?view=incompletos`)
 - **Informes** — Reportes mensuales de empresa (CSV export, charts)
 
-### Ficha del empleado (encriptada)
-Datos sensibles guardados en `ch_ficha_empleado` con cifrado AES-256-GCM aplicado en el repositorio
-(`FichaEmpleadoSupabaseRepository`). El cifrado/descifrado se hace transparente al consumidor del puerto
-`IFichaEmpleadoRepository`. Campos encriptados:
+### Ficha del empleado (encriptada server-side)
+Datos sensibles guardados en `ch_ficha_empleado` con cifrado **AES-256-GCM aplicado en una Supabase
+Edge Function** (`ficha-empleado`). El navegador nunca ve la clave maestra. El repositorio
+`FichaEmpleadoSupabaseRepository` actúa como un cliente HTTP fino que invoca la función vía
+`POST /functions/v1/ficha-empleado` con `{action:'get'|'upsert', userId, data}`.
+
+La Edge Function:
+1. Valida el JWT del caller (`auth.getUser`)
+2. Verifica que `users.role === 'admin'`
+3. Encripta/desencripta usando `ENCRYPTION_KEY` (secret server-side, derivada con PBKDF2 SHA-256)
+4. Lee/escribe la tabla con el service role key
+
+Campos encriptados:
 - `clienteAsignado`, `valorHora`, `seniority`
 - `contactoTelefono`, `contactoEmailPersonal`
 - `nss` (número de seguridad social)
@@ -320,9 +328,6 @@ Datos sensibles guardados en `ch_ficha_empleado` con cifrado AES-256-GCM aplicad
 
 Campos sin encriptar (fechas):
 - `fechaIncorporacion`, `fechaBaja`
-
-La clave maestra se deriva de `VITE_ENCRYPTION_KEY` vía PBKDF2 (100k iteraciones, SHA-256). La utilidad
-de cifrado vive en `apps/web/src/shared/lib/crypto.ts` (Web Crypto API, sin dependencias externas).
 
 ### Notificaciones
 Sistema cross-módulo. La campanita 🔔 está en el topbar global (`apps/web/src/shared/ui/NotificationsBell.tsx`).

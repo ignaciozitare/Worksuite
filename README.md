@@ -59,12 +59,11 @@ worksuite/
 npm install
 
 # 2. Variables de entorno
-# apps/web necesita:
-#   VITE_SUPABASE_URL
-#   VITE_SUPABASE_ANON_KEY
-#   VITE_API_URL
-#   VITE_ENCRYPTION_KEY    ← clave maestra (32+ chars) para AES-256-GCM de la ficha del empleado
+# apps/web necesita: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL
 # apps/api necesita: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET
+# Edge Functions (Supabase dashboard → Functions → Secrets):
+#   ENCRYPTION_KEY    ← clave maestra para AES-256-GCM de la ficha del empleado
+#                       (server-side only, nunca llega al navegador)
 
 # 3. Desarrollo local
 npm run dev    # api + web en paralelo
@@ -109,18 +108,29 @@ Idioma se persiste en localStorage. Switchear con botones EN/ES en el topbar.
 
 ## Seguridad — Cifrado de datos sensibles
 
-La ficha del empleado (`ch_ficha_empleado`) guarda campos sensibles encriptados con **AES-256-GCM** vía
-Web Crypto API. La clave se deriva de `VITE_ENCRYPTION_KEY` con PBKDF2 (100k iteraciones, SHA-256).
+La ficha del empleado (`ch_ficha_empleado`) guarda campos sensibles encriptados con **AES-256-GCM**.
+Encrypt/decrypt vive en una **Supabase Edge Function** (`ficha-empleado`), no en el navegador. La
+clave maestra (`ENCRYPTION_KEY`) es un secret de Edge Functions y nunca llega al cliente. La función
+también valida que el caller sea admin antes de leer/escribir.
+
+Flujo:
+```
+UI → fichaRepo.getByUserId() → POST /functions/v1/ficha-empleado { action:'get', userId }
+                              → Edge Function (verifica JWT + admin role)
+                              → SELECT ch_ficha_empleado + decrypt
+                              → JSON con datos en claro
+```
 
 Genera una clave aleatoria con:
 ```bash
 node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 ```
 
-⚠️ **No cambies la clave en producción** — los datos cifrados con la clave anterior quedarán ilegibles.
-⚠️ **Guárdala en un gestor de secretos** (Vercel env vars, 1Password, Bitwarden).
+Configurar el secret: **Supabase Dashboard → Project Settings → Edge Functions → Secrets** →
+`ENCRYPTION_KEY`.
 
-Utilidad: [apps/web/src/shared/lib/crypto.ts](apps/web/src/shared/lib/crypto.ts)
+⚠️ **No cambies la clave en producción** — los datos cifrados con la clave anterior quedarán ilegibles.
+⚠️ **Guárdala en un gestor de secretos** (1Password, Bitwarden).
 
 ## Base de datos
 

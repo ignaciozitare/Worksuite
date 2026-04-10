@@ -204,14 +204,15 @@ Cada módulo sigue: `domain/` (entities, ports, useCases) + `infra/` (repos, ada
   con `link: '/chrono?view=incompletos'` que el bell del topbar abre al hacer click
 - **Informes** — Reportes mensuales con charts, tablas y CSV export
 
-### Encriptación de la ficha
-- **Algoritmo**: AES-256-GCM via Web Crypto API
-- **Derivación de clave**: PBKDF2 (100k iteraciones, SHA-256) sobre `VITE_ENCRYPTION_KEY`
+### Encriptación de la ficha (server-side)
+- **Algoritmo**: AES-256-GCM
+- **Dónde corre**: Supabase Edge Function `ficha-empleado` (Deno) — el navegador nunca ve la clave
+- **Derivación de clave**: PBKDF2 (100k iteraciones, SHA-256) sobre `ENCRYPTION_KEY` (secret de Edge Functions)
 - **Formato ciphertext**: `base64(iv(12) || ciphertext || tag)`
-- **Encrypt/decrypt transparente** en `FichaEmpleadoSupabaseRepository` — el consumidor del puerto
-  `IFichaEmpleadoRepository` siempre recibe los datos en claro
-- **Utilidad**: `apps/web/src/shared/lib/crypto.ts`
-- ⚠️ Si la `VITE_ENCRYPTION_KEY` cambia, los datos previamente cifrados quedan ilegibles
+- **Auth**: la función valida JWT del caller y exige `role === 'admin'`
+- **Cliente**: `FichaEmpleadoSupabaseRepository` es un fino HTTP client que invoca
+  `POST /functions/v1/ficha-empleado` con `{action:'get'|'upsert', userId, data}`
+- ⚠️ Si la `ENCRYPTION_KEY` cambia, los datos previamente cifrados quedan ilegibles
 
 ---
 
