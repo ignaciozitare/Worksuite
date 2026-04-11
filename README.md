@@ -70,7 +70,18 @@ npm run dev    # api + web en paralelo
 
 # 4. Build
 npm run build --workspace=apps/web
+
+# 5. Tests (pure domain services)
+npm run test --workspace=apps/web         # run once
+npm run test:watch --workspace=apps/web   # watch mode
 ```
+
+## Tests
+
+Vitest runs against the pure domain services (`*.test.ts` next to the source).
+No component tests yet — start with `RepoGroupService` and `SubtaskService` as
+the pattern to follow. Adapters and repos are intentionally untested here; they
+get covered by the Vercel preview smoke-test instead.
 
 ## Arquitectura
 
