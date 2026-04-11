@@ -60,9 +60,10 @@ describe('RepoGroupService.findLinkedGroups', () => {
 
     const result = RepoGroupService.findLinkedGroups(groups, releases, tickets);
     expect(result).toHaveLength(1);
-    expect(result[0].group.id).toBe('g1');
-    expect(result[0].releaseIds).toEqual(['r1', 'r2']);
-    expect(result[0].allDoneOrApproved).toBe(false);
+    const [linked] = result;
+    expect(linked?.group.id).toBe('g1');
+    expect(linked?.releaseIds).toEqual(['r1', 'r2']);
+    expect(linked?.allDoneOrApproved).toBe(false);
   });
 
   it('marks allDoneOrApproved=true when every linked release is done/approved', () => {
@@ -75,7 +76,7 @@ describe('RepoGroupService.findLinkedGroups', () => {
 
     const result = RepoGroupService.findLinkedGroups(groups, releases, tickets);
     expect(result).toHaveLength(1);
-    expect(result[0].allDoneOrApproved).toBe(true);
+    expect(result[0]?.allDoneOrApproved).toBe(true);
   });
 
   it('marks allDoneOrApproved=false when at least one linked release is not done', () => {
@@ -87,7 +88,7 @@ describe('RepoGroupService.findLinkedGroups', () => {
     const tickets = [ticket('t1', ['web']), ticket('t2', ['web'])];
 
     const result = RepoGroupService.findLinkedGroups(groups, releases, tickets);
-    expect(result[0].allDoneOrApproved).toBe(false);
+    expect(result[0]?.allDoneOrApproved).toBe(false);
   });
 
   it('detects releases that touch several repos inside the same group', () => {
@@ -103,7 +104,7 @@ describe('RepoGroupService.findLinkedGroups', () => {
     ];
 
     const result = RepoGroupService.findLinkedGroups(groups, releases, tickets);
-    expect(result[0].releaseIds).toEqual(['r1', 'r2']);
+    expect(result[0]?.releaseIds).toEqual(['r1', 'r2']);
   });
 
   it('returns independent linked groups when multiple groups apply', () => {
@@ -136,7 +137,7 @@ describe('RepoGroupService.findLinkedGroups', () => {
     const tickets = [ticket('t1', ['web']), ticket('t2', ['web'])];
 
     const result = RepoGroupService.findLinkedGroups(groups, releases, tickets);
-    expect(result[0].releaseIds).toEqual(['r1', 'r2']);
+    expect(result[0]?.releaseIds).toEqual(['r1', 'r2']);
   });
 });
 

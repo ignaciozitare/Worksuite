@@ -15,7 +15,15 @@ const cfg = (
   category: SubtaskConfig['category'],
   closed_statuses: string[] = [],
   test_type?: string,
-): SubtaskConfig => ({ id: `cfg-${jira_issue_type}`, jira_issue_type, category, closed_statuses, test_type });
+): SubtaskConfig => ({
+  id: `cfg-${jira_issue_type}`,
+  jira_issue_type,
+  category,
+  closed_statuses,
+  // Omit `test_type` entirely when undefined so this stays compatible with
+  // `exactOptionalPropertyTypes: true`.
+  ...(test_type !== undefined && { test_type }),
+});
 
 const sub = (overrides: Partial<JiraSubtask> = {}): JiraSubtask => ({
   key:            overrides.key            ?? 'AND-1',
@@ -38,7 +46,7 @@ describe('SubtaskService.classify', () => {
 
     const result = SubtaskService.classify(subs, configs);
     expect(result).toHaveLength(1);
-    expect(result[0].type).toBe('Bug');
+    expect(result[0]?.type).toBe('Bug');
   });
 
   it('matches the config type case-insensitively', () => {
@@ -91,7 +99,7 @@ describe('SubtaskService.classify', () => {
     const configs = [cfg('Test', 'test')];
 
     const result = SubtaskService.classify(subs, configs);
-    expect(result[0].testType).toBeUndefined();
+    expect(result[0]?.testType).toBeUndefined();
   });
 });
 

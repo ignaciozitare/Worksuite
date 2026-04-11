@@ -1,36 +1,56 @@
-// @ts-nocheck
 /**
  * Metrics view — aggregate stats over releases, tickets, bugs and tests.
  * Pure presentational: all data comes from props.
  */
 import { diffD } from './helpers';
 import { SLabel } from './atoms';
-import { SubtaskService } from '../../domain/services/SubtaskService';
+import { SubtaskService, type ClassifiedSubtask } from '../../domain/services/SubtaskService';
+import type { Release, DpTicket, StatusCfg } from './types';
 
-export function Metrics({ releases, tickets, statusCfg, classifiedSubs = [] }) {
-  const tMap = Object.fromEntries(tickets.map(t => [t.key, t]));
+interface MetricsProps {
+  releases: Release[];
+  tickets: DpTicket[];
+  statusCfg: StatusCfg;
+  classifiedSubs?: ClassifiedSubtask[];
+}
+
+export function Metrics({ releases, tickets, statusCfg, classifiedSubs = [] }: MetricsProps) {
+  const tMap = new Map(tickets.map(t => [t.key, t]));
   const finalNames = Object.entries(statusCfg).filter(([, v]) => v.is_final).map(([n]) => n);
   const deployed  = releases.filter(r => r.status === 'Deployed');
   const rollbacks = releases.filter(r => r.status === 'Rollback');
   const finished  = releases.filter(r => finalNames.includes(r.status));
-  const durations = finished.filter(r => r.start_date && r.end_date).map(r => diffD(r.start_date, r.end_date));
-  const avgDur    = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
+  const durations = finished
+    .filter((r): r is Release & { start_date: string; end_date: string } =>
+      r.start_date != null && r.end_date != null,
+    )
+    .map(r => diffD(r.start_date, r.end_date));
+  const avgDur = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
   const successRate = finished.length ? Math.round(deployed.length / finished.length * 100) : 0;
-  const allKeys   = [...new Set(releases.flatMap(r => r.ticket_ids || []))];
-  const tpr       = releases.length ? (allKeys.length / releases.length).toFixed(1) : 0;
-  const allRepos  = [...new Set(allKeys.flatMap(k => tMap[k]?.repos || []))];
+  const allKeys = [...new Set(releases.flatMap(r => r.ticket_ids ?? []))];
+  const tpr = releases.length ? (allKeys.length / releases.length).toFixed(1) : '0';
+  const allRepos = [...new Set(allKeys.flatMap(k => tMap.get(k)?.repos ?? []))];
 
-  const byMonth = {};
-  releases.forEach(r => { if (!r.end_date) return; const m = r.end_date.slice(0, 7); byMonth[m] = (byMonth[m] || 0) + 1; });
+  const byMonth: Record<string, number> = {};
+  releases.forEach(r => {
+    if (!r.end_date) return;
+    const m = r.end_date.slice(0, 7);
+    byMonth[m] = (byMonth[m] ?? 0) + 1;
+  });
   const months = Object.entries(byMonth).sort();
   const maxM = Math.max(...Object.values(byMonth), 1);
 
-  const byType = {};
-  allKeys.forEach(k => { const t = tMap[k]; if (t) { byType[t.type || 'Task'] = (byType[t.type || 'Task'] || 0) + 1; } });
+  const byType: Record<string, number> = {};
+  allKeys.forEach(k => {
+    const t = tMap.get(k);
+    if (t) byType[t.type || 'Task'] = (byType[t.type || 'Task'] ?? 0) + 1;
+  });
   const typeEntries = Object.entries(byType).sort((a, b) => b[1] - a[1]);
 
-  const repoCounts = {};
-  allKeys.forEach(k => { (tMap[k]?.repos || []).forEach(r => { repoCounts[r] = (repoCounts[r] || 0) + 1; }); });
+  const repoCounts: Record<string, number> = {};
+  allKeys.forEach(k => {
+    (tMap.get(k)?.repos ?? []).forEach(r => { repoCounts[r] = (repoCounts[r] ?? 0) + 1; });
+  });
   const repoEntries = Object.entries(repoCounts).sort((a, b) => b[1] - a[1]);
   const maxR = Math.max(...Object.values(repoCounts), 1);
 
@@ -38,17 +58,18 @@ export function Metrics({ releases, tickets, statusCfg, classifiedSubs = [] }) {
   const bugRate = totalCounts.bugs.total > 0 ? Math.round(totalCounts.bugs.closed / totalCounts.bugs.total * 100) : 0;
   const testRate = totalCounts.tests.total > 0 ? Math.round(totalCounts.tests.closed / totalCounts.tests.total * 100) : 0;
 
-  const stats = [
-    { l: 'TOTAL RELEASES',  v: releases.length,   s: `${deployed.length} deployed · ${rollbacks.length} rollbacks`, c: 'var(--dp-tx,#e6edf3)' },
-    { l: 'DURACIÓN MEDIA',  v: `${avgDur}d`,       s: 'inicio → fin',                                                c: 'var(--dp-tx,#e6edf3)' },
-    { l: 'TASA DE ÉXITO',   v: `${successRate}%`,  s: `${deployed.length}/${finished.length} finalizadas`,           c: '#34d399' },
-    { l: 'TICKETS/RELEASE', v: tpr,                s: 'media',                                                        c: '#38bdf8' },
-    { l: 'REPOS ÚNICOS',    v: allRepos.length,    s: 'repositorios',                                                 c: '#a78bfa' },
-    { l: 'BUGS',            v: `${totalCounts.bugs.closed}/${totalCounts.bugs.total}`, s: `${bugRate}% resueltos`,     c: '#ef4444' },
+  interface Stat { l: string; v: string | number; s: string; c: string; }
+  const stats: Stat[] = [
+    { l: 'TOTAL RELEASES',  v: releases.length,    s: `${deployed.length} deployed · ${rollbacks.length} rollbacks`, c: 'var(--dp-tx,#e6edf3)' },
+    { l: 'DURACIÓN MEDIA',  v: `${avgDur}d`,        s: 'inicio → fin',                                                 c: 'var(--dp-tx,#e6edf3)' },
+    { l: 'TASA DE ÉXITO',   v: `${successRate}%`,   s: `${deployed.length}/${finished.length} finalizadas`,            c: '#34d399' },
+    { l: 'TICKETS/RELEASE', v: tpr,                 s: 'media',                                                         c: '#38bdf8' },
+    { l: 'REPOS ÚNICOS',    v: allRepos.length,     s: 'repositorios',                                                  c: '#a78bfa' },
+    { l: 'BUGS',            v: `${totalCounts.bugs.closed}/${totalCounts.bugs.total}`,   s: `${bugRate}% resueltos`,     c: '#ef4444' },
     { l: 'TESTS',           v: `${totalCounts.tests.closed}/${totalCounts.tests.total}`, s: `${testRate}% completados`, c: '#3b82f6' },
   ];
 
-  const TCOL = { Bug: '#f59e0b', Story: '#34d399', Task: '#3b82f6', Epic: '#a78bfa' };
+  const TCOL: Record<string, string> = { Bug: '#f59e0b', Story: '#34d399', Task: '#3b82f6', Epic: '#a78bfa' };
 
   return (
     <div>
@@ -74,22 +95,28 @@ export function Metrics({ releases, tickets, statusCfg, classifiedSubs = [] }) {
             ))}
             {months.length === 0 && <div style={{ fontSize: 10, color: 'var(--dp-tx3,#334155)', width: '100%', textAlign: 'center' }}>Sin datos</div>}
           </div>
-          {months.length > 0 && <div style={{ display: 'flex', gap: 4, marginTop: 3 }}>{months.map(([m]) => <div key={m} style={{ flex: 1, fontSize: 7, color: 'var(--dp-tx3,#334155)', textAlign: 'center' }}>{m.slice(5)}</div>)}</div>}
+          {months.length > 0 && (
+            <div style={{ display: 'flex', gap: 4, marginTop: 3 }}>
+              {months.map(([m]) => <div key={m} style={{ flex: 1, fontSize: 7, color: 'var(--dp-tx3,#334155)', textAlign: 'center' }}>{m.slice(5)}</div>)}
+            </div>
+          )}
         </div>
         <div style={{ background: 'var(--dp-sf,#0b0f18)', border: '1px solid var(--dp-bd,#1e293b)', borderRadius: 8, padding: '15px 17px' }}>
           <SLabel style={{ marginBottom: 12 }}>TICKETS POR TIPO</SLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
             {typeEntries.map(([type, count]) => {
-              const color = TCOL[type] || '#64748b';
-              return (<div key={type}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                  <span style={{ fontSize: 10, color: 'var(--dp-tx2,#94a3b8)' }}>{type}</span>
-                  <span style={{ fontSize: 10, color, fontWeight: 700 }}>{count} ({Math.round(count / Math.max(allKeys.length, 1) * 100)}%)</span>
+              const color = TCOL[type] ?? '#64748b';
+              return (
+                <div key={type}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                    <span style={{ fontSize: 10, color: 'var(--dp-tx2,#94a3b8)' }}>{type}</span>
+                    <span style={{ fontSize: 10, color, fontWeight: 700 }}>{count} ({Math.round(count / Math.max(allKeys.length, 1) * 100)}%)</span>
+                  </div>
+                  <div style={{ height: 4, background: 'var(--dp-bd,#1e293b)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${Math.round(count / Math.max(...Object.values(byType), 1) * 100)}%`, background: color, borderRadius: 2 }} />
+                  </div>
                 </div>
-                <div style={{ height: 4, background: 'var(--dp-bd,#1e293b)', borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${Math.round(count / Math.max(...Object.values(byType), 1) * 100)}%`, background: color, borderRadius: 2 }} />
-                </div>
-              </div>);
+              );
             })}
             {typeEntries.length === 0 && <div style={{ fontSize: 10, color: 'var(--dp-tx3,#334155)' }}>Sin datos</div>}
           </div>

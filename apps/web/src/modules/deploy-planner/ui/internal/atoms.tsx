@@ -1,8 +1,13 @@
-// @ts-nocheck
 // Small inline atoms shared by the Deploy Planner views.
 // Pure presentational — no state.
+import type { CSSProperties, ReactNode } from 'react';
 
-export const SLabel = ({ children, style = {} }) => (
+interface SLabelProps {
+  children: ReactNode;
+  style?: CSSProperties;
+}
+
+export const SLabel = ({ children, style = {} }: SLabelProps) => (
   <div
     style={{
       fontSize: 9,
@@ -17,7 +22,11 @@ export const SLabel = ({ children, style = {} }) => (
   </div>
 );
 
-export const RepoChip = ({ name }) => (
+interface RepoChipProps {
+  name: string;
+}
+
+export const RepoChip = ({ name }: RepoChipProps) => (
   <span
     style={{
       fontSize: 9,
