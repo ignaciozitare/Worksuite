@@ -121,7 +121,18 @@ INSERT INTO users (id, name, email, role, desk_type, avatar, active, modules) VA
   ('00000006-0000-0000-0000-000000000004', 'Sara Ibáñez',     'seed+sara.ibanez@worksuite.test',     'user',  'hotdesk', 'SI', true, '["jt","hd","retro","chrono"]'::jsonb),
   ('00000006-0000-0000-0000-000000000005', 'Óscar Villar',    'seed+oscar.villar@worksuite.test',    'user',  'hotdesk', 'OV', true, '["jt","hd","retro","chrono"]'::jsonb),
   ('00000006-0000-0000-0000-000000000006', 'Laura Redondo',   'seed+laura.redondo@worksuite.test',   'user',  'hotdesk', 'LR', true, '["jt","hd","retro","chrono"]'::jsonb)
-ON CONFLICT (id) DO NOTHING;
+-- Upsert instead of DO NOTHING because an AFTER INSERT trigger on
+-- auth.users (handle_new_user) has already created a matching row in
+-- public.users with the email prefix as the name. We want our real data
+-- to win, so we overwrite the fields this seed cares about.
+ON CONFLICT (id) DO UPDATE SET
+  name       = EXCLUDED.name,
+  email      = EXCLUDED.email,
+  role       = EXCLUDED.role,
+  desk_type  = EXCLUDED.desk_type,
+  avatar     = EXCLUDED.avatar,
+  active     = EXCLUDED.active,
+  modules    = EXCLUDED.modules;
 
 -- ── 2. Employee configs (1 per user, defaults: 480 min, 23 days, L-V) ──────
 INSERT INTO ch_empleado_config (user_id, horas_jornada_minutos, dias_vacaciones, jornada_dias)
