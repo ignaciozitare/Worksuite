@@ -267,11 +267,52 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
   const teamMembers: { name: string; status: 'working' | 'lunch' | 'off' }[] = [];
 
   /* ── Stat cards data ────────────────────────────────────────────────────── */
-  const stats = [
-    { icon: '◷', label: t('chrono.horasHoy'), value: fmtHM(minutesNow), accent: C.amber },
-    { icon: '▤', label: t('chrono.estaSemana'), value: fmtHM(weekMinutes), accent: C.blue },
-    { icon: '⚖', label: t('chrono.bolsaHoras'), value: `${saldoBolsa >= 0 ? '+' : ''}${fmtHM(Math.abs(saldoBolsa))}`, accent: saldoBolsa >= 0 ? C.green : C.red },
-    { icon: '◈', label: t('chrono.vacRestantes'), value: '—', accent: C.purple || '#a855f7' },
+  // Weekly progress: assume a 5-day standard week against the configured
+  // daily quota. Clamp to 100 so the bar never overflows.
+  const weekTargetMin = jornadaMin * 5;
+  const weekPct = weekTargetMin > 0 ? Math.min(100, Math.round((weekMinutes / weekTargetMin) * 100)) : 0;
+
+  interface StatCardDef {
+    icon: string;
+    label: string;
+    value: string;
+    accent: string;
+    subtext?: string;
+    trend?: string;
+    progressBar?: { pct: number };
+    bars?: number[];
+  }
+
+  const stats: StatCardDef[] = [
+    {
+      icon: '◷',
+      label: t('chrono.horasHoy'),
+      value: fmtHM(minutesNow),
+      accent: C.amber,
+      progressBar: { pct },
+      ...(pct >= 100 && { trend: t('chrono.completa') }),
+    },
+    {
+      icon: '▤',
+      label: t('chrono.estaSemana'),
+      value: `${fmtHM(weekMinutes)} / ${fmtHM(weekTargetMin)}`,
+      accent: C.blue,
+      progressBar: { pct: weekPct },
+    },
+    {
+      icon: '⚖',
+      label: t('chrono.bolsaHoras'),
+      value: `${saldoBolsa >= 0 ? '+' : ''}${fmtHM(Math.abs(saldoBolsa))}`,
+      accent: saldoBolsa >= 0 ? C.green : C.red,
+      subtext: t('chrono.bolsaHorasHint'),
+    },
+    {
+      icon: '◈',
+      label: t('chrono.vacRestantes'),
+      value: '—',
+      accent: C.purple || '#a855f7',
+      subtext: t('chrono.vacRestantesHint'),
+    },
   ];
 
   /* ── Render ─────────────────────────────────────────────────────────────── */
@@ -406,7 +447,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
         </div>
       )}
 
-      {/* ── 4 stat cards (Stitch look, Step 2) ────────────────────────────── */}
+      {/* ── 4 stat cards (Stitch look, Step 2 + Step 3 extras) ────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         {stats.map((s, i) => (
           <ChronoStatCard
@@ -415,6 +456,9 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
             value={s.value}
             accent={s.accent}
             icon={s.icon}
+            subtext={s.subtext}
+            trend={s.trend}
+            progressBar={s.progressBar}
           />
         ))}
       </div>

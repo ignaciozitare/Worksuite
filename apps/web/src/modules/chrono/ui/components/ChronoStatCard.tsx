@@ -33,6 +33,17 @@ export interface ChronoStatCardProps {
    * Rendered next to the value on the same row.
    */
   trend?: ReactNode;
+  /**
+   * Optional progress bar shown at the bottom of the card.
+   * `pct` must be 0-100. `track` lets the caller pick a color for the
+   * background of the bar (defaults to a subtle dark tint).
+   */
+  progressBar?: { pct: number; track?: string };
+  /**
+   * Optional sparkline of mini vertical bars at the bottom of the card.
+   * Each entry is 0-100. Useful for things like "last 7 days" at a glance.
+   */
+  bars?: number[];
   /** Forwarded style override for the root card. */
   style?: CSSProperties;
 }
@@ -46,6 +57,8 @@ export function ChronoStatCard({
   icon,
   subtext,
   trend,
+  progressBar,
+  bars,
   style,
 }: ChronoStatCardProps) {
   return (
@@ -159,6 +172,62 @@ export function ChronoStatCard({
           }}
         >
           {subtext}
+        </div>
+      )}
+
+      {/* Optional progress bar */}
+      {progressBar && (
+        <div
+          style={{
+            marginTop: 14,
+            height: 5,
+            background: progressBar.track ?? T.color.surfaceLow,
+            borderRadius: T.radius.full,
+            overflow: 'hidden',
+            position: 'relative',
+          }}
+        >
+          <div
+            style={{
+              width: `${Math.max(0, Math.min(100, progressBar.pct))}%`,
+              height: '100%',
+              background: accent,
+              borderRadius: T.radius.full,
+              transition: 'width .4s ease',
+            }}
+          />
+        </div>
+      )}
+
+      {/* Optional mini bars (sparkline) */}
+      {bars && bars.length > 0 && (
+        <div
+          style={{
+            marginTop: 14,
+            display: 'flex',
+            alignItems: 'flex-end',
+            gap: 4,
+            height: 24,
+            position: 'relative',
+          }}
+        >
+          {bars.map((h, i) => {
+            const clamped = Math.max(0, Math.min(100, h));
+            return (
+              <div
+                key={i}
+                style={{
+                  flex: 1,
+                  height: `${Math.max(4, clamped)}%`,
+                  background: clamped > 0 ? accent : T.color.surfaceLow,
+                  opacity: clamped > 0 ? 0.35 + (clamped / 100) * 0.65 : 0.2,
+                  borderRadius: 2,
+                  minHeight: 3,
+                  transition: 'height .3s ease, opacity .3s ease',
+                }}
+              />
+            );
+          })}
         </div>
       )}
     </div>
