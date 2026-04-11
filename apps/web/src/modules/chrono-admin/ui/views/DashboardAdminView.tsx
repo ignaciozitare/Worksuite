@@ -3,6 +3,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import type { IAdminFichajeRepository } from '../../domain/ports/IAdminFichajeRepository';
 import type { EmpleadoResumen } from '../../domain/entities/EmpleadoResumen';
+// Reusing the Stitch-inspired stat card from the Chrono module. Acceptable
+// cross-module import because chrono-admin already imports chrono's theme
+// tokens, so the coupling exists. If a third consumer shows up, move this
+// component (and CHRONO_THEME) to apps/web/src/shared/ui/.
+import { ChronoStatCard } from '../../../chrono/ui/components/ChronoStatCard';
 
 const C = { amber:'#f59e0b', amberDim:'#92400e', amberGlow:'rgba(245,158,11,0.12)', tx:'#e8e8e8', txDim:'#888', txMuted:'#555', green:'#10b981', greenDim:'rgba(16,185,129,0.15)', red:'#ef4444', redDim:'rgba(239,68,68,0.15)', blue:'#3b82f6', blueDim:'rgba(59,130,246,0.15)', orange:'#f97316', purple:'#a855f7', sf:'#161616', sfHover:'#1e1e1e', bd:'#2a2a2a', bg:'#0d0d0d' };
 
@@ -66,18 +71,16 @@ export function DashboardAdminView({ fichajeRepo }: Props) {
         </div>
       ) : (
         <>
-          {/* ── Stat cards ─── */}
+          {/* ── Stat cards (Stitch look) ─── */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 28 }}>
             {stats.map(s => (
-              <div key={s.label} className="ch-card" style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ fontSize: 20 }}>{s.icon}</div>
-                <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: s.accent }}>
-                  {s.value}
-                </div>
-                <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
-                  {s.label}
-                </div>
-              </div>
+              <ChronoStatCard
+                key={s.label}
+                label={s.label}
+                value={s.value}
+                accent={s.accent}
+                icon={s.icon}
+              />
             ))}
           </div>
 
