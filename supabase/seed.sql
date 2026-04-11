@@ -16,12 +16,60 @@
 --   * Idempotent via ON CONFLICT (id) DO NOTHING for the static rows, and
 --     guarded sub-SELECTs for the dynamically generated fichajes.
 --
+-- Note on auth.users:
+--   `public.users.id` has a FK to `auth.users.id ON DELETE CASCADE`, so we
+--   must create the auth rows first. Seed accounts have NO password/hash,
+--   so they CANNOT log in — which is exactly what we want. Cleanup just
+--   deletes the auth.users rows and the public.users rows cascade away.
+--
 -- To wipe everything clean: run supabase/seed-cleanup.sql.
 -- ============================================================================
 
 BEGIN;
 
--- ── 1. Users (30 seed accounts) ─────────────────────────────────────────────
+-- ── 0. Auth rows (required because public.users.id FK → auth.users.id) ─────
+-- Seed accounts only have the bare minimum fields. No password, no identity,
+-- no session → they are unable to log in. Their only role is to satisfy the
+-- FK so we can insert into `public.users`.
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email,
+  raw_app_meta_data, raw_user_meta_data,
+  email_confirmed_at, created_at, updated_at,
+  is_sso_user, is_anonymous
+) VALUES
+  ('00000001-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+lucia.delgado@worksuite.test',   '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000001-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+elena.fuentes@worksuite.test',   '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000002-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+clara.nogueira@worksuite.test',  '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000002-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+diego.castillo@worksuite.test',  '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000002-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+miguel.ortega@worksuite.test',   '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000002-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+carmen.bravo@worksuite.test',    '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000003-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+alejandra.ruiz@worksuite.test',  '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000003-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+marco.ferrari@worksuite.test',   '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000003-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+sofia.herrero@worksuite.test',   '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000003-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+pablo.iglesias@worksuite.test',  '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000003-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+valeria.campos@worksuite.test',  '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000003-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+ivan.ortiz@worksuite.test',      '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000004-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+nuria.vidal@worksuite.test',     '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000004-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+javier.molina@worksuite.test',   '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000004-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+raul.pereira@worksuite.test',    '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000004-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+ainhoa.solis@worksuite.test',    '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000004-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+tomas.rivera@worksuite.test',    '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000004-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+lola.martin@worksuite.test',     '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000005-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+gabriel.rios@worksuite.test',    '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000005-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+martina.serra@worksuite.test',   '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000005-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+andres.navarro@worksuite.test',  '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000005-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+irene.bustos@worksuite.test',    '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000005-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+enzo.vargas@worksuite.test',     '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000005-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+camila.reyes@worksuite.test',    '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000006-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+hector.salas@worksuite.test',    '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000006-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+paula.domingo@worksuite.test',   '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000006-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+bruno.cabrera@worksuite.test',   '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000006-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+sara.ibanez@worksuite.test',     '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000006-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+oscar.villar@worksuite.test',    '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false),
+  ('00000006-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'seed+laura.redondo@worksuite.test',   '{"provider":"seed"}'::jsonb, '{}'::jsonb, now(), now(), now(), false, false)
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 1. Users (30 seed accounts in public.users) ────────────────────────────
 -- IDs are intentionally predictable so the SQL reads cleanly.
 -- "Prefix 0000000X" encodes the group:
 --   00000001-... → admins (RRHH)

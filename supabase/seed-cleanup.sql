@@ -83,6 +83,12 @@ WHERE user_id IN (
 -- 9. Finally the users themselves
 DELETE FROM users WHERE email LIKE 'seed+%@worksuite.test';
 
+-- 10. Also delete the auth.users rows. public.users has ON DELETE CASCADE
+-- from auth.users, so in theory deleting here alone would clean both sides,
+-- but we keep step 9 explicit for clarity and to guard against any future
+-- removal of the cascade.
+DELETE FROM auth.users WHERE email LIKE 'seed+%@worksuite.test';
+
 COMMIT;
 
 -- Sanity check (run manually after):
