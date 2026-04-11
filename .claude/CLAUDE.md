@@ -75,3 +75,17 @@
 - Be direct and practical.
 - Prioritize simple, maintainable, and consistent solutions.
 - If there are tradeoffs or uncertainties, explain them briefly.
+
+## Session State & Context Management
+
+- At the **start of every session**, read `WORK_STATE.md` to understand the current task,
+  where we left off, and what the immediate next step is.
+- At the **end of any significant task** (or proactively if the context window is getting full),
+  update `WORK_STATE.md` with the real current state — do not wait for the user to ask.
+- `WORK_STATE.md` is not a log of requests. It is a **live snapshot** of the work in progress.
+- Structure of `WORK_STATE.md`:
+  - **🎯 Tarea en curso**: what we are building right now.
+  - **📍 Punto exacto**: which files were created/modified and what is still pending.
+  - **✅ Decisiones tomadas**: key decisions made (naming, models, patterns).
+  - **⏳ Siguiente paso inmediato**: the single next concrete action.
+  - **🚫 Bloqueos / notas**: anything that must not be forgotten or mixed up.
