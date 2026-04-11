@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { IDeployReleaseRawRepo, DeployReleaseRow } from '../../domain/ports/IDeployReleaseRawRepo';
 

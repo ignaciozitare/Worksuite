@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ReleaseCard — draggable card shown in the Planning board.
  *
@@ -9,25 +8,73 @@
  */
 import { useState } from 'react';
 import { DateRangePicker, BugIcon } from '@worksuite/ui';
-import { RepoGroupService } from '../../domain/services/RepoGroupService';
-import { SubtaskService } from '../../domain/services/SubtaskService';
+import { RepoGroupService, type LinkedGroup, type ReleaseForGrouping } from '../../domain/services/RepoGroupService';
+import { SubtaskService, type ClassifiedSubtask } from '../../domain/services/SubtaskService';
 import { datesOverlap } from './helpers';
 import { RepoChip } from './atoms';
 import { VersionPicker } from './VersionPicker';
+import type { Release, DpTicket, StatusCfg, RepoGroupView, DragState, VersionCfg } from './types';
 
-export function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag, drag, allReleases, repoGroups, versionCfg, allReleaseNumbers, jiraBaseUrl = '', linkedGroups = [], classifiedSubs = [] }) {
+interface ReleaseCardProps {
+  rel: Release;
+  statusCfg: StatusCfg;
+  tickets: DpTicket[];
+  onOpen: (id: string) => void;
+  onUpd: (id: string, patch: Partial<Release>) => void | Promise<void>;
+  onDelete: (id: string) => void;
+  onDrop: (targetId: string) => void;
+  setDrag: (drag: DragState | null) => void;
+  drag: DragState | null;
+  allReleases: Release[];
+  repoGroups: RepoGroupView[];
+  versionCfg: VersionCfg | null;
+  allReleaseNumbers: string[];
+  jiraBaseUrl?: string;
+  linkedGroups?: LinkedGroup[];
+  classifiedSubs?: ClassifiedSubtask[];
+}
+
+interface Conflict {
+  repo: string;
+  groupName: string;
+  otherRelease: string;
+}
+
+const PRIORITY_COLOR: Record<string, string> = {
+  Highest: '#ef4444',
+  High:    '#f97316',
+  Medium:  '#3b82f6',
+  Low:     '#6b7280',
+};
+
+// Shape that RepoGroupService.canTransitionToDone expects — we map from
+// the UI `Release` rows into it once and reuse the list.
+function toReleasesForGrouping(releases: Release[], statusCfg: StatusCfg): ReleaseForGrouping[] {
+  return releases.map(r => ({
+    id: r.id,
+    ticketIds: r.ticket_ids ?? [],
+    status: r.status || 'Planned',
+    statusCategory: statusCfg[r.status || 'Planned']?.status_category ?? 'backlog',
+  }));
+}
+
+export function ReleaseCard({
+  rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag,
+  allReleases, repoGroups, versionCfg, allReleaseNumbers,
+  jiraBaseUrl = '', linkedGroups = [], classifiedSubs = [],
+}: ReleaseCardProps) {
   const [addingTicket, setAddingTicket] = useState(false);
   const [search, setSearch] = useState('');
   const [showVersionPicker, setShowVersionPicker] = useState(false);
-  const tMap = Object.fromEntries(tickets.map(t => [t.key, t]));
+  const tMap = new Map(tickets.map(t => [t.key, t]));
 
-  const cfg = statusCfg[rel.status] || { color: '#6b7280', bg_color: 'rgba(107,114,128,.12)', border: '#1f2937' };
+  const cfg = statusCfg[rel.status] ?? { color: '#6b7280', bg_color: 'rgba(107,114,128,.12)', border: '#1f2937' };
 
   // Conflict detection using repo groups
   // A conflict exists when: another active release has a repo that belongs to the SAME group as one of our repos
-  const myRepos = [...new Set((rel.ticket_ids || []).flatMap(k => tMap[k]?.repos || []))];
+  const myRepos = [...new Set((rel.ticket_ids ?? []).flatMap(k => tMap.get(k)?.repos ?? []))];
 
-  const conflicts = []; // { repo, groupName, otherRelease }
+  const conflicts: Conflict[] = [];
   for (const group of repoGroups) {
     const myGroupRepos = myRepos.filter(r => group.repos.includes(r));
     if (myGroupRepos.length === 0) continue;
@@ -37,7 +84,7 @@ export function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, 
       if (!isActive) continue;
       // Only conflict if date ranges overlap
       if (!datesOverlap(rel.start_date, rel.end_date, other.start_date, other.end_date)) continue;
-      const otherRepos = [...new Set((other.ticket_ids || []).flatMap(k => tMap[k]?.repos || []))];
+      const otherRepos = [...new Set((other.ticket_ids ?? []).flatMap(k => tMap.get(k)?.repos ?? []))];
       const sharedGroupRepos = myGroupRepos.filter(r => otherRepos.includes(r));
       for (const repo of sharedGroupRepos) {
         if (!conflicts.find(c => c.repo === repo)) {
@@ -47,12 +94,15 @@ export function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, 
     }
   }
 
-  const relTickets = (rel.ticket_ids || []).map(k => tMap[k]).filter(Boolean);
-  const relRepos   = [...new Set(relTickets.flatMap(t => t.repos || []))];
-  const unassigned = tickets.filter(t => !(rel.ticket_ids || []).includes(t.key));
+  const relTickets = (rel.ticket_ids ?? [])
+    .map(k => tMap.get(k))
+    .filter((t): t is DpTicket => Boolean(t));
+  const relRepos   = [...new Set(relTickets.flatMap(t => t.repos ?? []))];
+  const unassigned = tickets.filter(t => !(rel.ticket_ids ?? []).includes(t.key));
 
   return (
-    <div className="anim-in"
+    <div
+      className="anim-in"
       onDragOver={e => e.preventDefault()}
       onDrop={e => { e.preventDefault(); onDrop(rel.id); }}
       onClick={() => onOpen(rel.id)}
@@ -68,8 +118,8 @@ export function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, 
         transition: 'box-shadow .2s, transform .1s',
         cursor: 'pointer',
       }}
-      onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-      onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+      onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
+      onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
     >
       {/* Release number: click title opens detail, edit via input */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
@@ -95,15 +145,16 @@ export function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, 
           <button
             onClick={e => { e.stopPropagation(); setShowVersionPicker(v => !v); }}
             title="Generar número de versión"
-            style={{ background: 'var(--dp-sf2,#07090f)', border: '1px solid var(--dp-bd,#1e293b)', borderLeft: 'none', borderRadius: '0 4px 4px 0', padding: '0 8px', fontSize: 12, color: 'var(--dp-tx3,#64748b)', cursor: 'pointer', lineHeight: 1 }}>
+            style={{ background: 'var(--dp-sf2,#07090f)', border: '1px solid var(--dp-bd,#1e293b)', borderLeft: 'none', borderRadius: '0 4px 4px 0', padding: '0 8px', fontSize: 12, color: 'var(--dp-tx3,#64748b)', cursor: 'pointer', lineHeight: 1 }}
+          >
             ⚙
           </button>
         </div>
         {showVersionPicker && versionCfg && (
           <VersionPicker
             versionCfg={versionCfg}
-            allReleaseNumbers={allReleaseNumbers || []}
-            onSelect={v => { onUpd(rel.id, { release_number: v }); setShowVersionPicker(false); }}
+            allReleaseNumbers={allReleaseNumbers}
+            onSelect={v => { void onUpd(rel.id, { release_number: v }); setShowVersionPicker(false); }}
             onClose={() => setShowVersionPicker(false)}
           />
         )}
@@ -111,7 +162,7 @@ export function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, 
 
       {/* Description — textarea with wrapping */}
       <textarea
-        value={rel.description || ''}
+        value={rel.description ?? ''}
         onChange={e => onUpd(rel.id, { description: e.target.value })}
         onClick={e => e.stopPropagation()}
         placeholder="Descripción de la release…"
@@ -121,29 +172,31 @@ export function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, 
 
       {/* Status selector with is_final blocking */}
       <div style={{ marginBottom: 10 }}>
-        <select value={rel.status || 'Planned'}
+        <select
+          value={rel.status || 'Planned'}
           onChange={e => {
             const newStatus = e.target.value;
             const isDone = statusCfg[newStatus]?.status_category === 'done';
             if (isDone && linkedGroups.length) {
               const check = RepoGroupService.canTransitionToDone(
                 rel.id, linkedGroups,
-                allReleases.map(r => ({ id: r.id, ticketIds: r.ticket_ids || [], status: r.status || 'Planned', statusCategory: statusCfg[r.status || 'Planned']?.status_category || 'backlog' })),
+                toReleasesForGrouping(allReleases, statusCfg),
               );
               if (!check.allowed) {
                 alert(`🔒 No puedes pasar a "${newStatus}" porque hay releases vinculadas pendientes:\n${check.blockers.map(b => `• ${b.groupName}: release en "${b.status}"`).join('\n')}`);
                 return;
               }
             }
-            onUpd(rel.id, { status: newStatus });
+            void onUpd(rel.id, { status: newStatus });
           }}
           onClick={e => e.stopPropagation()}
-          style={{ background: cfg.bg_color, border: `1px solid ${cfg.border}`, borderRadius: 5, padding: '4px 10px', fontSize: 10, color: cfg.color, cursor: 'pointer', outline: 'none', fontWeight: 700, fontFamily: 'inherit' }}>
+          style={{ background: cfg.bg_color, border: `1px solid ${cfg.border}`, borderRadius: 5, padding: '4px 10px', fontSize: 10, color: cfg.color, cursor: 'pointer', outline: 'none', fontWeight: 700, fontFamily: 'inherit' }}
+        >
           {Object.entries(statusCfg).map(([name, v]) => {
             const isDoneCat = v.status_category === 'done';
             const blocked = isDoneCat && linkedGroups.length > 0 && !RepoGroupService.canTransitionToDone(
               rel.id, linkedGroups,
-              allReleases.map(r => ({ id: r.id, ticketIds: r.ticket_ids || [], status: r.status || 'Planned', statusCategory: statusCfg[r.status || 'Planned']?.status_category || 'backlog' })),
+              toReleasesForGrouping(allReleases, statusCfg),
             ).allowed;
             return <option key={name} value={name} disabled={blocked}>{blocked ? '🔒 ' : ''}{name}</option>;
           })}
@@ -153,12 +206,12 @@ export function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, 
       {/* Dates — single calendar range picker */}
       <div style={{ marginBottom: 8 }} onClick={e => e.stopPropagation()}>
         <DateRangePicker
-          startValue={rel.start_date || ''}
-          endValue={rel.end_date || ''}
-          onChange={(s, e) => {
+          startValue={rel.start_date ?? ''}
+          endValue={rel.end_date ?? ''}
+          onChange={(s: string, e: string) => {
             const startDate = s ? s.slice(0, 10) : '';
             const endDate = e ? e.slice(0, 10) : '';
-            onUpd(rel.id, { start_date: startDate, end_date: endDate });
+            void onUpd(rel.id, { start_date: startDate, end_date: endDate });
           }}
           showTime={false}
           labels={{ start: 'Start', end: 'End' }}
@@ -181,26 +234,51 @@ export function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, 
       {/* Tickets */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
         {relTickets.map(t => {
-          const PCOLOR = { Highest: '#ef4444', High: '#f97316', Medium: '#3b82f6', Low: '#6b7280' };
-          const pColor = PCOLOR[t.priority] || '#334155';
+          const pColor = PRIORITY_COLOR[t.priority] ?? '#334155';
           const noRepo = !t.repos || t.repos.length === 0;
           return (
-            <div key={t.key} draggable
+            <div
+              key={t.key}
+              draggable
               onDragStart={() => setDrag({ key: t.key, fromId: rel.id })}
               onDragEnd={() => setDrag(null)}
               onClick={e => e.stopPropagation()}
               title={noRepo ? '⚠ Sin repositorio — asigna Components en Jira' : t.summary}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', background: 'var(--dp-sf2,#07090f)', border: noRepo ? '1px solid rgba(239,68,68,.5)' : '1px solid var(--dp-bd,#1e293b)', borderLeft: `2px solid ${noRepo ? '#ef4444' : pColor}`, borderRadius: 4, cursor: 'grab', fontSize: 10 }}>
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px',
+                background: 'var(--dp-sf2,#07090f)',
+                border: noRepo ? '1px solid rgba(239,68,68,.5)' : '1px solid var(--dp-bd,#1e293b)',
+                borderLeft: `2px solid ${noRepo ? '#ef4444' : pColor}`,
+                borderRadius: 4, cursor: 'grab', fontSize: 10,
+              }}
+            >
               {noRepo && <span style={{ color: '#ef4444', fontSize: 10, flexShrink: 0 }}>⚠</span>}
               <span style={{ color: '#38bdf8', fontWeight: 700, flexShrink: 0 }}>{t.key}</span>
-              <span style={{ color: noRepo ? '#ef4444' : 'var(--dp-tx2,#94a3b8)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.summary.slice(0, 28)}{t.summary.length > 28 ? '…' : ''}</span>
-              <span style={{ color: 'var(--dp-tx3,#334155)', flexShrink: 0, fontSize: 9 }}>{t.assignee?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '—'}</span>
-              {jiraBaseUrl && <a href={`${jiraBaseUrl}/browse/${t.key}`} target="_blank" rel="noopener noreferrer"
-                onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}
-                style={{ color: 'var(--dp-tx3,#475569)', fontSize: 10, flexShrink: 0, textDecoration: 'none', lineHeight: 1, padding: '0 2px' }}
-                title={`Open ${t.key} in Jira`}>↗</a>}
-              <button onClick={e => { e.stopPropagation(); onUpd(rel.id, { ticket_ids: (rel.ticket_ids || []).filter(x => x !== t.key) }); }}
-                style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#334155)', cursor: 'pointer', fontSize: 12, lineHeight: 1, flexShrink: 0 }}>×</button>
+              <span style={{ color: noRepo ? '#ef4444' : 'var(--dp-tx2,#94a3b8)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {t.summary.slice(0, 28)}{t.summary.length > 28 ? '…' : ''}
+              </span>
+              <span style={{ color: 'var(--dp-tx3,#334155)', flexShrink: 0, fontSize: 9 }}>
+                {t.assignee?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '—'}
+              </span>
+              {jiraBaseUrl && (
+                <a
+                  href={`${jiraBaseUrl}/browse/${t.key}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onMouseDown={e => e.stopPropagation()}
+                  onClick={e => e.stopPropagation()}
+                  style={{ color: 'var(--dp-tx3,#475569)', fontSize: 10, flexShrink: 0, textDecoration: 'none', lineHeight: 1, padding: '0 2px' }}
+                  title={`Open ${t.key} in Jira`}
+                >
+                  ↗
+                </a>
+              )}
+              <button
+                onClick={e => { e.stopPropagation(); void onUpd(rel.id, { ticket_ids: (rel.ticket_ids ?? []).filter(x => x !== t.key) }); }}
+                style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#334155)', cursor: 'pointer', fontSize: 12, lineHeight: 1, flexShrink: 0 }}
+              >
+                ×
+              </button>
             </div>
           );
         })}
@@ -216,31 +294,41 @@ export function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, 
       {/* Add ticket */}
       {addingTicket ? (
         <div style={{ marginBottom: 8 }}>
-          <input autoFocus value={search} onChange={e => setSearch(e.target.value)}
+          <input
+            autoFocus
+            value={search}
+            onChange={e => setSearch(e.target.value)}
             placeholder="Buscar ticket…"
             style={{ width: '100%', background: 'var(--dp-sf2,#07090f)', border: '1px solid #38bdf8', borderRadius: 4, padding: '5px 8px', fontSize: 10, color: 'var(--dp-tx,#e6edf3)', outline: 'none', marginBottom: 3 }}
-            onBlur={() => { setTimeout(() => { setAddingTicket(false); setSearch(''); }, 150); }} />
+            onBlur={() => { setTimeout(() => { setAddingTicket(false); setSearch(''); }, 150); }}
+          />
           {unassigned.filter(t => !search || (t.key + t.summary).toLowerCase().includes(search.toLowerCase())).slice(0, 5).map(t => (
-            <div key={t.key}
-              onMouseDown={() => { onUpd(rel.id, { ticket_ids: [...(rel.ticket_ids || []), t.key] }); setAddingTicket(false); setSearch(''); }}
+            <div
+              key={t.key}
+              onMouseDown={() => { void onUpd(rel.id, { ticket_ids: [...(rel.ticket_ids ?? []), t.key] }); setAddingTicket(false); setSearch(''); }}
               style={{ padding: '4px 8px', fontSize: 10, cursor: 'pointer', color: 'var(--dp-tx2,#94a3b8)', display: 'flex', gap: 8, borderRadius: 3 }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--dp-sf,#0b0f18)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--dp-sf,#0b0f18)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
               <span style={{ color: '#38bdf8', fontWeight: 700, flexShrink: 0 }}>{t.key}</span>
               <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.summary}</span>
             </div>
           ))}
         </div>
       ) : (
-        <button onClick={e => { e.stopPropagation(); setAddingTicket(true); }}
+        <button
+          onClick={e => { e.stopPropagation(); setAddingTicket(true); }}
           style={{ width: '100%', background: 'transparent', border: '1px dashed var(--dp-bd,#1e293b)', borderRadius: 4, padding: '5px', fontSize: 10, color: 'var(--dp-tx3,#334155)', cursor: 'pointer', marginBottom: 10, transition: 'border-color .15s' }}
-          onMouseEnter={e => e.currentTarget.style.borderColor = cfg.color}
-          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--dp-bd,#1e293b)'}>+ ticket</button>
+          onMouseEnter={e => (e.currentTarget.style.borderColor = cfg.color)}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--dp-bd,#1e293b)')}
+        >
+          + ticket
+        </button>
       )}
 
       {/* Bug/Test counters */}
       {(() => {
-        const relSubs = classifiedSubs.filter(s => (rel.ticket_ids || []).includes(s.parentKey));
+        const relSubs = classifiedSubs.filter(s => (rel.ticket_ids ?? []).includes(s.parentKey));
         const counts = SubtaskService.count(relSubs);
         if (counts.bugs.total === 0 && counts.tests.total === 0) return null;
         return (
@@ -261,7 +349,7 @@ export function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, 
 
       {/* Repo chips */}
       {relRepos.length > 0 && (
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', paddingTop: relRepos.length ? 4 : 6, borderTop: relRepos.length ? 'none' : '1px solid var(--dp-bd,#0e1520)' }}>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', paddingTop: 4 }}>
           {relRepos.map(r => <RepoChip key={r} name={r} />)}
         </div>
       )}
