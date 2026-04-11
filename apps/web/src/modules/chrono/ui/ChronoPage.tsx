@@ -65,7 +65,7 @@ const CSS = `
 .ch .ch-badge-amber{background:${C.amberGlow};color:${C.amber};}
 .ch .ch-badge-blue{background:${C.blueDim};color:${C.blue};}
 .ch .ch-badge-muted{background:#1e1e1e;color:${C.txDim};}
-.ch .ch-card{background:${C.sf};border:1px solid ${C.bd};border-radius:8px;padding:20px;}
+.ch .ch-card{background:${T.color.surface};border:1px solid ${T.color.surfaceHigh};border-radius:${T.radius.lg};padding:20px;}
 .ch .ch-stat{background:${C.sf};border:1px solid ${C.bd};border-radius:8px;padding:18px 20px;position:relative;overflow:hidden;}
 .ch .ch-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,${C.amberDim});}
 .ch .ch-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;text-transform:uppercase;transition:all .15s;}
@@ -76,10 +76,11 @@ const CSS = `
 .ch .ch-btn-red{background:${C.redDim};color:${C.red};border-color:rgba(239,68,68,.3);}
 .ch .ch-btn-green{background:${C.greenDim};color:${C.green};border-color:rgba(16,185,129,.3);}
 .ch table{width:100%;border-collapse:collapse;}
-.ch th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:${C.txMuted};padding:10px 14px;border-bottom:1px solid ${C.bd};font-family:'IBM Plex Mono',monospace;}
-.ch td{padding:12px 14px;font-size:13px;border-bottom:1px solid #1a1a1a;vertical-align:middle;}
+.ch th{text-align:left;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:${T.color.textDim};padding:12px 16px;border-bottom:1px solid ${T.color.surfaceHigh};background:${T.color.surfaceLow};font-family:${T.font.body};position:sticky;top:0;z-index:1;}
+.ch td{padding:14px 16px;font-size:13px;color:${T.color.text};border-bottom:1px solid ${T.color.surfaceHigh};vertical-align:middle;font-family:${T.font.body};}
 .ch tr:last-child td{border-bottom:none;}
-.ch tr:hover td{background:${C.sfHover};}
+.ch tbody tr{transition:background .12s;}
+.ch tbody tr:hover td{background:${T.color.surfaceHigh};}
 .ch .ch-toggle{position:relative;width:40px;height:22px;background:${C.bd};border-radius:11px;cursor:pointer;transition:background .2s;border:none;}
 .ch .ch-toggle.on{background:${C.amber};}
 .ch .ch-toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:white;border-radius:50%;transition:transform .2s;}
