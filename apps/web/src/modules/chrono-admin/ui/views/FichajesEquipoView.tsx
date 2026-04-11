@@ -155,7 +155,7 @@ export function FichajesEquipoView({ fichajeRepo }: Props) {
           {t('chronoAdmin.sinDatos')}
         </div>
       ) : (
-        <div className="ch-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="ch-card" style={{ padding: 0, overflow: 'auto', maxHeight: 'calc(100vh - 320px)' }}>
           <table>
             <thead>
               <tr>

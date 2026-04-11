@@ -338,7 +338,7 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
 
       {/* ── Tab: Mis solicitudes ───────────────────────────────────────────── */}
       {tab === 'solicitudes' && (
-        <div className="ch-card fade-in" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="ch-card fade-in" style={{ padding: 0, overflow: 'auto', maxHeight: 'calc(100vh - 340px)' }}>
           {vacaciones.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 40, color: C.txMuted }}>
               <span className="mono" style={{ fontSize: 12, letterSpacing: '.08em' }}>{t('chrono.sinVacaciones')}</span>

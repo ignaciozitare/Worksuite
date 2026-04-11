@@ -171,7 +171,7 @@ function MonthlyReport({ fichajeRepo, mes }: { fichajeRepo: IAdminFichajeReposit
       </div>
 
       {/* Table */}
-      <div className="ch-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
+      <div className="ch-card" style={{ padding: 0, overflow: 'auto', maxHeight: 'calc(100vh - 420px)', marginBottom: 16 }}>
         <table>
           <thead><tr>
             <th>{t('chronoAdmin.empleado')}</th>
@@ -251,7 +251,7 @@ function VacacionesReport({ vacacionRepo, year }: { vacacionRepo: IAdminVacacion
       </div>
 
       {/* Table */}
-      <div className="ch-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
+      <div className="ch-card" style={{ padding: 0, overflow: 'auto', maxHeight: 'calc(100vh - 420px)', marginBottom: 16 }}>
         <table>
           <thead><tr>
             <th>{t('chronoAdmin.empleado')}</th>
@@ -357,7 +357,7 @@ function JiraReport({ jiraRepo, mes }: { jiraRepo: IJiraResumenRepository; mes: 
       </div>
 
       {/* Table */}
-      <div className="ch-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
+      <div className="ch-card" style={{ padding: 0, overflow: 'auto', maxHeight: 'calc(100vh - 420px)', marginBottom: 16 }}>
         <table>
           <thead><tr>
             <th>{t('chronoAdmin.empleado')}</th>
@@ -453,7 +453,7 @@ function BolsaReport({ fichajeRepo, mes }: { fichajeRepo: IAdminFichajeRepositor
       </div>
 
       {/* Table */}
-      <div className="ch-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
+      <div className="ch-card" style={{ padding: 0, overflow: 'auto', maxHeight: 'calc(100vh - 420px)', marginBottom: 16 }}>
         <table>
           <thead><tr>
             <th>{t('chronoAdmin.empleado')}</th>

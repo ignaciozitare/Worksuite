@@ -193,7 +193,7 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
                 {t('chronoAdmin.sinPendientes')}
               </div>
             ) : (
-              <div className="ch-card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="ch-card" style={{ padding: 0, overflow: 'auto', maxHeight: 'calc(100vh - 340px)' }}>
                 <table>
                   <thead>
                     <tr>
@@ -252,7 +252,7 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
                 {t('chronoAdmin.sinPendientes')}
               </div>
             ) : (
-              <div className="ch-card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="ch-card" style={{ padding: 0, overflow: 'auto', maxHeight: 'calc(100vh - 340px)' }}>
                 <table>
                   <thead>
                     <tr>

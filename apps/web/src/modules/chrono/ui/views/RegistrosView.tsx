@@ -155,7 +155,7 @@ export function RegistrosView({ fichajeRepo, currentUser }: RegistrosViewProps) 
       ) : fichajes.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 48, color: C.txMuted }}>{t('chrono.sinRegistros')}</div>
       ) : (
-        <div className="ch-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="ch-card" style={{ padding: 0, overflow: 'auto', maxHeight: 'calc(100vh - 320px)' }}>
           <table>
             <thead>
               <tr>
