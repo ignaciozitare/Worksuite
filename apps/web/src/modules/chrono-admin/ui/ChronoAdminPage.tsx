@@ -18,11 +18,10 @@ import { EmpleadosView } from './views/EmpleadosView';
 import { EquiposView } from './views/EquiposView';
 import { JiraView } from './views/JiraView';
 import { ChronoConfigSection } from './sections/ChronoConfigSection';
-// Stitch-inspired design tokens shared with the Chrono module. Imported
-// but not yet consumed — we'll migrate piece by piece from the legacy `C`
-// object below. See ../../chrono/shared/theme.ts for the full palette.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { CHRONO_THEME } from '../../chrono/shared/theme';
+// Stitch-inspired design tokens shared with the Chrono module. Now
+// consumed by the topbar tab bar; the rest of the view still uses the
+// legacy `C` object below and will migrate in follow-up commits.
+import { CHRONO_THEME as T } from '../../chrono/shared/theme';
 
 /* ─── Repository instances ────────────────────────────────────────────────── */
 const fichajeRepo = new AdminFichajeSupabaseRepository(supabase);
@@ -49,8 +48,8 @@ export { C as CHRONO_ADMIN_COLORS };
 
 /* ─── CSS ─────────────────────────────────────────────────────────────────── */
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
-.ch{font-family:'IBM Plex Sans',sans-serif;background:${C.bg};color:${C.tx};min-height:100%;}
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap');
+.ch{font-family:'Inter','IBM Plex Sans',sans-serif;background:${C.bg};color:${C.tx};min-height:100%;}
 .ch *{box-sizing:border-box;margin:0;padding:0;}
 .ch ::-webkit-scrollbar{width:4px;height:4px;}
 .ch ::-webkit-scrollbar-track{background:${C.sf};}
@@ -139,35 +138,54 @@ function ChronoAdminPage({ currentUser }: Props) {
     <div className="ch">
       <style>{CSS}</style>
 
-      <div style={{ padding: '28px 32px' }}>
-        {/* ── Tab bar ────────────────────────────────────────── */}
+      <div style={{ padding: '28px 32px', fontFamily: T.font.body }}>
+        {/* ── Tab bar (Stitch look) ──────────────────────────── */}
         <div style={{
-          display: 'flex', gap: 4, marginBottom: 20,
-          background: C.sf, border: `1px solid ${C.bd}`,
-          borderRadius: 10, padding: 4, width: 'fit-content',
+          display: 'flex', gap: 4, marginBottom: 24,
+          background: T.color.surfaceLowest,
+          border: `1px solid ${T.color.surfaceHigh}`,
+          borderRadius: T.radius.lg,
+          padding: 4,
+          width: 'fit-content',
         }}>
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setView(tab.id)}
-              style={{
-                background: view === tab.id ? C.amber : 'transparent',
-                color: view === tab.id ? '#000' : C.txDim,
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: 7,
-                fontSize: 13,
-                fontWeight: view === tab.id ? 600 : 500,
-                cursor: 'pointer',
-                fontFamily: "'IBM Plex Sans', sans-serif",
-                letterSpacing: '.02em',
-                transition: 'all .15s',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {t(tab.labelKey)}
-            </button>
-          ))}
+          {TABS.map(tab => {
+            const active = view === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setView(tab.id)}
+                style={{
+                  background: active ? T.color.primary : 'transparent',
+                  color: active ? T.color.primaryOn : T.color.textDim,
+                  border: 'none',
+                  padding: '7px 16px',
+                  borderRadius: T.radius.md,
+                  fontSize: 12,
+                  fontWeight: active ? 700 : 500,
+                  cursor: 'pointer',
+                  fontFamily: T.font.body,
+                  letterSpacing: '.01em',
+                  transition: 'background .15s, color .15s, box-shadow .15s',
+                  whiteSpace: 'nowrap',
+                  boxShadow: active ? `0 0 14px ${T.color.primaryDim}` : 'none',
+                }}
+                onMouseEnter={e => {
+                  if (!active) {
+                    e.currentTarget.style.background = T.color.surfaceHigh;
+                    e.currentTarget.style.color = T.color.textMuted;
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!active) {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = T.color.textDim;
+                  }
+                }}
+              >
+                {t(tab.labelKey)}
+              </button>
+            );
+          })}
         </div>
 
         {/* ── View content ───────────────────────────────────── */}
