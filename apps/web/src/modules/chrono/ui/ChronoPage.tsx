@@ -14,11 +14,11 @@ import { RegistrosView } from './views/RegistrosView';
 import { IncompletosView } from './views/IncompletosView';
 import { VacacionesView } from './views/VacacionesView';
 import { AlarmasView } from './views/AlarmasView';
-// New Stitch-inspired design tokens. Imported but not yet consumed — we'll
-// migrate piece by piece from the legacy `C` object below. See
-// ../shared/theme.ts for the full palette.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { CHRONO_THEME } from '../shared/theme';
+// Stitch-inspired design tokens. Now consumed by the sidebar — see
+// ../shared/theme.ts for the full palette. The legacy `C` object below
+// is still used by the main content area and will migrate piece by
+// piece in follow-up commits.
+import { CHRONO_THEME as T } from '../shared/theme';
 
 const fichajeRepo = new FichajeSupabaseRepository(supabase);
 const bolsaRepo = new BolsaHorasSupabaseRepository(supabase);
@@ -40,8 +40,8 @@ const C = {
 export { C as CHRONO_COLORS };
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
-.ch{font-family:'IBM Plex Sans',sans-serif;background:${C.bg};color:${C.tx};height:100%;overflow:hidden;display:flex;}
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+.ch{font-family:'Inter','IBM Plex Sans',sans-serif;background:${C.bg};color:${C.tx};height:100%;overflow:hidden;display:flex;}
 .ch *{box-sizing:border-box;margin:0;padding:0;}
 .ch ::-webkit-scrollbar{width:4px;height:4px;}
 .ch ::-webkit-scrollbar-track{background:${C.sf};}
@@ -55,9 +55,10 @@ const CSS = `
 @keyframes chPulse{0%{transform:scale(.95);box-shadow:0 0 0 0 rgba(245,158,11,.5)}70%{transform:scale(1);box-shadow:0 0 0 20px rgba(245,158,11,0)}100%{transform:scale(.95);box-shadow:0 0 0 0 rgba(245,158,11,0)}}
 .ch .pulse-green{animation:chPulseG 2s cubic-bezier(.215,.61,.355,1) infinite;}
 @keyframes chPulseG{0%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}70%{box-shadow:0 0 0 12px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
-.ch .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;color:${C.txDim};transition:all .15s;border:1px solid transparent;letter-spacing:.02em;}
-.ch .nav-item:hover{background:${C.sfHover};color:${C.tx};}
-.ch .nav-item.active{background:${C.amberGlow};color:${C.amber};border-color:${C.amberDim};}
+/* Nav items — Stitch look: surface-high when active, subtle primary glow */
+.ch .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:${T.radius.md};cursor:pointer;font-size:13px;font-weight:500;color:${T.color.textDim};transition:background .15s, color .15s, box-shadow .15s;border:1px solid transparent;letter-spacing:.01em;}
+.ch .nav-item:hover{background:${T.color.surfaceLow};color:${T.color.textMuted};}
+.ch .nav-item.active{background:${T.color.surfaceHigh};color:${T.color.primary};box-shadow:0 0 10px ${T.color.primaryDim};}
 .ch .ch-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;text-transform:uppercase;}
 .ch .ch-badge-green{background:${C.greenDim};color:${C.green};}
 .ch .ch-badge-red{background:${C.redDim};color:${C.red};}
@@ -137,23 +138,52 @@ export function ChronoPage({ currentUser }: Props) {
     <div className="ch">
       <style>{CSS}</style>
 
-      {/* ── Sidebar ─────────────────────────────────────────── */}
-      <div style={{ width: 220, flexShrink: 0, background: C.sf, borderRight: `1px solid ${C.bd}`, display: 'flex', flexDirection: 'column' }}>
-        {/* Logo */}
-        <div style={{ padding: '18px 20px', borderBottom: `1px solid ${C.bd}` }}>
-          <div className="mono" style={{ fontSize: 15, fontWeight: 700, color: C.amber, letterSpacing: '.05em' }}>
-            CHRONO<span style={{ color: C.txDim }}>.</span>WORK
+      {/* ── Sidebar (Stitch look) ───────────────────────────── */}
+      <div style={{
+        width: 240,
+        flexShrink: 0,
+        background: T.color.surfaceLowest,
+        borderRight: `1px solid ${T.color.surfaceHigh}`,
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: T.font.body,
+      }}>
+        {/* Logo — badge + title */}
+        <div style={{ padding: '20px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 32,
+            height: 32,
+            borderRadius: T.radius.md,
+            background: T.color.primary,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 16,
+            color: T.color.primaryOn,
+            boxShadow: `0 0 14px ${T.color.primaryDim}`,
+          }}>
+            ⏱
           </div>
-          <div style={{ fontSize: 10, color: C.txMuted, marginTop: 3, letterSpacing: '.12em', textTransform: 'uppercase' }}>
-            {t('chrono.title')}
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
+              CHRONO<span style={{ color: T.color.primary }}>.</span>WORK
+            </div>
+            <div style={{ fontSize: 9, color: T.color.textDim, marginTop: 3, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700 }}>
+              {t('chrono.title')}
+            </div>
           </div>
         </div>
 
         {/* Nav */}
-        <nav style={{ padding: '12px 10px', flex: 1 }}>
+        <nav style={{ padding: '8px 12px', flex: 1 }}>
           {NAV_ITEMS.map(item => (
-            <div key={item.id} className={`nav-item ${view === item.id ? 'active' : ''}`} onClick={() => setView(item.id)}>
-              <span className="mono" style={{ fontSize: 16 }}>{item.icon}</span>
+            <div
+              key={item.id}
+              className={`nav-item ${view === item.id ? 'active' : ''}`}
+              onClick={() => setView(item.id)}
+              style={{ marginBottom: 2 }}
+            >
+              <span className="mono" style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{item.icon}</span>
               <span style={{ flex: 1 }}>{t(item.labelKey)}</span>
               {item.badge && incompletosCount > 0 && (
                 <span className="ch-badge ch-badge-red" style={{ fontSize: 10, padding: '2px 6px' }}>{incompletosCount}</span>
@@ -163,8 +193,15 @@ export function ChronoPage({ currentUser }: Props) {
         </nav>
 
         {/* Footer */}
-        <div style={{ padding: '14px 20px', borderTop: `1px solid ${C.bd}` }}>
-          <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.08em' }}>v1.0 · WorkSuite</div>
+        <div style={{
+          padding: '14px 20px',
+          borderTop: `1px solid ${T.color.surfaceHigh}`,
+          fontSize: 10,
+          color: T.color.textDim,
+          letterSpacing: '.08em',
+          fontFamily: T.font.mono,
+        }}>
+          v1.0 · WorkSuite
         </div>
       </div>
 
