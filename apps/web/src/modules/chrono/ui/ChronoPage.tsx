@@ -14,6 +14,11 @@ import { RegistrosView } from './views/RegistrosView';
 import { IncompletosView } from './views/IncompletosView';
 import { VacacionesView } from './views/VacacionesView';
 import { AlarmasView } from './views/AlarmasView';
+// New Stitch-inspired design tokens. Imported but not yet consumed — we'll
+// migrate piece by piece from the legacy `C` object below. See
+// ../shared/theme.ts for the full palette.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { CHRONO_THEME } from '../shared/theme';
 
 const fichajeRepo = new FichajeSupabaseRepository(supabase);
 const bolsaRepo = new BolsaHorasSupabaseRepository(supabase);

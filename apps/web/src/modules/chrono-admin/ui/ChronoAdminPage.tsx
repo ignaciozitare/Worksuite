@@ -18,6 +18,11 @@ import { EmpleadosView } from './views/EmpleadosView';
 import { EquiposView } from './views/EquiposView';
 import { JiraView } from './views/JiraView';
 import { ChronoConfigSection } from './sections/ChronoConfigSection';
+// Stitch-inspired design tokens shared with the Chrono module. Imported
+// but not yet consumed — we'll migrate piece by piece from the legacy `C`
+// object below. See ../../chrono/shared/theme.ts for the full palette.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { CHRONO_THEME } from '../../chrono/shared/theme';
 
 /* ─── Repository instances ────────────────────────────────────────────────── */
 const fichajeRepo = new AdminFichajeSupabaseRepository(supabase);
