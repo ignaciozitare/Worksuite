@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { CHRONO_COLORS as C } from '../ChronoPage';
+import { ChronoStatCard } from '../components/ChronoStatCard';
 import type { IFichajeRepository } from '../../domain/ports/IFichajeRepository';
 import type { IBolsaHorasRepository } from '../../domain/ports/IBolsaHorasRepository';
 import type { IIncidenciaRepository } from '../../domain/ports/IIncidenciaRepository';
@@ -405,27 +406,16 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
         </div>
       )}
 
-      {/* ── 4 stat cards ──────────────────────────────────────────────────── */}
+      {/* ── 4 stat cards (Stitch look, Step 2) ────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         {stats.map((s, i) => (
-          <div
+          <ChronoStatCard
             key={i}
-            className="ch-stat"
-            style={{ '--accent': s.accent } as React.CSSProperties}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <span className="mono" style={{ fontSize: 18, color: s.accent }}>{s.icon}</span>
-              <span style={{
-                fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-                letterSpacing: '.08em', color: C.txMuted,
-              }}>
-                {s.label}
-              </span>
-            </div>
-            <div className="mono" style={{ fontSize: 22, fontWeight: 600, color: C.tx }}>
-              {s.value}
-            </div>
-          </div>
+            label={s.label}
+            value={s.value}
+            accent={s.accent}
+            icon={s.icon}
+          />
         ))}
       </div>
 
