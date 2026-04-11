@@ -1,0 +1,270 @@
+// @ts-nocheck
+/**
+ * ReleaseCard — draggable card shown in the Planning board.
+ *
+ * Handles: inline edit of release number (with VersionPicker), description,
+ * status (with done-state blocking via RepoGroupService), dates, tickets
+ * (add/remove/drag), repo chips, conflict detection by repo group overlap,
+ * and bug/test counters from classified subtasks.
+ */
+import { useState } from 'react';
+import { DateRangePicker, BugIcon } from '@worksuite/ui';
+import { RepoGroupService } from '../../domain/services/RepoGroupService';
+import { SubtaskService } from '../../domain/services/SubtaskService';
+import { datesOverlap } from './helpers';
+import { RepoChip } from './atoms';
+import { VersionPicker } from './VersionPicker';
+
+export function ReleaseCard({ rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag, drag, allReleases, repoGroups, versionCfg, allReleaseNumbers, jiraBaseUrl = '', linkedGroups = [], classifiedSubs = [] }) {
+  const [addingTicket, setAddingTicket] = useState(false);
+  const [search, setSearch] = useState('');
+  const [showVersionPicker, setShowVersionPicker] = useState(false);
+  const tMap = Object.fromEntries(tickets.map(t => [t.key, t]));
+
+  const cfg = statusCfg[rel.status] || { color: '#6b7280', bg_color: 'rgba(107,114,128,.12)', border: '#1f2937' };
+
+  // Conflict detection using repo groups
+  // A conflict exists when: another active release has a repo that belongs to the SAME group as one of our repos
+  const myRepos = [...new Set((rel.ticket_ids || []).flatMap(k => tMap[k]?.repos || []))];
+
+  const conflicts = []; // { repo, groupName, otherRelease }
+  for (const group of repoGroups) {
+    const myGroupRepos = myRepos.filter(r => group.repos.includes(r));
+    if (myGroupRepos.length === 0) continue;
+    for (const other of allReleases) {
+      if (other.id === rel.id) continue;
+      const isActive = other.status !== 'Deployed' && other.status !== 'Rollback';
+      if (!isActive) continue;
+      // Only conflict if date ranges overlap
+      if (!datesOverlap(rel.start_date, rel.end_date, other.start_date, other.end_date)) continue;
+      const otherRepos = [...new Set((other.ticket_ids || []).flatMap(k => tMap[k]?.repos || []))];
+      const sharedGroupRepos = myGroupRepos.filter(r => otherRepos.includes(r));
+      for (const repo of sharedGroupRepos) {
+        if (!conflicts.find(c => c.repo === repo)) {
+          conflicts.push({ repo, groupName: group.name, otherRelease: other.release_number || 'sin versión' });
+        }
+      }
+    }
+  }
+
+  const relTickets = (rel.ticket_ids || []).map(k => tMap[k]).filter(Boolean);
+  const relRepos   = [...new Set(relTickets.flatMap(t => t.repos || []))];
+  const unassigned = tickets.filter(t => !(rel.ticket_ids || []).includes(t.key));
+
+  return (
+    <div className="anim-in"
+      onDragOver={e => e.preventDefault()}
+      onDrop={e => { e.preventDefault(); onDrop(rel.id); }}
+      onClick={() => onOpen(rel.id)}
+      style={{
+        width: 320,
+        background: 'var(--dp-sf,#0b0f18)',
+        border: `1px solid ${cfg.border}`,
+        borderLeft: `3px solid ${cfg.color}`,
+        borderRadius: 8,
+        padding: '14px 16px',
+        flexShrink: 0,
+        boxShadow: `0 0 0 1px ${cfg.color}18, 0 4px 20px ${cfg.color}10`,
+        transition: 'box-shadow .2s, transform .1s',
+        cursor: 'pointer',
+      }}
+      onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+      onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+    >
+      {/* Release number: click title opens detail, edit via input */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+        <span
+          onClick={() => onOpen(rel.id)}
+          style={{ flex: 1, fontSize: 15, fontWeight: 700, color: 'var(--dp-tx,#e6edf3)', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        >
+          {rel.release_number || <span style={{ color: 'var(--dp-tx3,#334155)' }}>sin versión</span>}
+        </span>
+        <button onClick={e => { e.stopPropagation(); onOpen(rel.id); }} title="Abrir detalle" style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#475569)', cursor: 'pointer', fontSize: 13, lineHeight: 1, padding: '2px 4px' }}>↗</button>
+        <button onClick={e => { e.stopPropagation(); onDelete(rel.id); }} style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#475569)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '2px 4px' }}>×</button>
+      </div>
+
+      {/* Version number input + generator */}
+      <div style={{ position: 'relative', marginBottom: 6 }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <input
+            value={rel.release_number || ''}
+            onChange={e => onUpd(rel.id, { release_number: e.target.value })}
+            placeholder="v1.0.0"
+            style={{ flex: 1, background: 'var(--dp-sf2,#07090f)', border: '1px solid var(--dp-bd,#1e293b)', borderRadius: '4px 0 0 4px', padding: '4px 8px', fontSize: 11, color: 'var(--dp-tx,#e6edf3)', fontFamily: 'monospace', outline: 'none' }}
+          />
+          <button
+            onClick={e => { e.stopPropagation(); setShowVersionPicker(v => !v); }}
+            title="Generar número de versión"
+            style={{ background: 'var(--dp-sf2,#07090f)', border: '1px solid var(--dp-bd,#1e293b)', borderLeft: 'none', borderRadius: '0 4px 4px 0', padding: '0 8px', fontSize: 12, color: 'var(--dp-tx3,#64748b)', cursor: 'pointer', lineHeight: 1 }}>
+            ⚙
+          </button>
+        </div>
+        {showVersionPicker && versionCfg && (
+          <VersionPicker
+            versionCfg={versionCfg}
+            allReleaseNumbers={allReleaseNumbers || []}
+            onSelect={v => { onUpd(rel.id, { release_number: v }); setShowVersionPicker(false); }}
+            onClose={() => setShowVersionPicker(false)}
+          />
+        )}
+      </div>
+
+      {/* Description — textarea with wrapping */}
+      <textarea
+        value={rel.description || ''}
+        onChange={e => onUpd(rel.id, { description: e.target.value })}
+        onClick={e => e.stopPropagation()}
+        placeholder="Descripción de la release…"
+        rows={rel.description && rel.description.length > 40 ? 3 : 2}
+        style={{ width: '100%', background: 'none', border: 'none', borderBottom: '1px solid var(--dp-bd,#0e1520)', fontSize: 10, color: 'var(--dp-tx2,#475569)', fontFamily: 'inherit', outline: 'none', marginBottom: 12, paddingBottom: 6, resize: 'none', lineHeight: 1.5 }}
+      />
+
+      {/* Status selector with is_final blocking */}
+      <div style={{ marginBottom: 10 }}>
+        <select value={rel.status || 'Planned'}
+          onChange={e => {
+            const newStatus = e.target.value;
+            const isDone = statusCfg[newStatus]?.status_category === 'done';
+            if (isDone && linkedGroups.length) {
+              const check = RepoGroupService.canTransitionToDone(
+                rel.id, linkedGroups,
+                allReleases.map(r => ({ id: r.id, ticketIds: r.ticket_ids || [], status: r.status || 'Planned', statusCategory: statusCfg[r.status || 'Planned']?.status_category || 'backlog' })),
+              );
+              if (!check.allowed) {
+                alert(`🔒 No puedes pasar a "${newStatus}" porque hay releases vinculadas pendientes:\n${check.blockers.map(b => `• ${b.groupName}: release en "${b.status}"`).join('\n')}`);
+                return;
+              }
+            }
+            onUpd(rel.id, { status: newStatus });
+          }}
+          onClick={e => e.stopPropagation()}
+          style={{ background: cfg.bg_color, border: `1px solid ${cfg.border}`, borderRadius: 5, padding: '4px 10px', fontSize: 10, color: cfg.color, cursor: 'pointer', outline: 'none', fontWeight: 700, fontFamily: 'inherit' }}>
+          {Object.entries(statusCfg).map(([name, v]) => {
+            const isDoneCat = v.status_category === 'done';
+            const blocked = isDoneCat && linkedGroups.length > 0 && !RepoGroupService.canTransitionToDone(
+              rel.id, linkedGroups,
+              allReleases.map(r => ({ id: r.id, ticketIds: r.ticket_ids || [], status: r.status || 'Planned', statusCategory: statusCfg[r.status || 'Planned']?.status_category || 'backlog' })),
+            ).allowed;
+            return <option key={name} value={name} disabled={blocked}>{blocked ? '🔒 ' : ''}{name}</option>;
+          })}
+        </select>
+      </div>
+
+      {/* Dates — single calendar range picker */}
+      <div style={{ marginBottom: 8 }} onClick={e => e.stopPropagation()}>
+        <DateRangePicker
+          startValue={rel.start_date || ''}
+          endValue={rel.end_date || ''}
+          onChange={(s, e) => {
+            const startDate = s ? s.slice(0, 10) : '';
+            const endDate = e ? e.slice(0, 10) : '';
+            onUpd(rel.id, { start_date: startDate, end_date: endDate });
+          }}
+          showTime={false}
+          labels={{ start: 'Start', end: 'End' }}
+        />
+      </div>
+
+      {/* Conflicts */}
+      {conflicts.length > 0 && (
+        <div style={{ background: 'rgba(248,113,113,.06)', border: '1px solid #7f1d1d', borderRadius: 4, padding: '6px 9px', fontSize: 10, color: '#f87171', marginBottom: 8 }}>
+          <div style={{ fontWeight: 700, marginBottom: 3 }}>⚠ Repos en conflicto:</div>
+          {conflicts.map(c => (
+            <div key={c.repo} style={{ marginTop: 2, color: '#fca5a5' }}>
+              · <strong>{c.repo}</strong>
+              <span style={{ color: '#7f1d1d' }}> — también en {c.otherRelease} ({c.groupName})</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tickets */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
+        {relTickets.map(t => {
+          const PCOLOR = { Highest: '#ef4444', High: '#f97316', Medium: '#3b82f6', Low: '#6b7280' };
+          const pColor = PCOLOR[t.priority] || '#334155';
+          const noRepo = !t.repos || t.repos.length === 0;
+          return (
+            <div key={t.key} draggable
+              onDragStart={() => setDrag({ key: t.key, fromId: rel.id })}
+              onDragEnd={() => setDrag(null)}
+              onClick={e => e.stopPropagation()}
+              title={noRepo ? '⚠ Sin repositorio — asigna Components en Jira' : t.summary}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', background: 'var(--dp-sf2,#07090f)', border: noRepo ? '1px solid rgba(239,68,68,.5)' : '1px solid var(--dp-bd,#1e293b)', borderLeft: `2px solid ${noRepo ? '#ef4444' : pColor}`, borderRadius: 4, cursor: 'grab', fontSize: 10 }}>
+              {noRepo && <span style={{ color: '#ef4444', fontSize: 10, flexShrink: 0 }}>⚠</span>}
+              <span style={{ color: '#38bdf8', fontWeight: 700, flexShrink: 0 }}>{t.key}</span>
+              <span style={{ color: noRepo ? '#ef4444' : 'var(--dp-tx2,#94a3b8)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.summary.slice(0, 28)}{t.summary.length > 28 ? '…' : ''}</span>
+              <span style={{ color: 'var(--dp-tx3,#334155)', flexShrink: 0, fontSize: 9 }}>{t.assignee?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '—'}</span>
+              {jiraBaseUrl && <a href={`${jiraBaseUrl}/browse/${t.key}`} target="_blank" rel="noopener noreferrer"
+                onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}
+                style={{ color: 'var(--dp-tx3,#475569)', fontSize: 10, flexShrink: 0, textDecoration: 'none', lineHeight: 1, padding: '0 2px' }}
+                title={`Open ${t.key} in Jira`}>↗</a>}
+              <button onClick={e => { e.stopPropagation(); onUpd(rel.id, { ticket_ids: (rel.ticket_ids || []).filter(x => x !== t.key) }); }}
+                style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#334155)', cursor: 'pointer', fontSize: 12, lineHeight: 1, flexShrink: 0 }}>×</button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Warning: tickets sin repo */}
+      {relTickets.some(t => !t.repos || t.repos.length === 0) && (
+        <div style={{ fontSize: 9, color: '#ef4444', marginBottom: 6, padding: '3px 6px', background: 'rgba(239,68,68,.06)', borderRadius: 3, border: '1px solid rgba(239,68,68,.2)' }}>
+          ⚠ {relTickets.filter(t => !t.repos || t.repos.length === 0).length} ticket{relTickets.filter(t => !t.repos || t.repos.length === 0).length > 1 ? 's' : ''} sin repositorio — asigna Components en Jira
+        </div>
+      )}
+
+      {/* Add ticket */}
+      {addingTicket ? (
+        <div style={{ marginBottom: 8 }}>
+          <input autoFocus value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar ticket…"
+            style={{ width: '100%', background: 'var(--dp-sf2,#07090f)', border: '1px solid #38bdf8', borderRadius: 4, padding: '5px 8px', fontSize: 10, color: 'var(--dp-tx,#e6edf3)', outline: 'none', marginBottom: 3 }}
+            onBlur={() => { setTimeout(() => { setAddingTicket(false); setSearch(''); }, 150); }} />
+          {unassigned.filter(t => !search || (t.key + t.summary).toLowerCase().includes(search.toLowerCase())).slice(0, 5).map(t => (
+            <div key={t.key}
+              onMouseDown={() => { onUpd(rel.id, { ticket_ids: [...(rel.ticket_ids || []), t.key] }); setAddingTicket(false); setSearch(''); }}
+              style={{ padding: '4px 8px', fontSize: 10, cursor: 'pointer', color: 'var(--dp-tx2,#94a3b8)', display: 'flex', gap: 8, borderRadius: 3 }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--dp-sf,#0b0f18)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              <span style={{ color: '#38bdf8', fontWeight: 700, flexShrink: 0 }}>{t.key}</span>
+              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.summary}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <button onClick={e => { e.stopPropagation(); setAddingTicket(true); }}
+          style={{ width: '100%', background: 'transparent', border: '1px dashed var(--dp-bd,#1e293b)', borderRadius: 4, padding: '5px', fontSize: 10, color: 'var(--dp-tx3,#334155)', cursor: 'pointer', marginBottom: 10, transition: 'border-color .15s' }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = cfg.color}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--dp-bd,#1e293b)'}>+ ticket</button>
+      )}
+
+      {/* Bug/Test counters */}
+      {(() => {
+        const relSubs = classifiedSubs.filter(s => (rel.ticket_ids || []).includes(s.parentKey));
+        const counts = SubtaskService.count(relSubs);
+        if (counts.bugs.total === 0 && counts.tests.total === 0) return null;
+        return (
+          <div style={{ display: 'flex', gap: 8, fontSize: 10, paddingTop: 6, borderTop: '1px solid var(--dp-bd,#0e1520)', marginBottom: 4 }}>
+            {counts.bugs.total > 0 && (
+              <span style={{ color: counts.bugs.open > 0 ? '#ef4444' : '#22c55e', fontWeight: 600 }}>
+                <BugIcon size={12} color="currentColor" />{counts.bugs.closed}/{counts.bugs.total}
+              </span>
+            )}
+            {counts.tests.total > 0 && (
+              <span style={{ color: counts.tests.open > 0 ? '#3b82f6' : '#22c55e', fontWeight: 600 }}>
+                🧪 {counts.tests.closed}/{counts.tests.total}
+              </span>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Repo chips */}
+      {relRepos.length > 0 && (
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', paddingTop: relRepos.length ? 4 : 6, borderTop: relRepos.length ? 'none' : '1px solid var(--dp-bd,#0e1520)' }}>
+          {relRepos.map(r => <RepoChip key={r} name={r} />)}
+        </div>
+      )}
+    </div>
+  );
+}
