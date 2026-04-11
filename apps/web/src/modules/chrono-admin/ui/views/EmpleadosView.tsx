@@ -215,7 +215,7 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, fic
           {t('chronoAdmin.sinDatos')}
         </div>
       ) : (
-        <div className="ch-card" style={{ overflow: 'auto' }}>
+        <div className="ch-card" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 260px)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>

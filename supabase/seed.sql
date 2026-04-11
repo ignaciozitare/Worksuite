@@ -239,6 +239,35 @@ WHERE id IN (
   LIMIT 5
 );
 
+-- ── 7b. Fichajes de HOY (variedad de estados visibles en EmpleadosView) ────
+-- The full-history INSERT above only covers weekdays from -30 to -1, so
+-- today would always be "sin fichar" for everyone. Here we explicitly create
+-- today's rows for a handful of users so the admin can see several states
+-- at a glance: trabajando, teletrabajo, médico, completo.
+INSERT INTO ch_fichajes (user_id, fecha, entrada_at, comida_ini_at, comida_fin_at, salida_at, minutos_trabajados, tipo, estado)
+VALUES
+  ('00000003-0000-0000-0000-000000000001', current_date, now() - interval '3 hours 45 minutes', NULL, NULL, NULL, NULL, 'normal', 'abierto'),
+  ('00000003-0000-0000-0000-000000000003', current_date, now() - interval '4 hours 10 minutes', NULL, NULL, NULL, NULL, 'normal', 'abierto'),
+  ('00000004-0000-0000-0000-000000000001', current_date, now() - interval '3 hours 30 minutes', NULL, NULL, NULL, NULL, 'normal', 'abierto'),
+  ('00000005-0000-0000-0000-000000000002', current_date, now() - interval '3 hours 55 minutes', NULL, NULL, NULL, NULL, 'normal', 'abierto'),
+  ('00000006-0000-0000-0000-000000000001', current_date, now() - interval '4 hours 5 minutes',  NULL, NULL, NULL, NULL, 'normal', 'abierto'),
+  ('00000003-0000-0000-0000-000000000002', current_date, now() - interval '4 hours 20 minutes', NULL, NULL, NULL, NULL, 'teletrabajo', 'abierto'),
+  ('00000005-0000-0000-0000-000000000003', current_date, now() - interval '3 hours',            NULL, NULL, NULL, NULL, 'teletrabajo', 'abierto'),
+  ('00000004-0000-0000-0000-000000000004', current_date, now() - interval '2 hours',            NULL, NULL, NULL, NULL, 'medico', 'abierto'),
+  ('00000003-0000-0000-0000-000000000004', current_date,
+    (current_date + time '07:30') AT TIME ZONE 'UTC',
+    (current_date + time '13:00') AT TIME ZONE 'UTC',
+    (current_date + time '14:00') AT TIME ZONE 'UTC',
+    now() - interval '10 minutes',
+    480, 'normal', 'completo'),
+  ('00000006-0000-0000-0000-000000000002', current_date,
+    (current_date + time '08:00') AT TIME ZONE 'UTC',
+    (current_date + time '13:15') AT TIME ZONE 'UTC',
+    (current_date + time '14:15') AT TIME ZONE 'UTC',
+    now() - interval '30 minutes',
+    495, 'normal', 'completo')
+ON CONFLICT DO NOTHING;
+
 -- ── 8. Bolsa de horas (hour bank) ──────────────────────────────────────────
 -- Varied totals so the "Bolsa horas" stat card renders every color branch:
 -- big positive, small positive, neutral, small negative, big positive.
@@ -293,7 +322,11 @@ VALUES
   ('00000006-0000-0000-0000-000000000003', 'asunto_propio', current_date - 20, current_date - 20, 1, 'aprobada', 'Gestión personal', '00000002-0000-0000-0000-000000000004', now() - interval '25 days'),
   -- Aprobadas futuras (2)
   ('00000003-0000-0000-0000-000000000005', 'vacaciones', current_date + 50, current_date + 64, 11, 'aprobada', 'Vacaciones verano', '00000002-0000-0000-0000-000000000001', now() - interval '5 days'),
-  ('00000006-0000-0000-0000-000000000001', 'vacaciones', current_date + 10, current_date + 14, 5, 'aprobada', 'Viaje familiar', '00000002-0000-0000-0000-000000000004', now() - interval '2 days')
+  ('00000006-0000-0000-0000-000000000001', 'vacaciones', current_date + 10, current_date + 14, 5, 'aprobada', 'Viaje familiar', '00000002-0000-0000-0000-000000000004', now() - interval '2 days'),
+  -- Cubren HOY (para ver estado "vacaciones" en la tabla de empleados)
+  ('00000004-0000-0000-0000-000000000005', 'vacaciones',   current_date - 2, current_date + 2, 5, 'aprobada', 'Puente largo',   '00000002-0000-0000-0000-000000000002', now() - interval '10 days'),
+  ('00000005-0000-0000-0000-000000000004', 'vacaciones',   current_date,     current_date + 4, 5, 'aprobada', 'Días de verano', '00000002-0000-0000-0000-000000000003', now() - interval '7 days'),
+  ('00000006-0000-0000-0000-000000000005', 'asunto_propio', current_date,    current_date,     1, 'aprobada', 'Gestión',        '00000002-0000-0000-0000-000000000004', now() - interval '3 days')
 ON CONFLICT DO NOTHING;
 
 -- ── 11. Incidencias (justificaciones históricas para la vista RRHH) ────────
