@@ -2,6 +2,35 @@
 // Pure presentational — no state.
 import type { CSSProperties, ReactNode } from 'react';
 
+/* ─── Deploy Planner branded icon ─────────────────────────────── */
+interface DeployPlannerIconProps {
+  size?: number;
+}
+
+/** Branded icon for the Deploy Planner module — "hub" Material Symbol
+ *  inside a primary gradient box. Reusable across sidebar, nav, etc. */
+export const DeployPlannerIcon = ({ size = 40 }: DeployPlannerIconProps) => (
+  <div
+    style={{
+      width: size,
+      height: size,
+      borderRadius: size * 0.2,
+      background: 'rgba(77,142,255,.12)',
+      border: '1px solid rgba(77,142,255,.2)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    <span
+      className="material-symbols-outlined"
+      style={{ fontSize: size * 0.5, color: '#4d8eff' }}
+    >
+      hub
+    </span>
+  </div>
+);
+
 interface SLabelProps {
   children: ReactNode;
   style?: CSSProperties;

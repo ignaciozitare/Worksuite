@@ -19,7 +19,16 @@ import { History } from './internal/History';
 import { Timeline } from './internal/Timeline';
 import { ReleaseCard } from './internal/ReleaseCard';
 import { ReleaseDetail } from './internal/ReleaseDetail';
+import { DeployPlannerIcon } from './internal/atoms';
 import type { Release, DpTicket, StatusCfg, StatusCfgEntry, DragState, VersionCfg, RepoGroupView } from './internal/types';
+
+/* ─── Sidebar nav config ─────────────────────────────────────── */
+const TAB_ICONS: Record<string, string> = {
+  planning: 'event_note',
+  timeline: 'timeline',
+  history:  'history',
+  metrics:  'analytics',
+};
 
 /* ─── CSS ────────────────────────────────────────────────────── */
 const CSS = `
@@ -59,6 +68,12 @@ const CSS = `
 .dp .glass-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(173,198,255,.2),transparent);border-radius:8px 8px 0 0;}
 .dp .ghost-border-top{position:relative;}
 .dp .ghost-border-top::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(173,198,255,.2),transparent);border-radius:8px 8px 0 0;}
+/* Sidebar */
+.dp .dp-sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:rgba(14,14,14,.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid rgba(255,255,255,.05);box-shadow:0 0 60px rgba(77,142,255,.04);display:flex;flex-direction:column;padding:16px;gap:4px;z-index:50;overflow-y:auto;}
+.dp .dp-sidebar-nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:500;letter-spacing:.02em;cursor:pointer;border:none;background:transparent;color:var(--dp-tx,#e5e2e1);opacity:.6;transition:all .2s;text-align:left;width:100%;font-family:inherit;}
+.dp .dp-sidebar-nav-item:hover{opacity:1;background:var(--dp-sf,#1c1b1b);transform:translateX(2px);}
+.dp .dp-sidebar-nav-item.active{opacity:1;color:#4d8eff;background:rgba(77,142,255,.1);font-weight:600;box-shadow:0 0 20px rgba(77,142,255,.1);}
+.dp .dp-main{margin-left:240px;height:100%;overflow:auto;}
 @keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .anim-in{animation:slideIn .2s ease forwards;}
@@ -379,71 +394,88 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
   const allReleaseNumbers = releases.map(r => r.release_number).filter((n): n is string => Boolean(n));
 
   return (
-    <div className={`dp${isLight ? ' light' : ''}`}>
+    <div className={`dp${isLight ? ' light' : ''}`} style={{ display: 'flex', height: '100%' }}>
       <style>{CSS}</style>
 
-      {/* Nav */}
-      <nav style={{ borderBottom: 'none', padding: '0 24px', display: 'flex', alignItems: 'center', height: 56, background: 'var(--dp-sf,#1c1b1b)', gap: 12, position: 'sticky', top: 0, zIndex: 20, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
-        {detail ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button onClick={() => setDetail(null)} style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>arrow_back</span>
-            </button>
-            <div style={{ width: 28, height: 28, background: 'linear-gradient(135deg,#adc6ff,#4d8eff)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 12px rgba(77,142,255,.3)' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#00285d' }}>rocket_launch</span>
-            </div>
-            <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--dp-tx,#e5e2e1)', letterSpacing: '-0.01em' }}>Deploy Planner</span>
-            <span style={{ color: 'var(--dp-tx3,#8c909f)', fontSize: 11 }}>/</span>
-            <span style={{ fontSize: 12, color: 'var(--dp-primary,#adc6ff)', fontWeight: 600 }}>{detailRel?.release_number}</span>
+      {/* ── Sidebar ─────────────────────────────────────── */}
+      <aside className="dp-sidebar">
+        {/* Brand header */}
+        <div style={{ padding: '24px 12px 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <DeployPlannerIcon size={40} />
+          <div>
+            <h1 style={{ fontSize: 16, fontWeight: 700, color: 'var(--dp-tx,#e5e2e1)', letterSpacing: '-0.01em', lineHeight: 1 }}>Deploy Planner</h1>
+            <p style={{ fontSize: 10, color: 'var(--dp-tx,#e5e2e1)', opacity: .4, fontWeight: 700, letterSpacing: '.1em', marginTop: 4 }}>
+              {releases.length > 0 ? `${releases.length} RELEASES` : 'PIPELINE'}
+            </p>
           </div>
-        ) : (
-          <div style={{ display: 'flex', gap: 2, background: 'var(--dp-sf2,#201f1f)', border: '1px solid rgba(66,71,84,.15)', borderRadius: 8, padding: 3 }}>
-            {TABS.map(t => (
+        </div>
+
+        {/* New Release CTA */}
+        <div style={{ padding: '8px 8px 16px' }}>
+          <button
+            onClick={() => void addRelease()}
+            style={{
+              width: '100%', background: 'linear-gradient(135deg,#adc6ff,#4d8eff)', color: '#00285d',
+              fontWeight: 600, padding: '10px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              fontFamily: 'inherit', fontSize: 13, letterSpacing: '.02em',
+              boxShadow: '0 4px 20px rgba(77,142,255,.12)',
+              transition: 'all .2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(77,142,255,.3))')}
+            onMouseLeave={e => (e.currentTarget.style.filter = 'none')}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add_circle</span>
+            New Release
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav style={{ flex: 1 }}>
+          {TABS.map(t => {
+            const active = (detail ? false : tab === t.id);
+            return (
               <button
                 key={t.id}
-                onClick={() => setTab(t.id)}
-                style={{
-                  padding: '5px 14px', fontSize: 12, fontWeight: tab === t.id ? 600 : 400, borderRadius: 6,
-                  border: 'none', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: tab === t.id ? '-0.01em' : '0.01em',
-                  background: tab === t.id ? 'linear-gradient(135deg,#adc6ff,#4d8eff)' : 'transparent',
-                  color: tab === t.id ? '#00285d' : 'var(--dp-tx3,#8c909f)',
-                  boxShadow: tab === t.id ? '0 0 12px rgba(77,142,255,.3)' : 'none',
-                  transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 5,
-                }}
+                className={`dp-sidebar-nav-item${active ? ' active' : ''}`}
+                onClick={() => { setTab(t.id); setDetail(null); }}
               >
-                {t.label}
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{TAB_ICONS[t.id]}</span>
+                <span>{t.label}</span>
                 {t.badge !== undefined && t.badge > 0 && (
                   <span style={{
-                    fontSize: 9, padding: '1px 6px', borderRadius: 10,
-                    background: tab === t.id ? 'rgba(0,40,93,.25)' : 'rgba(77,142,255,.08)',
-                    color: tab === t.id ? 'rgba(0,40,93,.8)' : 'var(--dp-tx3,#8c909f)',
+                    marginLeft: 'auto', fontSize: 9, padding: '1px 7px', borderRadius: 10,
+                    background: active ? 'rgba(77,142,255,.2)' : 'rgba(255,255,255,.06)',
+                    color: active ? '#4d8eff' : 'var(--dp-tx3,#8c909f)', fontWeight: 700,
                   }}>{t.badge}</span>
                 )}
               </button>
-            ))}
-          </div>
-        )}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 10, color: 'var(--dp-tx3,#8c909f)' }}>
+            );
+          })}
+        </nav>
+
+        {/* Jira sync status (footer) */}
+        <div style={{ padding: '12px 8px', borderTop: '1px solid rgba(255,255,255,.05)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 10, color: 'var(--dp-tx3,#8c909f)', flex: 1 }}>
             {fetchingJira
               ? <><span className="spin" style={{ marginRight: 4 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>sync</span>
-                </span>Sincronizando Jira…</>
+                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>sync</span>
+                </span>Syncing…</>
               : `${tickets.length} tickets`}
           </span>
           <button
             onClick={() => void fetchJiraTickets()}
             disabled={fetchingJira}
             title="Recargar tickets de Jira"
-            style={{ background: 'var(--dp-sf3,#2a2a2a)', border: '1px solid rgba(66,71,84,.15)', borderRadius: 8, width: 32, height: 32, color: 'var(--dp-tx2,#c2c6d6)', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)' }}
+            style={{ background: 'var(--dp-sf3,#2a2a2a)', border: '1px solid rgba(66,71,84,.15)', borderRadius: 6, width: 28, height: 28, color: 'var(--dp-tx2,#c2c6d6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>refresh</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>refresh</span>
           </button>
         </div>
-      </nav>
+      </aside>
 
-      {/* Content */}
-      <div style={{ padding: 28 }}>
+      {/* ── Main content ────────────────────────────────── */}
+      <div className="dp-main" style={{ padding: 28 }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: 60, color: 'var(--dp-tx3,#8c909f)', fontSize: 13 }}>Cargando…</div>
         ) : detailRel ? (
