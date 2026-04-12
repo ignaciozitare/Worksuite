@@ -25,6 +25,69 @@
 - If a new component is created and it is reusable, add it to the component library following the project conventions.
 - **When adding a new component to `packages/ui`, also add it to the UI Kit page** (`apps/web/src/shared/ui/UIKit.tsx`) with a live interactive example, description, and import statement. The UI Kit is accessible at `/ui-kit` from the Admin sidebar.
 
+## Design System — Carbon Logic (Stitch)
+All UI work MUST follow the Carbon Logic design system. This is non-negotiable.
+
+### Creative North Star: Kinetic Monolithism
+The UI feels carved from solid carbon, light-emitting, and hyper-precise. We reject flat enterprise looks in favor of **Tonal Layering** — hierarchy comes from surface depth and glow, not boxes and borders.
+
+### Colors & Surfaces
+- **Surface (Base):** `#131313` — primary canvas
+- **Void (Lowest):** `#0e0e0e` — recessed areas, sidebars
+- **Elevated (Low):** `#1c1b1b` — secondary layout tier
+- **Surface High:** `#2a2a2a` — hover, nested cards
+- **Primary (Electric Blue):** `#4d8eff` / `#adc6ff` — critical actions, active states
+- **Secondary (Green):** `#4ae176` / `#00b954` — success, on-track
+- **Tertiary (Violet):** `#ddb7ff` / `#b76dff` — hours bank, highlights
+- **Danger:** `#ffb4ab` / `#ef4444` — errors, alerts
+- **Warning:** `#f59e0b` — caution states
+- **Text:** `#e5e2e1` (main), `#c2c6d6` (muted), `#8c909f` (dim). NEVER use pure white `#FFFFFF`.
+
+### The "No-Line" Rule
+1px solid borders for layout are **prohibited**. Use background shifts and tonal transitions instead. If a border is needed for accessibility, use `outline-variant` at 15% opacity ("Ghost Border").
+
+### The "Glass & Gradient" Rule
+- Floating elements: `surface-container-highest` at 60% opacity + 20-40px backdrop blur
+- Primary CTAs: `linear-gradient(135deg, #adc6ff, #4d8eff)` with glow shadow
+- Button hover: `drop-shadow` matching primary at 30% opacity, 12px blur
+
+### Typography (Inter)
+- **Display:** Semi-Bold 600, tracking -0.02em
+- **Headlines:** Medium 500, tracking -0.01em
+- **Titles:** Medium 500, tracking 0.01em
+- **Body:** Regular 400, tracking 0.01em
+- **Labels:** Bold 700, tracking 0.05em, ALL-CAPS
+
+### Elevation
+- **Recessed:** `surface-container-lowest` — inputs, wells
+- **Canvas:** `surface` — page background
+- **Raised:** `surface-container-low` — cards, modules
+- **Floating:** `surface-container-high` + glassmorphism
+
+### Icons
+Use **Material Symbols Outlined** (Google Fonts). Weight: 300 light (default), filled on interaction. NEVER use emojis in the UI.
+
+### Buttons
+- **Primary:** Gradient fill + glow shadow. Radius: 8px (`0.5rem`).
+- **Ghost:** `surface-container-high` at 80% opacity + backdrop blur
+- **Semantic:** Green gradient (approve), Red gradient (reject/danger)
+
+### Cards
+- No divider lines inside cards. Use whitespace (1.5rem+) or tonal shift.
+- Background: `surface-container-low`, 8px rounding, ghost border top-edge only.
+
+### Semantic Chips
+- Success: emerald text on 10% emerald bg, no border
+- Error: ruby text on 10% ruby bg
+- Warning: gold text on 10% gold bg
+
+### Do's and Don'ts
+- **Do** embrace asymmetry, high-contrast font weights, `surface-bright` for active elements
+- **Don't** use `#FFFFFF`, standard Material shadows, dividers, or corners > 8px
+
+### Token File
+All tokens live in `apps/web/src/modules/chrono/shared/theme.ts` (`CHRONO_THEME`). Admin views import from `apps/web/src/modules/chrono-admin/shared/adminColors.ts`.
+
 ## Before Writing Code
 - First, briefly summarize what is going to be built.
 - Then indicate which layer, module, or area of the system each piece belongs to.
