@@ -127,6 +127,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
   const [incCategoria, setIncCategoria] = useState<CategoriaIncidencia>('medico');
   const [incDescripcion, setIncDescripcion] = useState('');
   const [jornadaMin, setJornadaMin] = useState(480);
+  const [cityName, setCityName] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const clockRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -166,6 +167,24 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
       }
     })();
   }, [fichajeRepo, currentUser.id]);
+
+  /* ── Detect city via browser geolocation ─────────────────────────────── */
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&zoom=10`)
+          .then(r => r.json())
+          .then(data => {
+            const city = data.address?.city || data.address?.town || data.address?.village || '';
+            if (city) setCityName(city);
+          })
+          .catch(() => {});
+      },
+      () => {},
+      { timeout: 5000 },
+    );
+  }, []);
 
   /* ── Live clock + timer ─────────────────────────────────────────────────── */
   useEffect(() => {
@@ -222,7 +241,6 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
 
   const handleMainButton = () => {
     if (canClockIn) { clockIn(); return; }
-    if (isOnLunch) { endLunch(); return; }
     if (canClockOut) { setShowExitModal(true); return; }
   };
 
@@ -249,13 +267,10 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
   /* ── Main button style ──────────────────────────────────────────────────── */
   // "Ready to clock in" uses the Stitch primary (was amber). Lunch and clock-out
   // keep their semantic colors (green / red).
-  const mainBtnBg = canClockIn ? T.color.primary : isOnLunch ? C.green : C.red;
+  const mainBtnBg = canClockIn ? T.color.primary : C.red;
   const mainBtnLabel = canClockIn
     ? t('chrono.ficharEntradaBtn')
-    : isOnLunch
-      ? t('chrono.volverComida')
-      : t('chrono.ficharSalidaBtn');
-  const mainBtnClass = canClockIn ? '' : isOnLunch ? '' : 'pulse-ring';
+    : t('chrono.ficharSalidaBtn');
 
   /* ── Alerts ─────────────────────────────────────────────────────────────── */
   const alerts: { color: string; text: string }[] = [];
@@ -327,127 +342,94 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
     );
   }
 
+  /* ── Greeting based on time of day ──────────────────────────────────────── */
+  const hour = clockTime.getHours();
+  const greetingKey = hour < 12 ? 'chrono.buenosDias' : hour < 19 ? 'chrono.buenosTardes' : 'chrono.buenasNoches';
+  const userName = currentUser.name || currentUser.id.slice(0, 8);
+
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-      {/* ── Timer bento card (Stitch look) ─────────────────────────────────── */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          padding: '44px 32px 32px',
-          background: T.color.surface,
-          border: `1px solid ${T.color.surfaceHigh}`,
-          borderRadius: T.radius.lg,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Radial accent glow (same hue as the main clock-in button) */}
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: `radial-gradient(ellipse at 50% 0%, ${mainBtnBg}1a 0%, transparent 60%)`,
-            pointerEvents: 'none',
-          }}
-        />
-        {/* Giant clock */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div className="mono" style={{ fontSize: 52, fontWeight: 300, color: C.amber, letterSpacing: '.04em' }}>
-            {clockHH}<span className="blink">:</span>{clockMM}
-          </div>
-          <div style={{ fontSize: 13, color: C.txDim, marginTop: 4, textTransform: 'capitalize' }}>
-            {clockDate}
-          </div>
-        </div>
-
-        {/* Big circular button */}
-        <button
-          className={mainBtnClass}
-          disabled={acting}
-          onClick={handleMainButton}
-          style={{
-            width: 160,
-            height: 160,
-            borderRadius: '50%',
-            background: mainBtnBg,
-            border: 'none',
-            cursor: acting ? 'wait' : 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-            transition: 'transform .15s, box-shadow .15s',
-            boxShadow: `0 0 40px ${mainBtnBg}33`,
-            opacity: acting ? 0.7 : 1,
-          }}
-          onMouseEnter={e => { if (!acting) e.currentTarget.style.transform = 'scale(1.05)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-        >
-          <span className="mono" style={{
-            fontSize: 13, fontWeight: 700,
-            // Dark navy on top of the Stitch primary for ready-to-clock-in,
-            // pure black on the green/red variants where contrast is fine.
-            color: canClockIn ? T.color.primaryOn : '#000',
-            letterSpacing: '.08em', textAlign: 'center', lineHeight: 1.3, padding: '0 12px',
+      {/* ── Header section — pixel-match to Stitch HTML ────────────────── */}
+      <div style={{
+        marginBottom: 10, display: 'flex', flexDirection: 'row',
+        alignItems: 'flex-end', justifyContent: 'space-between', gap: 24,
+      }}>
+        <div>
+          <span style={{
+            color: T.color.primaryStrong,
+            fontSize: 12, fontWeight: 700,
+            textTransform: 'uppercase', letterSpacing: '0.2em',
+            fontFamily: T.font.body,
           }}>
-            {mainBtnLabel}
+            {t('chrono.sesionEnVivo')}
           </span>
-        </button>
-
-        {/* Live timer */}
-        <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <div className="mono" style={{ fontSize: 28, fontWeight: 500, color: C.green, letterSpacing: '.02em' }}>
-            {timer.h}:{timer.m}:{timer.s}
-          </div>
-          <div style={{ fontSize: 11, color: C.txDim, marginTop: 4, letterSpacing: '.08em', textTransform: 'uppercase' }}>
-            {t('chrono.tiempoTrabajadoHoy')}
-          </div>
+          <h2 style={{
+            fontSize: '2.25rem', fontWeight: 700, letterSpacing: '-0.025em',
+            color: '#fff', marginTop: 4, lineHeight: 1.15,
+            fontFamily: T.font.body,
+          }}>
+            {t(greetingKey, { name: userName })}
+          </h2>
+          <p style={{
+            color: T.color.textMuted, marginTop: 8, fontSize: 14,
+            maxWidth: 420, lineHeight: 1.5,
+          }}>
+            {t('chrono.dashboardDesc')}
+          </p>
         </div>
-
-        {/* Progress bar */}
-        <div style={{ width: '100%', maxWidth: 400, marginTop: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.08em', textTransform: 'uppercase' }}>
-              {t('chrono.jornadaLabel')}
-            </span>
-            <span className="mono" style={{ fontSize: 10, color: C.txDim }}>{pct}%</span>
+        {/* Current time + date + location widget */}
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          background: T.color.surfaceLow, padding: 8, borderRadius: T.radius.lg,
+        }}>
+          <div style={{ textAlign: 'right', padding: '0 16px' }}>
+            <p style={{
+              fontSize: '0.65rem', textTransform: 'uppercase',
+              color: T.color.textMuted, fontWeight: 700, letterSpacing: '0.1em',
+            }}>
+              {t('chrono.horaActualLabel')}
+            </p>
+            <p style={{
+              fontSize: '1.25rem', fontWeight: 700, color: '#fff',
+              fontVariantNumeric: 'tabular-nums',
+            }}>
+              {clockHH}:{clockMM}:{String(clockTime.getSeconds()).padStart(2, '0')}
+            </p>
           </div>
-          <div className="tl-bar">
-            <div
-              className="tl-fill"
-              style={{
-                width: `${pct}%`,
-                background: pct >= 100
-                  ? `linear-gradient(90deg, ${C.green}, #34d399)`
-                  : `linear-gradient(90deg, ${C.amber}, #fbbf24)`,
-              }}
-            />
+          <div style={{ width: 1, height: 32, background: `${T.color.border}30` }} />
+          <div style={{ padding: '0 16px' }}>
+            <p style={{
+              fontSize: '0.65rem', textTransform: 'uppercase',
+              color: T.color.textMuted, fontWeight: 700, letterSpacing: '0.1em',
+            }}>
+              {t('chrono.fechaLabel', { defaultValue: 'Fecha' })}
+            </p>
+            <p style={{
+              fontSize: '1.25rem', fontWeight: 700, color: '#fff',
+              textTransform: 'capitalize',
+            }}>
+              {clockDate}
+            </p>
           </div>
-        </div>
-
-        {/* Quick action buttons */}
-        <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
-          <button
-            className="ch-btn ch-btn-ghost"
-            disabled={!canStartLunch || acting}
-            onClick={startLunch}
-            style={{ opacity: canStartLunch ? 1 : 0.4 }}
-          >
-            {t('chrono.iniciarComida')}
-          </button>
-          <button
-            className="ch-btn ch-btn-ghost"
-            disabled={!isOpen || acting}
-            onClick={() => setShowIncModal(true)}
-            style={{ opacity: isOpen ? 1 : 0.4 }}
-          >
-            {t('chrono.anadirIncidencia')}
-          </button>
+          {cityName && (
+            <>
+              <div style={{ width: 1, height: 32, background: `${T.color.border}30` }} />
+              <div style={{ textAlign: 'left', padding: '0 16px' }}>
+                <p style={{
+                  fontSize: '0.65rem', textTransform: 'uppercase',
+                  color: T.color.textMuted, fontWeight: 700, letterSpacing: '0.1em',
+                }}>
+                  {t('chrono.ubicacionLabel')}
+                </p>
+                <p style={{
+                  fontSize: '1.25rem', fontWeight: 700, color: '#fff',
+                }}>
+                  {cityName}
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -455,11 +437,11 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
       {error && (
         <div
           style={{
-            background: C.redDim,
+            background: T.color.dangerDim,
             border: `1px solid rgba(239,68,68,0.3)`,
-            borderRadius: 8,
+            borderRadius: T.radius.lg,
             padding: '10px 16px',
-            color: C.red,
+            color: T.color.danger,
             fontSize: 13,
           }}
         >
@@ -467,67 +449,395 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
         </div>
       )}
 
-      {/* ── 4 stat cards (Stitch look, Step 2 + Step 3 extras) ────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-        {stats.map((s, i) => (
-          <ChronoStatCard
-            key={i}
-            label={s.label}
-            value={s.value}
-            accent={s.accent}
-            icon={s.icon}
-            subtext={s.subtext}
-            trend={s.trend}
-            progressBar={s.progressBar}
+      {/* ── Bento grid: Hero (8 cols) + Stats stack (4 cols) ──────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 24 }}>
+
+        {/* ── Hero timer card (8 cols) ──────────────────────────────────────── */}
+        <div
+          style={{
+            gridColumn: 'span 8',
+            background: T.color.surface,
+            borderRadius: T.radius.xl,
+            position: 'relative',
+            overflow: 'hidden',
+            padding: '40px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+          }}
+        >
+          {/* Background radial glow */}
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: `radial-gradient(ellipse at 50% 30%, ${T.color.primaryStrong}18 0%, transparent 70%)`,
+              pointerEvents: 'none',
+            }}
           />
-        ))}
-      </div>
 
-      {/* ── Two columns: Alerts + Team ────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-
-        {/* Alerts */}
-        <div className="ch-card">
-          <div style={{
-            fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
-            letterSpacing: '.08em', color: C.txMuted, marginBottom: 14,
-          }}>
-            {t('chrono.alertas')}
-          </div>
-          {alerts.length === 0 ? (
-            <div style={{ fontSize: 13, color: C.txMuted }}>—</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {alerts.map((a, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: a.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, color: a.color }}>{a.text}</span>
-                </div>
-              ))}
+          {/* Giant session timer — 5.5rem like Stitch */}
+          <div style={{ position: 'relative', marginBottom: 8 }}>
+            <div style={{
+              fontSize: '5.5rem',
+              fontWeight: 900,
+              letterSpacing: '-0.04em',
+              color: '#fff',
+              lineHeight: 1,
+              fontVariantNumeric: 'tabular-nums',
+              fontFamily: T.font.body,
+            }}>
+              {timer.h}:{timer.m}:{timer.s}
             </div>
-          )}
+            <div style={{
+              color: T.color.primary,
+              fontWeight: 700,
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              fontSize: 12,
+              marginTop: 8,
+            }}>
+              {t('chrono.duracionSesion')}
+            </div>
+          </div>
+
+          {/* Action buttons — rectangular with gradient like Stitch */}
+          <div style={{ display: 'flex', gap: 16, marginTop: 24, position: 'relative' }}>
+            {/* Main: Clock In / Clock Out — disabled during lunch */}
+            <button
+              disabled={acting || isOnLunch}
+              onClick={handleMainButton}
+              style={{
+                background: canClockIn
+                  ? `linear-gradient(135deg, ${T.color.primary}, ${T.color.primaryStrong})`
+                  : `linear-gradient(135deg, ${T.color.danger}, ${T.color.dangerStrong})`,
+                color: canClockIn ? T.color.primaryOn : '#fff',
+                padding: '16px 40px',
+                borderRadius: T.radius.lg,
+                border: 'none',
+                fontWeight: 700,
+                fontSize: 18,
+                cursor: (acting || isOnLunch) ? 'default' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                boxShadow: canClockIn
+                  ? `0 4px 20px ${T.color.primaryStrong}44`
+                  : `0 4px 20px ${T.color.dangerStrong}44`,
+                transition: 'transform .15s, box-shadow .15s',
+                opacity: (acting || isOnLunch) ? 0.4 : 1,
+              }}
+              onMouseEnter={e => { if (!acting && !isOnLunch) e.currentTarget.style.transform = 'scale(1.02)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+            >
+              <span style={{ fontSize: 20 }}>⏱</span>
+              {mainBtnLabel}
+            </button>
+
+            {/* Lunch button: "Salir a comer" or "Volver de comida" */}
+            <button
+              disabled={(!canStartLunch && !isOnLunch) || acting}
+              onClick={isOnLunch ? endLunch : startLunch}
+              style={{
+                background: isOnLunch
+                  ? `linear-gradient(135deg, ${T.color.secondary}, ${T.color.secondaryStrong})`
+                  : `${T.color.surfaceHigh}80`,
+                border: isOnLunch ? 'none' : `1px solid ${T.color.border}50`,
+                color: isOnLunch ? T.color.primaryOn : '#fff',
+                padding: '16px 32px',
+                borderRadius: T.radius.lg,
+                fontWeight: 700,
+                fontSize: 18,
+                cursor: (canStartLunch || isOnLunch) ? 'pointer' : 'default',
+                transition: 'background .15s',
+                opacity: (canStartLunch || isOnLunch) ? 1 : 0.4,
+              }}
+              onMouseEnter={e => { if (canStartLunch && !isOnLunch) e.currentTarget.style.background = T.color.surfaceHigh; }}
+              onMouseLeave={e => { if (!isOnLunch) e.currentTarget.style.background = `${T.color.surfaceHigh}80`; }}
+            >
+              {isOnLunch ? t('chrono.volverComida') : t('chrono.tomarDescanso')}
+            </button>
+
+            {/* Add incident — small ghost */}
+            <button
+              className="ch-btn ch-btn-ghost"
+              disabled={!isOpen || acting}
+              onClick={() => setShowIncModal(true)}
+              style={{ opacity: isOpen ? 1 : 0.4, alignSelf: 'center' }}
+            >
+              {t('chrono.anadirIncidencia')}
+            </button>
+          </div>
+
+          {/* Status indicators */}
+          <div style={{
+            display: 'flex', gap: 32, marginTop: 32,
+            color: T.color.textMuted, fontSize: 14, position: 'relative',
+          }}>
+            {isOpen && fichaje?.entradaAt && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  className="pulse-green"
+                  style={{
+                    display: 'inline-block', width: 8, height: 8,
+                    borderRadius: '50%', background: T.color.secondary,
+                  }}
+                />
+                {t('chrono.fichadoALas', {
+                  time: new Date(fichaje.entradaAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                })}
+              </div>
+            )}
+            {isOnLunch && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 14 }}>🍽</span>
+                {t('chrono.enPausaComida')}
+              </div>
+            )}
+          </div>
+
+          {/* Progress bar */}
+          <div style={{ width: '100%', maxWidth: 500, marginTop: 20, position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{
+                fontSize: 10, color: T.color.textMuted,
+                letterSpacing: '.08em', textTransform: 'uppercase',
+              }}>
+                {t('chrono.jornadaLabel')}
+              </span>
+              <span className="mono" style={{ fontSize: 10, color: T.color.textDim }}>{pct}%</span>
+            </div>
+            <div style={{
+              height: 6, background: T.color.surfaceLow,
+              borderRadius: T.radius.full, overflow: 'hidden',
+            }}>
+              <div style={{
+                width: `${pct}%`,
+                height: '100%',
+                borderRadius: T.radius.full,
+                background: pct >= 100
+                  ? `linear-gradient(90deg, ${T.color.secondary}, ${T.color.secondaryStrong})`
+                  : `linear-gradient(90deg, ${T.color.primary}, ${T.color.primaryStrong})`,
+                transition: 'width .4s ease',
+              }} />
+            </div>
+          </div>
         </div>
 
-        {/* Team today */}
-        <div className="ch-card">
+        {/* ── Secondary stat stack (4 cols) ─────────────────────────────────── */}
+        <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+          {/* Hours Today card */}
+          <div style={{
+            background: T.color.surfaceHigh,
+            padding: 24,
+            borderRadius: T.radius.xl,
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
+            {/* Color accent bar */}
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+              background: stats[0].accent,
+            }} />
+            <p style={{
+              fontSize: 11, fontWeight: 700, color: T.color.textMuted,
+              textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 16,
+            }}>
+              {stats[0].label}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+              <h3 style={{ fontSize: 36, fontWeight: 700, color: '#fff', margin: 0, fontFamily: T.font.body }}>
+                {stats[0].value}
+              </h3>
+              {pct >= 100 ? (
+                <div style={{ color: T.color.secondary, display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700 }}>
+                  <span>↗</span> {t('chrono.completa')}
+                </div>
+              ) : (
+                <div style={{ color: T.color.secondary, display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700 }}>
+                  <span>↗</span> On Track
+                </div>
+              )}
+            </div>
+            {/* Progress bar */}
+            <div style={{
+              marginTop: 16, width: '100%', height: 6,
+              background: T.color.surfaceLow, borderRadius: T.radius.full, overflow: 'hidden',
+            }}>
+              <div style={{
+                width: `${pct}%`, height: '100%',
+                background: T.color.secondary, borderRadius: T.radius.full,
+                transition: 'width .4s ease',
+              }} />
+            </div>
+          </div>
+
+          {/* This Week card */}
+          <div style={{
+            background: T.color.surfaceHigh,
+            padding: 24,
+            borderRadius: T.radius.xl,
+            border: `1px solid ${T.color.primaryDim}`,
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
+            {/* Color accent bar */}
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+              background: stats[1].accent,
+            }} />
+            <p style={{
+              fontSize: 11, fontWeight: 700, color: T.color.textMuted,
+              textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 16,
+            }}>
+              {stats[1].label}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+              <h3 style={{ fontSize: 36, fontWeight: 700, color: '#fff', margin: 0, fontFamily: T.font.body }}>
+                {fmtHM(weekMinutes)} <span style={{ fontSize: 18, color: T.color.textMuted, fontWeight: 400 }}>/ {fmtHM(weekTargetMin)}</span>
+              </h3>
+            </div>
+            {/* Mini bar chart (sparkline for weekdays) */}
+            <div style={{ marginTop: 16, display: 'flex', gap: 4, height: 24, alignItems: 'flex-end' }}>
+              {[60, 80, 90, 75, weekPct, 0, 0].map((h, i) => (
+                <div key={i} style={{
+                  flex: 1,
+                  height: h > 0 ? `${Math.max(4, h)}%` : 4,
+                  background: i < 4
+                    ? `${T.color.primary}33`
+                    : i === 4
+                      ? `${T.color.primary}99`
+                      : T.color.surfaceLow,
+                  borderRadius: 2,
+                  transition: 'height .3s ease',
+                }} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Bottom row: 3 + 3 + 6 cols ─────────────────────────────────────── */}
+
+        {/* Hours Bank */}
+        <div style={{
+          gridColumn: 'span 3',
+          background: T.color.surfaceLow,
+          padding: 24,
+          borderRadius: T.radius.xl,
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+            background: T.color.tertiary,
+          }} />
+          <span style={{ fontSize: 30, marginBottom: 16, display: 'block', color: T.color.tertiary }}>⚖</span>
+          <p style={{
+            fontSize: 11, fontWeight: 700, color: T.color.textMuted,
+            textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 4,
+          }}>
+            {stats[2].label}
+          </p>
+          <h3 style={{ fontSize: 30, fontWeight: 700, color: '#fff', margin: 0, fontFamily: T.font.body }}>
+            {stats[2].value}
+          </h3>
+          <p style={{ fontSize: 11, color: T.color.textDim, marginTop: 8 }}>
+            {t('chrono.bolsaHorasHint')}
+          </p>
+        </div>
+
+        {/* Remaining Holidays */}
+        <div style={{
+          gridColumn: 'span 3',
+          background: T.color.surfaceLow,
+          padding: 24,
+          borderRadius: T.radius.xl,
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+            background: T.color.warning,
+          }} />
+          <span style={{ fontSize: 30, marginBottom: 16, display: 'block', color: T.color.warning }}>◈</span>
+          <p style={{
+            fontSize: 11, fontWeight: 700, color: T.color.textMuted,
+            textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 4,
+          }}>
+            {stats[3].label}
+          </p>
+          <h3 style={{ fontSize: 30, fontWeight: 700, color: '#fff', margin: 0, fontFamily: T.font.body }}>
+            {stats[3].value}
+          </h3>
+          <p style={{ fontSize: 11, color: T.color.textDim, marginTop: 8 }}>
+            {t('chrono.vacRestantesHint')}
+          </p>
+        </div>
+
+        {/* Alerts & Incidents — Stitch style with border-left */}
+        <div style={{
+          gridColumn: 'span 6',
+          background: T.color.surfaceLow,
+          padding: 24,
+          borderRadius: T.radius.xl,
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <p style={{
+            fontSize: 11, fontWeight: 700, color: T.color.textMuted,
+            textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 16,
+          }}>
+            {t('chrono.alertas')}
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {alerts.length === 0 && (
+              <div style={{ fontSize: 13, color: T.color.textDim }}>—</div>
+            )}
+            {alerts.map((a, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: 12, background: `${T.color.bg}66`,
+                borderRadius: T.radius.lg,
+                borderLeft: `3px solid ${a.color}`,
+              }}>
+                <span style={{ fontSize: 18, color: a.color }}>⚠</span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', margin: 0 }}>{a.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Team Today */}
+        <div style={{
+          gridColumn: 'span 12',
+          background: T.color.surface,
+          borderRadius: T.radius.xl,
+          padding: 24,
+        }}>
           <div style={{
             fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
-            letterSpacing: '.08em', color: C.txMuted, marginBottom: 14,
+            letterSpacing: '.12em', color: T.color.textMuted, marginBottom: 14,
           }}>
             {t('chrono.equipoHoy')}
           </div>
           {teamMembers.length === 0 ? (
-            <div style={{ fontSize: 13, color: C.txMuted }}>{t('chrono.proximaVista')}</div>
+            <div style={{ fontSize: 13, color: T.color.textDim }}>{t('chrono.proximaVista')}</div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
               {teamMembers.map((m, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{
                     width: 32, height: 32, borderRadius: '50%',
-                    background: `linear-gradient(135deg, ${C.amberDim}, #78350f)`,
+                    background: `linear-gradient(135deg, ${T.color.primaryDim}, ${T.color.primaryOn})`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11, fontWeight: 700, color: C.amber,
-                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: 11, fontWeight: 700, color: T.color.primary,
+                    fontFamily: T.font.mono,
                     position: 'relative',
                   }}>
                     {m.name.slice(0, 2).toUpperCase()}
@@ -536,8 +846,8 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
                     </span>
                   </div>
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 500, color: C.tx }}>{m.name}</div>
-                    <div style={{ fontSize: 10, color: C.txDim }}>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: T.color.text }}>{m.name}</div>
+                    <div style={{ fontSize: 10, color: T.color.textDim }}>
                       {m.status === 'working' ? t('chrono.trabajando')
                         : m.status === 'lunch' ? t('chrono.enPausa')
                         : t('chrono.noFichado')}

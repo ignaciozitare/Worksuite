@@ -4,7 +4,7 @@ import { useTranslation } from '@worksuite/i18n';
 import type { IEquipoRepository } from '../../domain/ports/IEquipoRepository';
 import type { Equipo } from '../../domain/entities/Equipo';
 
-const C = { amber:'#f59e0b', amberDim:'#92400e', amberGlow:'rgba(245,158,11,0.12)', tx:'#e8e8e8', txDim:'#888', txMuted:'#555', green:'#10b981', greenDim:'rgba(16,185,129,0.15)', red:'#ef4444', redDim:'rgba(239,68,68,0.15)', blue:'#3b82f6', blueDim:'rgba(59,130,246,0.15)', orange:'#f97316', purple:'#a855f7', sf:'#161616', sfHover:'#1e1e1e', bd:'#2a2a2a', bg:'#0d0d0d' };
+import { CHRONO_ADMIN_COLORS as C } from '../../shared/adminColors';
 
 interface Props {
   equipoRepo: IEquipoRepository;

@@ -54,7 +54,7 @@ const CSS = `
 .ch .blink{animation:chBlink 1s step-end infinite;}
 @keyframes chBlink{0%,100%{opacity:1}50%{opacity:0}}
 .ch .pulse-ring{animation:chPulse 2s cubic-bezier(.215,.61,.355,1) infinite;}
-@keyframes chPulse{0%{transform:scale(.95);box-shadow:0 0 0 0 rgba(245,158,11,.5)}70%{transform:scale(1);box-shadow:0 0 0 20px rgba(245,158,11,0)}100%{transform:scale(.95);box-shadow:0 0 0 0 rgba(245,158,11,0)}}
+@keyframes chPulse{0%{transform:scale(.95);box-shadow:0 0 0 0 rgba(77,142,255,.5)}70%{transform:scale(1);box-shadow:0 0 0 20px rgba(77,142,255,0)}100%{transform:scale(.95);box-shadow:0 0 0 0 rgba(77,142,255,0)}}
 .ch .pulse-green{animation:chPulseG 2s cubic-bezier(.215,.61,.355,1) infinite;}
 @keyframes chPulseG{0%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}70%{box-shadow:0 0 0 12px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
 /* Nav items — Stitch look: surface-high when active, subtle primary glow */
@@ -72,12 +72,14 @@ const CSS = `
 .ch .ch-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,${C.amberDim});}
 .ch .ch-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;text-transform:uppercase;transition:all .15s;}
 /* Primary action button — repainted from amber to the Stitch primary. */
-.ch .ch-btn-amber{background:${T.color.primary};color:${T.color.primaryOn};border-color:${T.color.primary};box-shadow:0 0 14px ${T.color.primaryDim};}
-.ch .ch-btn-amber:hover{background:${T.color.primaryStrong};color:#fff;border-color:${T.color.primaryStrong};}
-.ch .ch-btn-ghost{background:transparent;color:${T.color.textDim};border-color:${T.color.surfaceHigh};}
+.ch .ch-btn-amber{background:linear-gradient(135deg,${T.color.primary},${T.color.primaryStrong});color:${T.color.primaryOn};border-color:transparent;box-shadow:0 4px 20px ${T.color.primaryDim};}
+.ch .ch-btn-amber:hover{background:linear-gradient(135deg,${T.color.primaryStrong},${T.color.primary});color:#fff;box-shadow:0 4px 24px ${T.color.primaryStrong}55;}
+.ch .ch-btn-ghost{background:${T.color.surfaceHigh}80;color:${T.color.textMuted};border-color:${T.color.border}50;backdrop-filter:blur(8px);}
 .ch .ch-btn-ghost:hover{border-color:${T.color.primary};color:${T.color.primary};background:${T.color.primaryDim};}
-.ch .ch-btn-red{background:${C.redDim};color:${C.red};border-color:rgba(239,68,68,.3);}
-.ch .ch-btn-green{background:${C.greenDim};color:${C.green};border-color:rgba(16,185,129,.3);}
+.ch .ch-btn-red{background:linear-gradient(135deg,${T.color.danger},${T.color.dangerStrong});color:#fff;border-color:transparent;box-shadow:0 4px 20px ${T.color.dangerDim};}
+.ch .ch-btn-red:hover{box-shadow:0 4px 24px ${T.color.dangerStrong}55;}
+.ch .ch-btn-green{background:linear-gradient(135deg,${T.color.secondary},${T.color.secondaryStrong});color:${T.color.primaryOn};border-color:transparent;box-shadow:0 4px 20px ${T.color.secondaryDim};}
+.ch .ch-btn-green:hover{box-shadow:0 4px 24px ${T.color.secondaryStrong}55;}
 .ch table{width:100%;border-collapse:collapse;}
 .ch th{text-align:left;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:${T.color.textDim};padding:12px 16px;border-bottom:1px solid ${T.color.surfaceHigh};background:${T.color.surfaceLow};font-family:${T.font.body};position:sticky;top:0;z-index:1;}
 .ch td{padding:14px 16px;font-size:13px;color:${T.color.text};border-bottom:1px solid ${T.color.surfaceHigh};vertical-align:middle;font-family:${T.font.body};}
