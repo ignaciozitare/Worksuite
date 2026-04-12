@@ -29,13 +29,15 @@ const configEmpresaRepo = new ConfigEmpresaSupabaseRepository(supabase);
 
 /* ─── Design tokens ─────────────────────────────────────────────────────────── */
 const C = {
-  bg:'#0d0d0d', sf:'#161616', sfHover:'#1e1e1e', bd:'#2a2a2a',
-  amber:'#f59e0b', amberDim:'#92400e', amberGlow:'rgba(245,158,11,0.12)',
-  tx:'#e8e8e8', txDim:'#888', txMuted:'#555',
-  green:'#10b981', greenDim:'rgba(16,185,129,0.15)',
-  red:'#ef4444', redDim:'rgba(239,68,68,0.15)',
+  bg: T.color.bg, sf: T.color.surface, sfHover: T.color.surfaceHigh, bd: T.color.surfaceHigh,
+  // "amber" is now the Stitch primary — all 30+ downstream refs get the
+  // new palette without any code changes. The name stays for compat.
+  amber: T.color.primary, amberDim: T.color.primaryStrong, amberGlow: T.color.primaryDim,
+  tx: T.color.text, txDim: T.color.textDim, txMuted: T.color.textMuted,
+  green: T.color.secondary, greenDim: T.color.secondaryDim,
+  red: T.color.dangerStrong, redDim: T.color.dangerDim,
   blue:'#3b82f6', blueDim:'rgba(59,130,246,0.15)',
-  orange:'#f97316', purple:'#a855f7',
+  orange: T.color.warning, purple: T.color.tertiary,
 };
 export { C as CHRONO_COLORS };
 
