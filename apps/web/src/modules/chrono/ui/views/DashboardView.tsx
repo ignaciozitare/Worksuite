@@ -247,7 +247,9 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
   };
 
   /* ── Main button style ──────────────────────────────────────────────────── */
-  const mainBtnBg = canClockIn ? C.amber : isOnLunch ? C.green : C.red;
+  // "Ready to clock in" uses the Stitch primary (was amber). Lunch and clock-out
+  // keep their semantic colors (green / red).
+  const mainBtnBg = canClockIn ? T.color.primary : isOnLunch ? C.green : C.red;
   const mainBtnLabel = canClockIn
     ? t('chrono.ficharEntradaBtn')
     : isOnLunch
@@ -386,7 +388,13 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
           onMouseEnter={e => { if (!acting) e.currentTarget.style.transform = 'scale(1.05)'; }}
           onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
         >
-          <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: '#000', letterSpacing: '.08em', textAlign: 'center', lineHeight: 1.3, padding: '0 12px' }}>
+          <span className="mono" style={{
+            fontSize: 13, fontWeight: 700,
+            // Dark navy on top of the Stitch primary for ready-to-clock-in,
+            // pure black on the green/red variants where contrast is fine.
+            color: canClockIn ? T.color.primaryOn : '#000',
+            letterSpacing: '.08em', textAlign: 'center', lineHeight: 1.3, padding: '0 12px',
+          }}>
             {mainBtnLabel}
           </span>
         </button>
