@@ -102,35 +102,43 @@ export function ReleaseCard({
 
   return (
     <div
-      className="anim-in"
+      className="anim-in glass-card ghost-border-top"
       onDragOver={e => e.preventDefault()}
       onDrop={e => { e.preventDefault(); onDrop(rel.id); }}
       onClick={() => onOpen(rel.id)}
       style={{
         width: 320,
-        background: 'var(--dp-sf,#0b0f18)',
-        border: `1px solid ${cfg.border}`,
+        position: 'relative',
+        background: 'rgba(42,42,42,.6)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        border: '1px solid rgba(66,71,84,.15)',
         borderLeft: `3px solid ${cfg.color}`,
         borderRadius: 8,
-        padding: '14px 16px',
+        padding: '16px 18px',
         flexShrink: 0,
-        boxShadow: `0 0 0 1px ${cfg.color}18, 0 4px 20px ${cfg.color}10`,
-        transition: 'box-shadow .2s, transform .1s',
+        boxShadow: `0 4px 20px rgba(0,0,0,.35), 0 0 0 1px ${cfg.color}18`,
+        transition: 'box-shadow .2s, transform .15s',
         cursor: 'pointer',
+        overflow: 'hidden',
       }}
-      onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
-      onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 30px rgba(0,0,0,.4), 0 0 15px ${cfg.color}25`; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 4px 20px rgba(0,0,0,.35), 0 0 0 1px ${cfg.color}18`; }}
     >
       {/* Release number: click title opens detail, edit via input */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
         <span
           onClick={() => onOpen(rel.id)}
-          style={{ flex: 1, fontSize: 15, fontWeight: 700, color: 'var(--dp-tx,#e6edf3)', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+          style={{ flex: 1, fontSize: 18, fontWeight: 600, color: 'var(--dp-primary,#adc6ff)', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}
         >
-          {rel.release_number || <span style={{ color: 'var(--dp-tx3,#334155)' }}>sin versión</span>}
+          {rel.release_number || <span style={{ color: 'var(--dp-tx3,#8c909f)' }}>sin versión</span>}
         </span>
-        <button onClick={e => { e.stopPropagation(); onOpen(rel.id); }} title="Abrir detalle" style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#475569)', cursor: 'pointer', fontSize: 13, lineHeight: 1, padding: '2px 4px' }}>↗</button>
-        <button onClick={e => { e.stopPropagation(); onDelete(rel.id); }} style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#475569)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '2px 4px' }}>×</button>
+        <button onClick={e => { e.stopPropagation(); onOpen(rel.id); }} title="Abrir detalle" style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '2px 4px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>open_in_new</span>
+        </button>
+        <button onClick={e => { e.stopPropagation(); onDelete(rel.id); }} style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '2px 4px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+        </button>
       </div>
 
       {/* Version number input + generator */}
@@ -140,14 +148,14 @@ export function ReleaseCard({
             value={rel.release_number || ''}
             onChange={e => onUpd(rel.id, { release_number: e.target.value })}
             placeholder="v1.0.0"
-            style={{ flex: 1, background: 'var(--dp-sf2,#07090f)', border: '1px solid var(--dp-bd,#1e293b)', borderRadius: '4px 0 0 4px', padding: '4px 8px', fontSize: 11, color: 'var(--dp-tx,#e6edf3)', fontFamily: 'monospace', outline: 'none' }}
+            style={{ flex: 1, background: 'var(--dp-sf2,#201f1f)', border: '1px solid rgba(66,71,84,.15)', borderRadius: '4px 0 0 4px', padding: '5px 10px', fontSize: 11, color: 'var(--dp-tx,#e5e2e1)', fontFamily: "'Inter', monospace", outline: 'none' }}
           />
           <button
             onClick={e => { e.stopPropagation(); setShowVersionPicker(v => !v); }}
             title="Generar número de versión"
-            style={{ background: 'var(--dp-sf2,#07090f)', border: '1px solid var(--dp-bd,#1e293b)', borderLeft: 'none', borderRadius: '0 4px 4px 0', padding: '0 8px', fontSize: 12, color: 'var(--dp-tx3,#64748b)', cursor: 'pointer', lineHeight: 1 }}
+            style={{ background: 'var(--dp-sf2,#201f1f)', border: '1px solid rgba(66,71,84,.15)', borderLeft: 'none', borderRadius: '0 4px 4px 0', padding: '0 10px', fontSize: 14, color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', lineHeight: 1 }}
           >
-            ⚙
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>settings</span>
           </button>
         </div>
         {showVersionPicker && versionCfg && (
@@ -167,7 +175,7 @@ export function ReleaseCard({
         onClick={e => e.stopPropagation()}
         placeholder="Descripción de la release…"
         rows={rel.description && rel.description.length > 40 ? 3 : 2}
-        style={{ width: '100%', background: 'none', border: 'none', borderBottom: '1px solid var(--dp-bd,#0e1520)', fontSize: 10, color: 'var(--dp-tx2,#475569)', fontFamily: 'inherit', outline: 'none', marginBottom: 12, paddingBottom: 6, resize: 'none', lineHeight: 1.5 }}
+        style={{ width: '100%', background: 'none', border: 'none', borderBottom: '1px solid rgba(66,71,84,.1)', fontSize: 11, color: 'var(--dp-tx2,#c2c6d6)', fontFamily: 'inherit', outline: 'none', marginBottom: 12, paddingBottom: 6, resize: 'none', lineHeight: 1.5, letterSpacing: '0.01em' }}
       />
 
       {/* Status selector with is_final blocking */}
@@ -234,7 +242,7 @@ export function ReleaseCard({
       {/* Tickets */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
         {relTickets.map(t => {
-          const pColor = PRIORITY_COLOR[t.priority] ?? '#334155';
+          const pColor = PRIORITY_COLOR[t.priority] ?? '#8c909f';
           const noRepo = !t.repos || t.repos.length === 0;
           return (
             <div
@@ -245,19 +253,19 @@ export function ReleaseCard({
               onClick={e => e.stopPropagation()}
               title={noRepo ? '⚠ Sin repositorio — asigna Components en Jira' : t.summary}
               style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px',
-                background: 'var(--dp-sf2,#07090f)',
-                border: noRepo ? '1px solid rgba(239,68,68,.5)' : '1px solid var(--dp-bd,#1e293b)',
+                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px',
+                background: 'var(--dp-sf2,#201f1f)',
+                border: noRepo ? '1px solid rgba(239,68,68,.5)' : '1px solid rgba(66,71,84,.1)',
                 borderLeft: `2px solid ${noRepo ? '#ef4444' : pColor}`,
-                borderRadius: 4, cursor: 'grab', fontSize: 10,
+                borderRadius: 6, cursor: 'grab', fontSize: 10,
               }}
             >
               {noRepo && <span style={{ color: '#ef4444', fontSize: 10, flexShrink: 0 }}>⚠</span>}
-              <span style={{ color: '#38bdf8', fontWeight: 700, flexShrink: 0 }}>{t.key}</span>
-              <span style={{ color: noRepo ? '#ef4444' : 'var(--dp-tx2,#94a3b8)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ color: 'var(--dp-primary,#adc6ff)', fontWeight: 700, flexShrink: 0 }}>{t.key}</span>
+              <span style={{ color: noRepo ? '#ef4444' : 'var(--dp-tx2,#c2c6d6)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {t.summary.slice(0, 28)}{t.summary.length > 28 ? '…' : ''}
               </span>
-              <span style={{ color: 'var(--dp-tx3,#334155)', flexShrink: 0, fontSize: 9 }}>
+              <span style={{ color: 'var(--dp-tx3,#8c909f)', flexShrink: 0, fontSize: 9 }}>
                 {t.assignee?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '—'}
               </span>
               {jiraBaseUrl && (
@@ -267,7 +275,7 @@ export function ReleaseCard({
                   rel="noopener noreferrer"
                   onMouseDown={e => e.stopPropagation()}
                   onClick={e => e.stopPropagation()}
-                  style={{ color: 'var(--dp-tx3,#475569)', fontSize: 10, flexShrink: 0, textDecoration: 'none', lineHeight: 1, padding: '0 2px' }}
+                  style={{ color: 'var(--dp-tx3,#8c909f)', fontSize: 10, flexShrink: 0, textDecoration: 'none', lineHeight: 1, padding: '0 2px' }}
                   title={`Open ${t.key} in Jira`}
                 >
                   ↗
@@ -275,7 +283,7 @@ export function ReleaseCard({
               )}
               <button
                 onClick={e => { e.stopPropagation(); void onUpd(rel.id, { ticket_ids: (rel.ticket_ids ?? []).filter(x => x !== t.key) }); }}
-                style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#334155)', cursor: 'pointer', fontSize: 12, lineHeight: 1, flexShrink: 0 }}
+                style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', fontSize: 12, lineHeight: 1, flexShrink: 0 }}
               >
                 ×
               </button>
@@ -299,18 +307,18 @@ export function ReleaseCard({
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar ticket…"
-            style={{ width: '100%', background: 'var(--dp-sf2,#07090f)', border: '1px solid #38bdf8', borderRadius: 4, padding: '5px 8px', fontSize: 10, color: 'var(--dp-tx,#e6edf3)', outline: 'none', marginBottom: 3 }}
+            style={{ width: '100%', background: 'var(--dp-sf2,#201f1f)', border: '1px solid var(--dp-primary-strong,#4d8eff)', borderRadius: 6, padding: '6px 10px', fontSize: 10, color: 'var(--dp-tx,#e5e2e1)', outline: 'none', marginBottom: 3 }}
             onBlur={() => { setTimeout(() => { setAddingTicket(false); setSearch(''); }, 150); }}
           />
           {unassigned.filter(t => !search || (t.key + t.summary).toLowerCase().includes(search.toLowerCase())).slice(0, 5).map(t => (
             <div
               key={t.key}
               onMouseDown={() => { void onUpd(rel.id, { ticket_ids: [...(rel.ticket_ids ?? []), t.key] }); setAddingTicket(false); setSearch(''); }}
-              style={{ padding: '4px 8px', fontSize: 10, cursor: 'pointer', color: 'var(--dp-tx2,#94a3b8)', display: 'flex', gap: 8, borderRadius: 3 }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--dp-sf,#0b0f18)')}
+              style={{ padding: '4px 8px', fontSize: 10, cursor: 'pointer', color: 'var(--dp-tx2,#c2c6d6)', display: 'flex', gap: 8, borderRadius: 3 }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--dp-sf,#1c1b1b)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
-              <span style={{ color: '#38bdf8', fontWeight: 700, flexShrink: 0 }}>{t.key}</span>
+              <span style={{ color: 'var(--dp-primary,#adc6ff)', fontWeight: 700, flexShrink: 0 }}>{t.key}</span>
               <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.summary}</span>
             </div>
           ))}
@@ -318,9 +326,9 @@ export function ReleaseCard({
       ) : (
         <button
           onClick={e => { e.stopPropagation(); setAddingTicket(true); }}
-          style={{ width: '100%', background: 'transparent', border: '1px dashed var(--dp-bd,#1e293b)', borderRadius: 4, padding: '5px', fontSize: 10, color: 'var(--dp-tx3,#334155)', cursor: 'pointer', marginBottom: 10, transition: 'border-color .15s' }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = cfg.color)}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--dp-bd,#1e293b)')}
+          style={{ width: '100%', background: 'transparent', border: '1px dashed rgba(66,71,84,.2)', borderRadius: 6, padding: '6px', fontSize: 10, color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', marginBottom: 10, transition: 'all .15s' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = cfg.color; e.currentTarget.style.color = cfg.color; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(66,71,84,.2)'; e.currentTarget.style.color = 'var(--dp-tx3,#8c909f)'; }}
         >
           + ticket
         </button>
@@ -332,7 +340,7 @@ export function ReleaseCard({
         const counts = SubtaskService.count(relSubs);
         if (counts.bugs.total === 0 && counts.tests.total === 0) return null;
         return (
-          <div style={{ display: 'flex', gap: 8, fontSize: 10, paddingTop: 6, borderTop: '1px solid var(--dp-bd,#0e1520)', marginBottom: 4 }}>
+          <div style={{ display: 'flex', gap: 8, fontSize: 10, paddingTop: 6, borderTop: '1px solid rgba(66,71,84,.1)', marginBottom: 4 }}>
             {counts.bugs.total > 0 && (
               <span style={{ color: counts.bugs.open > 0 ? '#ef4444' : '#22c55e', fontWeight: 600 }}>
                 <BugIcon size={12} color="currentColor" />{counts.bugs.closed}/{counts.bugs.total}

@@ -23,29 +23,42 @@ import type { Release, DpTicket, StatusCfg, StatusCfgEntry, DragState, VersionCf
 
 /* ─── CSS ────────────────────────────────────────────────────── */
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 .dp *{box-sizing:border-box;margin:0;padding:0;}
-.dp{font-family:'JetBrains Mono',monospace;background:var(--dp-bg,#07090f);color:var(--dp-tx,#c9d1d9);height:100%;overflow:auto;}
-.dp button,.dp select,.dp input,.dp textarea{font-family:'JetBrains Mono',monospace;}
+.dp{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--dp-bg,#131313);color:var(--dp-tx,#e5e2e1);height:100%;overflow:auto;}
+.dp button,.dp select,.dp input,.dp textarea{font-family:'Inter',system-ui,-apple-system,sans-serif;}
 .dp input[type=date]::-webkit-calendar-picker-indicator{filter:var(--dp-date-filter,invert(.4) sepia(1) hue-rotate(180deg));}
 .dp ::-webkit-scrollbar{width:4px;height:4px;}
-.dp ::-webkit-scrollbar-track{background:var(--dp-bg,#07090f);}
-.dp ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:2px;}
-.dp select option{background:var(--dp-sf,#0b0f18);}
-/* Dark (default) */
+.dp ::-webkit-scrollbar-track{background:var(--dp-bg,#131313);}
+.dp ::-webkit-scrollbar-thumb{background:#424754;border-radius:2px;}
+.dp select option{background:var(--dp-sf,#1c1b1b);}
+.dp .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:300;font-style:normal;display:inline-block;line-height:1;text-transform:none;letter-spacing:normal;word-wrap:normal;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased;font-size:inherit;}
+/* Dark (default) — Stitch / Carbon Logic */
 .dp{
-  --dp-bg:#07090f; --dp-sf:#0b0f18; --dp-sf2:#07090f;
-  --dp-tx:#c9d1d9; --dp-tx2:#94a3b8; --dp-tx3:#64748b;
-  --dp-bd:#1e293b; --dp-date-filter:invert(.4) sepia(1) hue-rotate(180deg);
+  --dp-bg:#131313; --dp-sf:#1c1b1b; --dp-sf2:#201f1f; --dp-sf3:#2a2a2a;
+  --dp-tx:#e5e2e1; --dp-tx2:#c2c6d6; --dp-tx3:#8c909f;
+  --dp-bd:#424754; --dp-date-filter:invert(.4) sepia(1) hue-rotate(180deg);
+  --dp-primary:#adc6ff; --dp-primary-strong:#4d8eff;
+  --dp-secondary:#4ae176; --dp-secondary-strong:#00b954;
+  --dp-tertiary:#ddb7ff; --dp-tertiary-strong:#b76dff;
+  --dp-danger:#ffb4ab; --dp-danger-strong:#ef4444;
+  --dp-warning:#f59e0b;
 }
 /* Light mode — activated by data-theme="light" or .light class */
 [data-theme="light"] .dp, .light .dp, .dp.light{
-  --dp-bg:#f1f5f9; --dp-sf:#ffffff; --dp-sf2:#f8fafc;
+  --dp-bg:#f1f5f9; --dp-sf:#ffffff; --dp-sf2:#f8fafc; --dp-sf3:#e2e8f0;
   --dp-tx:#0f172a; --dp-tx2:#475569; --dp-tx3:#64748b;
   --dp-bd:#e2e8f0; --dp-date-filter:none;
+  --dp-primary:#4d8eff; --dp-primary-strong:#2563eb;
 }
 [data-theme="light"] .dp ::-webkit-scrollbar-thumb, .light .dp ::-webkit-scrollbar-thumb, .dp.light ::-webkit-scrollbar-thumb{background:#cbd5e1;}
 [data-theme="light"] .dp select option, .light .dp select option, .dp.light select option{background:#ffffff;}
+/* Glass card utility */
+.dp .glass-card{background:rgba(42,42,42,.6);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(66,71,84,.15);border-radius:8px;}
+.dp .glass-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(173,198,255,.2),transparent);border-radius:8px 8px 0 0;}
+.dp .ghost-border-top{position:relative;}
+.dp .ghost-border-top::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(173,198,255,.2),transparent);border-radius:8px 8px 0 0;}
 @keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .anim-in{animation:slideIn .2s ease forwards;}
@@ -370,27 +383,31 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
       <style>{CSS}</style>
 
       {/* Nav */}
-      <nav style={{ borderBottom: '1px solid var(--dp-bd,#0e1520)', padding: '0 20px', display: 'flex', alignItems: 'center', height: 52, background: 'var(--dp-sf,#07090f)', gap: 10, position: 'sticky', top: 0, zIndex: 20 }}>
+      <nav style={{ borderBottom: 'none', padding: '0 24px', display: 'flex', alignItems: 'center', height: 56, background: 'var(--dp-sf,#1c1b1b)', gap: 12, position: 'sticky', top: 0, zIndex: 20, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
         {detail ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button onClick={() => setDetail(null)} style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#64748b)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>←</button>
-            <div style={{ width: 26, height: 26, background: 'linear-gradient(135deg,#1d4ed8,#0ea5e9)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🚀</div>
-            <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--dp-tx,#e6edf3)', letterSpacing: '.04em' }}>Deploy Planner</span>
-            <span style={{ color: 'var(--dp-tx3,#334155)', fontSize: 11 }}>→</span>
-            <span style={{ fontSize: 12, color: '#38bdf8', fontWeight: 600 }}>{detailRel?.release_number}</span>
+            <button onClick={() => setDetail(null)} style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>arrow_back</span>
+            </button>
+            <div style={{ width: 28, height: 28, background: 'linear-gradient(135deg,#adc6ff,#4d8eff)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 12px rgba(77,142,255,.3)' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#00285d' }}>rocket_launch</span>
+            </div>
+            <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--dp-tx,#e5e2e1)', letterSpacing: '-0.01em' }}>Deploy Planner</span>
+            <span style={{ color: 'var(--dp-tx3,#8c909f)', fontSize: 11 }}>/</span>
+            <span style={{ fontSize: 12, color: 'var(--dp-primary,#adc6ff)', fontWeight: 600 }}>{detailRel?.release_number}</span>
           </div>
         ) : (
-          <div style={{ display: 'flex', gap: 2, background: 'var(--dp-sf2,#07090f)', border: '1px solid var(--dp-bd,#1e293b)', borderRadius: 8, padding: 3 }}>
+          <div style={{ display: 'flex', gap: 2, background: 'var(--dp-sf2,#201f1f)', border: '1px solid rgba(66,71,84,.15)', borderRadius: 8, padding: 3 }}>
             {TABS.map(t => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 style={{
-                  padding: '4px 12px', fontSize: 12, fontWeight: tab === t.id ? 600 : 400, borderRadius: 6,
-                  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                  background: tab === t.id ? '#38bdf8' : 'transparent',
-                  color: tab === t.id ? '#000' : 'var(--dp-tx3,#64748b)',
-                  boxShadow: tab === t.id ? '0 1px 3px rgba(0,0,0,.15)' : 'none',
+                  padding: '5px 14px', fontSize: 12, fontWeight: tab === t.id ? 600 : 400, borderRadius: 6,
+                  border: 'none', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: tab === t.id ? '-0.01em' : '0.01em',
+                  background: tab === t.id ? 'linear-gradient(135deg,#adc6ff,#4d8eff)' : 'transparent',
+                  color: tab === t.id ? '#00285d' : 'var(--dp-tx3,#8c909f)',
+                  boxShadow: tab === t.id ? '0 0 12px rgba(77,142,255,.3)' : 'none',
                   transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 5,
                 }}
               >
@@ -398,8 +415,8 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
                 {t.badge !== undefined && t.badge > 0 && (
                   <span style={{
                     fontSize: 9, padding: '1px 6px', borderRadius: 10,
-                    background: tab === t.id ? 'rgba(0,0,0,.2)' : 'rgba(56,189,248,.08)',
-                    color: tab === t.id ? 'rgba(0,0,0,.7)' : 'var(--dp-tx3,#475569)',
+                    background: tab === t.id ? 'rgba(0,40,93,.25)' : 'rgba(77,142,255,.08)',
+                    color: tab === t.id ? 'rgba(0,40,93,.8)' : 'var(--dp-tx3,#8c909f)',
                   }}>{t.badge}</span>
                 )}
               </button>
@@ -407,18 +424,20 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
           </div>
         )}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 10, color: 'var(--dp-tx3,#334155)' }}>
+          <span style={{ fontSize: 10, color: 'var(--dp-tx3,#8c909f)' }}>
             {fetchingJira
-              ? <><span className="spin" style={{ marginRight: 4 }}>⟳</span>Sincronizando Jira…</>
+              ? <><span className="spin" style={{ marginRight: 4 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>sync</span>
+                </span>Sincronizando Jira…</>
               : `${tickets.length} tickets`}
           </span>
           <button
             onClick={() => void fetchJiraTickets()}
             disabled={fetchingJira}
             title="Recargar tickets de Jira"
-            style={{ background: 'transparent', border: '1px solid var(--dp-bd,#1e293b)', borderRadius: 5, width: 28, height: 28, color: 'var(--dp-tx2,#64748b)', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ background: 'var(--dp-sf3,#2a2a2a)', border: '1px solid rgba(66,71,84,.15)', borderRadius: 8, width: 32, height: 32, color: 'var(--dp-tx2,#c2c6d6)', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(12px)' }}
           >
-            ↻
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>refresh</span>
           </button>
         </div>
       </nav>
@@ -426,7 +445,7 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
       {/* Content */}
       <div style={{ padding: 28 }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 60, color: 'var(--dp-tx3,#334155)', fontSize: 13 }}>Cargando…</div>
+          <div style={{ textAlign: 'center', padding: 60, color: 'var(--dp-tx3,#8c909f)', fontSize: 13 }}>Cargando…</div>
         ) : detailRel ? (
           <ReleaseDetail
             rel={detailRel}
@@ -458,17 +477,45 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
               <div style={{ position: 'relative' }}>
                 {/* Loading overlay */}
                 {fetchingJira && tickets.length === 0 && (
-                  <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'var(--dp-bg,rgba(7,9,15,.85))', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, borderRadius: 8, minHeight: 200 }}>
-                    <div className="spin" style={{ fontSize: 24, color: '#38bdf8' }}>⟳</div>
-                    <div style={{ fontSize: 12, color: 'var(--dp-tx2,#94a3b8)', fontWeight: 600 }}>Cargando tickets de Jira…</div>
-                    <div style={{ fontSize: 10, color: 'var(--dp-tx3,#64748b)' }}>Conectando con proyectos y sincronizando issues</div>
+                  <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(19,19,19,.92)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, borderRadius: 8, minHeight: 200 }}>
+                    <div className="spin" style={{ fontSize: 24, color: 'var(--dp-primary,#adc6ff)' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 28 }}>sync</span>
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--dp-tx,#e5e2e1)', fontWeight: 600, letterSpacing: '-0.01em' }}>Cargando tickets de Jira…</div>
+                    <div style={{ fontSize: 11, color: 'var(--dp-tx3,#8c909f)' }}>Conectando con proyectos y sincronizando issues</div>
                   </div>
                 )}
+                {/* Stitch header */}
+                <div style={{ marginBottom: 28 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--dp-primary,#adc6ff)', marginBottom: 6 }}>PRODUCTION PIPELINE</div>
+                  <h1 style={{ fontSize: 28, fontWeight: 600, color: 'var(--dp-tx,#e5e2e1)', letterSpacing: '-0.02em', marginBottom: 6 }}>Planning Board</h1>
+                  <p style={{ fontSize: 13, color: 'var(--dp-tx3,#8c909f)', letterSpacing: '0.01em' }}>
+                    Organiza releases, asigna tickets y coordina deploys a producción.
+                  </p>
+                </div>
+                {/* Stat cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, marginBottom: 28 }}>
+                  {[
+                    { label: 'ACTIVE RELEASES', value: releases.filter(r => !statusCfg[r.status]?.is_final).length, icon: 'rocket_launch', color: 'var(--dp-primary,#adc6ff)' },
+                    { label: 'SCHEDULED TODAY', value: releases.filter(r => r.end_date === fmt(today)).length, icon: 'today', color: 'var(--dp-warning,#f59e0b)' },
+                    { label: 'SUCCESS RATE', value: `${releases.filter(r => statusCfg[r.status]?.is_final).length ? Math.round(releases.filter(r => r.status === 'Deployed').length / Math.max(releases.filter(r => statusCfg[r.status]?.is_final).length, 1) * 100) : 0}%`, icon: 'trending_up', color: 'var(--dp-secondary,#4ae176)' },
+                    { label: 'PENDING TICKETS', value: tickets.length, icon: 'confirmation_number', color: 'var(--dp-tertiary,#ddb7ff)' },
+                  ].map(s => (
+                    <div key={s.label} className="glass-card ghost-border-top" style={{ position: 'relative', padding: '16px 18px', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 18, color: s.color }}>{s.icon}</span>
+                        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--dp-tx3,#8c909f)' }}>{s.label}</span>
+                      </div>
+                      <div style={{ fontSize: 28, fontWeight: 600, color: s.color, lineHeight: 1, letterSpacing: '-0.02em' }}>{s.value}</div>
+                    </div>
+                  ))}
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
-                  <h2 style={{ fontSize: 14, color: 'var(--dp-tx,#e6edf3)', fontWeight: 700, marginRight: 8 }}>Planificación</h2>
-                  <span style={{ fontSize: 10, color: 'var(--dp-tx3,#64748b)', marginRight: 8 }}>
+                  <span style={{ fontSize: 11, color: 'var(--dp-tx3,#8c909f)', marginRight: 8 }}>
                     {releases.length} releases · {tickets.length} tickets
-                    {fetchingJira && tickets.length > 0 && <span className="spin" style={{ marginLeft: 6, display: 'inline-block' }}>⟳</span>}
+                    {fetchingJira && tickets.length > 0 && <span className="spin" style={{ marginLeft: 6, display: 'inline-block' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 12 }}>sync</span>
+                    </span>}
                   </span>
                   {Object.entries(statusCfg).map(([name, cfg]) => {
                     const on = filterStatus.includes(name);
@@ -477,10 +524,10 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
                         key={name}
                         onClick={() => setFilterStatus(f => f.includes(name) ? f.filter(x => x !== name) : [...f, name])}
                         style={{
-                          fontSize: 10, padding: '3px 10px', borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
+                          fontSize: 10, padding: '4px 12px', borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
                           background: on ? cfg.bg_color : 'transparent',
-                          color: on ? cfg.color : 'var(--dp-tx3,#334155)',
-                          border: `1px solid ${on ? cfg.border : 'var(--dp-bd,#1e293b)'}`,
+                          color: on ? cfg.color : 'var(--dp-tx3,#8c909f)',
+                          border: `1px solid ${on ? cfg.border : 'rgba(66,71,84,.15)'}`,
                           transition: 'all .12s',
                         }}
                       >
@@ -490,8 +537,9 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
                   })}
                 </div>
                 {hidden > 0 && (
-                  <div style={{ fontSize: 10, color: 'var(--dp-tx3,#334155)', marginBottom: 14 }}>
-                    ↓ {hidden} release{hidden > 1 ? 's' : ''} oculta{hidden > 1 ? 's' : ''} por filtros — actívalas arriba o ve a History.
+                  <div style={{ fontSize: 10, color: 'var(--dp-tx3,#8c909f)', marginBottom: 14 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 12, verticalAlign: 'middle', marginRight: 4 }}>filter_alt</span>
+                    {hidden} release{hidden > 1 ? 's' : ''} oculta{hidden > 1 ? 's' : ''} por filtros — actívalas arriba o ve a History.
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-start' }}>
@@ -520,7 +568,7 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
                             style={{
                               position: 'absolute', top: -9, left: 14, fontSize: 8, fontWeight: 700,
                               color: allDone ? '#22c55e' : '#f59e0b',
-                              background: 'var(--dp-bg,var(--bg,#07090f))',
+                              background: 'var(--dp-bg,#131313)',
                               padding: '0 6px', letterSpacing: '.05em', textTransform: 'uppercase',
                             }}
                           >
@@ -578,12 +626,12 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
                   })()}
                   <div
                     onClick={() => void addRelease()}
-                    style={{ width: 290, minHeight: 140, background: 'transparent', border: '2px dashed var(--dp-bd,#1e293b)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', color: 'var(--dp-tx3,#334155)', fontSize: 12, transition: 'border-color .15s' }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#38bdf8')}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--dp-bd,#1e293b)')}
+                    style={{ width: 320, minHeight: 140, background: 'transparent', border: '2px dashed rgba(66,71,84,.3)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', color: 'var(--dp-tx3,#8c909f)', fontSize: 12, transition: 'all .2s' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--dp-primary,#adc6ff)'; e.currentTarget.style.background = 'rgba(77,142,255,.04)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(66,71,84,.3)'; e.currentTarget.style.background = 'transparent'; }}
                   >
-                    <span style={{ fontSize: 24 }}>+</span>
-                    <span style={{ fontSize: 10 }}>Nueva release</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 28, color: 'var(--dp-primary,#adc6ff)' }}>add_circle</span>
+                    <span style={{ fontSize: 11, letterSpacing: '0.01em' }}>Nueva release</span>
                   </div>
                 </div>
               </div>
