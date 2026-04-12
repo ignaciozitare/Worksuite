@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { CHRONO_COLORS as C } from '../ChronoPage';
+import { CHRONO_THEME as T } from '../../shared/theme';
 import { ChronoStatCard } from '../components/ChronoStatCard';
 import type { IFichajeRepository } from '../../domain/ports/IFichajeRepository';
 import type { IBolsaHorasRepository } from '../../domain/ports/IBolsaHorasRepository';
@@ -325,21 +326,32 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
   }
 
   return (
-    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-      {/* ── Top amber line ─────────────────────────────────────────────────── */}
-      <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, #f59e0b, transparent)', marginBottom: -12 }} />
-
-      {/* ── Giant clock + main button area ─────────────────────────────────── */}
+      {/* ── Timer bento card (Stitch look) ─────────────────────────────────── */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          padding: '40px 0 20px',
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.05) 0%, transparent 60%)',
+          padding: '44px 32px 32px',
+          background: T.color.surface,
+          border: `1px solid ${T.color.surfaceHigh}`,
+          borderRadius: T.radius.lg,
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
+        {/* Radial accent glow (same hue as the main clock-in button) */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: `radial-gradient(ellipse at 50% 0%, ${mainBtnBg}1a 0%, transparent 60%)`,
+            pointerEvents: 'none',
+          }}
+        />
         {/* Giant clock */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div className="mono" style={{ fontSize: 52, fontWeight: 300, color: C.amber, letterSpacing: '.04em' }}>
