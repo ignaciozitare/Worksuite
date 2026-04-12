@@ -69,11 +69,12 @@ const CSS = `
 .dp .ghost-border-top{position:relative;}
 .dp .ghost-border-top::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(173,198,255,.2),transparent);border-radius:8px 8px 0 0;}
 /* Sidebar */
-.dp .dp-sidebar{position:fixed;left:0;top:0;width:240px;height:100vh;background:rgba(14,14,14,.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid rgba(255,255,255,.05);box-shadow:0 0 60px rgba(77,142,255,.04);display:flex;flex-direction:column;padding:16px;gap:4px;z-index:50;overflow-y:auto;}
+/* Sidebar — sits inside the module container, not fixed to viewport */
+.dp .dp-sidebar{position:sticky;top:0;width:240px;min-width:240px;height:100%;min-height:calc(100vh - 52px);align-self:stretch;background:rgba(14,14,14,.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid rgba(255,255,255,.05);box-shadow:0 0 60px rgba(77,142,255,.04);display:flex;flex-direction:column;padding:16px;gap:4px;z-index:30;overflow-y:auto;}
 .dp .dp-sidebar-nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:500;letter-spacing:.02em;cursor:pointer;border:none;background:transparent;color:var(--dp-tx,#e5e2e1);opacity:.6;transition:all .2s;text-align:left;width:100%;font-family:inherit;}
 .dp .dp-sidebar-nav-item:hover{opacity:1;background:var(--dp-sf,#1c1b1b);transform:translateX(2px);}
 .dp .dp-sidebar-nav-item.active{opacity:1;color:#4d8eff;background:rgba(77,142,255,.1);font-weight:600;box-shadow:0 0 20px rgba(77,142,255,.1);}
-.dp .dp-main{margin-left:240px;height:100%;overflow:auto;}
+.dp .dp-main{flex:1;min-width:0;height:100%;overflow:auto;}
 @keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .anim-in{animation:slideIn .2s ease forwards;}
