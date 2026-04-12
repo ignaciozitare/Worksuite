@@ -64,17 +64,18 @@ const CSS = `
 .ch .ch-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;text-transform:uppercase;}
 .ch .ch-badge-green{background:${C.greenDim};color:${C.green};}
 .ch .ch-badge-red{background:${C.redDim};color:${C.red};}
-.ch .ch-badge-amber{background:${C.amberGlow};color:${C.amber};}
+.ch .ch-badge-amber{background:${T.color.primaryDim};color:${T.color.primary};}
 .ch .ch-badge-blue{background:${C.blueDim};color:${C.blue};}
 .ch .ch-badge-muted{background:#1e1e1e;color:${C.txDim};}
 .ch .ch-card{background:${T.color.surface};border:1px solid ${T.color.surfaceHigh};border-radius:${T.radius.lg};padding:20px;}
 .ch .ch-stat{background:${C.sf};border:1px solid ${C.bd};border-radius:8px;padding:18px 20px;position:relative;overflow:hidden;}
 .ch .ch-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,${C.amberDim});}
 .ch .ch-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;text-transform:uppercase;transition:all .15s;}
-.ch .ch-btn-amber{background:${C.amber};color:#000;border-color:${C.amber};}
-.ch .ch-btn-amber:hover{background:#fbbf24;}
-.ch .ch-btn-ghost{background:transparent;color:${C.txDim};border-color:${C.bd};}
-.ch .ch-btn-ghost:hover{border-color:${C.amber};color:${C.amber};}
+/* Primary action button — repainted from amber to the Stitch primary. */
+.ch .ch-btn-amber{background:${T.color.primary};color:${T.color.primaryOn};border-color:${T.color.primary};box-shadow:0 0 14px ${T.color.primaryDim};}
+.ch .ch-btn-amber:hover{background:${T.color.primaryStrong};color:#fff;border-color:${T.color.primaryStrong};}
+.ch .ch-btn-ghost{background:transparent;color:${T.color.textDim};border-color:${T.color.surfaceHigh};}
+.ch .ch-btn-ghost:hover{border-color:${T.color.primary};color:${T.color.primary};background:${T.color.primaryDim};}
 .ch .ch-btn-red{background:${C.redDim};color:${C.red};border-color:rgba(239,68,68,.3);}
 .ch .ch-btn-green{background:${C.greenDim};color:${C.green};border-color:rgba(16,185,129,.3);}
 .ch table{width:100%;border-collapse:collapse;}
