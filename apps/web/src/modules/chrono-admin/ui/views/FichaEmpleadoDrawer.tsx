@@ -4,13 +4,18 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from '@worksuite/i18n';
 import type { IFichaEmpleadoRepository } from '../../domain/ports/IFichaEmpleadoRepository';
 import type { FichaEmpleado } from '../../domain/entities/FichaEmpleado';
+import { CHRONO_THEME as T } from '../../../chrono/shared/theme';
 
 const C = {
-  amber: '#f59e0b', amberDim: '#92400e', amberGlow: 'rgba(245,158,11,0.12)',
-  tx: '#e8e8e8', txDim: '#888', txMuted: '#555',
-  green: '#10b981', greenDim: 'rgba(16,185,129,0.15)',
-  red: '#ef4444', redDim: 'rgba(239,68,68,0.15)',
-  sf: '#161616', sfHover: '#1e1e1e', bd: '#2a2a2a', bg: '#0d0d0d',
+  tx: T.color.text,
+  txDim: T.color.textDim,
+  txMuted: T.color.textMuted,
+  red: T.color.dangerStrong,
+  redDim: T.color.dangerDim,
+  sf: T.color.surface,
+  sfHover: T.color.surfaceHigh,
+  bd: T.color.surfaceHigh,
+  bg: T.color.bg,
 };
 
 const SENIORITY_OPTIONS = ['junior', 'mid', 'senior', 'lead', 'principal', 'manager', 'director'];
@@ -83,14 +88,21 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
   }
 
   const inputStyle: React.CSSProperties = {
-    background: C.bg, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '8px 12px',
-    color: C.tx, fontSize: 13, width: '100%', outline: 'none',
-    fontFamily: "'IBM Plex Mono',monospace",
+    background: T.color.surfaceLow,
+    border: `1px solid ${T.color.surfaceHigh}`,
+    borderRadius: T.radius.md,
+    padding: '9px 12px',
+    color: T.color.text,
+    fontSize: 13,
+    width: '100%',
+    outline: 'none',
+    fontFamily: T.font.body,
+    transition: 'border-color .15s, box-shadow .15s',
   };
 
   const labelStyle: React.CSSProperties = {
-    fontSize: 10, color: C.txMuted, display: 'block', marginBottom: 4,
-    textTransform: 'uppercase', letterSpacing: '.08em', fontWeight: 600,
+    fontSize: 10, color: T.color.textDim, display: 'block', marginBottom: 5,
+    textTransform: 'uppercase', letterSpacing: '.1em', fontWeight: 600,
   };
 
   return createPortal(
@@ -107,10 +119,11 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
       {/* Drawer */}
       <div style={{
         position: 'fixed', top: 0, right: 0, bottom: 0, width: 520,
-        background: C.sf, borderLeft: `1px solid ${C.bd}`,
+        background: T.color.surface,
+        borderLeft: `1px solid ${T.color.surfaceHigh}`,
         zIndex: 9999, display: 'flex', flexDirection: 'column',
         animation: 'chSlideIn .25s ease forwards',
-        fontFamily: "'IBM Plex Sans', sans-serif",
+        fontFamily: T.font.body,
       }}>
         <style>{`
           @keyframes chSlideIn { from { transform: translateX(100%) } to { transform: translateX(0) } }
@@ -122,11 +135,12 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
           display: 'flex', alignItems: 'center', gap: 14,
         }}>
           <div style={{
-            width: 42, height: 42, borderRadius: '50%',
-            background: `linear-gradient(135deg,${C.amberDim},#78350f)`,
+            width: 42, height: 42, borderRadius: T.radius.md,
+            background: `linear-gradient(135deg, ${T.color.primary}, ${T.color.primaryStrong})`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 700, color: C.amber, fontSize: 16,
-            fontFamily: "'IBM Plex Mono',monospace",
+            fontWeight: 700, color: T.color.primaryOn, fontSize: 16,
+            fontFamily: T.font.body,
+            boxShadow: `0 0 14px ${T.color.primaryDim}`,
           }}>
             {userName.charAt(0).toUpperCase()}
           </div>
@@ -154,7 +168,7 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {/* Sección: Datos profesionales */}
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.amber, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: -6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.color.primary, textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: -6 }}>
                 {t('chronoAdmin.fichaSeccionProfesional')}
               </div>
 
@@ -190,7 +204,7 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
               </div>
 
               {/* Sección: Contacto */}
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.amber, textTransform: 'uppercase', letterSpacing: '.08em', marginTop: 6, marginBottom: -6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.color.primary, textTransform: 'uppercase', letterSpacing: '.12em', marginTop: 6, marginBottom: -6 }}>
                 {t('chronoAdmin.fichaSeccionContacto')}
               </div>
 
@@ -209,7 +223,7 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
               </div>
 
               {/* Sección: Seguridad Social */}
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.amber, textTransform: 'uppercase', letterSpacing: '.08em', marginTop: 6, marginBottom: -6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.color.primary, textTransform: 'uppercase', letterSpacing: '.12em', marginTop: 6, marginBottom: -6 }}>
                 {t('chronoAdmin.fichaSeccionLegal')}
               </div>
 
@@ -219,7 +233,7 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
               </div>
 
               {/* Sección: Baja */}
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.red, textTransform: 'uppercase', letterSpacing: '.08em', marginTop: 6, marginBottom: -6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.red, textTransform: 'uppercase', letterSpacing: '.12em', marginTop: 6, marginBottom: -6 }}>
                 {t('chronoAdmin.fichaSeccionBaja')}
               </div>
 
