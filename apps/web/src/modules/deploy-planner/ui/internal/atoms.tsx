@@ -14,7 +14,7 @@ export const SLabel = ({ children, style = {} }: SLabelProps) => (
       fontWeight: 700,
       letterSpacing: '.12em',
       textTransform: 'uppercase',
-      color: 'var(--dp-tx3,#334155)',
+      color: 'var(--dp-tx3,#8c909f)',
       ...style,
     }}
   >
@@ -32,9 +32,9 @@ export const RepoChip = ({ name }: RepoChipProps) => (
       fontSize: 9,
       padding: '2px 7px',
       borderRadius: 3,
-      background: 'var(--dp-sf2,#0d111a)',
-      border: '1px solid var(--dp-bd,#1e293b)',
-      color: 'var(--dp-tx3,#475569)',
+      background: 'var(--dp-sf2,#201f1f)',
+      border: '1px solid rgba(66,71,84,.15)',
+      color: 'var(--dp-tx3,#8c909f)',
     }}
   >
     {name}

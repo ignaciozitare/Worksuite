@@ -113,8 +113,8 @@ export function Timeline({ releases, tickets, upd, setDetail, statusCfg, repoGro
                 fontSize: 10, padding: '3px 10px', borderRadius: 20, cursor: 'pointer',
                 fontFamily: 'inherit', fontWeight: 600,
                 background: on ? cfg.bg_color : 'transparent',
-                color: on ? cfg.color : 'var(--dp-tx3,#64748b)',
-                border: `1px solid ${on ? cfg.border : 'var(--dp-bd,#1e293b)'}`,
+                color: on ? cfg.color : 'var(--dp-tx3,#8c909f)',
+                border: `1px solid ${on ? cfg.border : 'var(--dp-bd,#424754)'}`,
                 transition: 'all .12s',
               }}
             >
@@ -132,7 +132,7 @@ export function Timeline({ releases, tickets, upd, setDetail, statusCfg, repoGro
       {/* Legend */}
       <div style={{ marginTop: 12, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         {legend.map(l => (
-          <div key={l.name} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--dp-tx3,var(--tx3,#64748b))' }}>
+          <div key={l.name} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--dp-tx3,#8c909f)' }}>
             <div style={{ width: 10, height: 10, borderRadius: 2, background: l.color }} />{l.name}
           </div>
         ))}

@@ -39,14 +39,14 @@ export function History({ releases, tickets, setDetail, statusCfg, classifiedSub
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-        <h2 style={{ fontSize: 14, color: 'var(--dp-tx,#e6edf3)', fontWeight: 700 }}>Historial</h2>
-        <span style={{ fontSize: 10, color: 'var(--dp-tx3,#334155)' }}>{sorted.length} releases</span>
+        <h2 style={{ fontSize: 14, color: 'var(--dp-tx,#e5e2e1)', fontWeight: 700 }}>Historial</h2>
+        <span style={{ fontSize: 10, color: 'var(--dp-tx3,#8c909f)' }}>{sorted.length} releases</span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           <SLabel>Ordenar</SLabel>
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as SortBy)}
-            style={{ background: 'var(--dp-sf,#0b0f18)', border: '1px solid var(--dp-bd,#1e293b)', borderRadius: 4, padding: '4px 8px', fontSize: 10, color: 'var(--dp-tx2,#94a3b8)', outline: 'none' }}
+            style={{ background: 'var(--dp-sf,#1c1b1b)', border: '1px solid var(--dp-bd,#424754)', borderRadius: 4, padding: '4px 8px', fontSize: 10, color: 'var(--dp-tx2,#c2c6d6)', outline: 'none' }}
           >
             <option value="end_date">Fecha fin</option>
             <option value="start_date">Fecha inicio</option>
@@ -66,8 +66,8 @@ export function History({ releases, tickets, setDetail, statusCfg, classifiedSub
                 fontSize: 9, padding: '2px 8px', borderRadius: 20, cursor: 'pointer',
                 fontFamily: 'inherit', fontWeight: 600,
                 background: on ? cfg.bg_color : 'transparent',
-                color: on ? cfg.color : 'var(--dp-tx3,#64748b)',
-                border: `1px solid ${on ? cfg.border : 'var(--dp-bd,#1e293b)'}`,
+                color: on ? cfg.color : 'var(--dp-tx3,#8c909f)',
+                border: `1px solid ${on ? cfg.border : 'var(--dp-bd,#424754)'}`,
                 transition: 'all .12s',
               }}
             >
@@ -77,9 +77,9 @@ export function History({ releases, tickets, setDetail, statusCfg, classifiedSub
         })}
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
-        <thead><tr style={{ borderBottom: '1px solid var(--dp-bd,#0e1520)' }}>
+        <thead><tr style={{ borderBottom: '1px solid var(--dp-bd,#424754)' }}>
           {['RELEASE', 'ESTADO', 'INICIO', 'FIN', 'DURACIÓN', 'TICKETS', 'BUGS', 'REPOS'].map(h => (
-            <th key={h} style={{ padding: '7px 12px', textAlign: 'left', color: 'var(--dp-tx3,#334155)', fontWeight: 600, letterSpacing: '.06em', fontSize: 9 }}>{h}</th>
+            <th key={h} style={{ padding: '7px 12px', textAlign: 'left', color: 'var(--dp-tx3,#8c909f)', fontWeight: 600, letterSpacing: '.06em', fontSize: 9 }}>{h}</th>
           ))}
         </tr></thead>
         <tbody>
@@ -94,34 +94,34 @@ export function History({ releases, tickets, setDetail, statusCfg, classifiedSub
               <tr
                 key={rel.id}
                 onClick={() => setDetail(rel.id)}
-                style={{ borderBottom: '1px solid var(--dp-bd,#0d111a)', cursor: 'pointer' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--dp-sf,#0b0f18)')}
+                style={{ borderBottom: '1px solid var(--dp-bd,#424754)', cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--dp-sf,#1c1b1b)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <td style={{ padding: '11px 12px' }}>
-                  <div style={{ fontWeight: 700, color: '#38bdf8', fontSize: 11 }}>{rel.release_number || '—'}</div>
-                  {rel.description && <div style={{ color: 'var(--dp-tx3,#334155)', fontSize: 9, marginTop: 1 }}>{rel.description}</div>}
+                  <div style={{ fontWeight: 700, color: 'var(--dp-primary,#adc6ff)', fontSize: 11 }}>{rel.release_number || '—'}</div>
+                  {rel.description && <div style={{ color: 'var(--dp-tx3,#8c909f)', fontSize: 9, marginTop: 1 }}>{rel.description}</div>}
                 </td>
                 <td style={{ padding: '11px 12px' }}>
                   <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: cfg.color, background: cfg.bg_color, border: `1px solid ${cfg.border}` }}>
                     {rel.status || 'Planned'}
                   </span>
                 </td>
-                <td style={{ padding: '11px 12px', color: 'var(--dp-tx2,#64748b)' }}>{rel.start_date ?? '—'}</td>
-                <td style={{ padding: '11px 12px', color: 'var(--dp-tx2,#64748b)' }}>{rel.end_date ?? '—'}</td>
-                <td style={{ padding: '11px 12px', color: 'var(--dp-tx,#94a3b8)', fontWeight: 600 }}>{dur != null ? `${dur}d` : '—'}</td>
-                <td style={{ padding: '11px 12px', color: 'var(--dp-tx2,#64748b)' }}>{rel.ticket_ids?.length ?? 0}</td>
+                <td style={{ padding: '11px 12px', color: 'var(--dp-tx2,#c2c6d6)' }}>{rel.start_date ?? '—'}</td>
+                <td style={{ padding: '11px 12px', color: 'var(--dp-tx2,#c2c6d6)' }}>{rel.end_date ?? '—'}</td>
+                <td style={{ padding: '11px 12px', color: 'var(--dp-tx,#e5e2e1)', fontWeight: 600 }}>{dur != null ? `${dur}d` : '—'}</td>
+                <td style={{ padding: '11px 12px', color: 'var(--dp-tx2,#c2c6d6)' }}>{rel.ticket_ids?.length ?? 0}</td>
                 <td style={{ padding: '11px 12px' }}>{(() => {
                   const relSubs = classifiedSubs.filter(s => (rel.ticket_ids ?? []).includes(s.parentKey));
                   const c = SubtaskService.count(relSubs);
                   return c.bugs.total > 0
                     ? <span style={{ color: c.bugs.open > 0 ? '#ef4444' : '#22c55e', fontWeight: 600 }}><BugIcon size={12} color="currentColor" />{c.bugs.closed}/{c.bugs.total}</span>
-                    : <span style={{ color: 'var(--dp-tx3,#64748b)' }}>—</span>;
+                    : <span style={{ color: 'var(--dp-tx3,#8c909f)' }}>—</span>;
                 })()}</td>
                 <td style={{ padding: '11px 12px' }}>
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                     {relRepos.slice(0, 3).map(r => <RepoChip key={r} name={r} />)}
-                    {relRepos.length > 3 && <span style={{ fontSize: 9, color: 'var(--dp-tx3,#64748b)' }}>+{relRepos.length - 3}</span>}
+                    {relRepos.length > 3 && <span style={{ fontSize: 9, color: 'var(--dp-tx3,#8c909f)' }}>+{relRepos.length - 3}</span>}
                   </div>
                 </td>
               </tr>

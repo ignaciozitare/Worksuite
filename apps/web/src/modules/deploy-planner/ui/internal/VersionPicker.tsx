@@ -71,15 +71,15 @@ export function VersionPicker({ versionCfg, allReleaseNumbers, onSelect, onClose
   return (
     <div
       onClick={e => e.stopPropagation()}
-      style={{ position: 'absolute', top: '100%', left: 0, zIndex: 50, background: 'var(--dp-sf,#0b0f18)', border: '1px solid var(--dp-bd,#1e293b)', borderRadius: 8, padding: '14px 16px', width: 264, marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,.4)' }}
+      style={{ position: 'absolute', top: '100%', left: 0, zIndex: 50, background: 'var(--dp-sf,#1c1b1b)', border: '1px solid var(--dp-bd,#424754)', borderRadius: 8, padding: '14px 16px', width: 264, marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,.4)' }}
     >
-      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--dp-tx3,#475569)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 10 }}>Generador de versión</div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--dp-tx3,#8c909f)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 10 }}>Generador de versión</div>
 
       {/* Current → next */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, padding: '8px 10px', background: 'var(--dp-sf2,#07090f)', borderRadius: 6, border: '1px solid var(--dp-bd,#1e293b)' }}>
-        <span style={{ fontSize: 12, color: 'var(--dp-tx3,#475569)', fontFamily: 'monospace' }}>{currentStr}</span>
-        <span style={{ color: 'var(--dp-tx3,#334155)' }}>→</span>
-        <span style={{ fontSize: 14, fontWeight: 700, color: '#38bdf8', fontFamily: 'monospace' }}>{previewStr}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, padding: '8px 10px', background: 'var(--dp-sf2,#201f1f)', borderRadius: 6, border: '1px solid var(--dp-bd,#424754)' }}>
+        <span style={{ fontSize: 12, color: 'var(--dp-tx3,#8c909f)', fontFamily: 'monospace' }}>{currentStr}</span>
+        <span style={{ color: 'var(--dp-tx3,#8c909f)' }}>→</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--dp-primary,#adc6ff)', fontFamily: 'monospace' }}>{previewStr}</span>
       </div>
 
       {/* Segment selectors */}
@@ -92,9 +92,9 @@ export function VersionPicker({ versionCfg, allReleaseNumbers, onSelect, onClose
               onClick={() => setBumpIdx(i)}
               style={{
                 flex: 1, padding: '7px 0', borderRadius: 5, fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                border: `1px solid ${bumpIdx === i ? '#38bdf8' : 'var(--dp-bd,#1e293b)'}`,
-                background: bumpIdx === i ? 'rgba(56,189,248,.15)' : 'transparent',
-                color: bumpIdx === i ? '#38bdf8' : 'var(--dp-tx3,#64748b)', transition: 'all .12s',
+                border: `1px solid ${bumpIdx === i ? 'var(--dp-primary,#adc6ff)' : 'var(--dp-bd,#424754)'}`,
+                background: bumpIdx === i ? 'rgba(77,142,255,.12)' : 'transparent',
+                color: bumpIdx === i ? 'var(--dp-primary,#adc6ff)' : 'var(--dp-tx3,#8c909f)', transition: 'all .12s',
               }}
             >
               {seg.name}<br />
@@ -111,13 +111,13 @@ export function VersionPicker({ versionCfg, allReleaseNumbers, onSelect, onClose
       <div style={{ display: 'flex', gap: 6 }}>
         <button
           onClick={() => onSelect(previewStr)}
-          style={{ flex: 1, background: 'linear-gradient(135deg,#1d4ed8,#0ea5e9)', border: 'none', borderRadius: 5, padding: '7px', fontSize: 11, fontWeight: 700, color: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
+          style={{ flex: 1, background: 'linear-gradient(135deg,#adc6ff,#4d8eff)', border: 'none', borderRadius: 8, padding: '7px', fontSize: 11, fontWeight: 700, color: '#00285d', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 0 12px rgba(77,142,255,.3)' }}
         >
           Usar {previewStr}
         </button>
         <button
           onClick={onClose}
-          style={{ background: 'transparent', border: '1px solid var(--dp-bd,#1e293b)', borderRadius: 5, padding: '7px 10px', fontSize: 11, color: 'var(--dp-tx3,#64748b)', cursor: 'pointer', fontFamily: 'inherit' }}
+          style={{ background: 'transparent', border: '1px solid var(--dp-bd,#424754)', borderRadius: 5, padding: '7px 10px', fontSize: 11, color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           ✕
         </button>
