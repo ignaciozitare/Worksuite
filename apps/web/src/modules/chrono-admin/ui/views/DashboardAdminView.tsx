@@ -11,7 +11,12 @@ import { ChronoStatCard } from '../../../chrono/ui/components/ChronoStatCard';
 
 import { CHRONO_ADMIN_COLORS as C } from '../../shared/adminColors';
 
-const STAT_ICONS = ['👥', '⏱', '⚠️', '🏖'];
+const STAT_ICONS = [
+  <span className="material-symbols-outlined">group</span>,
+  <span className="material-symbols-outlined">schedule</span>,
+  <span className="material-symbols-outlined">warning</span>,
+  <span className="material-symbols-outlined">beach_access</span>,
+];
 
 interface Props {
   fichajeRepo: IAdminFichajeRepository;

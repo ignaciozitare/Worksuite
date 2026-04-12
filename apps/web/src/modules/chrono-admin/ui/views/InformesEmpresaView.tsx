@@ -32,10 +32,10 @@ export function InformesEmpresaView({ fichajeRepo, vacacionRepo, jiraRepo }: Pro
   const nextMonth = () => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); };
 
   const TABS: { id: ReportTab; label: string; icon: string }[] = [
-    { id: 'monthly', label: t('chronoAdmin.informeMensual') || 'Monthly', icon: '📊' },
-    { id: 'vacaciones', label: t('chronoAdmin.informeVacaciones') || 'Time Off', icon: '🏖️' },
-    { id: 'jira', label: t('chronoAdmin.jiraTitle') || 'Jira', icon: '🔗' },
-    { id: 'bolsa', label: t('chronoAdmin.informeBolsa') || 'Hours Bank', icon: '⚖️' },
+    { id: 'monthly', label: t('chronoAdmin.informeMensual') || 'Monthly', icon: 'bar_chart' },
+    { id: 'vacaciones', label: t('chronoAdmin.informeVacaciones') || 'Time Off', icon: 'beach_access' },
+    { id: 'jira', label: t('chronoAdmin.jiraTitle') || 'Jira', icon: 'link' },
+    { id: 'bolsa', label: t('chronoAdmin.informeBolsa') || 'Hours Bank', icon: 'account_balance_wallet' },
   ];
 
   return (
@@ -55,7 +55,7 @@ export function InformesEmpresaView({ fichajeRepo, vacacionRepo, jiraRepo }: Pro
               border: 'none', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s',
               background: tab === tb.id ? C.amber : 'transparent',
               color: tab === tb.id ? '#000' : C.txDim,
-            }}>{tb.icon} {tb.label}</button>
+            }}><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: 'middle' }}>{tb.icon}</span> {tb.label}</button>
           ))}
         </div>
       </div>
@@ -90,7 +90,7 @@ function BarChart({ data, labelKey, valueKey, color, maxHeight = 160 }: { data: 
 }
 
 /* ─── Stat card ─────────────────────────────────────────────────────────── */
-function Stat({ label, value, color = C.amber, icon = '' }: { label: string; value: string; color?: string; icon?: string }) {
+function Stat({ label, value, color = C.amber, icon = '' }: { label: string; value: string; color?: string; icon?: any }) {
   return (
     <div className="ch-stat" style={{ '--accent': color }}>
       {icon && <div style={{ fontSize: 16, marginBottom: 6 }}>{icon}</div>}
@@ -148,10 +148,10 @@ function MonthlyReport({ fichajeRepo, mes }: { fichajeRepo: IAdminFichajeReposit
     <div>
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
-        <Stat icon="👥" label={t('chronoAdmin.totalEmpleados')} value={String(totals.empleados)} />
-        <Stat icon="⏱" label={t('chronoAdmin.horasTotales')} value={fmtH(totals.horas)} />
-        <Stat icon="📈" label="Extra" value={fmtH(totals.extra)} color={totals.extra >= 0 ? C.green : C.red} />
-        <Stat icon="⚠️" label={t('chronoAdmin.incompletos')} value={String(totals.incompletos)} color={totals.incompletos > 0 ? C.red : C.green} />
+        <Stat icon={<span className="material-symbols-outlined">group</span>} label={t('chronoAdmin.totalEmpleados')} value={String(totals.empleados)} />
+        <Stat icon={<span className="material-symbols-outlined">schedule</span>} label={t('chronoAdmin.horasTotales')} value={fmtH(totals.horas)} />
+        <Stat icon={<span className="material-symbols-outlined">trending_up</span>} label="Extra" value={fmtH(totals.extra)} color={totals.extra >= 0 ? C.green : C.red} />
+        <Stat icon={<span className="material-symbols-outlined">warning</span>} label={t('chronoAdmin.incompletos')} value={String(totals.incompletos)} color={totals.incompletos > 0 ? C.red : C.green} />
       </div>
 
       {/* Chart */}
@@ -225,10 +225,10 @@ function VacacionesReport({ vacacionRepo, year }: { vacacionRepo: IAdminVacacion
     <div>
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
-        <Stat icon="📋" label="Total solicitudes" value={String(data.length)} />
-        <Stat icon="✅" label="Aprobadas" value={String(data.filter(d => d.estado === 'aprobado').length)} color={C.green} />
-        <Stat icon="🕐" label="Pendientes" value={String(data.filter(d => d.estado === 'pendiente').length)} color={C.amber} />
-        <Stat icon="📅" label="Días aprobados" value={String(data.filter(d => d.estado === 'aprobado').reduce((s, d) => s + d.diasHabiles, 0))} color={C.blue} />
+        <Stat icon={<span className="material-symbols-outlined">description</span>} label="Total solicitudes" value={String(data.length)} />
+        <Stat icon={<span className="material-symbols-outlined">check_circle</span>} label="Aprobadas" value={String(data.filter(d => d.estado === 'aprobado').length)} color={C.green} />
+        <Stat icon={<span className="material-symbols-outlined">pending</span>} label="Pendientes" value={String(data.filter(d => d.estado === 'pendiente').length)} color={C.amber} />
+        <Stat icon={<span className="material-symbols-outlined">event_available</span>} label="Días aprobados" value={String(data.filter(d => d.estado === 'aprobado').reduce((s, d) => s + d.diasHabiles, 0))} color={C.blue} />
       </div>
 
       {/* Chart */}
@@ -309,9 +309,9 @@ function JiraReport({ jiraRepo, mes }: { jiraRepo: IJiraResumenRepository; mes: 
     <div>
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
-        <Stat icon="🔗" label={t('chronoAdmin.totalHorasJira')} value={fmtH(totals.jira)} color={C.blue} />
-        <Stat icon="⏱" label={t('chronoAdmin.totalHorasFichaje')} value={fmtH(totals.fichaje)} color={C.amber} />
-        <Stat icon="⚠️" label={t('chronoAdmin.empleadosConDeficit')} value={String(totals.deficit)} color={totals.deficit > 0 ? C.red : C.green} />
+        <Stat icon={<span className="material-symbols-outlined">link</span>} label={t('chronoAdmin.totalHorasJira')} value={fmtH(totals.jira)} color={C.blue} />
+        <Stat icon={<span className="material-symbols-outlined">schedule</span>} label={t('chronoAdmin.totalHorasFichaje')} value={fmtH(totals.fichaje)} color={C.amber} />
+        <Stat icon={<span className="material-symbols-outlined">warning</span>} label={t('chronoAdmin.empleadosConDeficit')} value={String(totals.deficit)} color={totals.deficit > 0 ? C.red : C.green} />
       </div>
 
       {/* Chart — comparison bars */}

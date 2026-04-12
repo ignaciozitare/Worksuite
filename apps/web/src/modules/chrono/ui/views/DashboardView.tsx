@@ -533,7 +533,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
               onMouseEnter={e => { if (!acting && !isOnLunch) e.currentTarget.style.transform = 'scale(1.02)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
             >
-              <span style={{ fontSize: 20 }}>⏱</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}>timer</span>
               {mainBtnLabel}
             </button>
 
@@ -593,7 +593,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
             )}
             {isOnLunch && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 14 }}>🍽</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>restaurant</span>
                 {t('chrono.enPausaComida')}
               </div>
             )}
@@ -655,11 +655,11 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
               </h3>
               {pct >= 100 ? (
                 <div style={{ color: T.color.secondary, display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700 }}>
-                  <span>↗</span> {t('chrono.completa')}
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>trending_up</span> {t('chrono.completa')}
                 </div>
               ) : (
                 <div style={{ color: T.color.secondary, display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700 }}>
-                  <span>↗</span> On Track
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>trending_up</span> On Track
                 </div>
               )}
             </div>
@@ -735,7 +735,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
             position: 'absolute', top: 0, left: 0, right: 0, height: 2,
             background: T.color.tertiary,
           }} />
-          <span style={{ fontSize: 30, marginBottom: 16, display: 'block', color: T.color.tertiary }}>⚖</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 30, marginBottom: 16, display: 'block', color: T.color.tertiary }}>account_balance_wallet</span>
           <p style={{
             fontSize: 11, fontWeight: 700, color: T.color.textMuted,
             textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 4,
@@ -763,7 +763,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
             position: 'absolute', top: 0, left: 0, right: 0, height: 2,
             background: T.color.warning,
           }} />
-          <span style={{ fontSize: 30, marginBottom: 16, display: 'block', color: T.color.warning }}>◈</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 30, marginBottom: 16, display: 'block', color: T.color.warning }}>event_available</span>
           <p style={{
             fontSize: 11, fontWeight: 700, color: T.color.textMuted,
             textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 4,
@@ -804,7 +804,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
                 borderRadius: T.radius.lg,
                 borderLeft: `3px solid ${a.color}`,
               }}>
-                <span style={{ fontSize: 18, color: a.color }}>⚠</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 20, color: a.color }}>warning</span>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', margin: 0 }}>{a.text}</p>
                 </div>
