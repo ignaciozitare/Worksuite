@@ -100,6 +100,111 @@ export function UIKit() {
           </div>
         </div>
 
+        {/* ══════════════════════════════════════════════════════════ */}
+        {/* ══ DESIGN SYSTEM — CARBON LOGIC (STITCH) ══════════════ */}
+        {/* ══════════════════════════════════════════════════════════ */}
+        <div style={{ marginBottom: 60, padding: '32px', background: '#0e0e0e', borderRadius: 12, border: '1px solid rgba(66,71,83,0.15)' }}>
+          <div style={{ marginBottom: 24 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#4d8eff', textTransform: 'uppercase', letterSpacing: '0.2em' }}>The Philosophy</span>
+            <h2 style={{ fontSize: 32, fontWeight: 600, letterSpacing: '-0.02em', color: '#e5e2e1', marginTop: 4 }}>Kinetic Monolithism</h2>
+            <p style={{ color: '#c2c6d6', marginTop: 8, fontSize: 14, maxWidth: 600, lineHeight: 1.6 }}>
+              Carbon Logic rejects traditional structural lines. We use <span style={{ color: '#4d8eff' }}>Tonal Layering</span> to create focus. The UI feels carved from a single block of dark material, with light and data emerging from depth.
+            </p>
+          </div>
+
+          {/* ── Tonal Depth Palette ── */}
+          <div style={{ marginBottom: 32 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 500, color: '#e5e2e1', marginBottom: 8 }}>Tonal Depth</h3>
+            <p style={{ fontSize: 12, color: '#8c909f', marginBottom: 16 }}>Defining the palette of the Monolith.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
+              {[
+                { name: 'Background', hex: '#131313', bg: '#131313' },
+                { name: 'Void', hex: '#0E0E0E', bg: '#0e0e0e' },
+                { name: 'Elevated', hex: '#1C1B1B', bg: '#1c1b1b' },
+                { name: 'Electric Blue', hex: '#4D8EFF', bg: 'linear-gradient(135deg, #adc6ff, #4d8eff)' },
+                { name: 'Secondary', hex: '#4AE176', bg: 'linear-gradient(135deg, #4ae176, #00b954)' },
+                { name: 'Tertiary', hex: '#DDB7FF', bg: 'linear-gradient(135deg, #ddb7ff, #b76dff)' },
+              ].map(c => (
+                <div key={c.name} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ height: 80, borderRadius: 8, background: c.bg, border: '1px solid rgba(66,71,83,0.1)' }} />
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#e5e2e1' }}>{c.name}</div>
+                    <div style={{ fontSize: 10, color: '#8c909f', fontFamily: 'monospace' }}>{c.hex}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Typography ── */}
+          <div style={{ marginBottom: 32, padding: 24, background: '#1c1b1b', borderRadius: 8, border: '1px solid rgba(66,71,83,0.15)' }}>
+            <h3 style={{ fontSize: 18, fontWeight: 500, color: '#e5e2e1', marginBottom: 16 }}>Editorial Typography</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#4d8eff', textTransform: 'uppercase', letterSpacing: '0.3em', display: 'block', marginBottom: 8 }}>Display (Semi-Bold -0.02em)</span>
+                <div style={{ fontSize: 48, fontWeight: 600, letterSpacing: '-0.02em', color: '#e5e2e1' }}>Hyper Precise.</div>
+              </div>
+              <div>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#4d8eff', textTransform: 'uppercase', letterSpacing: '0.3em', display: 'block', marginBottom: 8 }}>Headline (Medium -0.01em)</span>
+                <div style={{ fontSize: 32, fontWeight: 500, letterSpacing: '-0.01em', color: '#e5e2e1' }}>The future of technical logistics.</div>
+              </div>
+              <div style={{ display: 'flex', gap: 32 }}>
+                <div>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#4d8eff', textTransform: 'uppercase', letterSpacing: '0.3em', display: 'block', marginBottom: 4 }}>Label (Bold)</span>
+                  <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#e5e2e1' }}>META DATA 102.4</div>
+                </div>
+                <div>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#4d8eff', textTransform: 'uppercase', letterSpacing: '0.3em', display: 'block', marginBottom: 4 }}>Body (Regular)</span>
+                  <div style={{ fontSize: 14, fontWeight: 400, color: '#c2c6d6' }}>Readable text for dark backgrounds.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Buttons ── */}
+          <div style={{ marginBottom: 32, padding: 24, background: '#1c1b1b', borderRadius: 8, border: '1px solid rgba(66,71,83,0.15)' }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'rgba(77,142,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>Radiant Controls — Buttons</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <button style={{ width: '100%', background: 'linear-gradient(135deg, #adc6ff, #4d8eff)', color: '#00285d', fontWeight: 700, padding: '12px 0', borderRadius: 8, border: 'none', fontSize: 14, boxShadow: '0 0 20px rgba(77,142,255,0.15)', cursor: 'pointer' }}>Primary Default</button>
+                <button style={{ width: '100%', background: 'linear-gradient(135deg, #adc6ff, #4d8eff)', color: '#00285d', fontWeight: 700, padding: '12px 0', borderRadius: 8, border: 'none', fontSize: 14, opacity: 0.9, transform: 'scale(0.98)', cursor: 'pointer' }}>Primary Active</button>
+                <button style={{ width: '100%', background: 'rgba(42,42,42,0.4)', color: 'rgba(194,198,214,0.4)', fontWeight: 700, padding: '12px 0', borderRadius: 8, border: 'none', fontSize: 14, cursor: 'not-allowed' }}>Primary Disabled</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <button style={{ width: '100%', background: '#2a2a2a', color: '#e5e2e1', fontWeight: 500, padding: '12px 0', borderRadius: 8, border: 'none', fontSize: 14, cursor: 'pointer' }}>Secondary</button>
+                <button style={{ width: '100%', background: 'transparent', color: '#c2c6d6', fontWeight: 500, padding: '12px 0', borderRadius: 8, border: '1px solid rgba(66,71,83,0.3)', fontSize: 14, cursor: 'pointer' }}>Ghost Action</button>
+                <button style={{ width: '100%', background: 'linear-gradient(135deg, #4ae176, #00b954)', color: '#00285d', fontWeight: 700, padding: '12px 0', borderRadius: 8, border: 'none', fontSize: 14, cursor: 'pointer' }}>Approve</button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Semantic Chips ── */}
+          <div style={{ marginBottom: 32, padding: 24, background: '#1c1b1b', borderRadius: 8, border: '1px solid rgba(66,71,83,0.15)' }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'rgba(77,142,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>Semantic Chips</h3>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <span style={{ padding: '4px 12px', background: 'rgba(77,142,255,0.1)', color: '#adc6ff', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', borderRadius: 9999 }}>Active Node</span>
+              <span style={{ padding: '4px 12px', background: 'rgba(74,225,118,0.1)', color: '#4ae176', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', borderRadius: 9999 }}>On Track</span>
+              <span style={{ padding: '4px 12px', background: 'rgba(255,180,171,0.1)', color: '#ffb4ab', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', borderRadius: 9999 }}>Warning</span>
+              <span style={{ padding: '4px 12px', background: 'rgba(221,183,255,0.1)', color: '#ddb7ff', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', borderRadius: 9999 }}>Synchronizing</span>
+            </div>
+          </div>
+
+          {/* ── Iconography ── */}
+          <div style={{ padding: 32, background: '#0e0e0e', borderRadius: 8 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 500, color: '#e5e2e1', marginBottom: 4 }}>Iconography</h3>
+            <p style={{ fontSize: 12, color: '#8c909f', marginBottom: 20 }}>Material Symbols Outlined — weight 300, filled on interaction.</p>
+            <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 20 }}>
+              {['dashboard','monitoring','terminal','layers','database','hub','rocket_launch','developer_board','schedule','group','warning','settings'].map(icon => (
+                <div key={icon} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#c2c6d6', fontFamily: 'Material Symbols Outlined', fontVariationSettings: "'FILL' 0, 'wght' 300" }}>{icon}</span>
+                  <span style={{ fontSize: 8, fontFamily: 'monospace', color: 'rgba(255,255,255,0.3)' }}>{icon}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* ── Btn ─────────────────────────────────────────────────── */}
         <Section title="Btn" description="Botón principal con variantes, tamaños y estado loading. Usa style como string inline (zero-dependency CSS).">
           <Row label="Variantes">

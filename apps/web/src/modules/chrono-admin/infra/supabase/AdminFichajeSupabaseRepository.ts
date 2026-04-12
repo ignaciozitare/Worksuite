@@ -19,11 +19,16 @@ function toFichaje(row: any): Fichaje {
   };
 }
 
-function resolveEstado(fichaje: any | undefined): EstadoPresencia {
+function resolveEstado(
+  fichaje: any | undefined,
+  onVacation: boolean,
+): EstadoPresencia {
+  if (onVacation) return 'vacaciones';
   if (!fichaje) return 'sin_fichar';
   if (fichaje.tipo === 'teletrabajo') return 'teletrabajo';
   if (fichaje.tipo === 'medico') return 'medico';
-  if (fichaje.estado === 'abierto') return 'oficina';
+  // 'abierto' means still clocked in today; any other state (completo,
+  // incompleto, aprobado...) still counts as "in office today".
   return 'oficina';
 }
 
@@ -32,13 +37,29 @@ export class AdminFichajeSupabaseRepository implements IAdminFichajeRepository {
 
   async getEquipoHoy(): Promise<EmpleadoResumen[]> {
     const today = new Date().toISOString().split('T')[0];
+    const currentYear = new Date().getFullYear();
+    const yearStart = `${currentYear}-01-01`;
+    const yearEnd   = `${currentYear}-12-31`;
 
-    const [usersRes, fichajesRes, saldosRes, bolsaRes, incompletosRes] = await Promise.all([
+    const [usersRes, fichajesRes, saldosRes, bolsaRes, incompletosRes, vacResRes, vacTodayRes] = await Promise.all([
       this.db.from('users').select('id, name, email'),
       this.db.from('ch_fichajes').select('*').eq('fecha', today),
-      this.db.from('ch_saldo_vacaciones').select('*').eq('anyo', new Date().getFullYear()),
+      this.db.from('ch_saldo_vacaciones').select('*').eq('anyo', currentYear),
       this.db.from('ch_bolsa_horas').select('user_id, minutos'),
       this.db.from('ch_fichajes').select('user_id').in('estado', ['incompleto', 'pendiente_aprobacion']),
+      // Days already used this year via approved vacations. `ch_saldo_vacaciones`
+      // has no `dias_disfrutados` column, so we derive it from actual approved
+      // vacation rows that fall inside the current year.
+      this.db.from('ch_vacaciones').select('user_id, dias_habiles, estado, fecha_inicio, fecha_fin')
+        .eq('estado', 'aprobada')
+        .gte('fecha_inicio', yearStart)
+        .lte('fecha_fin', yearEnd),
+      // Users currently on vacation TODAY — used to render the "vacaciones"
+      // presence state in the admin employees table.
+      this.db.from('ch_vacaciones').select('user_id')
+        .eq('estado', 'aprobada')
+        .lte('fecha_inicio', today)
+        .gte('fecha_fin', today),
     ]);
 
     if (usersRes.error) throw usersRes.error;
@@ -49,6 +70,8 @@ export class AdminFichajeSupabaseRepository implements IAdminFichajeRepository {
     const saldos = saldosRes.data ?? [];
     const bolsa = bolsaRes.data ?? [];
     const incompletos = incompletosRes.data ?? [];
+    const vacacionesAprobadas = vacResRes.data ?? [];
+    const onVacationToday = new Set<string>((vacTodayRes.data ?? []).map((v: any) => v.user_id));
 
     const fichajeByUser = new Map(fichajes.map((f: any) => [f.user_id, f]));
     const saldoByUser = new Map(saldos.map((s: any) => [s.user_id, s]));
@@ -63,18 +86,27 @@ export class AdminFichajeSupabaseRepository implements IAdminFichajeRepository {
       incompletosByUser.set(i.user_id, (incompletosByUser.get(i.user_id) ?? 0) + 1);
     }
 
+    const diasDisfrutadosByUser = new Map<string, number>();
+    for (const v of vacacionesAprobadas) {
+      diasDisfrutadosByUser.set(
+        v.user_id,
+        (diasDisfrutadosByUser.get(v.user_id) ?? 0) + (v.dias_habiles ?? 0),
+      );
+    }
+
     return users.map((u: any) => {
       const f = fichajeByUser.get(u.id);
       const s = saldoByUser.get(u.id);
+      const disfrutados = diasDisfrutadosByUser.get(u.id) ?? 0;
       return {
         userId: u.id,
         nombre: u.name ?? u.email,
         email: u.email,
-        estadoHoy: resolveEstado(f),
+        estadoHoy: resolveEstado(f, onVacationToday.has(u.id)),
         fichajeHoyId: f?.id ?? null,
         minutosHoy: f?.minutos_trabajados ?? null,
         fichajesIncompletos: incompletosByUser.get(u.id) ?? 0,
-        saldoVacacionesDias: s ? (s.dias_totales + s.dias_extra - s.dias_disfrutados) : 0,
+        saldoVacacionesDias: s ? Math.max(0, s.dias_totales + s.dias_extra - disfrutados) : 0,
         saldoBolsaMinutos: bolsaByUser.get(u.id) ?? 0,
       };
     });

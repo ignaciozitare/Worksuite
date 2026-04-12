@@ -9,8 +9,9 @@ import type { EmpleadoConfig } from '../../domain/entities/EmpleadoConfig';
 import type { IEquipoRepository } from '../../domain/ports/IEquipoRepository';
 import type { Equipo } from '../../domain/entities/Equipo';
 import { FichaEmpleadoDrawer } from './FichaEmpleadoDrawer';
+import { CHRONO_THEME as T } from '../../../chrono/shared/theme';
 
-const C = { amber:'#f59e0b', amberDim:'#92400e', amberGlow:'rgba(245,158,11,0.12)', tx:'#e8e8e8', txDim:'#888', txMuted:'#555', green:'#10b981', greenDim:'rgba(16,185,129,0.15)', red:'#ef4444', redDim:'rgba(239,68,68,0.15)', blue:'#3b82f6', blueDim:'rgba(59,130,246,0.15)', orange:'#f97316', purple:'#a855f7', sf:'#161616', sfHover:'#1e1e1e', bd:'#2a2a2a', bg:'#0d0d0d' };
+import { CHRONO_ADMIN_COLORS as C } from '../../shared/adminColors';
 
 type FilterKey = 'all' | 'complete' | 'incomplete' | 'vacation';
 
@@ -183,12 +184,20 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, fic
           </button>
         ))}
         <select value={filterEquipo} onChange={e => setFilterEquipo(e.target.value)}
-          style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '6px 10px', color: C.tx, fontSize: 12, fontFamily: "'IBM Plex Mono',monospace" }}>
+          style={{
+            background: T.color.surfaceLow, border: `1px solid ${T.color.surfaceHigh}`,
+            borderRadius: T.radius.md, padding: '7px 12px',
+            color: T.color.text, fontSize: 12, fontFamily: T.font.body,
+          }}>
           <option value="">{t('chronoAdmin.equipos')}: {t('chronoAdmin.todos')}</option>
           {equipos.map(eq => <option key={eq.id} value={eq.nombre}>{eq.nombre}</option>)}
         </select>
         <select value={filterRole} onChange={e => setFilterRole(e.target.value)}
-          style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '6px 10px', color: C.tx, fontSize: 12, fontFamily: "'IBM Plex Mono',monospace" }}>
+          style={{
+            background: T.color.surfaceLow, border: `1px solid ${T.color.surfaceHigh}`,
+            borderRadius: T.radius.md, padding: '7px 12px',
+            color: T.color.text, fontSize: 12, fontFamily: T.font.body,
+          }}>
           <option value="">Rol: {t('chronoAdmin.todos')}</option>
           <option value="admin">Admin</option>
           <option value="user">User</option>
@@ -200,8 +209,10 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, fic
           onChange={e => setSearch(e.target.value)}
           placeholder={t('chronoAdmin.buscarEmpleado')}
           style={{
-            background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 12px',
-            color: C.tx, fontSize: 13, width: 220, outline: 'none',
+            background: T.color.surfaceLow, border: `1px solid ${T.color.surfaceHigh}`,
+            borderRadius: T.radius.md, padding: '8px 12px',
+            color: T.color.text, fontSize: 13, width: 240, outline: 'none',
+            fontFamily: T.font.body,
           }}
         />
       </div>
@@ -215,7 +226,7 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, fic
           {t('chronoAdmin.sinDatos')}
         </div>
       ) : (
-        <div className="ch-card" style={{ overflow: 'auto' }}>
+        <div className="ch-card" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 260px)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>

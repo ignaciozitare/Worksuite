@@ -4,12 +4,7 @@ import { useTranslation } from '@worksuite/i18n';
 import type { IAdminFichajeRepository } from '../../domain/ports/IAdminFichajeRepository';
 import type { EmpleadoResumen, EstadoPresencia } from '../../domain/entities/EmpleadoResumen';
 
-const C = {
-  amber:'#f59e0b', amberDim:'#92400e', amberGlow:'rgba(245,158,11,0.12)',
-  tx:'#e8e8e8', txDim:'#888', txMuted:'#555',
-  green:'#10b981', red:'#ef4444', blue:'#3b82f6', purple:'#a855f7', orange:'#f97316',
-  sf:'#161616', bd:'#2a2a2a',
-};
+import { CHRONO_ADMIN_COLORS as C } from '../../shared/adminColors';
 
 const STATUS_DOT: Record<EstadoPresencia, string> = {
   oficina: C.green, teletrabajo: C.blue, vacaciones: C.purple,

@@ -14,6 +14,11 @@ import { RegistrosView } from './views/RegistrosView';
 import { IncompletosView } from './views/IncompletosView';
 import { VacacionesView } from './views/VacacionesView';
 import { AlarmasView } from './views/AlarmasView';
+// Stitch-inspired design tokens. Now consumed by the sidebar — see
+// ../shared/theme.ts for the full palette. The legacy `C` object below
+// is still used by the main content area and will migrate piece by
+// piece in follow-up commits.
+import { CHRONO_THEME as T } from '../shared/theme';
 
 const fichajeRepo = new FichajeSupabaseRepository(supabase);
 const bolsaRepo = new BolsaHorasSupabaseRepository(supabase);
@@ -24,19 +29,23 @@ const configEmpresaRepo = new ConfigEmpresaSupabaseRepository(supabase);
 
 /* ─── Design tokens ─────────────────────────────────────────────────────────── */
 const C = {
-  bg:'#0d0d0d', sf:'#161616', sfHover:'#1e1e1e', bd:'#2a2a2a',
-  amber:'#f59e0b', amberDim:'#92400e', amberGlow:'rgba(245,158,11,0.12)',
-  tx:'#e8e8e8', txDim:'#888', txMuted:'#555',
-  green:'#10b981', greenDim:'rgba(16,185,129,0.15)',
-  red:'#ef4444', redDim:'rgba(239,68,68,0.15)',
+  bg: T.color.bg, sf: T.color.surface, sfHover: T.color.surfaceHigh, bd: T.color.surfaceHigh,
+  // "amber" is now the Stitch primary — all 30+ downstream refs get the
+  // new palette without any code changes. The name stays for compat.
+  amber: T.color.primary, amberDim: T.color.primaryStrong, amberGlow: T.color.primaryDim,
+  tx: T.color.text, txDim: T.color.textDim, txMuted: T.color.textMuted,
+  green: T.color.secondary, greenDim: T.color.secondaryDim,
+  red: T.color.dangerStrong, redDim: T.color.dangerDim,
   blue:'#3b82f6', blueDim:'rgba(59,130,246,0.15)',
-  orange:'#f97316', purple:'#a855f7',
+  orange: T.color.warning, purple: T.color.tertiary,
 };
 export { C as CHRONO_COLORS };
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
-.ch{font-family:'IBM Plex Sans',sans-serif;background:${C.bg};color:${C.tx};height:100%;overflow:hidden;display:flex;}
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+.ch .material-symbols-outlined{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;display:inline-block;line-height:1;text-transform:none;letter-spacing:normal;word-wrap:normal;white-space:nowrap;direction:ltr;vertical-align:middle;}
+.ch{font-family:'Inter','IBM Plex Sans',sans-serif;background:${C.bg};color:${C.tx};height:100%;overflow:hidden;display:flex;}
 .ch *{box-sizing:border-box;margin:0;padding:0;}
 .ch ::-webkit-scrollbar{width:4px;height:4px;}
 .ch ::-webkit-scrollbar-track{background:${C.sf};}
@@ -47,33 +56,38 @@ const CSS = `
 .ch .blink{animation:chBlink 1s step-end infinite;}
 @keyframes chBlink{0%,100%{opacity:1}50%{opacity:0}}
 .ch .pulse-ring{animation:chPulse 2s cubic-bezier(.215,.61,.355,1) infinite;}
-@keyframes chPulse{0%{transform:scale(.95);box-shadow:0 0 0 0 rgba(245,158,11,.5)}70%{transform:scale(1);box-shadow:0 0 0 20px rgba(245,158,11,0)}100%{transform:scale(.95);box-shadow:0 0 0 0 rgba(245,158,11,0)}}
+@keyframes chPulse{0%{transform:scale(.95);box-shadow:0 0 0 0 rgba(77,142,255,.5)}70%{transform:scale(1);box-shadow:0 0 0 20px rgba(77,142,255,0)}100%{transform:scale(.95);box-shadow:0 0 0 0 rgba(77,142,255,0)}}
 .ch .pulse-green{animation:chPulseG 2s cubic-bezier(.215,.61,.355,1) infinite;}
 @keyframes chPulseG{0%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}70%{box-shadow:0 0 0 12px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
-.ch .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;color:${C.txDim};transition:all .15s;border:1px solid transparent;letter-spacing:.02em;}
-.ch .nav-item:hover{background:${C.sfHover};color:${C.tx};}
-.ch .nav-item.active{background:${C.amberGlow};color:${C.amber};border-color:${C.amberDim};}
+/* Nav items — Stitch look: surface-high when active, subtle primary glow */
+.ch .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:${T.radius.md};cursor:pointer;font-size:13px;font-weight:500;color:${T.color.textDim};transition:background .15s, color .15s, box-shadow .15s;border:1px solid transparent;letter-spacing:.01em;}
+.ch .nav-item:hover{background:${T.color.surfaceLow};color:${T.color.textMuted};}
+.ch .nav-item.active{background:${T.color.surfaceHigh};color:${T.color.primary};box-shadow:0 0 10px ${T.color.primaryDim};}
 .ch .ch-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;text-transform:uppercase;}
 .ch .ch-badge-green{background:${C.greenDim};color:${C.green};}
 .ch .ch-badge-red{background:${C.redDim};color:${C.red};}
-.ch .ch-badge-amber{background:${C.amberGlow};color:${C.amber};}
+.ch .ch-badge-amber{background:${T.color.primaryDim};color:${T.color.primary};}
 .ch .ch-badge-blue{background:${C.blueDim};color:${C.blue};}
 .ch .ch-badge-muted{background:#1e1e1e;color:${C.txDim};}
-.ch .ch-card{background:${C.sf};border:1px solid ${C.bd};border-radius:8px;padding:20px;}
+.ch .ch-card{background:${T.color.surface};border:1px solid ${T.color.surfaceHigh};border-radius:${T.radius.lg};padding:20px;}
 .ch .ch-stat{background:${C.sf};border:1px solid ${C.bd};border-radius:8px;padding:18px 20px;position:relative;overflow:hidden;}
 .ch .ch-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,${C.amberDim});}
 .ch .ch-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;text-transform:uppercase;transition:all .15s;}
-.ch .ch-btn-amber{background:${C.amber};color:#000;border-color:${C.amber};}
-.ch .ch-btn-amber:hover{background:#fbbf24;}
-.ch .ch-btn-ghost{background:transparent;color:${C.txDim};border-color:${C.bd};}
-.ch .ch-btn-ghost:hover{border-color:${C.amber};color:${C.amber};}
-.ch .ch-btn-red{background:${C.redDim};color:${C.red};border-color:rgba(239,68,68,.3);}
-.ch .ch-btn-green{background:${C.greenDim};color:${C.green};border-color:rgba(16,185,129,.3);}
+/* Primary action button — repainted from amber to the Stitch primary. */
+.ch .ch-btn-amber{background:linear-gradient(135deg,${T.color.primary},${T.color.primaryStrong});color:${T.color.primaryOn};border-color:transparent;box-shadow:0 4px 20px ${T.color.primaryDim};}
+.ch .ch-btn-amber:hover{background:linear-gradient(135deg,${T.color.primaryStrong},${T.color.primary});color:#fff;box-shadow:0 4px 24px ${T.color.primaryStrong}55;}
+.ch .ch-btn-ghost{background:${T.color.surfaceHigh}80;color:${T.color.textMuted};border-color:${T.color.border}50;backdrop-filter:blur(8px);}
+.ch .ch-btn-ghost:hover{border-color:${T.color.primary};color:${T.color.primary};background:${T.color.primaryDim};}
+.ch .ch-btn-red{background:linear-gradient(135deg,${T.color.danger},${T.color.dangerStrong});color:#fff;border-color:transparent;box-shadow:0 4px 20px ${T.color.dangerDim};}
+.ch .ch-btn-red:hover{box-shadow:0 4px 24px ${T.color.dangerStrong}55;}
+.ch .ch-btn-green{background:linear-gradient(135deg,${T.color.secondary},${T.color.secondaryStrong});color:${T.color.primaryOn};border-color:transparent;box-shadow:0 4px 20px ${T.color.secondaryDim};}
+.ch .ch-btn-green:hover{box-shadow:0 4px 24px ${T.color.secondaryStrong}55;}
 .ch table{width:100%;border-collapse:collapse;}
-.ch th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:${C.txMuted};padding:10px 14px;border-bottom:1px solid ${C.bd};font-family:'IBM Plex Mono',monospace;}
-.ch td{padding:12px 14px;font-size:13px;border-bottom:1px solid #1a1a1a;vertical-align:middle;}
+.ch th{text-align:left;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:${T.color.textDim};padding:12px 16px;border-bottom:1px solid ${T.color.surfaceHigh};background:${T.color.surfaceLow};font-family:${T.font.body};position:sticky;top:0;z-index:1;}
+.ch td{padding:14px 16px;font-size:13px;color:${T.color.text};border-bottom:1px solid ${T.color.surfaceHigh};vertical-align:middle;font-family:${T.font.body};}
 .ch tr:last-child td{border-bottom:none;}
-.ch tr:hover td{background:${C.sfHover};}
+.ch tbody tr{transition:background .12s;}
+.ch tbody tr:hover td{background:${T.color.surfaceHigh};}
 .ch .ch-toggle{position:relative;width:40px;height:22px;background:${C.bd};border-radius:11px;cursor:pointer;transition:background .2s;border:none;}
 .ch .ch-toggle.on{background:${C.amber};}
 .ch .ch-toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:white;border-radius:50%;transition:transform .2s;}
@@ -132,23 +146,52 @@ export function ChronoPage({ currentUser }: Props) {
     <div className="ch">
       <style>{CSS}</style>
 
-      {/* ── Sidebar ─────────────────────────────────────────── */}
-      <div style={{ width: 220, flexShrink: 0, background: C.sf, borderRight: `1px solid ${C.bd}`, display: 'flex', flexDirection: 'column' }}>
-        {/* Logo */}
-        <div style={{ padding: '18px 20px', borderBottom: `1px solid ${C.bd}` }}>
-          <div className="mono" style={{ fontSize: 15, fontWeight: 700, color: C.amber, letterSpacing: '.05em' }}>
-            CHRONO<span style={{ color: C.txDim }}>.</span>WORK
+      {/* ── Sidebar (Stitch look) ───────────────────────────── */}
+      <div style={{
+        width: 240,
+        flexShrink: 0,
+        background: T.color.surfaceLowest,
+        borderRight: `1px solid ${T.color.surfaceHigh}`,
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: T.font.body,
+      }}>
+        {/* Logo — badge + title */}
+        <div style={{ padding: '20px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 32,
+            height: 32,
+            borderRadius: T.radius.md,
+            background: T.color.primary,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 16,
+            color: T.color.primaryOn,
+            boxShadow: `0 0 14px ${T.color.primaryDim}`,
+          }}>
+            ⏱
           </div>
-          <div style={{ fontSize: 10, color: C.txMuted, marginTop: 3, letterSpacing: '.12em', textTransform: 'uppercase' }}>
-            {t('chrono.title')}
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
+              CHRONO<span style={{ color: T.color.primary }}>.</span>WORK
+            </div>
+            <div style={{ fontSize: 9, color: T.color.textDim, marginTop: 3, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700 }}>
+              {t('chrono.title')}
+            </div>
           </div>
         </div>
 
         {/* Nav */}
-        <nav style={{ padding: '12px 10px', flex: 1 }}>
+        <nav style={{ padding: '8px 12px', flex: 1 }}>
           {NAV_ITEMS.map(item => (
-            <div key={item.id} className={`nav-item ${view === item.id ? 'active' : ''}`} onClick={() => setView(item.id)}>
-              <span className="mono" style={{ fontSize: 16 }}>{item.icon}</span>
+            <div
+              key={item.id}
+              className={`nav-item ${view === item.id ? 'active' : ''}`}
+              onClick={() => setView(item.id)}
+              style={{ marginBottom: 2 }}
+            >
+              <span className="mono" style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{item.icon}</span>
               <span style={{ flex: 1 }}>{t(item.labelKey)}</span>
               {item.badge && incompletosCount > 0 && (
                 <span className="ch-badge ch-badge-red" style={{ fontSize: 10, padding: '2px 6px' }}>{incompletosCount}</span>
@@ -158,8 +201,15 @@ export function ChronoPage({ currentUser }: Props) {
         </nav>
 
         {/* Footer */}
-        <div style={{ padding: '14px 20px', borderTop: `1px solid ${C.bd}` }}>
-          <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.08em' }}>v1.0 · WorkSuite</div>
+        <div style={{
+          padding: '14px 20px',
+          borderTop: `1px solid ${T.color.surfaceHigh}`,
+          fontSize: 10,
+          color: T.color.textDim,
+          letterSpacing: '.08em',
+          fontFamily: T.font.mono,
+        }}>
+          v1.0 · WorkSuite
         </div>
       </div>
 

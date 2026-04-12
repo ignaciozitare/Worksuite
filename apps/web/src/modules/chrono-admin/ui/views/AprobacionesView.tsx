@@ -4,14 +4,7 @@ import { useTranslation } from '@worksuite/i18n';
 import type { IAdminFichajeRepository } from '../../domain/ports/IAdminFichajeRepository';
 import type { IAdminVacacionRepository } from '../../domain/ports/IAdminVacacionRepository';
 
-const C = {
-  bg:'#0d0d0d', sf:'#161616', sfHover:'#1e1e1e', bd:'#2a2a2a',
-  amber:'#f59e0b', amberDim:'#92400e', amberGlow:'rgba(245,158,11,0.12)',
-  tx:'#e8e8e8', txDim:'#888', txMuted:'#555',
-  green:'#10b981', greenDim:'rgba(16,185,129,0.15)',
-  red:'#ef4444', redDim:'rgba(239,68,68,0.15)',
-  purple:'#a855f7',
-};
+import { CHRONO_ADMIN_COLORS as C } from '../../shared/adminColors';
 
 function fmtDate(iso) {
   if (!iso) return '--';
@@ -193,7 +186,7 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
                 {t('chronoAdmin.sinPendientes')}
               </div>
             ) : (
-              <div className="ch-card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="ch-card" style={{ padding: 0, overflow: 'auto', maxHeight: 'calc(100vh - 340px)' }}>
                 <table>
                   <thead>
                     <tr>
@@ -252,7 +245,7 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
                 {t('chronoAdmin.sinPendientes')}
               </div>
             ) : (
-              <div className="ch-card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="ch-card" style={{ padding: 0, overflow: 'auto', maxHeight: 'calc(100vh - 340px)' }}>
                 <table>
                   <thead>
                     <tr>

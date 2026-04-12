@@ -259,7 +259,7 @@ export function GestionVacacionesView({ vacacionRepo }: Props) {
               —
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ overflow: 'auto', maxHeight: 'calc(100vh - 340px)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
                 <thead>
                   <tr>

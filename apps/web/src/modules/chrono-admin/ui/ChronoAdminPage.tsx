@@ -18,6 +18,10 @@ import { EmpleadosView } from './views/EmpleadosView';
 import { EquiposView } from './views/EquiposView';
 import { JiraView } from './views/JiraView';
 import { ChronoConfigSection } from './sections/ChronoConfigSection';
+// Stitch-inspired design tokens shared with the Chrono module. Now
+// consumed by the topbar tab bar; the rest of the view still uses the
+// legacy `C` object below and will migrate in follow-up commits.
+import { CHRONO_THEME as T } from '../../chrono/shared/theme';
 
 /* ─── Repository instances ────────────────────────────────────────────────── */
 const fichajeRepo = new AdminFichajeSupabaseRepository(supabase);
@@ -31,21 +35,16 @@ const jiraResumenRepo = new JiraResumenSupabaseRepository(supabase);
 const userRepo = new SupabaseUserRepo(supabase);
 
 /* ─── Design tokens ───────────────────────────────────────────────────────── */
-const C = {
-  bg: '#0d0d0d', sf: '#161616', sfHover: '#1e1e1e', bd: '#2a2a2a',
-  amber: '#f59e0b', amberDim: '#92400e', amberGlow: 'rgba(245,158,11,0.12)',
-  tx: '#e8e8e8', txDim: '#888', txMuted: '#555',
-  green: '#10b981', greenDim: 'rgba(16,185,129,0.15)',
-  red: '#ef4444', redDim: 'rgba(239,68,68,0.15)',
-  blue: '#3b82f6', blueDim: 'rgba(59,130,246,0.15)',
-  orange: '#f97316', purple: '#a855f7',
-};
-export { C as CHRONO_ADMIN_COLORS };
+import { CHRONO_ADMIN_COLORS } from '../shared/adminColors';
+const C = CHRONO_ADMIN_COLORS;
+export { CHRONO_ADMIN_COLORS };
 
 /* ─── CSS ─────────────────────────────────────────────────────────────────── */
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
-.ch{font-family:'IBM Plex Sans',sans-serif;background:${C.bg};color:${C.tx};min-height:100%;}
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+.ch .material-symbols-outlined{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;display:inline-block;line-height:1;text-transform:none;letter-spacing:normal;word-wrap:normal;white-space:nowrap;direction:ltr;vertical-align:middle;}
+.ch{font-family:'Inter','IBM Plex Sans',sans-serif;background:${C.bg};color:${C.tx};min-height:100%;}
 .ch *{box-sizing:border-box;margin:0;padding:0;}
 .ch ::-webkit-scrollbar{width:4px;height:4px;}
 .ch ::-webkit-scrollbar-track{background:${C.sf};}
@@ -56,28 +55,32 @@ const CSS = `
 .ch .blink{animation:chBlink 1s step-end infinite;}
 @keyframes chBlink{0%,100%{opacity:1}50%{opacity:0}}
 .ch .pulse-ring{animation:chPulse 2s cubic-bezier(.215,.61,.355,1) infinite;}
-@keyframes chPulse{0%{transform:scale(.95);box-shadow:0 0 0 0 rgba(245,158,11,.5)}70%{transform:scale(1);box-shadow:0 0 0 20px rgba(245,158,11,0)}100%{transform:scale(.95);box-shadow:0 0 0 0 rgba(245,158,11,0)}}
+@keyframes chPulse{0%{transform:scale(.95);box-shadow:0 0 0 0 rgba(77,142,255,.5)}70%{transform:scale(1);box-shadow:0 0 0 20px rgba(77,142,255,0)}100%{transform:scale(.95);box-shadow:0 0 0 0 rgba(77,142,255,0)}}
 .ch .ch-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;text-transform:uppercase;}
 .ch .ch-badge-green{background:${C.greenDim};color:${C.green};}
 .ch .ch-badge-red{background:${C.redDim};color:${C.red};}
-.ch .ch-badge-amber{background:${C.amberGlow};color:${C.amber};}
+.ch .ch-badge-amber{background:${T.color.primaryDim};color:${T.color.primary};}
 .ch .ch-badge-blue{background:${C.blueDim};color:${C.blue};}
 .ch .ch-badge-muted{background:#1e1e1e;color:${C.txDim};}
-.ch .ch-card{background:${C.sf};border:1px solid ${C.bd};border-radius:8px;padding:20px;}
+.ch .ch-card{background:${T.color.surface};border:1px solid ${T.color.surfaceHigh};border-radius:${T.radius.lg};padding:20px;}
 .ch .ch-stat{background:${C.sf};border:1px solid ${C.bd};border-radius:8px;padding:18px 20px;position:relative;overflow:hidden;}
 .ch .ch-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,${C.amberDim});}
 .ch .ch-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;text-transform:uppercase;transition:all .15s;}
-.ch .ch-btn-amber{background:${C.amber};color:#000;border-color:${C.amber};}
-.ch .ch-btn-amber:hover{background:#fbbf24;}
-.ch .ch-btn-ghost{background:transparent;color:${C.txDim};border-color:${C.bd};}
-.ch .ch-btn-ghost:hover{border-color:${C.amber};color:${C.amber};}
-.ch .ch-btn-red{background:${C.redDim};color:${C.red};border-color:rgba(239,68,68,.3);}
-.ch .ch-btn-green{background:${C.greenDim};color:${C.green};border-color:rgba(16,185,129,.3);}
+/* Primary action button — repainted from amber to the Stitch primary. */
+.ch .ch-btn-amber{background:linear-gradient(135deg,${T.color.primary},${T.color.primaryStrong});color:${T.color.primaryOn};border-color:transparent;box-shadow:0 4px 20px ${T.color.primaryDim};}
+.ch .ch-btn-amber:hover{background:linear-gradient(135deg,${T.color.primaryStrong},${T.color.primary});color:#fff;box-shadow:0 4px 24px ${T.color.primaryStrong}55;}
+.ch .ch-btn-ghost{background:${T.color.surfaceHigh}80;color:${T.color.textMuted};border-color:${T.color.border}50;backdrop-filter:blur(8px);}
+.ch .ch-btn-ghost:hover{border-color:${T.color.primary};color:${T.color.primary};background:${T.color.primaryDim};}
+.ch .ch-btn-red{background:linear-gradient(135deg,${T.color.danger},${T.color.dangerStrong});color:#fff;border-color:transparent;box-shadow:0 4px 20px ${T.color.dangerDim};}
+.ch .ch-btn-red:hover{box-shadow:0 4px 24px ${T.color.dangerStrong}55;}
+.ch .ch-btn-green{background:linear-gradient(135deg,${T.color.secondary},${T.color.secondaryStrong});color:${T.color.primaryOn};border-color:transparent;box-shadow:0 4px 20px ${T.color.secondaryDim};}
+.ch .ch-btn-green:hover{box-shadow:0 4px 24px ${T.color.secondaryStrong}55;}
 .ch table{width:100%;border-collapse:collapse;}
-.ch th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:${C.txMuted};padding:10px 14px;border-bottom:1px solid ${C.bd};font-family:'IBM Plex Mono',monospace;}
-.ch td{padding:12px 14px;font-size:13px;border-bottom:1px solid #1a1a1a;vertical-align:middle;}
+.ch th{text-align:left;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:${T.color.textDim};padding:12px 16px;border-bottom:1px solid ${T.color.surfaceHigh};background:${T.color.surfaceLow};font-family:${T.font.body};position:sticky;top:0;z-index:1;}
+.ch td{padding:14px 16px;font-size:13px;color:${T.color.text};border-bottom:1px solid ${T.color.surfaceHigh};vertical-align:middle;font-family:${T.font.body};}
 .ch tr:last-child td{border-bottom:none;}
-.ch tr:hover td{background:${C.sfHover};}
+.ch tbody tr{transition:background .12s;}
+.ch tbody tr:hover td{background:${T.color.surfaceHigh};}
 .ch select,.ch input[type="time"],.ch input[type="text"],.ch input[type="number"],.ch input[type="month"],.ch textarea{background:${C.bg};border:1px solid ${C.bd};color:${C.tx};padding:8px 12px;border-radius:5px;font-size:13px;font-family:'IBM Plex Mono',monospace;outline:none;transition:border-color .15s;}
 .ch select:focus,.ch input:focus,.ch textarea:focus{border-color:${C.amber};}
 .ch .ch-toggle{position:relative;width:36px;height:20px;background:${C.bd};border-radius:10px;cursor:pointer;transition:background .2s;}
@@ -134,35 +137,54 @@ function ChronoAdminPage({ currentUser }: Props) {
     <div className="ch">
       <style>{CSS}</style>
 
-      <div style={{ padding: '28px 32px' }}>
-        {/* ── Tab bar ────────────────────────────────────────── */}
+      <div style={{ padding: '28px 32px', fontFamily: T.font.body }}>
+        {/* ── Tab bar (Stitch look) ──────────────────────────── */}
         <div style={{
-          display: 'flex', gap: 4, marginBottom: 20,
-          background: C.sf, border: `1px solid ${C.bd}`,
-          borderRadius: 10, padding: 4, width: 'fit-content',
+          display: 'flex', gap: 4, marginBottom: 24,
+          background: T.color.surfaceLowest,
+          border: `1px solid ${T.color.surfaceHigh}`,
+          borderRadius: T.radius.lg,
+          padding: 4,
+          width: 'fit-content',
         }}>
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setView(tab.id)}
-              style={{
-                background: view === tab.id ? C.amber : 'transparent',
-                color: view === tab.id ? '#000' : C.txDim,
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: 7,
-                fontSize: 13,
-                fontWeight: view === tab.id ? 600 : 500,
-                cursor: 'pointer',
-                fontFamily: "'IBM Plex Sans', sans-serif",
-                letterSpacing: '.02em',
-                transition: 'all .15s',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {t(tab.labelKey)}
-            </button>
-          ))}
+          {TABS.map(tab => {
+            const active = view === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setView(tab.id)}
+                style={{
+                  background: active ? T.color.primary : 'transparent',
+                  color: active ? T.color.primaryOn : T.color.textDim,
+                  border: 'none',
+                  padding: '7px 16px',
+                  borderRadius: T.radius.md,
+                  fontSize: 12,
+                  fontWeight: active ? 700 : 500,
+                  cursor: 'pointer',
+                  fontFamily: T.font.body,
+                  letterSpacing: '.01em',
+                  transition: 'background .15s, color .15s, box-shadow .15s',
+                  whiteSpace: 'nowrap',
+                  boxShadow: active ? `0 0 14px ${T.color.primaryDim}` : 'none',
+                }}
+                onMouseEnter={e => {
+                  if (!active) {
+                    e.currentTarget.style.background = T.color.surfaceHigh;
+                    e.currentTarget.style.color = T.color.textMuted;
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!active) {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = T.color.textDim;
+                  }
+                }}
+              >
+                {t(tab.labelKey)}
+              </button>
+            );
+          })}
         </div>
 
         {/* ── View content ───────────────────────────────────── */}
