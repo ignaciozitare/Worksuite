@@ -10,6 +10,7 @@ import { SupabaseReservationHistoryRepo } from '../infra/supabase/SupabaseReserv
 import { SupabaseJiraConfigRepo }         from '../infra/supabase/SupabaseJiraConfigRepo';
 import { SupabaseReservationStatusRepo }  from '../infra/supabase/SupabaseReservationStatusRepo';
 import { SupabaseJiraFilterConfigRepo }   from '../infra/supabase/SupabaseJiraFilterConfigRepo';
+import { SupabaseEnvHistoryNoteRepo }    from '../infra/supabase/SupabaseEnvHistoryNoteRepo';
 import type { Environment }        from '../domain/entities/Environment';
 import type { Reservation, Repository, EnvPolicy } from '../domain/entities/Reservation';
 import { SupabaseEnvironmentRepo } from '../infra/supabase/SupabaseEnvironmentRepo';
@@ -39,6 +40,7 @@ const historyRepo        = new SupabaseReservationHistoryRepo(supabase);
 const jiraConfigRepo     = new SupabaseJiraConfigRepo(supabase);
 const statusRepo         = new SupabaseReservationStatusRepo(supabase);
 const jiraFilterRepo     = new SupabaseJiraFilterConfigRepo(supabase);
+const historyNoteRepo    = new SupabaseEnvHistoryNoteRepo(supabase);
 
 // ── Map reservation status category → DeployTimeline's visual vocabulary ────
 const CATEGORY_TO_TIMELINE_STATUS = {
@@ -410,17 +412,22 @@ function GanttView({ reservations, envs, onBarClick }) {
 
 // ── History view ──────────────────────────────────────────────────────────────
 function HistoryView({ onSelect }) {
-  const [history, setHistory]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [selected, setSelected] = useState(null);
+  const { t } = useTranslation();
+  const [history, setHistory]       = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [selected, setSelected]     = useState(null);
+  const [historyNote, setHistoryNote] = useState('');
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
-        const data = await historyRepo.findRecent(2);
-        if (!cancelled) setHistory(data);
+        const [data, note] = await Promise.all([
+          historyRepo.findRecent(2),
+          historyNoteRepo.get(),
+        ]);
+        if (!cancelled) { setHistory(data); setHistoryNote(note); }
       } catch (err) {
         console.error('[HistoryView] error cargando historial', err);
       } finally { if (!cancelled) setLoading(false); }
@@ -428,96 +435,161 @@ function HistoryView({ onSelect }) {
     return () => { cancelled = true; };
   }, []);
 
-  const thStyle = {
-    padding:'8px 12px', fontSize:11, fontWeight:700, color:'var(--tx3,#50506a)',
-    textTransform:'uppercase', letterSpacing:'.04em', textAlign:'left',
-    borderBottom:'1px solid var(--bd,#2a2a38)', background:'var(--sf2,#1b1b22)',
-  };
-  const tdStyle = {
-    padding:'8px 12px', fontSize:12, color:'var(--tx,#e4e4ef)',
-    borderBottom:'1px solid var(--bd,#2a2a38)',
-  };
+  // ── Computed metrics ─────────────────────────────────────────────────────
+  const metrics = useMemo(() => {
+    const total = history.length;
+    const completed = history.filter(h => h.status === 'Completed').length;
+    const cancelled = history.filter(h => h.status === 'Cancelled').length;
+    const durations = history
+      .filter(h => h.planned_start && h.planned_end)
+      .map(h => parseFloat(durH(h.planned_start, h.actual_end ?? h.planned_end)));
+    const avg = durations.length ? (durations.reduce((a,b)=>a+b,0) / durations.length).toFixed(1) : '0';
+    const completionRate = total ? Math.round((completed / total) * 100) : 0;
+    return { total, completed, cancelled, avg, completionRate };
+  }, [history]);
 
   const statusBadge = (status) => {
     const map = {
-      Reserved:  { color:'#4f6ef7', bg:'rgba(79,110,247,.12)' },
-      InUse:     { color:'#22c55e', bg:'rgba(34,197,94,.12)' },
-      Completed: { color:'#a78bfa', bg:'rgba(124,58,237,.12)' },
-      Cancelled: { color:'#ef4444', bg:'rgba(239,68,68,.12)' },
+      Reserved:  { color:'#adc6ff', bg:'rgba(173,198,255,.1)' },
+      InUse:     { color:'#4ae176', bg:'rgba(74,225,118,.1)' },
+      Completed: { color:'#4ae176', bg:'rgba(74,225,118,.1)' },
+      Cancelled: { color:'#ffb779', bg:'rgba(255,183,121,.1)' },
     };
     const s = map[status] ?? map.Reserved;
     return (
-      <span style={{padding:'2px 8px',borderRadius:12,fontSize:11,fontWeight:600,
+      <span style={{padding:'3px 10px',borderRadius:4,fontSize:10,fontWeight:700,
+        textTransform:'uppercase',letterSpacing:'.04em',
         background:s.bg,color:s.color}}>{status}</span>
     );
   };
 
   if (loading) {
     return (
-      <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
+      <div style={{textAlign:'center',padding:'40px 0',color:'#8c909f',fontSize:13}}>
         Cargando historial…
       </div>
     );
   }
 
-  if (!history.length) {
-    return (
-      <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
-        Sin registros en los últimos 2 meses.
-      </div>
-    );
-  }
+  const thStyle = {
+    padding:'12px 20px', fontSize:11, fontWeight:700, color:'#8c909f',
+    textTransform:'uppercase', letterSpacing:'.06em', textAlign:'left',
+    background:'rgba(42,42,42,.5)',
+  };
+  const tdStyle = {
+    padding:'12px 20px', fontSize:13, color:'#e5e2e1',
+    borderBottom:'1px solid rgba(66,71,83,.1)',
+  };
 
   return (
-    <div style={{overflowX:'auto'}}>
-      <table style={{width:'100%',borderCollapse:'collapse',minWidth:800}}>
-        <thead>
-          <tr>
-            <th style={thStyle}>Fecha</th>
-            <th style={thStyle}>Usuario</th>
-            <th style={thStyle}>Entorno</th>
-            <th style={thStyle}>Claves Jira</th>
-            <th style={thStyle}>Repos</th>
-            <th style={thStyle}>Duración</th>
-            <th style={thStyle}>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          {history.map(h => (
-            <tr key={h.id} onClick={()=>setSelected(h)}
-              style={{cursor:'pointer',transition:'background .1s'}}
-              onMouseEnter={e=>e.currentTarget.style.background='rgba(79,110,247,.06)'}
-              onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-              <td style={tdStyle}>{fmtDt(h.created_at)}</td>
-              <td style={tdStyle}>{h.reserved_by_name || '—'}</td>
-              <td style={tdStyle}>{h.environment_name || '—'}</td>
-              <td style={tdStyle}>
-                <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
-                  {(h.jira_issue_keys??[]).map(k=>(
-                    <span key={k} style={{padding:'1px 6px',borderRadius:4,fontSize:11,fontFamily:'monospace',
-                      background:'rgba(124,58,237,.12)',color:'#a78bfa'}}>{k}</span>
-                  ))}
-                </div>
-              </td>
-              <td style={tdStyle}>
-                <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
-                  {(h.repos??[]).map(r=>(
-                    <span key={r} style={{padding:'1px 6px',borderRadius:4,fontSize:11,
-                      background:'var(--sf2,#1b1b22)',color:'var(--tx3,#50506a)'}}>{r}</span>
-                  ))}
-                  {(!h.repos||!h.repos.length)&&<span style={{color:'var(--tx3,#50506a)'}}>—</span>}
-                </div>
-              </td>
-              <td style={tdStyle}>
-                {h.planned_start && h.planned_end
-                  ? durH(h.planned_start, h.actual_end ?? h.planned_end) + 'h'
-                  : '—'}
-              </td>
-              <td style={tdStyle}>{statusBadge(h.status)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div>
+      {/* ── Stats Overview ────────────────────────────────────── */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16,marginBottom:28}}>
+        {[
+          { label: t('admin.envHistoryMetricTotal'), value: metrics.total, sub: null, subColor: null },
+          { label: t('admin.envHistoryMetricCompleted'), value: metrics.completed, sub: `${metrics.completionRate}%`, subColor: '#4ae176' },
+          { label: t('admin.envHistoryMetricAvgDuration'), value: `${metrics.avg}h`, sub: null, subColor: null },
+          { label: t('admin.envHistoryMetricCancelled'), value: metrics.cancelled, sub: metrics.total ? `${((metrics.cancelled/metrics.total)*100).toFixed(1)}%` : '0%', subColor: '#ffb4ab' },
+        ].map(m => (
+          <div key={m.label} style={{padding:16,background:'#1c1b1b',borderRadius:8,
+            border:'1px solid rgba(66,71,83,.1)',transition:'border-color .15s'}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(77,142,255,.2)';}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(66,71,83,.1)';}}>
+            <p style={{fontSize:10,fontWeight:700,letterSpacing:'.1em',color:'#8c909f',
+              textTransform:'uppercase',marginBottom:4}}>{m.label}</p>
+            <div style={{display:'flex',alignItems:'baseline',gap:8}}>
+              <span style={{fontSize:24,fontWeight:600,letterSpacing:'-0.02em'}}>{m.value}</span>
+              {m.sub && <span style={{fontSize:12,fontWeight:500,color:m.subColor}}>{m.sub}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Audit Trail Table ─────────────────────────────────── */}
+      {!history.length ? (
+        <div style={{textAlign:'center',padding:'40px 0',color:'#8c909f',fontSize:13}}>
+          Sin registros en los últimos 2 meses.
+        </div>
+      ) : (
+        <div style={{background:'#1c1b1b',borderRadius:12,overflow:'hidden',
+          border:'1px solid rgba(66,71,83,.1)',boxShadow:'0 8px 40px rgba(0,0,0,.3)'}}>
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%',borderCollapse:'collapse',minWidth:900}}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Entorno</th>
+                  <th style={thStyle}>Usuario</th>
+                  <th style={thStyle}>Rango</th>
+                  <th style={thStyle}>Duración</th>
+                  <th style={thStyle}>Estado</th>
+                  <th style={thStyle}>Jira</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map(h => (
+                  <tr key={h.id} onClick={()=>setSelected(h)}
+                    style={{cursor:'pointer',transition:'background .15s'}}
+                    onMouseEnter={e=>{e.currentTarget.style.background='rgba(58,57,57,.3)';}}
+                    onMouseLeave={e=>{e.currentTarget.style.background='transparent';}}>
+                    <td style={tdStyle}>
+                      <div style={{display:'flex',alignItems:'center',gap:10}}>
+                        <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
+                          background: h.status==='Completed'?'#4ae176' : h.status==='Cancelled'?'#ffb779' : h.status==='InUse'?'#adc6ff':'#ffb4ab'}} />
+                        <div>
+                          <div style={{fontSize:13,fontWeight:600,color:'#e5e2e1'}}>{h.environment_name || '—'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{fontSize:13,color:'#c2c6d6'}}>{h.reserved_by_name || '—'}</span>
+                    </td>
+                    <td style={tdStyle}>
+                      <div style={{fontSize:13,color:'#e5e2e1'}}>
+                        {h.planned_start ? new Date(h.planned_start).toLocaleDateString('es-ES',{day:'numeric',month:'short'}) : '—'}
+                        {h.planned_end ? ` – ${new Date(h.planned_end).toLocaleDateString('es-ES',{day:'numeric',month:'short'})}` : ''}
+                      </div>
+                      {h.created_at && <div style={{fontSize:10,color:'#8c909f'}}>
+                        {new Date(h.created_at).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}
+                      </div>}
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{fontSize:13,fontWeight:500}}>
+                        {h.planned_start && h.planned_end
+                          ? durH(h.planned_start, h.actual_end ?? h.planned_end) + 'h' : '—'}
+                      </span>
+                    </td>
+                    <td style={tdStyle}>{statusBadge(h.status)}</td>
+                    <td style={tdStyle}>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                        {(h.jira_issue_keys??[]).map(k=>(
+                          <span key={k} style={{padding:'2px 8px',borderRadius:4,fontSize:10,fontWeight:700,
+                            fontFamily:'monospace',background:'#2a2a2a',color:'#adc6ff'}}>{k}</span>
+                        ))}
+                        {(!h.jira_issue_keys||!h.jira_issue_keys.length)&&<span style={{color:'#8c909f'}}>—</span>}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Retention Policy Section ──────────────────────────── */}
+      {historyNote && (
+        <div style={{marginTop:40,marginBottom:24}}>
+          <div style={{background:'#1c1b1b',borderRadius:12,padding:28,
+            borderTop:'1px solid rgba(66,71,83,.15)'}}>
+            <h3 style={{fontSize:18,fontWeight:600,marginBottom:12,display:'flex',alignItems:'center',gap:10,color:'#e5e2e1'}}>
+              <span className="material-symbols-outlined" style={{fontSize:22,color:'#adc6ff'}}>analytics</span>
+              Retention Policy Overview
+            </h3>
+            <div style={{fontSize:13,color:'#c2c6d6',lineHeight:1.7,maxWidth:720}}
+              dangerouslySetInnerHTML={{__html: historyNote}} />
+          </div>
+        </div>
+      )}
 
       {/* History detail modal */}
       {selected && (
@@ -525,7 +597,7 @@ function HistoryView({ onSelect }) {
           <div style={{display:'flex',flexDirection:'column',gap:12}}>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               {statusBadge(selected.status)}
-              <span style={{fontWeight:700,fontSize:16,color:'var(--tx,#e4e4ef)'}}>{selected.environment_name}</span>
+              <span style={{fontWeight:700,fontSize:16,color:'#e5e2e1'}}>{selected.environment_name}</span>
             </div>
 
             <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
@@ -535,7 +607,7 @@ function HistoryView({ onSelect }) {
               ))}
             </div>
 
-            {selected.description&&<p style={{fontSize:13,color:'var(--tx3,#50506a)',lineHeight:1.5}}>{selected.description}</p>}
+            {selected.description&&<p style={{fontSize:13,color:'#8c909f',lineHeight:1.5}}>{selected.description}</p>}
 
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,fontSize:12}}>
               {[
@@ -549,27 +621,27 @@ function HistoryView({ onSelect }) {
                 ['Registrado',   selected.created_at ? fmtDt(selected.created_at) : '—'],
               ].map(([l,v])=>(
                 <div key={l}>
-                  <div style={{fontSize:10,fontWeight:700,color:'var(--tx3,#50506a)',
+                  <div style={{fontSize:10,fontWeight:700,color:'#8c909f',
                     textTransform:'uppercase',letterSpacing:'.04em',marginBottom:2}}>{l}</div>
-                  <div style={{color:'var(--tx,#e4e4ef)'}}>{v}</div>
+                  <div style={{color:'#e5e2e1'}}>{v}</div>
                 </div>
               ))}
             </div>
 
             {(selected.repos??[]).length>0&&(
               <div>
-                <div style={{fontSize:10,fontWeight:700,color:'var(--tx3,#50506a)',textTransform:'uppercase',
+                <div style={{fontSize:10,fontWeight:700,color:'#8c909f',textTransform:'uppercase',
                   letterSpacing:'.04em',marginBottom:4}}>Repositorios</div>
                 <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
                   {selected.repos.map(r=>(
                     <span key={r} style={{padding:'3px 8px',borderRadius:4,fontSize:12,
-                      background:'var(--sf2,#1b1b22)',color:'var(--tx3,#50506a)'}}>📦 {r}</span>
+                      background:'#1c1b1b',color:'#8c909f'}}>{r}</span>
                   ))}
                 </div>
               </div>
             )}
 
-            <div style={{display:'flex',justifyContent:'flex-end',paddingTop:8,borderTop:'1px solid var(--bd,#2a2a38)'}}>
+            <div style={{display:'flex',justifyContent:'flex-end',paddingTop:8,borderTop:'1px solid rgba(66,71,83,.15)'}}>
               <button style={btnStyle('ghost')} onClick={()=>setSelected(null)}>Cerrar</button>
             </div>
           </div>
