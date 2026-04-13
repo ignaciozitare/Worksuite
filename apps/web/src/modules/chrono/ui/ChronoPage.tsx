@@ -101,12 +101,12 @@ const CSS = `
 type Tab = 'dashboard' | 'registros' | 'incompletos' | 'vacaciones' | 'alarmas' | 'informes';
 
 const NAV_ITEMS: { id: Tab; labelKey: string; icon: string; badge?: boolean }[] = [
-  { id: 'dashboard',   labelKey: 'chrono.dashboard',   icon: '⬡' },
-  { id: 'registros',   labelKey: 'chrono.registros',   icon: '◷' },
-  { id: 'incompletos', labelKey: 'chrono.incompletos', icon: '⚠', badge: true },
-  { id: 'vacaciones',  labelKey: 'chrono.vacaciones',  icon: '◈' },
-  { id: 'alarmas',     labelKey: 'chrono.alarmas',     icon: '◌' },
-  { id: 'informes',    labelKey: 'chrono.informes',    icon: '▤' },
+  { id: 'dashboard',   labelKey: 'chrono.dashboard',   icon: 'dashboard' },
+  { id: 'registros',   labelKey: 'chrono.registros',   icon: 'schedule' },
+  { id: 'incompletos', labelKey: 'chrono.incompletos', icon: 'warning', badge: true },
+  { id: 'vacaciones',  labelKey: 'chrono.vacaciones',  icon: 'beach_access' },
+  { id: 'alarmas',     labelKey: 'chrono.alarmas',     icon: 'notifications_active' },
+  { id: 'informes',    labelKey: 'chrono.informes',    icon: 'analytics' },
 ];
 
 interface Props { currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown }; }
@@ -146,72 +146,67 @@ export function ChronoPage({ currentUser }: Props) {
     <div className="ch">
       <style>{CSS}</style>
 
-      {/* ── Sidebar (Stitch look) ───────────────────────────── */}
-      <div style={{
-        width: 240,
-        flexShrink: 0,
-        background: T.color.surfaceLowest,
-        borderRight: `1px solid ${T.color.surfaceHigh}`,
-        display: 'flex',
-        flexDirection: 'column',
-        fontFamily: T.font.body,
+      {/* ── Sidebar (Stitch / Environments style) ──────────── */}
+      <aside style={{
+        position: 'sticky', top: 0, width: 240, minWidth: 240, height: '100%',
+        minHeight: 'calc(100vh - 52px)', alignSelf: 'stretch',
+        background: 'rgba(14,14,14,.6)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        borderRight: '1px solid rgba(255,255,255,.05)',
+        boxShadow: '0 0 60px rgba(77,142,255,.04)',
+        display: 'flex', flexDirection: 'column', padding: 16, gap: 4,
+        zIndex: 30, overflowY: 'auto', fontFamily: T.font.body,
       }}>
-        {/* Logo — badge + title */}
-        <div style={{ padding: '20px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        {/* Brand header */}
+        <div style={{ padding: '24px 12px 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
-            width: 32,
-            height: 32,
-            borderRadius: T.radius.md,
-            background: T.color.primary,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 16,
-            color: T.color.primaryOn,
-            boxShadow: `0 0 14px ${T.color.primaryDim}`,
+            width: 40, height: 40, borderRadius: 8,
+            background: 'rgba(77,142,255,.2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: '1px solid rgba(77,142,255,.3)',
           }}>
-            ⏱
+            <span className="material-symbols-outlined" style={{ fontSize: 22, color: '#4d8eff' }}>timer</span>
           </div>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.1 }}>
-              CHRONO<span style={{ color: T.color.primary }}>.</span>WORK
-            </div>
-            <div style={{ fontSize: 9, color: T.color.textDim, marginTop: 3, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700 }}>
+            <h1 style={{ fontSize: 16, fontWeight: 700, color: '#e5e2e1', letterSpacing: '-0.01em', lineHeight: 1, margin: 0 }}>
               {t('chrono.title')}
-            </div>
+            </h1>
+            <p style={{ fontSize: 10, color: '#e5e2e1', opacity: .4, fontWeight: 700, letterSpacing: '.1em', marginTop: 4, textTransform: 'uppercase' }}>
+              CONTROL MODULE
+            </p>
           </div>
         </div>
 
         {/* Nav */}
-        <nav style={{ padding: '8px 12px', flex: 1 }}>
-          {NAV_ITEMS.map(item => (
-            <div
-              key={item.id}
-              className={`nav-item ${view === item.id ? 'active' : ''}`}
-              onClick={() => setView(item.id)}
-              style={{ marginBottom: 2 }}
-            >
-              <span className="mono" style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{item.icon}</span>
-              <span style={{ flex: 1 }}>{t(item.labelKey)}</span>
-              {item.badge && incompletosCount > 0 && (
-                <span className="ch-badge ch-badge-red" style={{ fontSize: 10, padding: '2px 6px' }}>{incompletosCount}</span>
-              )}
-            </div>
-          ))}
+        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, padding: '16px 0' }}>
+          {NAV_ITEMS.map(item => {
+            const active = view === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setView(item.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px',
+                  borderRadius: 8, fontSize: 13, fontWeight: active ? 600 : 500,
+                  letterSpacing: '.02em', cursor: 'pointer', border: 'none',
+                  background: active ? 'rgba(77,142,255,.1)' : 'transparent',
+                  color: active ? '#4d8eff' : '#e5e2e1',
+                  opacity: active ? 1 : .6, transition: 'all .2s', textAlign: 'left',
+                  width: '100%', fontFamily: 'inherit',
+                  boxShadow: active ? '0 0 20px rgba(77,142,255,.1)' : 'none',
+                }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = '#1c1b1b'; e.currentTarget.style.transform = 'translateX(2px)'; }}}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'none'; }}}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{item.icon}</span>
+                <span style={{ flex: 1 }}>{t(item.labelKey)}</span>
+                {item.badge && incompletosCount > 0 && (
+                  <span className="ch-badge ch-badge-red" style={{ fontSize: 10, padding: '2px 6px' }}>{incompletosCount}</span>
+                )}
+              </button>
+            );
+          })}
         </nav>
-
-        {/* Footer */}
-        <div style={{
-          padding: '14px 20px',
-          borderTop: `1px solid ${T.color.surfaceHigh}`,
-          fontSize: 10,
-          color: T.color.textDim,
-          letterSpacing: '.08em',
-          fontFamily: T.font.mono,
-        }}>
-          v1.0 · WorkSuite
-        </div>
-      </div>
+      </aside>
 
       {/* ── Main ────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflow: 'auto', padding: '28px 32px' }}>
