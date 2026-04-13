@@ -73,6 +73,7 @@ textarea.fi{resize:vertical;min-height:52px;font-family:var(--mono);font-size:11
 .cc.today{border-color:rgba(79,110,247,.35);}
 .cc.other{background:transparent !important;border-color:transparent !important;pointer-events:none;}
 .cc.active{border-color:var(--ac2);background:var(--glow);}
+.cc.drag-over{border-color:var(--ac) !important;background:var(--glow) !important;box-shadow:0 0 12px rgba(79,110,247,.2);}
 .cc.has-d{background:var(--sf2);}
 .ctop{display:flex;align-items:flex-start;justify-content:space-between;}
 .cday{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--tx3);}

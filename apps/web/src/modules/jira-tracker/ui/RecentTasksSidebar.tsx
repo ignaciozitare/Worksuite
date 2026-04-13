@@ -47,9 +47,14 @@ export function RecentTasksSidebar({ worklogs, onOpenLog }: RecentTasksSidebarPr
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 6px' }}>
           {recentTasks.map(rt => (
             <div key={rt.issue}
+              draggable
+              onDragStart={e => {
+                e.dataTransfer.setData('application/jira-issue', JSON.stringify({ issueKey: rt.issue, summary: rt.summary }));
+                e.dataTransfer.effectAllowed = 'copy';
+              }}
               onClick={() => onOpenLog({ issueKey: rt.issue })}
               style={{
-                padding: '8px 8px', borderRadius: 6, cursor: 'pointer',
+                padding: '8px 8px', borderRadius: 6, cursor: 'grab',
                 marginBottom: 4, transition: 'background .1s',
                 borderLeft: '2px solid var(--ac,#4f6ef7)',
               }}

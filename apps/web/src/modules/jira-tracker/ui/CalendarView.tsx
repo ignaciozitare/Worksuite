@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { WorklogService } from '../domain/services/WorklogService';
 import { TimeParser } from '../domain/services/TimeParser';
@@ -118,6 +118,30 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
   const DAYS_FULL_EN = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const DAYS_FULL = lang === 'es' ? DAYS_FULL_ES : DAYS_FULL_EN;
 
+  // ── Drag-and-drop handlers ─────────────────────────────
+  const [dragOver, setDragOver] = useState<string | null>(null);
+
+  const handleDragOver = useCallback((e: React.DragEvent, date: string) => {
+    if (e.dataTransfer.types.includes('application/jira-issue')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      setDragOver(date);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback(() => { setDragOver(null); }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, date: string) => {
+    e.preventDefault();
+    setDragOver(null);
+    const raw = e.dataTransfer.getData('application/jira-issue');
+    if (!raw) return;
+    try {
+      const { issueKey } = JSON.parse(raw);
+      if (issueKey) onOpenLog({ date, issueKey });
+    } catch {}
+  }, [onOpenLog]);
+
   return (
     <div>
       <div className="cal-h">
@@ -157,7 +181,7 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
         </div>
 
         <button className="btn-log" onClick={()=>onOpenLog({})}>{t("jiraTracker.logHours")}</button>
-        <div className="cal-stats">
+        <div className="cal-stats" style={{marginLeft:'auto'}}>
           <div className="chip">{t("jiraTracker.totalLabel")}: <strong>{(viewMode === 'week' ? weekTotalH : totalH).toFixed(1)}h</strong></div>
           <div className="chip">{t("jiraTracker.activeDays")}: <strong>{viewMode === 'week' ? weekActD : actD}</strong></div>
           {(viewMode === 'week' ? weekActD : actD)>0&&<div className="chip">{t("jiraTracker.avgLabel")}: <strong>{((viewMode === 'week' ? weekTotalH / weekActD : totalH / actD)).toFixed(1)}{t("jiraTracker.perDay")}</strong></div>}
@@ -172,8 +196,11 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
             const dw=rWls[c.date]||[], sec=dw.reduce((s,w)=>s+w.seconds,0), hrs=TimeParser.toHours(sec);
             const top=[...new Set(dw.map(w=>w.issue))].slice(0,2);
             return (
-              <div key={c.date} className={["cc",!c.isCurrentMonth?"other":"",c.isToday?"today":"",sec>0?"has-d":"",sel===c.date?"active":""].filter(Boolean).join(" ")}
-                onClick={()=>{sSel(c.date);onDayClick(c.date);}}>
+              <div key={c.date} className={["cc",!c.isCurrentMonth?"other":"",c.isToday?"today":"",sec>0?"has-d":"",sel===c.date?"active":"",dragOver===c.date?"drag-over":""].filter(Boolean).join(" ")}
+                onClick={()=>{sSel(c.date);onDayClick(c.date);}}
+                onDragOver={e=>handleDragOver(e,c.date)}
+                onDragLeave={handleDragLeave}
+                onDrop={e=>handleDrop(e,c.date)}>
                 <div className="ctop">
                   <div className="cday">{c.day}</div>
                   <div className="cadd" onClick={e=>{e.stopPropagation();onOpenLog({date:c.date});}}>+</div>
@@ -209,9 +236,12 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
               <div
                 key={c.date}
                 onClick={() => { sSel(c.date); onDayClick(c.date); }}
+                onDragOver={e=>handleDragOver(e,c.date)}
+                onDragLeave={handleDragLeave}
+                onDrop={e=>handleDrop(e,c.date)}
                 style={{
-                  background: 'var(--sf)',
-                  border: `1px solid ${c.isToday ? 'var(--ac)' : 'var(--bd)'}`,
+                  background: dragOver===c.date ? 'var(--sf2,#1b1b22)' : 'var(--sf)',
+                  border: `1px solid ${dragOver===c.date ? 'var(--ac)' : c.isToday ? 'var(--ac)' : 'var(--bd)'}`,
                   borderRadius: 'var(--r)',
                   padding: 12,
                   cursor: 'pointer',
@@ -219,7 +249,8 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 8,
-                  transition: 'border-color .15s',
+                  transition: 'border-color .15s, background .15s',
+                  boxShadow: dragOver===c.date ? '0 0 12px rgba(79,110,247,.2)' : 'none',
                 }}
               >
                 {/* Day header */}
