@@ -92,13 +92,13 @@ const CSS = `
 /* ─── Tab definitions ─────────────────────────────────────────────────────── */
 type Tab = 'dashboard' | 'empleados' | 'equipos' | 'aprobaciones' | 'jira' | 'informes' | 'config';
 
-const TABS: { id: Tab; labelKey: string }[] = [
-  { id: 'dashboard',    labelKey: 'chronoAdmin.dashboard' },
-  { id: 'empleados',    labelKey: 'chronoAdmin.empleados' },
-  { id: 'equipos',      labelKey: 'chronoAdmin.equipos' },
-  { id: 'aprobaciones', labelKey: 'chronoAdmin.aprobaciones' },
-  { id: 'jira',         labelKey: 'chronoAdmin.jira' },
-  { id: 'informes',     labelKey: 'chronoAdmin.informes' },
+const TABS: { id: Tab; labelKey: string; icon: string }[] = [
+  { id: 'dashboard',    labelKey: 'chronoAdmin.dashboard',    icon: 'dashboard' },
+  { id: 'empleados',    labelKey: 'chronoAdmin.empleados',    icon: 'badge' },
+  { id: 'equipos',      labelKey: 'chronoAdmin.equipos',      icon: 'groups' },
+  { id: 'aprobaciones', labelKey: 'chronoAdmin.aprobaciones', icon: 'task_alt' },
+  { id: 'jira',         labelKey: 'chronoAdmin.jira',         icon: 'integration_instructions' },
+  { id: 'informes',     labelKey: 'chronoAdmin.informes',     icon: 'analytics' },
 ];
 
 /* ─── Placeholder for views not yet implemented ───────────────────────────── */
@@ -134,19 +134,41 @@ function ChronoAdminPage({ currentUser }: Props) {
   }, []);
 
   return (
-    <div className="ch">
+    <div className="ch" style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
       <style>{CSS}</style>
 
-      <div style={{ padding: '28px 32px', fontFamily: T.font.body }}>
-        {/* ── Tab bar (Stitch look) ──────────────────────────── */}
-        <div style={{
-          display: 'flex', gap: 4, marginBottom: 24,
-          background: T.color.surfaceLowest,
-          border: `1px solid ${T.color.surfaceHigh}`,
-          borderRadius: T.radius.lg,
-          padding: 4,
-          width: 'fit-content',
-        }}>
+      {/* ── Sidebar (Stitch / Environments style) ──────────── */}
+      <aside style={{
+        position: 'sticky', top: 0, width: 240, minWidth: 240, height: '100%',
+        minHeight: 'calc(100vh - 52px)', alignSelf: 'stretch',
+        background: 'rgba(14,14,14,.6)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        borderRight: '1px solid rgba(255,255,255,.05)',
+        boxShadow: '0 0 60px rgba(77,142,255,.04)',
+        display: 'flex', flexDirection: 'column', padding: 16, gap: 4,
+        zIndex: 30, overflowY: 'auto', fontFamily: T.font.body,
+      }}>
+        {/* Brand header */}
+        <div style={{ padding: '24px 12px 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 8,
+            background: 'rgba(77,142,255,.2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: '1px solid rgba(77,142,255,.3)',
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 22, color: '#4d8eff' }}>group</span>
+          </div>
+          <div>
+            <h1 style={{ fontSize: 16, fontWeight: 700, color: '#e5e2e1', letterSpacing: '-0.01em', lineHeight: 1, margin: 0 }}>
+              RRHH
+            </h1>
+            <p style={{ fontSize: 10, color: '#e5e2e1', opacity: .4, fontWeight: 700, letterSpacing: '.1em', marginTop: 4, textTransform: 'uppercase' }}>
+              MANAGEMENT MODULE
+            </p>
+          </div>
+        </div>
+
+        {/* Nav */}
+        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, padding: '16px 0' }}>
           {TABS.map(tab => {
             const active = view === tab.id;
             return (
@@ -154,40 +176,28 @@ function ChronoAdminPage({ currentUser }: Props) {
                 key={tab.id}
                 onClick={() => setView(tab.id)}
                 style={{
-                  background: active ? T.color.primary : 'transparent',
-                  color: active ? T.color.primaryOn : T.color.textDim,
-                  border: 'none',
-                  padding: '7px 16px',
-                  borderRadius: T.radius.md,
-                  fontSize: 12,
-                  fontWeight: active ? 700 : 500,
-                  cursor: 'pointer',
-                  fontFamily: T.font.body,
-                  letterSpacing: '.01em',
-                  transition: 'background .15s, color .15s, box-shadow .15s',
-                  whiteSpace: 'nowrap',
-                  boxShadow: active ? `0 0 14px ${T.color.primaryDim}` : 'none',
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px',
+                  borderRadius: 8, fontSize: 13, fontWeight: active ? 600 : 500,
+                  letterSpacing: '.02em', cursor: 'pointer', border: 'none',
+                  background: active ? 'rgba(77,142,255,.1)' : 'transparent',
+                  color: active ? '#4d8eff' : '#e5e2e1',
+                  opacity: active ? 1 : .6, transition: 'all .2s', textAlign: 'left',
+                  width: '100%', fontFamily: 'inherit',
+                  boxShadow: active ? '0 0 20px rgba(77,142,255,.1)' : 'none',
                 }}
-                onMouseEnter={e => {
-                  if (!active) {
-                    e.currentTarget.style.background = T.color.surfaceHigh;
-                    e.currentTarget.style.color = T.color.textMuted;
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!active) {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = T.color.textDim;
-                  }
-                }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = '#1c1b1b'; e.currentTarget.style.transform = 'translateX(2px)'; }}}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'none'; }}}
               >
-                {t(tab.labelKey)}
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{tab.icon}</span>
+                <span>{t(tab.labelKey)}</span>
               </button>
             );
           })}
-        </div>
+        </nav>
+      </aside>
 
-        {/* ── View content ───────────────────────────────────── */}
+      {/* ── Main content ────────────────────────────────────── */}
+      <div style={{ flex: 1, minWidth: 0, overflow: 'auto', padding: '28px 32px', fontFamily: T.font.body }}>
         <div className="fade-in" key={view}>
           {view === 'dashboard' && (
             <DashboardAdminView fichajeRepo={fichajeRepo} />
@@ -212,7 +222,6 @@ function ChronoAdminPage({ currentUser }: Props) {
           {view === 'informes' && (
             <InformesEmpresaView fichajeRepo={fichajeRepo} vacacionRepo={vacacionRepo} jiraRepo={jiraResumenRepo} />
           )}
-
         </div>
       </div>
     </div>
