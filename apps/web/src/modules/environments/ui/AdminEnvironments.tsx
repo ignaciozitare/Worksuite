@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase }            from '@/shared/lib/supabaseClient';
 import { StatusManager, DualPanelPicker } from '@worksuite/ui';
 import { useTranslation }      from '@worksuite/i18n';
@@ -9,12 +9,14 @@ import { SupabaseEnvironmentRepo } from '../infra/supabase/SupabaseEnvironmentRe
 import { SupabaseReservationRepo } from '../infra/supabase/SupabaseReservationRepo';
 import { SupabaseReservationStatusRepo } from '../infra/supabase/SupabaseReservationStatusRepo';
 import { SupabaseJiraFilterConfigRepo } from '../infra/supabase/SupabaseJiraFilterConfigRepo';
+import { SupabaseEnvHistoryNoteRepo } from '../infra/supabase/SupabaseEnvHistoryNoteRepo';
 import { HttpJiraApiAdapter } from '@/shared/infra/HttpJiraApiAdapter';
 
 const envRepo = new SupabaseEnvironmentRepo(supabase);
 const resRepo = new SupabaseReservationRepo(supabase);
 const statusRepo = new SupabaseReservationStatusRepo(supabase);
 const jiraFilterRepo = new SupabaseJiraFilterConfigRepo(supabase);
+const historyNoteRepo = new SupabaseEnvHistoryNoteRepo(supabase);
 
 const API_BASE = ((import.meta as any).env?.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 async function getAuthHeaders() {
@@ -497,6 +499,53 @@ export function AdminEnvPolicy() {
       </>}
       <div style={{display:'flex',alignItems:'center',gap:10,marginTop:16}}>
         <button style={btn('primary',{padding:'8px 18px'})} onClick={save}>Guardar política</button>
+        {saved&&<span style={{fontSize:12,color:'var(--green,#3ecf8e)'}}>✓ Guardado</span>}
+      </div>
+    </div>
+  );
+}
+
+// ── Admin: Nota de historial (Retention Policy) ──────────────────────────────
+export function AdminEnvHistoryNote() {
+  const { t } = useTranslation();
+  const [html, setHtml] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const editorRef = useRef(null);
+
+  useEffect(() => {
+    historyNoteRepo.get().then(v => { setHtml(v); setLoading(false); });
+  }, []);
+
+  const save = async () => {
+    await historyNoteRepo.save(html);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  if (loading) return <div style={{padding:20,color:'var(--tx3,#50506a)',fontSize:13}}>Cargando…</div>;
+
+  return (
+    <div style={{padding:20,maxWidth:700}}>
+      <label style={lbl}>{t('admin.envHistoryNoteLabel')}</label>
+      <p style={{fontSize:12,color:'var(--tx3,#50506a)',marginBottom:12,lineHeight:1.5}}>
+        {t('admin.envHistoryNoteHint')}
+      </p>
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={e => setHtml(e.currentTarget.innerHTML)}
+        dangerouslySetInnerHTML={{ __html: html }}
+        style={{
+          minHeight:120,padding:'12px 14px',fontSize:13,lineHeight:1.7,
+          fontFamily:'inherit',color:'var(--tx,#e4e4ef)',
+          background:'var(--sf2,#1b1b22)',border:'1px solid var(--bd,#2a2a38)',
+          borderRadius:8,outline:'none',overflowY:'auto',maxHeight:300,
+        }}
+      />
+      <div style={{display:'flex',alignItems:'center',gap:10,marginTop:12}}>
+        <button style={btn('primary',{padding:'8px 18px'})} onClick={save}>Guardar</button>
         {saved&&<span style={{fontSize:12,color:'var(--green,#3ecf8e)'}}>✓ Guardado</span>}
       </div>
     </div>
