@@ -769,7 +769,11 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   };
 
   const filterTabs=[{id:'all',label:'Todas'},{id:'active',label:'Activas'},{id:'mine',label:'Mis reservas'}];
-  const mainTabs=[{id:'reservas',label:'Reservas'},{id:'gantt',label:'Timeline'},{id:'historial',label:'Historial'}];
+  const mainTabs=[
+    {id:'reservas', label:'Reservas',  icon:'event_note'},
+    {id:'gantt',    label:'Timeline',  icon:'timeline'},
+    {id:'historial',label:'Historial', icon:'history'},
+  ];
 
   // ── Environment sidebar data ────────────────────────────────────────────────
   const [sidebarAvailOnly, setSidebarAvailOnly] = useState(false);
@@ -791,121 +795,97 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   }, [res]);
 
   return (
-    <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
-      {/* Main tabs */}
-      <div style={{display:'flex',alignItems:'center',gap:10,padding:'12px 20px',
-        borderBottom:'1px solid var(--bd,#2a2a38)',background:'var(--sf,#141418)',flexShrink:0}}>
-        <div style={{display:'flex',gap:2,background:'var(--sf2,#1b1b22)',
-          border:'1px solid var(--bd,#2a2a38)',borderRadius:8,padding:3}}>
-          {mainTabs.map(t=>(
-            <button key={t.id} onClick={()=>setMainTab(t.id)}
-              style={{padding:'4px 12px',fontSize:12,fontWeight:mainTab===t.id?600:400,borderRadius:6,
-                border:'none',cursor:'pointer',fontFamily:'inherit',
-                background:mainTab===t.id?'var(--ac,#4f6ef7)':'transparent',
-                color:mainTab===t.id?'#fff':'var(--tx3,#50506a)',
-                boxShadow:mainTab===t.id?'0 1px 3px rgba(0,0,0,.15)':'none'}}>
-              {t.label}
-            </button>
-          ))}
+    <div className="ev" style={{display:'flex',height:'100%',overflow:'hidden',fontFamily:"'Inter',system-ui,-apple-system,sans-serif",background:'#131313',color:'#e5e2e1'}}>
+      <style>{`
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+.ev *{box-sizing:border-box;}
+.ev button,.ev select,.ev input,.ev textarea{font-family:'Inter',system-ui,-apple-system,sans-serif;}
+.ev .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:300;font-style:normal;display:inline-block;line-height:1;text-transform:none;letter-spacing:normal;word-wrap:normal;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased;font-size:inherit;}
+.ev ::-webkit-scrollbar{width:4px;height:4px;}
+.ev ::-webkit-scrollbar-track{background:#131313;}
+.ev ::-webkit-scrollbar-thumb{background:#424754;border-radius:2px;}
+/* Nav sidebar */
+.ev .ev-sidebar{position:sticky;top:0;width:240px;min-width:240px;height:100%;min-height:calc(100vh - 52px);align-self:stretch;background:rgba(14,14,14,.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid rgba(255,255,255,.05);box-shadow:0 0 60px rgba(77,142,255,.04);display:flex;flex-direction:column;padding:16px;gap:4px;z-index:30;overflow-y:auto;}
+.ev .ev-nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:500;letter-spacing:.02em;cursor:pointer;border:none;background:transparent;color:#e5e2e1;opacity:.6;transition:all .2s;text-align:left;width:100%;font-family:inherit;}
+.ev .ev-nav-item:hover{opacity:1;background:#1c1b1b;transform:translateX(2px);}
+.ev .ev-nav-item.active{opacity:1;color:#4d8eff;background:rgba(77,142,255,.1);font-weight:600;box-shadow:0 0 20px rgba(77,142,255,.1);}
+/* Right sidebar */
+.ev .ev-right-sidebar{width:240px;min-width:240px;align-self:stretch;background:rgba(14,14,14,.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-left:1px solid rgba(255,255,255,.05);box-shadow:0 0 60px rgba(77,142,255,.04);overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:6px;}
+/* CTA button */
+.ev .ev-cta{width:100%;background:linear-gradient(135deg,#adc6ff 0%,#4d8eff 100%);color:#002e6a;font-weight:600;padding:10px 16px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;letter-spacing:.02em;transition:all .3s;font-family:inherit;}
+.ev .ev-cta:hover{filter:drop-shadow(0 0 12px rgba(77,142,255,.3));}
+.ev .ev-cta:active{transform:scale(.95);}
+      `}</style>
+
+      {/* ── Left Navigation Sidebar ─────────────────────────────────── */}
+      <aside className="ev-sidebar">
+        {/* Brand header */}
+        <div style={{padding:'24px 12px 8px',display:'flex',alignItems:'center',gap:12}}>
+          <div style={{width:40,height:40,borderRadius:8,background:'rgba(77,142,255,.2)',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            border:'1px solid rgba(77,142,255,.3)'}}>
+            <span className="material-symbols-outlined" style={{fontSize:22,color:'#4d8eff'}}>hub</span>
+          </div>
+          <div>
+            <h1 style={{fontSize:16,fontWeight:700,color:'#e5e2e1',letterSpacing:'-0.01em',lineHeight:1,margin:0}}>Environments</h1>
+            <p style={{fontSize:10,color:'#e5e2e1',opacity:.4,fontWeight:700,letterSpacing:'.1em',marginTop:4,textTransform:'uppercase'}}>MANAGEMENT MODULE</p>
+          </div>
         </div>
 
-        {/* Filter bar solo en vista Reservas */}
+        {/* CTA */}
+        <div style={{padding:'0 4px',margin:'16px 0 24px'}}>
+          <button className="ev-cta" onClick={()=>{ setForm('new'); void loadAvailableTickets(); }}>
+            <span className="material-symbols-outlined" style={{fontSize:18}}>add_circle</span>
+            <span>Nueva reserva</span>
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav style={{flex:1,display:'flex',flexDirection:'column',gap:2}}>
+          {mainTabs.map(t=>(
+            <button key={t.id}
+              className={`ev-nav-item${mainTab===t.id?' active':''}`}
+              onClick={()=>setMainTab(t.id)}>
+              <span className="material-symbols-outlined" style={{fontSize:20}}>{t.icon}</span>
+              <span>{t.label}</span>
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      {/* ── Main Content ────────────────────────────────────────────── */}
+      <div style={{flex:1,minWidth:0,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        {/* Filter bar (only on Reservas tab) */}
         {mainTab==='reservas'&&(
-          <>
-            <div style={{display:'flex',gap:2,background:'var(--sf2,#1b1b22)',
-              border:'1px solid var(--bd,#2a2a38)',borderRadius:8,padding:3,marginLeft:8}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 20px',
+            borderBottom:'1px solid rgba(66,71,83,.15)',flexShrink:0}}>
+            <div style={{display:'flex',gap:2,background:'#1c1b1b',
+              border:'1px solid rgba(66,71,83,.15)',borderRadius:8,padding:3}}>
               {filterTabs.map(t=>(
                 <button key={t.id} onClick={()=>setFilter(t.id)}
                   style={{padding:'4px 12px',fontSize:12,fontWeight:filter===t.id?600:400,borderRadius:6,
                     border:'none',cursor:'pointer',fontFamily:'inherit',
-                    background:filter===t.id?'var(--sf,#141418)':'transparent',
-                    color:filter===t.id?'var(--tx,#e4e4ef)':'var(--tx3,#50506a)',
-                    boxShadow:filter===t.id?'0 1px 3px rgba(0,0,0,.15)':'none'}}>
+                    background:filter===t.id?'#2a2a2a':'transparent',
+                    color:filter===t.id?'#e5e2e1':'#8c909f',
+                    boxShadow:filter===t.id?'0 1px 3px rgba(0,0,0,.15)':'none',transition:'all .15s'}}>
                   {t.label}
                 </button>
               ))}
             </div>
             <input placeholder="Buscar por ticket o entorno…" value={search} onChange={e=>setSearch(e.target.value)}
-              style={inpStyle({width:200,padding:'6px 10px',fontSize:12})}/>
-          </>
+              style={{width:220,padding:'7px 12px',fontSize:12,fontFamily:'inherit',
+                background:'#1c1b1b',border:'1px solid rgba(66,71,83,.15)',
+                borderRadius:8,color:'#e5e2e1',outline:'none'}}/>
+          </div>
         )}
 
-        <div style={{marginLeft:'auto'}}>
-          <button style={btnStyle('primary',{padding:'7px 14px'})} onClick={()=>{ setForm('new'); void loadAvailableTickets(); }}>
-            + Nueva reserva
-          </button>
-        </div>
-      </div>
-
-      {/* Body: sidebar + content */}
-      <div style={{display:'flex',flex:1,overflow:'hidden'}}>
-        {/* ── Environment Sidebar ──────────────────────────────────────── */}
-        <div style={{width:220,flexShrink:0,borderRight:'1px solid var(--bd,#2a2a38)',
-          background:'var(--sf,#141418)',overflowY:'auto',padding:'12px 10px',
-          display:'flex',flexDirection:'column',gap:6}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4,padding:'0 4px'}}>
-            <span style={{fontSize:11,fontWeight:700,color:'var(--tx3,#50506a)',textTransform:'uppercase',letterSpacing:'.05em'}}>Entornos</span>
-            <button onClick={()=>setSidebarAvailOnly(v=>!v)}
-              style={{fontSize:10,padding:'2px 8px',borderRadius:10,cursor:'pointer',fontFamily:'inherit',fontWeight:600,
-                border:`1px solid ${sidebarAvailOnly?'#22c55e':'var(--bd,#2a2a38)'}`,
-                background:sidebarAvailOnly?'rgba(34,197,94,.12)':'transparent',
-                color:sidebarAvailOnly?'#22c55e':'var(--tx3,#50506a)',transition:'all .12s'}}>
-              {sidebarAvailOnly?'✓ Libres':'Todos'}
-            </button>
-          </div>
-          {sortedEnvs.map(env => {
-            const st = getEnvStatus(env);
-            const cc = CAT[env.category] ?? CAT.DEV;
-            const activeRes = res.find(r => r.environmentId === env.id && ['reserved','in_use','violation'].includes(r.statusCategory));
-            const handleClick = () => {
-              if (st.occupied && activeRes) {
-                setDetail(activeRes);
-              } else if (!st.occupied) {
-                setForm('new');
-                void loadAvailableTickets();
-                // Pre-select this environment after form renders
-                setTimeout(() => {
-                  const sel = document.querySelector('select') as HTMLSelectElement;
-                  if (sel) { sel.value = env.id; sel.dispatchEvent(new Event('change', { bubbles: true })); }
-                }, 100);
-              }
-            };
-            return (
-              <div key={env.id} onClick={handleClick} style={{padding:'10px 10px',borderRadius:10,
-                background:'var(--sf2,#1b1b22)',border:`1px solid ${st.occupied?'rgba(239,68,68,.3)':'rgba(34,197,94,.3)'}`,
-                transition:'all .15s',cursor:'pointer'}}
-                onMouseEnter={e=>(e.currentTarget.style.background='var(--sf,#141418)')}
-                onMouseLeave={e=>(e.currentTarget.style.background='var(--sf2,#1b1b22)')}>
-                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
-                  <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
-                    background:st.occupied?'#ef4444':'#22c55e'}}/>
-                  <span style={{fontSize:12,fontWeight:700,color:'var(--tx,#e4e4ef)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{env.name}</span>
-                  <span style={{fontSize:9,padding:'1px 5px',borderRadius:8,fontWeight:600,
-                    background:cc.bg,color:cc.color,flexShrink:0}}>{env.category}</span>
-                </div>
-                {st.occupied ? (
-                  <div style={{fontSize:10,color:'#f87171',marginLeft:14}}>
-                    {st.label}{st.endDate ? ` · hasta ${new Date(st.endDate).toLocaleDateString('es-ES',{day:'numeric',month:'short'})}` : ''}
-                  </div>
-                ) : (
-                  <div style={{fontSize:10,color:'#4ade80',marginLeft:14}}>Disponible</div>
-                )}
-              </div>
-            );
-          })}
-          {sortedEnvs.length===0&&(
-            <div style={{fontSize:11,color:'var(--tx3,#50506a)',textAlign:'center',padding:'20px 0'}}>
-              {sidebarAvailOnly?'No hay entornos libres':'Sin entornos'}
-            </div>
-          )}
-        </div>
-
-        {/* ── Tab content ──────────────────────────────────────────────── */}
+        {/* Tab content */}
         <div style={{flex:1,overflowY:'auto',padding:'16px 20px'}}>
           {mainTab==='reservas' && (
             <>
               {loading ? (
-                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
+                <div style={{textAlign:'center',padding:'40px 0',color:'#8c909f',fontSize:13}}>
                   Cargando reservas…
                 </div>
               ) : (
@@ -922,7 +902,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
           {mainTab==='gantt' && (
             <>
               {loading ? (
-                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
+                <div style={{textAlign:'center',padding:'40px 0',color:'#8c909f',fontSize:13}}>
                   Cargando…
                 </div>
               ) : (
@@ -934,6 +914,65 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
           {mainTab==='historial' && <HistoryView />}
         </div>
       </div>
+
+      {/* ── Right Environment Sidebar ───────────────────────────────── */}
+      <aside className="ev-right-sidebar">
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4,padding:'8px 4px 0'}}>
+          <span style={{fontSize:11,fontWeight:700,color:'#8c909f',textTransform:'uppercase',letterSpacing:'.05em'}}>Entornos</span>
+          <button onClick={()=>setSidebarAvailOnly(v=>!v)}
+            style={{fontSize:10,padding:'2px 8px',borderRadius:10,cursor:'pointer',fontFamily:'inherit',fontWeight:600,
+              border:`1px solid ${sidebarAvailOnly?'#22c55e':'rgba(66,71,83,.15)'}`,
+              background:sidebarAvailOnly?'rgba(34,197,94,.12)':'transparent',
+              color:sidebarAvailOnly?'#22c55e':'#8c909f',transition:'all .12s'}}>
+            {sidebarAvailOnly?'✓ Libres':'Todos'}
+          </button>
+        </div>
+        {sortedEnvs.map(env => {
+          const st = getEnvStatus(env);
+          const cc = CAT[env.category] ?? CAT.DEV;
+          const activeRes = res.find(r => r.environmentId === env.id && ['reserved','in_use','violation'].includes(r.statusCategory));
+          const handleClick = () => {
+            if (st.occupied && activeRes) {
+              setDetail(activeRes);
+            } else if (!st.occupied) {
+              setForm('new');
+              void loadAvailableTickets();
+              setTimeout(() => {
+                const sel = document.querySelector('select') as HTMLSelectElement;
+                if (sel) { sel.value = env.id; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+              }, 100);
+            }
+          };
+          return (
+            <div key={env.id} onClick={handleClick} style={{padding:'10px 10px',borderRadius:8,
+              background:'#1c1b1b',border:'1px solid rgba(66,71,83,.15)',
+              borderTop:'1px solid rgba(173,198,255,.08)',
+              transition:'all .15s',cursor:'pointer'}}
+              onMouseEnter={e=>{e.currentTarget.style.background='#2a2a2a';}}
+              onMouseLeave={e=>{e.currentTarget.style.background='#1c1b1b';}}>
+              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+                <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
+                  background:st.occupied?'#ef4444':'#22c55e'}}/>
+                <span style={{fontSize:12,fontWeight:700,color:'#e5e2e1',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{env.name}</span>
+                <span style={{fontSize:9,padding:'1px 5px',borderRadius:8,fontWeight:600,
+                  background:cc.bg,color:cc.color,flexShrink:0}}>{env.category}</span>
+              </div>
+              {st.occupied ? (
+                <div style={{fontSize:10,color:'#ffb4ab',marginLeft:14}}>
+                  {st.label}{st.endDate ? ` · hasta ${new Date(st.endDate).toLocaleDateString('es-ES',{day:'numeric',month:'short'})}` : ''}
+                </div>
+              ) : (
+                <div style={{fontSize:10,color:'#4ae176',marginLeft:14}}>Disponible</div>
+              )}
+            </div>
+          );
+        })}
+        {sortedEnvs.length===0&&(
+          <div style={{fontSize:11,color:'#8c909f',textAlign:'center',padding:'20px 0'}}>
+            {sidebarAvailOnly?'No hay entornos libres':'Sin entornos'}
+          </div>
+        )}
+      </aside>
 
       {form&&<ReservationForm res={form==='new'?null:form} envs={envs} repos={repos} allRes={res}
         policy={policy} currentUser={currentUser} onSave={handleSave} onClose={()=>setForm(null)}
