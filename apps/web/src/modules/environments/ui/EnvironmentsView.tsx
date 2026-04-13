@@ -591,6 +591,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   const [loading, setLoading] = useState(true);
   const [filter,  setFilter]  = useState('active');
   const [search,  setSearch]  = useState('');
+  const [viewMode, setViewMode] = useState<'list'|'grid'>('list');
   const [form,    setForm]    = useState(null);
   const [detail,  setDetail]  = useState(null);
   const [confirm, setConfirm] = useState(null);
@@ -816,6 +817,21 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
 .ev .ev-cta{width:100%;background:linear-gradient(135deg,#adc6ff 0%,#4d8eff 100%);color:#002e6a;font-weight:600;padding:10px 16px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;letter-spacing:.02em;transition:all .3s;font-family:inherit;}
 .ev .ev-cta:hover{filter:drop-shadow(0 0 12px rgba(77,142,255,.3));}
 .ev .ev-cta:active{transform:scale(.95);}
+/* View toggle */
+.ev .ev-view-toggle{display:flex;background:#1c1b1b;border:1px solid rgba(66,71,83,.15);border-radius:8px;padding:3px;height:34px;}
+.ev .ev-view-btn{display:flex;align-items:center;justify-content:center;padding:0 10px;border-radius:6px;border:none;cursor:pointer;background:transparent;color:#8c909f;transition:all .15s;font-family:inherit;}
+.ev .ev-view-btn.active{background:#2a2a2a;color:#e5e2e1;box-shadow:0 1px 3px rgba(0,0,0,.15);}
+.ev .ev-view-btn:hover:not(.active){color:#c2c6d6;}
+/* Grid cards */
+.ev .ev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;}
+.ev .ev-grid-card{position:relative;background:#1c1b1b;border-radius:8px;padding:20px;overflow:hidden;cursor:pointer;transition:all .2s;border:1px solid rgba(66,71,83,.15);}
+.ev .ev-grid-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(173,198,255,.2),transparent);border-radius:8px 8px 0 0;}
+.ev .ev-grid-card:hover{box-shadow:0 8px 40px rgba(77,142,255,.08);}
+/* List cards */
+.ev .ev-list{display:flex;flex-direction:column;gap:8px;}
+.ev .ev-list-card{position:relative;display:flex;align-items:center;gap:16px;background:#1c1b1b;border-radius:8px;padding:14px 16px 14px 20px;overflow:hidden;cursor:pointer;transition:all .2s;border:1px solid rgba(66,71,83,.15);}
+.ev .ev-list-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(173,198,255,.2),transparent);border-radius:8px 8px 0 0;}
+.ev .ev-list-card:hover{box-shadow:0 8px 40px rgba(77,142,255,.08);}
       `}</style>
 
       {/* ── Left Navigation Sidebar ─────────────────────────────────── */}
@@ -860,6 +876,16 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
         {mainTab==='reservas'&&(
           <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 20px',
             borderBottom:'1px solid rgba(66,71,83,.15)',flexShrink:0}}>
+            {/* View toggle */}
+            <div className="ev-view-toggle">
+              <button className={`ev-view-btn${viewMode==='list'?' active':''}`} onClick={()=>setViewMode('list')} title="List">
+                <span className="material-symbols-outlined" style={{fontSize:18}}>view_list</span>
+              </button>
+              <button className={`ev-view-btn${viewMode==='grid'?' active':''}`} onClick={()=>setViewMode('grid')} title="Grid">
+                <span className="material-symbols-outlined" style={{fontSize:18}}>grid_view</span>
+              </button>
+            </div>
+            {/* Filters */}
             <div style={{display:'flex',gap:2,background:'#1c1b1b',
               border:'1px solid rgba(66,71,83,.15)',borderRadius:8,padding:3}}>
               {filterTabs.map(t=>(
@@ -888,12 +914,123 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
                 <div style={{textAlign:'center',padding:'40px 0',color:'#8c909f',fontSize:13}}>
                   Cargando reservas…
                 </div>
+              ) : visible.length === 0 ? (
+                <div style={{textAlign:'center',padding:'40px 0',color:'#8c909f',fontSize:13}}>
+                  No hay reservas que coincidan con los filtros.
+                </div>
+              ) : viewMode==='list' ? (
+                /* ── List View ──────────────────────────────────────── */
+                <div className="ev-list">
+                  {visible.map(r => {
+                    const env = envs.find(e=>e.id===r.environmentId);
+                    const cc = CAT[env?.category] ?? CAT.DEV;
+                    const owner = (wsUsers??[]).find(u=>u.id===r.reservedByUserId);
+                    const statusBadge = r.statusCategory==='in_use'
+                      ? {color:'#4ae176',bg:'rgba(74,225,118,.1)',label:r.statusName??'In Use'}
+                      : r.statusCategory==='reserved'
+                      ? {color:'#adc6ff',bg:'rgba(173,198,255,.1)',label:r.statusName??'Reserved'}
+                      : r.statusCategory==='violation'
+                      ? {color:'#f59e0b',bg:'rgba(245,158,11,.1)',label:r.statusName??'Violation'}
+                      : {color:'#8c909f',bg:'rgba(140,144,159,.1)',label:r.statusName??r.statusCategory};
+                    return (
+                      <div key={r.id} className="ev-list-card" onClick={()=>setDetail(r)}
+                        style={{borderLeft:`4px solid ${cc.color}`}}
+                        onMouseEnter={e=>{e.currentTarget.style.background='#2a2a2a';}}
+                        onMouseLeave={e=>{e.currentTarget.style.background='#1c1b1b';}}>
+                        {/* Left: env info */}
+                        <div style={{minWidth:120}}>
+                          <span style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',
+                            color:cc.color,display:'block',marginBottom:2}}>{env?.category??'—'}</span>
+                          <span style={{fontSize:15,fontWeight:700,color:cc.color}}>{env?.name??'—'}</span>
+                        </div>
+                        {/* Center: tickets & repos */}
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:4}}>
+                            {(r.jiraIssueKeys??[]).map(k=>(
+                              <span key={k} style={{padding:'2px 8px',borderRadius:4,fontSize:11,fontFamily:'monospace',
+                                background:'rgba(124,58,237,.12)',color:'#a78bfa'}}>{k}</span>
+                            ))}
+                          </div>
+                          {(r.extractedRepos??[]).length>0&&(
+                            <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                              {r.extractedRepos.map(name=>(
+                                <span key={name} style={{padding:'2px 8px',borderRadius:4,fontSize:10,
+                                  background:'#0e0e0e',color:'#8c909f'}}>{name}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {/* Right: status & meta */}
+                        <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,flexShrink:0}}>
+                          <span style={{padding:'3px 10px',borderRadius:20,fontSize:10,fontWeight:700,
+                            background:statusBadge.bg,color:statusBadge.color}}>{statusBadge.label}</span>
+                          <span style={{fontSize:10,color:'#8c909f'}}>{owner?.name??owner?.email??'—'}</span>
+                          <span style={{fontSize:10,color:'#8c909f'}}>{durH(r.plannedStart,r.plannedEnd)}h</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
-                <div style={{maxWidth:760}}>
-                  <DeployTimeline
-                    deployments={deploymentShapes}
-                    onSelect={handleSelect}
-                  />
+                /* ── Grid View ─────────────────────────────────────── */
+                <div className="ev-grid">
+                  {visible.map(r => {
+                    const env = envs.find(e=>e.id===r.environmentId);
+                    const cc = CAT[env?.category] ?? CAT.DEV;
+                    const owner = (wsUsers??[]).find(u=>u.id===r.reservedByUserId);
+                    const statusBadge = r.statusCategory==='in_use'
+                      ? {color:'#4ae176',bg:'rgba(74,225,118,.1)',label:r.statusName??'In Use'}
+                      : r.statusCategory==='reserved'
+                      ? {color:'#adc6ff',bg:'rgba(173,198,255,.1)',label:r.statusName??'Reserved'}
+                      : r.statusCategory==='violation'
+                      ? {color:'#f59e0b',bg:'rgba(245,158,11,.1)',label:r.statusName??'Violation'}
+                      : {color:'#8c909f',bg:'rgba(140,144,159,.1)',label:r.statusName??r.statusCategory};
+                    return (
+                      <div key={r.id} className="ev-grid-card" onClick={()=>setDetail(r)}
+                        style={{borderLeft:`4px solid ${cc.color}`}}
+                        onMouseEnter={e=>{e.currentTarget.style.background='#2a2a2a';}}
+                        onMouseLeave={e=>{e.currentTarget.style.background='#1c1b1b';}}>
+                        {/* Header */}
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
+                          <div>
+                            <span style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',
+                              color:cc.color,display:'block',marginBottom:4}}>{env?.category??'—'}</span>
+                            <h3 style={{fontSize:18,fontWeight:700,color:cc.color,margin:0}}>{env?.name??'—'}</h3>
+                          </div>
+                          <span style={{padding:'4px 10px',borderRadius:20,fontSize:10,fontWeight:700,
+                            background:statusBadge.bg,color:statusBadge.color}}>{statusBadge.label}</span>
+                        </div>
+                        {/* Jira tickets */}
+                        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
+                          <span className="material-symbols-outlined" style={{fontSize:16,color:'#8c909f'}}>confirmation_number</span>
+                          <span style={{fontSize:13,fontWeight:500,color:'#c2c6d6'}}>
+                            {(r.jiraIssueKeys??[]).join(', ')||'—'}
+                          </span>
+                        </div>
+                        {/* Repos */}
+                        {(r.extractedRepos??[]).length>0&&(
+                          <div style={{marginBottom:12}}>
+                            <div style={{fontSize:10,fontWeight:700,color:'rgba(140,144,159,.5)',textTransform:'uppercase',
+                              letterSpacing:'.04em',marginBottom:6}}>Repos</div>
+                            <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                              {r.extractedRepos.map(name=>(
+                                <span key={name} style={{padding:'4px 10px',fontSize:11,borderRadius:4,
+                                  background:'#0e0e0e',color:'#c2c6d6',border:'1px solid rgba(66,71,83,.1)'}}>{name}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {/* Footer */}
+                        <div style={{paddingTop:12,borderTop:'1px solid rgba(66,71,83,.1)',
+                          display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                          <span style={{fontSize:11,fontWeight:500,color:'#8c909f'}}>{owner?.name??owner?.email??'—'}</span>
+                          <span style={{fontSize:11,color:'rgba(140,144,159,.6)',fontWeight:500}}>
+                            {durH(r.plannedStart,r.plannedEnd)}h
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </>
