@@ -209,6 +209,8 @@
     "exportHint":    "Solo horas en el rango seleccionado",
     "clearSelection":"Limpiar",
     "today":         "Hoy",
+    "month":         "Mes",
+    "week":          "Semana",
     "totalLabel":    "Total",
     "activeDays":    "Días activos",
     "avgLabel":      "Promedio",

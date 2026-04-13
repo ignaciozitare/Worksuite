@@ -209,6 +209,8 @@
     "exportHint":    "Only hours within the selected range",
     "clearSelection":"Clear",
     "today":         "Today",
+    "month":         "Month",
+    "week":          "Week",
     "totalLabel":    "Total",
     "activeDays":    "Active days",
     "avgLabel":      "Avg",
