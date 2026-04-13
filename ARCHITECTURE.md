@@ -235,8 +235,16 @@ Consumido por Deploy Planner y Environments. El `repoField` se lee de `dp_versio
 - **Repos**: Repo groups con dependencias
 - **Subtareas**: Configuración de tipos de subtareas
 
-### Vistas (pill-style tabs)
-- **Planning**: Cards con tickets, repos, contadores, filtro por estado
+### UI — Carbon Logic (Stitch) design system
+- **Sidebar lateral** (glass effect, backdrop blur) con brand header (`hub` icon), nav items con Material Symbols, botón "New Release" con gradient primary, y Jira sync status en el footer
+- Icono reutilizable: `DeployPlannerIcon` en `atoms.tsx`
+- Glass cards con `backdrop-filter: blur(24px)` + ghost-border-top
+- Tipografía Inter, iconos Material Symbols Outlined
+- Colores Stitch: `#131313` bg, `#adc6ff`/`#4d8eff` primary, `#e5e2e1` text
+- Tokens en CSS variables `--dp-*` con soporte light/dark mode
+
+### Vistas (sidebar nav)
+- **Planning**: Header Stitch (PRODUCTION PIPELINE + Planning Board), 4 stat cards glass, release cards con glass effect, filtro por estado
 - **Timeline**: GanttTimeline con zoom, drag-resize, group frames, filtro
 - **History**: Tabla con filtros, ordenar, columna de bugs
 - **Metrics**: Stats de releases, bugs, tests, repos
@@ -273,8 +281,15 @@ Consumido por Deploy Planner y Environments. El `repoField` se lee de `dp_versio
 
 Módulo para que cada usuario gestione su propio fichaje y tiempos.
 
+### UI — Carbon Logic (Stitch) design system
+- Tipografía Inter, iconos Material Symbols Outlined (reemplaza emojis)
+- Tokens compartidos en `modules/chrono/shared/theme.ts` (`CHRONO_THEME`)
+- Dashboard con hero timer bento card, `ChronoStatCard` con progressBar/subtext/sparkline
+- Botones gradient primary con glow, tablas con sticky headers
+- Sidebar con nav items estilo glow on active
+
 ### Vistas (sidebar tabs)
-- **Dashboard** — Estado del fichaje hoy + resumen del mes (horas trabajadas, días, incidencias, bolsa)
+- **Dashboard** — Hero timer, estado del fichaje hoy + bento grid de stats (horas hoy, semana, bolsa, vacaciones, alertas, equipo)
 - **Registros** — Listado de fichajes históricos por mes con detalles entrada/comida/salida
 - **Incompletos** — Fichajes con datos faltantes (entrada sin salida, etc.). Plazo de 48h antes de pasar a incidencia
 - **Vacaciones** — Solicitud y consulta de vacaciones, saldo del año
@@ -297,6 +312,13 @@ Módulo para que cada usuario gestione su propio fichaje y tiempos.
 ## Chrono Admin — RRHH
 
 Módulo de administración de RRHH sobre el chrono.
+
+### UI — Carbon Logic (Stitch) design system
+- Tokens importados desde `chrono-admin/shared/adminColors.ts` (remapea legacy `C` → `CHRONO_THEME`)
+- Tab bar Stitch con primary active + glow shadow
+- Tablas con sticky headers, hover rows, Material Symbols
+- Buttons: gradient primary/danger/success con box-shadow glow
+- `ChronoStatCard` reutilizado para dashboard stats
 
 ### Vistas (top tabs)
 - **Dashboard** — Resumen del equipo: total empleados, fichando hoy, incompletos, vacaciones, alertas

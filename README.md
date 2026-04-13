@@ -46,10 +46,10 @@ worksuite/
 | **Jira Tracker** | Imputación de horas, calendario, vista día, tareas (filtradas por rango), sidebar recientes, export CSV configurable con presets |
 | **HotDesk** | Mapa de oficina, reservas de puesto, vista mensual, blueprints |
 | **RetroBoard** | Retrospectivas estructuradas, kanban de accionables, historial |
-| **Deploy Planner** | Releases, timeline Gantt, repo groups, subtareas (bugs/tests), métricas. Admin en tabs (Estados, Jira, Versiones, Repos, Subtareas) |
+| **Deploy Planner** | Releases, timeline Gantt, repo groups, subtareas (bugs/tests), métricas. Sidebar glass Stitch con nav items Material Symbols. Admin en tabs (Estados, Jira, Versiones, Repos, Subtareas) |
 | **Environments** | Gestión de entornos con barra lateral (priority, disponibilidad), reservas, timeline, historial. Admin en tabs (Entornos, Estados, Filtro Jira, Política) |
-| **Chrono** | Control horario del usuario: dashboard, registros, fichajes incompletos, vacaciones, alarmas, informes. Soporta deep links vía `?view=` |
-| **Chrono Admin (RRHH)** | Administración de empleados, equipos, aprobaciones, comparativa Jira vs fichaje, ficha del empleado con datos sensibles encriptados (AES-256-GCM), informes con CSV export |
+| **Chrono** | Control horario: hero timer, bento stat cards, registros, fichajes incompletos, vacaciones, alarmas, informes. UI Stitch (Inter, Material Symbols, gradient buttons). Deep links vía `?view=` |
+| **Chrono Admin (RRHH)** | Administración de empleados, equipos, aprobaciones, comparativa Jira vs fichaje, ficha encriptada (AES-256-GCM), informes CSV. UI Stitch con `ChronoStatCard` y tabs gradient |
 | **Profile** | Página de perfil del usuario actual accesible desde el menú del avatar |
 
 ## Getting started
