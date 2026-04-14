@@ -32,6 +32,7 @@ const EnvTracker = lazy(() => import('./modules/environments/ui/EnvironmentsView
 const ChronoPage = lazy(() => import('./modules/chrono').then(m => ({ default: m.ChronoPage })));
 const ChronoAdminPage = lazy(() => import('./modules/chrono-admin').then(m => ({ default: m.ChronoAdminPage })));
 const ProfilePage = lazy(() => import('./modules/profile').then(m => ({ default: m.ProfilePage })));
+const VectorLogicPage = lazy(() => import('./modules/vector-logic').then(m => ({ default: m.VectorLogicPage })));
 
 // Domain
 import { CsvService } from './modules/jira-tracker/domain/services/CsvService';
@@ -53,6 +54,7 @@ function WorkSuiteApp() {
             : location.pathname.startsWith('/retro')         ? 'retro'
             : location.pathname.startsWith('/deploy')        ? 'deploy'
             : location.pathname.startsWith('/envtracker')    ? 'envtracker'
+            : location.pathname.startsWith('/vector-logic')   ? 'vector-logic'
             : location.pathname.startsWith('/chrono-admin')  ? 'chrono-admin'
             : location.pathname.startsWith('/chrono')        ? 'chrono'
             : location.pathname.startsWith('/profile')       ? 'profile'
@@ -63,6 +65,7 @@ function WorkSuiteApp() {
              : mod === 'retro' ? 'retro'
              : mod === 'deploy' ? 'deploy'
              : mod === 'envtracker' ? 'envtracker'
+             : mod === 'vector-logic' ? 'vector-logic'
              : (urlView || 'calendar');
 
   // Data
@@ -226,6 +229,9 @@ function WorkSuiteApp() {
               {(CURRENT_USER.modules || []).includes("envtracker") && (
                 <button className={`sw-btn ${mod === "envtracker" ? "active" : ""}`} onClick={() => navigate('/envtracker')}>🖥️ Environments</button>
               )}
+              {(CURRENT_USER.modules || []).includes("vector-logic") && (
+                <button className={`sw-btn ${mod === "vector-logic" ? "active" : ""}`} onClick={() => navigate('/vector-logic')}>⚡ Vector Logic</button>
+              )}
               {(CURRENT_USER.modules || []).includes("chrono") && (
                 <button className={`sw-btn ${mod === "chrono" ? "active" : ""}`} onClick={() => navigate('/chrono')}>⏱️ {t("chrono.title")}</button>
               )}
@@ -272,7 +278,7 @@ function WorkSuiteApp() {
           </header>
 
           {/* ── Sub-nav ─────────────────────────────────────────── */}
-          {mod !== "retro" && mod !== "deploy" && mod !== "envtracker" && mod !== "chrono" && mod !== "chrono-admin" && mod !== "profile" && (
+          {mod !== "retro" && mod !== "deploy" && mod !== "envtracker" && mod !== "chrono" && mod !== "chrono-admin" && mod !== "vector-logic" && mod !== "profile" && (
             <nav className="nav-bar">
               {currentNavItems.map(item => (
                 <button key={item.id}
@@ -335,6 +341,11 @@ function WorkSuiteApp() {
               {mod === "chrono-admin" && (
                 <main className="content" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
                   <ChronoAdminPage currentUser={CURRENT_USER} />
+                </main>
+              )}
+              {mod === "vector-logic" && (
+                <main className="content" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
+                  <VectorLogicPage currentUser={CURRENT_USER} />
                 </main>
               )}
               {mod === "profile" && (
