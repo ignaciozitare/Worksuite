@@ -1,29 +1,13 @@
 // @ts-nocheck
 import { useState, useEffect, useRef } from 'react';
-import { supabase }            from '@/shared/lib/supabaseClient';
 import { StatusManager, DualPanelPicker } from '@worksuite/ui';
 import { useTranslation }      from '@worksuite/i18n';
 import type { Environment }    from '../domain/entities/Environment';
 import type { Repository, EnvPolicy } from '../domain/entities/Reservation';
-import { SupabaseEnvironmentRepo } from '../infra/supabase/SupabaseEnvironmentRepo';
-import { SupabaseReservationRepo } from '../infra/supabase/SupabaseReservationRepo';
-import { SupabaseReservationStatusRepo } from '../infra/supabase/SupabaseReservationStatusRepo';
-import { SupabaseJiraFilterConfigRepo } from '../infra/supabase/SupabaseJiraFilterConfigRepo';
-import { SupabaseEnvHistoryNoteRepo } from '../infra/supabase/SupabaseEnvHistoryNoteRepo';
-import { HttpJiraApiAdapter } from '@/shared/infra/HttpJiraApiAdapter';
-
-const envRepo = new SupabaseEnvironmentRepo(supabase);
-const resRepo = new SupabaseReservationRepo(supabase);
-const statusRepo = new SupabaseReservationStatusRepo(supabase);
-const jiraFilterRepo = new SupabaseJiraFilterConfigRepo(supabase);
-const historyNoteRepo = new SupabaseEnvHistoryNoteRepo(supabase);
-
-const API_BASE = ((import.meta as any).env?.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
-async function getAuthHeaders() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
-}
-const jiraApi = new HttpJiraApiAdapter(API_BASE, getAuthHeaders);
+import {
+  envRepo, resRepo, statusRepo,
+  jiraFilterRepo, historyNoteRepo, jiraApi,
+} from '../container';
 
 // ── Admin: Filtro Jira (pre-selección de tickets mostrados en reserva) ──────
 export function AdminEnvJiraFilter() {

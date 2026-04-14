@@ -1,46 +1,16 @@
 // @ts-nocheck
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { supabase }                from '@/shared/lib/supabaseClient';
-// Usamos el mismo DeployTimeline de Deploy Planner — sin tocarlo
 import { DeployTimeline }          from '../../deploy-planner/ui/DeployTimeline';
 import { GanttTimeline, JiraTicketPicker, DateRangePicker } from '@worksuite/ui';
 import { useTranslation }                 from '@worksuite/i18n';
 import { extractReposFromTickets }        from '@worksuite/jira-service';
-import { SupabaseReservationHistoryRepo } from '../infra/supabase/SupabaseReservationHistoryRepo';
-import { SupabaseJiraConfigRepo }         from '../infra/supabase/SupabaseJiraConfigRepo';
-import { SupabaseReservationStatusRepo }  from '../infra/supabase/SupabaseReservationStatusRepo';
-import { SupabaseJiraFilterConfigRepo }   from '../infra/supabase/SupabaseJiraFilterConfigRepo';
-import { SupabaseEnvHistoryNoteRepo }    from '../infra/supabase/SupabaseEnvHistoryNoteRepo';
 import type { Environment }        from '../domain/entities/Environment';
 import type { Reservation, Repository, EnvPolicy } from '../domain/entities/Reservation';
-import { SupabaseEnvironmentRepo } from '../infra/supabase/SupabaseEnvironmentRepo';
-import { SupabaseReservationRepo } from '../infra/supabase/SupabaseReservationRepo';
-import { GetEnvironments }         from '../domain/useCases/GetEnvironments';
-import { GetReservations }         from '../domain/useCases/GetReservations';
-import { UpsertReservation }       from '../domain/useCases/UpsertReservation';
-import { UpdateReservationStatus } from '../domain/useCases/UpdateReservationStatus';
-import { HttpJiraApiAdapter }      from '@/shared/infra/HttpJiraApiAdapter';
-
-// ── Use-cases ────────────────────────────────────────────────────────────────
-const envRepo  = new SupabaseEnvironmentRepo(supabase);
-const resRepo  = new SupabaseReservationRepo(supabase);
-const getEnvs  = new GetEnvironments(envRepo);
-const getRes   = new GetReservations(resRepo);
-const upsertUC = new UpsertReservation(resRepo);
-const statusUC = new UpdateReservationStatus(resRepo);
-
-// ── Adapters ─────────────────────────────────────────────────────────────────
-const API_BASE = ((import.meta as any).env?.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
-async function getAuthHeaders() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
-}
-const jiraApi = new HttpJiraApiAdapter(API_BASE, getAuthHeaders);
-const historyRepo        = new SupabaseReservationHistoryRepo(supabase);
-const jiraConfigRepo     = new SupabaseJiraConfigRepo(supabase);
-const statusRepo         = new SupabaseReservationStatusRepo(supabase);
-const jiraFilterRepo     = new SupabaseJiraFilterConfigRepo(supabase);
-const historyNoteRepo    = new SupabaseEnvHistoryNoteRepo(supabase);
+import {
+  getEnvs, getRes, upsertUC, statusUC,
+  jiraApi, historyRepo, jiraConfigRepo, statusRepo,
+  jiraFilterRepo, historyNoteRepo,
+} from '../container';
 
 // ── Map reservation status category → DeployTimeline's visual vocabulary ────
 const CATEGORY_TO_TIMELINE_STATUS = {
@@ -193,7 +163,7 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
             <option value="">{t('admin.envSelectEnvPlaceholder')}</option>
             {envs.filter(e=>!e.isArchived&&(isAdmin||!e.isLocked)).map(e=>(
               <option key={e.id} value={e.id}>
-                {e.isLocked?'🔒 ':''}{e.name} ({e.category}) — max {e.maxReservationDuration}h
+                {e.isLocked?'🔒 ':''}{e.name} ({e.category}) — {e.maxReservationDuration}h
               </option>
             ))}
           </select>

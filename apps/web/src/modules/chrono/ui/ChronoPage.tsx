@@ -19,6 +19,7 @@ import { AlarmasView } from './views/AlarmasView';
 // is still used by the main content area and will migrate piece by
 // piece in follow-up commits.
 import { CHRONO_THEME as T } from '../shared/theme';
+import { NominatimGeoLocationService } from '../infra/NominatimGeoLocationService';
 
 const fichajeRepo = new FichajeSupabaseRepository(supabase);
 const bolsaRepo = new BolsaHorasSupabaseRepository(supabase);
@@ -26,6 +27,7 @@ const vacacionRepo = new VacacionSupabaseRepository(supabase);
 const incidenciaRepo = new IncidenciaSupabaseRepository(supabase);
 const alarmaRepo = new AlarmaSupabaseRepository(supabase);
 const configEmpresaRepo = new ConfigEmpresaSupabaseRepository(supabase);
+const geoService = new NominatimGeoLocationService();
 
 /* ─── Design tokens ─────────────────────────────────────────────────────────── */
 const C = {
@@ -215,7 +217,7 @@ export function ChronoPage({ currentUser }: Props) {
           {t('chrono.breadcrumb')} / {t(NAV_ITEMS.find(n => n.id === view)?.labelKey || '').toUpperCase()}
         </div>
 
-        {view === 'dashboard' && <DashboardView fichajeRepo={fichajeRepo} bolsaRepo={bolsaRepo} incidenciaRepo={incidenciaRepo} configEmpresaRepo={configEmpresaRepo} currentUser={currentUser} />}
+        {view === 'dashboard' && <DashboardView fichajeRepo={fichajeRepo} bolsaRepo={bolsaRepo} incidenciaRepo={incidenciaRepo} configEmpresaRepo={configEmpresaRepo} geoService={geoService} currentUser={currentUser} />}
         {view === 'registros' && <RegistrosView fichajeRepo={fichajeRepo} currentUser={currentUser} />}
         {view === 'incompletos' && <IncompletosView fichajeRepo={fichajeRepo} currentUser={currentUser} />}
         {view === 'vacaciones' && <VacacionesView vacacionRepo={vacacionRepo} currentUser={currentUser} />}

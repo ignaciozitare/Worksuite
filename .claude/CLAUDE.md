@@ -12,6 +12,12 @@
 - Infrastructure implements adapters and access to external systems.
 - Do not place business logic in controllers, handlers, routers, or UI components.
 
+### Strict Hexagonal Boundaries (Zero Tolerance)
+- **UI files (`/ui/`) MUST NEVER import from `/infra/` directories or `@/shared/infra/`.** If a UI component needs a repository or adapter, import it from a `container.ts` at the module root that wires infrastructure and exports instances.
+- **UI files MUST NEVER call `fetch()`, `supabase.from()`, or any other direct I/O.** All external access goes through ports implemented by infra adapters.
+- **`container.ts` pattern**: each module that needs infra should have a `container.ts` that imports from `/infra/`, instantiates adapters, and exports them. UI files import only from `container.ts`, domain entities, and use-cases.
+- If you are about to write `import ... from '../infra/'` inside a `/ui/` file, **STOP** — that is a violation. Refactor to use the container pattern.
+
 ## Shared Packages
 - Any logic, service, or component that is reused across multiple modules must live in `packages/` as a shared package — not duplicated in each module.
 - This includes: UI components (`@worksuite/ui`), translations (`@worksuite/i18n`), shared types (`@worksuite/shared-types`), external service clients (`@worksuite/jira-client`, `@worksuite/jira-service`), etc.
@@ -81,6 +87,13 @@ Use **Material Symbols Outlined** (Google Fonts). Weight: 300 light (default), f
 - Error: ruby text on 10% ruby bg
 - Warning: gold text on 10% gold bg
 
+### Light / Dark Mode (Mandatory)
+- **NEVER use hardcoded hex color values for backgrounds, text, or borders in inline styles or embedded CSS.** Always use CSS variables: `var(--bg)`, `var(--sf)`, `var(--sf2)`, `var(--sf3)`, `var(--tx)`, `var(--tx2)`, `var(--tx3)`, `var(--bd)`, `var(--bd2)`, `var(--ac)`, `var(--ac2)`, `var(--green)`, `var(--amber)`, `var(--red)`, `var(--purple)`.
+- CSS variables are defined in `WorkSuiteApp.css` with `:root` (dark) and `[data-theme="light"]` (light) selectors. All components inherit them automatically.
+- **Do NOT use fallback values in CSS vars** (e.g., `var(--tx,#e4e4ef)` is forbidden — just use `var(--tx)`). The variables are always defined.
+- Semantic/accent colors (e.g., status badges) may use rgba() for transparency but must derive the base from a CSS variable or a fixed semantic color that works in both themes.
+- If you need a component-scoped variable, define it with `[data-theme="light"]` override in a `<style>` block.
+
 ### Do's and Don'ts
 - **Do** embrace asymmetry, high-contrast font weights, `surface-bright` for active elements
 - **Don't** use `#FFFFFF`, standard Material shadows, dividers, or corners > 8px
@@ -108,9 +121,12 @@ All tokens live in `apps/web/src/modules/chrono/shared/theme.ts` (`CHRONO_THEME`
 
 ## Multi-language (i18n)
 - All user-facing strings must use `t()` from `@worksuite/i18n` — never hardcode Spanish or English text in components.
+- **This includes**: button labels, modal titles, error messages, empty states, form labels, placeholders, tooltips, filter/tab labels, sidebar titles, loading messages, confirmation dialogs, and status badges.
+- **Exceptions**: technical identifiers that match DB values (e.g., "DEV", "PRE", "STAGING"), placeholder examples (e.g., "DEV-03", "frontend-app"), and icon names.
 - When creating or modifying any component, verify that all visible text uses translation keys.
 - If new keys are needed, add them to both `packages/i18n/locales/es.json` and `packages/i18n/locales/en.json`.
 - Before committing, check that the EN/ES switch works correctly on the affected views.
+- **Zero tolerance**: if you write a hardcoded user-facing string in a component, fix it immediately before moving on. Do not leave it as "debt".
 
 ## Documentation
 - If the architecture, project structure, or an important technical decision changes, update `ARCHITECTURE.md`.
@@ -121,12 +137,24 @@ All tokens live in `apps/web/src/modules/chrono/shared/theme.ts` (`CHRONO_THEME`
 ## Pre-commit Checklist
 **This checklist is mandatory and non-negotiable. Do not consider any task complete until every item below has been explicitly verified. Run each check and report the result before marking work as done.**
 
-1. **Hexagonal architecture**: confirm no `supabase.from()` exists outside `/infra/`, and no `fetch()` in UI — all DB/API access goes through ports and adapters. If a violation is found, fix it before proceeding.
-2. **i18n**: confirm no hardcoded user-facing strings — all text uses `t()` with keys present in both `es.json` and `en.json`. Add missing keys if needed.
-3. **UI components**: confirm reusable components are in `packages/ui`, not duplicated inline.
-4. **Documentation**: if structure or architecture changed, update `ARCHITECTURE.md` and `README.md` accordingly.
-5. **Build passes**: run `npx vite build` and confirm it succeeds without errors. If it fails, fix it before finishing.
-6. **No secrets**: confirm no tokens, keys, or passwords are hardcoded in any source file.
+1. **Hexagonal architecture** — run these checks on every modified file:
+   - `grep -rn "from.*infra" apps/web/src/**/ui/**` → must return zero results. UI files must NOT import from `/infra/`. Use `container.ts` instead.
+   - `grep -rn "supabase\.from\|\.from(" apps/web/src/**/ui/**` → must return zero results.
+   - `grep -rn "fetch(" apps/web/src/**/ui/**` → must return zero results. All HTTP calls go through infra adapters.
+   - If ANY violation is found, **fix it before proceeding**. Do not document it as "debt".
+2. **i18n** — on every modified UI file:
+   - Search for hardcoded Spanish/English strings (modal titles, button labels, error messages, loading text, empty states, form labels, tab labels).
+   - Verify every user-visible string uses `t('key')`. If a new key is needed, add it to BOTH `es.json` and `en.json`.
+   - If ANY hardcoded string is found, **fix it before proceeding**.
+3. **Light/Dark mode** — on every modified UI file:
+   - Search for hardcoded hex colors (`#131313`, `#1c1b1b`, `#e5e2e1`, `#8c909f`, `#0e0e0e`, `#2a2a38`, `#50506a`, `#424754`, `#c2c6d6`, `#4d8eff`).
+   - Also search for CSS var fallbacks like `var(--tx,#e4e4ef)` — remove the fallback.
+   - Replace with the appropriate CSS variable (`var(--bg)`, `var(--sf)`, `var(--tx)`, etc.).
+   - If ANY hardcoded color is found, **fix it before proceeding**.
+4. **UI components**: confirm reusable components are in `packages/ui`, not duplicated inline.
+5. **Documentation**: if structure or architecture changed, update `ARCHITECTURE.md` and `README.md` accordingly.
+6. **Build passes**: run `npx vite build` from `apps/web/` and confirm it succeeds without errors. If it fails, fix it before finishing.
+7. **No secrets**: confirm no tokens, keys, or passwords are hardcoded in any source file.
 
 ## Deployment Rules
 - **Never merge a feature branch to `main` without first verifying the build compiles cleanly on a Vercel preview deploy.**

@@ -8,6 +8,7 @@ import type { IFichajeRepository } from '../../domain/ports/IFichajeRepository';
 import type { IBolsaHorasRepository } from '../../domain/ports/IBolsaHorasRepository';
 import type { IIncidenciaRepository } from '../../domain/ports/IIncidenciaRepository';
 import type { IConfigEmpresaRepository } from '../../domain/ports/IConfigEmpresaRepository';
+import type { IGeoLocationService } from '../../domain/ports/IGeoLocationService';
 import type { Fichaje } from '../../domain/entities/Fichaje';
 import type { CategoriaIncidencia } from '../../domain/entities/Incidencia';
 
@@ -106,10 +107,11 @@ interface DashboardViewProps {
   bolsaRepo: IBolsaHorasRepository;
   incidenciaRepo: IIncidenciaRepository;
   configEmpresaRepo: IConfigEmpresaRepository;
+  geoService?: IGeoLocationService;
   currentUser: { id: string; name?: string; [key: string]: unknown };
 }
 
-export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEmpresaRepo, currentUser }: DashboardViewProps) {
+export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEmpresaRepo, geoService, currentUser }: DashboardViewProps) {
   const { t } = useTranslation();
 
   /* ── State ──────────────────────────────────────────────────────────────── */
@@ -170,21 +172,17 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
 
   /* ── Detect city via browser geolocation ─────────────────────────────── */
   useEffect(() => {
-    if (!navigator.geolocation) return;
+    if (!geoService || !navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&zoom=10`)
-          .then(r => r.json())
-          .then(data => {
-            const city = data.address?.city || data.address?.town || data.address?.village || '';
-            if (city) setCityName(city);
-          })
+        geoService.reverseGeocode(pos.coords.latitude, pos.coords.longitude)
+          .then(city => { if (city) setCityName(city); })
           .catch(() => {});
       },
       () => {},
       { timeout: 5000 },
     );
-  }, []);
+  }, [geoService]);
 
   /* ── Live clock + timer ─────────────────────────────────────────────────── */
   useEffect(() => {
