@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { StateManagerView } from './views/StateManagerView';
+import { CanvasDesignerView } from './views/CanvasDesignerView';
 import { AssignmentManagerView } from './views/AssignmentManagerView';
 
 /* ─── CSS (Stitch / Carbon Logic) ────────────────────────────────────────── */
@@ -98,20 +99,10 @@ export function VectorLogicPage({ currentUser }: Props) {
       {/* ── Main content ──────────────────────────────────── */}
       <div style={{flex:1,minWidth:0,overflow:'auto',padding:'28px 32px'}}>
         {view === 'states' && <StateManagerView currentUser={currentUser} />}
-        {view === 'canvas' && <CanvasPlaceholder />}
+        {view === 'canvas' && <CanvasDesignerView currentUser={currentUser} />}
         {view === 'assignment' && <AssignmentManagerView />}
       </div>
     </div>
   );
 }
 
-function CanvasPlaceholder() {
-  const { t } = useTranslation();
-  return (
-    <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:400,color:'var(--tx3)'}}>
-      <span className="material-symbols-outlined" style={{fontSize:48,marginBottom:16,opacity:.3}}>schema</span>
-      <div style={{fontSize:15,fontWeight:600,marginBottom:4}}>{t('vectorLogic.canvasDesigner')}</div>
-      <div style={{fontSize:12,opacity:.6}}>React Flow — coming next</div>
-    </div>
-  );
-}

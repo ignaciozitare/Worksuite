@@ -7,18 +7,21 @@
     "apps/*"
   ],
   "scripts": {
-    "dev:web":   "npm -w apps/web run dev",
-    "dev:api":   "npm -w apps/api run dev",
-    "build":     "npm -w apps/web run build",
+    "dev:web": "npm -w apps/web run dev",
+    "dev:api": "npm -w apps/api run dev",
+    "build": "npm -w apps/web run build",
     "build:web": "npm -w apps/web run build",
     "build:api": "npm -w apps/api run build",
     "typecheck": "tsc --build --verbose",
-    "lint":      "eslint packages apps --ext .ts,.tsx"
+    "lint": "eslint packages apps --ext .ts,.tsx"
   },
   "devDependencies": {
     "typescript": "^5.4.0"
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.10.2"
   }
 }
