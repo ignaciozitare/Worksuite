@@ -158,11 +158,11 @@ function ChronoAdminPage({ currentUser }: Props) {
             <span className="material-symbols-outlined" style={{ fontSize: 22, color: '#4d8eff' }}>group</span>
           </div>
           <div>
-            <h1 style={{ fontSize: 16, fontWeight: 700, color: '#e5e2e1', letterSpacing: '-0.01em', lineHeight: 1, margin: 0 }}>
-              RRHH
+            <h1 style={{ fontSize: 16, fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.01em', lineHeight: 1, margin: 0 }}>
+              {t('chrono.admin')}
             </h1>
-            <p style={{ fontSize: 10, color: '#e5e2e1', opacity: .4, fontWeight: 700, letterSpacing: '.1em', marginTop: 4, textTransform: 'uppercase' }}>
-              MANAGEMENT MODULE
+            <p style={{ fontSize: 10, color: 'var(--tx)', opacity: .4, fontWeight: 700, letterSpacing: '.1em', marginTop: 4, textTransform: 'uppercase' }}>
+              {t('chrono.adminModuleSubtitle')}
             </p>
           </div>
         </div>
@@ -180,12 +180,12 @@ function ChronoAdminPage({ currentUser }: Props) {
                   borderRadius: 8, fontSize: 13, fontWeight: active ? 600 : 500,
                   letterSpacing: '.02em', cursor: 'pointer', border: 'none',
                   background: active ? 'rgba(77,142,255,.1)' : 'transparent',
-                  color: active ? '#4d8eff' : '#e5e2e1',
+                  color: active ? 'var(--ac)' : 'var(--tx)',
                   opacity: active ? 1 : .6, transition: 'all .2s', textAlign: 'left',
                   width: '100%', fontFamily: 'inherit',
-                  boxShadow: active ? '0 0 20px rgba(77,142,255,.1)' : 'none',
+                  boxShadow: active ? '0 0 20px rgba(79,110,247,.1)' : 'none',
                 }}
-                onMouseEnter={e => { if (!active) { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = '#1c1b1b'; e.currentTarget.style.transform = 'translateX(2px)'; }}}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'var(--sf2)'; e.currentTarget.style.transform = 'translateX(2px)'; }}}
                 onMouseLeave={e => { if (!active) { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'none'; }}}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{tab.icon}</span>

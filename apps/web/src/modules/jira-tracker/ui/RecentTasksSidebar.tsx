@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from '@worksuite/i18n';
 
 interface RecentTasksSidebarProps {
   worklogs: Record<string, any[]>;
@@ -6,6 +7,7 @@ interface RecentTasksSidebarProps {
 }
 
 export function RecentTasksSidebar({ worklogs, onOpenLog }: RecentTasksSidebarProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(true);
 
   const recentTasks = useMemo(() => {
@@ -41,7 +43,7 @@ export function RecentTasksSidebar({ worklogs, onOpenLog }: RecentTasksSidebarPr
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
       }}>
         {open ? '›' : '‹'}
-        {open && <span style={{ letterSpacing: '.04em', textTransform: 'uppercase' }}>Recientes</span>}
+        {open && <span style={{ letterSpacing: '.04em', textTransform: 'uppercase' }}>{t('jiraTracker.recentTasks')}</span>}
       </button>
       {open && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 6px' }}>
@@ -66,7 +68,7 @@ export function RecentTasksSidebar({ worklogs, onOpenLog }: RecentTasksSidebarPr
             </div>
           ))}
           {recentTasks.length === 0 && (
-            <div style={{ fontSize: 10, color: 'var(--tx3)', textAlign: 'center', padding: '16px 0' }}>Sin imputaciones</div>
+            <div style={{ fontSize: 10, color: 'var(--tx3)', textAlign: 'center', padding: '16px 0' }}>{t('jiraTracker.noWorklogs2')}</div>
           )}
         </div>
       )}

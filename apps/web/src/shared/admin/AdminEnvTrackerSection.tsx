@@ -12,7 +12,7 @@ function AdminEnvTrackerSection() {
     { id:"statuses",     label:t("admin.envTabStatuses"),     icon:"🏷️" },
     { id:"jirafilter",   label:t("admin.envTabJiraFilter"),   icon:"🔎" },
     { id:"policy",       label:t("admin.envTabPolicy"),       icon:"📋" },
-    { id:"historynote",  label:"Retention Note",              icon:"📝" },
+    { id:"historynote",  label:t("admin.envTabRetentionNote"), icon:"📝" },
   ];
   return (
     <div>

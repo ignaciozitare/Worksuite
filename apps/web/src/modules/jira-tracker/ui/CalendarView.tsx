@@ -113,10 +113,12 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
     return `${mon.day} ${mName} – ${sun.day} ${sName} ${sun.year}`;
   })();
 
-  // Full day names for week view headers
-  const DAYS_FULL_ES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-  const DAYS_FULL_EN = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  const DAYS_FULL = lang === 'es' ? DAYS_FULL_ES : DAYS_FULL_EN;
+  // Full day names for week view headers — from i18n
+  const DAYS_FULL = [
+    t('jiraTracker.dayMonday'), t('jiraTracker.dayTuesday'), t('jiraTracker.dayWednesday'),
+    t('jiraTracker.dayThursday'), t('jiraTracker.dayFriday'), t('jiraTracker.daySaturday'),
+    t('jiraTracker.daySunday'),
+  ];
 
   // ── Drag-and-drop handlers ─────────────────────────────
   const [dragOver, setDragOver] = useState<string | null>(null);
