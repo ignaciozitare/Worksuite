@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from '@worksuite/i18n';
 
 interface RecentTasksSidebarProps {
   worklogs: Record<string, any[]>;
@@ -6,6 +7,7 @@ interface RecentTasksSidebarProps {
 }
 
 export function RecentTasksSidebar({ worklogs, onOpenLog }: RecentTasksSidebarProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(true);
 
   const recentTasks = useMemo(() => {
@@ -41,15 +43,20 @@ export function RecentTasksSidebar({ worklogs, onOpenLog }: RecentTasksSidebarPr
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
       }}>
         {open ? '›' : '‹'}
-        {open && <span style={{ letterSpacing: '.04em', textTransform: 'uppercase' }}>Recientes</span>}
+        {open && <span style={{ letterSpacing: '.04em', textTransform: 'uppercase' }}>{t('jiraTracker.recentTasks')}</span>}
       </button>
       {open && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 6px' }}>
           {recentTasks.map(rt => (
             <div key={rt.issue}
+              draggable
+              onDragStart={e => {
+                e.dataTransfer.setData('application/jira-issue', JSON.stringify({ issueKey: rt.issue, summary: rt.summary }));
+                e.dataTransfer.effectAllowed = 'copy';
+              }}
               onClick={() => onOpenLog({ issueKey: rt.issue })}
               style={{
-                padding: '8px 8px', borderRadius: 6, cursor: 'pointer',
+                padding: '8px 8px', borderRadius: 6, cursor: 'grab',
                 marginBottom: 4, transition: 'background .1s',
                 borderLeft: '2px solid var(--ac,#4f6ef7)',
               }}
@@ -61,7 +68,7 @@ export function RecentTasksSidebar({ worklogs, onOpenLog }: RecentTasksSidebarPr
             </div>
           ))}
           {recentTasks.length === 0 && (
-            <div style={{ fontSize: 10, color: 'var(--tx3)', textAlign: 'center', padding: '16px 0' }}>Sin imputaciones</div>
+            <div style={{ fontSize: 10, color: 'var(--tx3)', textAlign: 'center', padding: '16px 0' }}>{t('jiraTracker.noWorklogs2')}</div>
           )}
         </div>
       )}

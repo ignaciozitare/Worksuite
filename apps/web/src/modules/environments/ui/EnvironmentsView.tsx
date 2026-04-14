@@ -10,6 +10,7 @@ import { SupabaseReservationHistoryRepo } from '../infra/supabase/SupabaseReserv
 import { SupabaseJiraConfigRepo }         from '../infra/supabase/SupabaseJiraConfigRepo';
 import { SupabaseReservationStatusRepo }  from '../infra/supabase/SupabaseReservationStatusRepo';
 import { SupabaseJiraFilterConfigRepo }   from '../infra/supabase/SupabaseJiraFilterConfigRepo';
+import { SupabaseEnvHistoryNoteRepo }    from '../infra/supabase/SupabaseEnvHistoryNoteRepo';
 import type { Environment }        from '../domain/entities/Environment';
 import type { Reservation, Repository, EnvPolicy } from '../domain/entities/Reservation';
 import { SupabaseEnvironmentRepo } from '../infra/supabase/SupabaseEnvironmentRepo';
@@ -39,6 +40,7 @@ const historyRepo        = new SupabaseReservationHistoryRepo(supabase);
 const jiraConfigRepo     = new SupabaseJiraConfigRepo(supabase);
 const statusRepo         = new SupabaseReservationStatusRepo(supabase);
 const jiraFilterRepo     = new SupabaseJiraFilterConfigRepo(supabase);
+const historyNoteRepo    = new SupabaseEnvHistoryNoteRepo(supabase);
 
 // ── Map reservation status category → DeployTimeline's visual vocabulary ────
 const CATEGORY_TO_TIMELINE_STATUS = {
@@ -73,26 +75,26 @@ const btnStyle = (variant='primary', extra={}) => ({
   display:'inline-flex', alignItems:'center', gap:5, padding:'6px 14px',
   borderRadius:8, fontWeight:600, fontSize:13, cursor:'pointer', border:'none',
   fontFamily:'inherit', transition:'all .15s',
-  ...(variant==='primary' && { background:'var(--ac,#4f6ef7)', color:'#fff' }),
-  ...(variant==='ghost'   && { background:'var(--sf2,#1b1b22)', color:'var(--tx3,#50506a)', border:'1px solid var(--bd,#2a2a38)' }),
+  ...(variant==='primary' && { background:'var(--ac)', color:'#fff' }),
+  ...(variant==='ghost'   && { background:'var(--sf2)', color:'var(--tx3)', border:'1px solid var(--bd)' }),
   ...(variant==='danger'  && { background:'rgba(239,68,68,.12)', color:'#ef4444', border:'1px solid rgba(239,68,68,.3)' }),
   ...(variant==='success' && { background:'rgba(34,197,94,.12)', color:'#22c55e', border:'1px solid rgba(34,197,94,.3)' }),
   ...(variant==='warn'    && { background:'rgba(245,158,11,.12)', color:'#f59e0b', border:'1px solid rgba(245,158,11,.3)' }),
-  ...(variant==='outline' && { background:'transparent', color:'var(--ac,#4f6ef7)', border:'1px solid var(--ac,#4f6ef7)' }),
+  ...(variant==='outline' && { background:'transparent', color:'var(--ac)', border:'1px solid var(--ac)' }),
   ...extra,
 });
 const inpStyle = (extra={}) => ({
   width:'100%', padding:'7px 10px', fontSize:13, fontFamily:'inherit',
-  background:'var(--sf2,#1b1b22)', border:'1px solid var(--bd,#2a2a38)',
-  borderRadius:8, color:'var(--tx,#e4e4ef)', outline:'none', ...extra,
+  background:'var(--sf2)', border:'1px solid var(--bd)',
+  borderRadius:8, color:'var(--tx)', outline:'none', ...extra,
 });
 const lblStyle = {
-  fontSize:11, fontWeight:700, color:'var(--tx3,#50506a)',
+  fontSize:11, fontWeight:700, color:'var(--tx3)',
   textTransform:'uppercase', letterSpacing:'.05em', display:'block', marginBottom:5,
 };
 
 const uid    = () => Math.random().toString(36).slice(2,10);
-const fmtDt  = iso => new Date(iso).toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'});
+const fmtDt  = (iso, locale='es-ES') => new Date(iso).toLocaleString(locale,{dateStyle:'short',timeStyle:'short'});
 const durH   = (s,e) => ((new Date(e)-new Date(s))/3600000).toFixed(1);
 const isJira = k => /^[A-Z][A-Z0-9]+-\d+$/.test(k.trim());
 const CAT    = {
@@ -112,15 +114,15 @@ function Modal({ title, onClose, children, width=520 }) {
     <div style={{position:'fixed',inset:0,zIndex:200,display:'flex',alignItems:'center',
       justifyContent:'center',padding:20,background:'rgba(0,0,0,.6)',backdropFilter:'blur(2px)'}}
       onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{background:'var(--sf,#141418)',border:'1px solid var(--bd,#2a2a38)',
+      <div style={{background:'var(--sf)',border:'1px solid var(--bd)',
         borderRadius:16,width:'100%',maxWidth:width,maxHeight:'90vh',overflow:'hidden',
         display:'flex',flexDirection:'column',boxShadow:'0 24px 80px rgba(0,0,0,.6)'}}>
         {title&&(
-          <div style={{padding:'16px 20px',borderBottom:'1px solid var(--bd,#2a2a38)',
+          <div style={{padding:'16px 20px',borderBottom:'1px solid var(--bd)',
             display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
-            <h3 style={{fontSize:15,fontWeight:700,color:'var(--tx,#e4e4ef)',margin:0,flex:1}}>{title}</h3>
+            <h3 style={{fontSize:15,fontWeight:700,color:'var(--tx)',margin:0,flex:1}}>{title}</h3>
             <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',
-              color:'var(--tx3,#50506a)',fontSize:20,lineHeight:1,fontFamily:'inherit'}}>✕</button>
+              color:'var(--tx3)',fontSize:20,lineHeight:1,fontFamily:'inherit'}}>✕</button>
           </div>
         )}
         <div style={{overflowY:'auto',flex:1,padding:'18px 20px'}}>{children}</div>
@@ -157,9 +159,9 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
   };
 
   const submit = () => {
-    if(!envId)       {setError('Selecciona un entorno.');return;}
-    if(!jiras.length){setError('Añade al menos una clave Jira.');return;}
-    if(!start||!end) {setError('Inicio y fin son obligatorios.');return;}
+    if(!envId)       {setError(t('admin.envSelectEnv'));return;}
+    if(!jiras.length){setError(t('admin.envAddJiraKey'));return;}
+    if(!start||!end) {setError(t('admin.envStartEndRequired'));return;}
     // When creating a new reservation we pick the right status based on
     // start time: if it's already past, use an "in_use" status; otherwise
     // the default "reserved" one. Both are resolved from the dynamic catalog.
@@ -183,12 +185,12 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
   };
 
   return (
-    <Modal title={isEdit?'Editar reserva':'Nueva reserva'} onClose={onClose}>
+    <Modal title={isEdit?t('admin.envEditReservation'):t('admin.envNewReservation')} onClose={onClose}>
       <div style={{display:'flex',flexDirection:'column',gap:14}}>
         <div>
-          <label style={lblStyle}>Entorno</label>
+          <label style={lblStyle}>{t('admin.envEnvironment')}</label>
           <select value={envId} onChange={e=>setEnvId(e.target.value)} style={inpStyle()}>
-            <option value="">Selecciona entorno…</option>
+            <option value="">{t('admin.envSelectEnvPlaceholder')}</option>
             {envs.filter(e=>!e.isArchived&&(isAdmin||!e.isLocked)).map(e=>(
               <option key={e.id} value={e.id}>
                 {e.isLocked?'🔒 ':''}{e.name} ({e.category}) — max {e.maxReservationDuration}h
@@ -212,21 +214,21 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
           />
         </div>
         <div>
-          <label style={lblStyle}>Descripción <span style={{fontWeight:400,textTransform:'none'}}>(opcional)</span></label>
+          <label style={lblStyle}>{t('admin.envDescription')} <span style={{fontWeight:400,textTransform:'none'}}>{t('admin.envOptional')}</span></label>
           <textarea value={desc} onChange={e=>setDesc(e.target.value)} rows={2}
-            style={inpStyle({resize:'vertical'})} placeholder="Propósito de la reserva…"/>
+            style={inpStyle({resize:'vertical'})} placeholder={t('admin.envPurposePlaceholder')}/>
         </div>
         <DateRangePicker
           startValue={start}
           endValue={end}
           onChange={(s, e) => { setStart(s); setEnd(e); }}
           maxDurationHours={selEnv?.maxReservationDuration ?? 0}
-          labels={{ start: 'Inicio', end: 'Fin', time: 'Hora' }}
+          labels={{ start: t('admin.envStart'), end: t('admin.envEnd'), time: t('admin.envTime') }}
         />
         {/* Repositorios extraidos de los tickets Jira (solo lectura) */}
         {extractedRepos.length > 0 && (
           <div>
-            <label style={lblStyle}>Repositorios (desde Jira)</label>
+            <label style={lblStyle}>{t('admin.envReposFromJira')}</label>
             <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
               {extractedRepos.map(name => (
                 <span key={name} style={{padding:'4px 10px',fontSize:12,borderRadius:20,fontFamily:'inherit',
@@ -241,9 +243,9 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
         {error&&<div style={{padding:'8px 12px',background:'rgba(239,68,68,.1)',
           border:'1px solid rgba(239,68,68,.3)',borderRadius:8,fontSize:12,color:'#ef4444'}}>⛔ {error}</div>}
         <div style={{display:'flex',justifyContent:'flex-end',gap:8,paddingTop:8,
-          borderTop:'1px solid var(--bd,#2a2a38)'}}>
-          <button style={btnStyle('ghost')} onClick={onClose}>Cancelar</button>
-          <button style={btnStyle('primary')} onClick={submit}>{isEdit?'Actualizar':'Crear'}</button>
+          borderTop:'1px solid var(--bd)'}}>
+          <button style={btnStyle('ghost')} onClick={onClose}>{t('common.cancel')}</button>
+          <button style={btnStyle('primary')} onClick={submit}>{isEdit?t('admin.envUpdate'):t('common.create')}</button>
         </div>
       </div>
     </Modal>
@@ -252,6 +254,7 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
 
 // ── Reservation detail ────────────────────────────────────────────────────────
 function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEdit, onCheckIn, onCheckOut, onCancel, onAddBranch, jiraBaseUrl="" }) {
+  const { t } = useTranslation();
   const env     = envs.find(e=>e.id===res.environmentId);
   const isOwner = currentUser?.id===res.reservedByUserId;
   const isAdmin = currentUser?.role==='admin';
@@ -269,12 +272,12 @@ function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEd
   const allRepos = [...new Set([...repoNames, ...extractedRepoNames])];
 
   return (
-    <Modal title="Detalle de reserva" onClose={onClose}>
+    <Modal title={t('admin.envDetailTitle')} onClose={onClose}>
       <div style={{display:'flex',flexDirection:'column',gap:12}}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           {env&&<span style={{padding:'2px 8px',borderRadius:20,fontSize:11,fontWeight:700,
             background:cat.bg,color:cat.color}}>{env.category}</span>}
-          <span style={{fontWeight:700,fontSize:16,color:'var(--tx,#e4e4ef)'}}>{env?.name}</span>
+          <span style={{fontWeight:700,fontSize:16,color:'var(--tx)'}}>{env?.name}</span>
         </div>
         <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
           {(res.jiraIssueKeys??[]).map(k=>(
@@ -283,28 +286,28 @@ function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEd
               background:'rgba(124,58,237,.15)',color:'#a78bfa',textDecoration:'none'}}>{k} ↗</a>
           ))}
         </div>
-        {res.description&&<p style={{fontSize:13,color:'var(--tx3,#50506a)',lineHeight:1.5}}>{res.description}</p>}
+        {res.description&&<p style={{fontSize:13,color:'var(--tx3)',lineHeight:1.5}}>{res.description}</p>}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,fontSize:12}}>
           {[
-            ['Responsable', owner?.name??owner?.email??'—'],
-            ['Duración',    durH(res.plannedStart,res.plannedEnd)+'h'],
-            ['Inicio',      fmtDt(res.plannedStart)],
-            ['Fin',         fmtDt(res.plannedEnd)],
+            [t('admin.envResponsible'), owner?.name??owner?.email??'—'],
+            [t('admin.envDuration'),    durH(res.plannedStart,res.plannedEnd)+'h'],
+            [t('admin.envPlannedStart'),fmtDt(res.plannedStart)],
+            [t('admin.envPlannedEnd'),  fmtDt(res.plannedEnd)],
             ...(res.usageSession?[
-              ['Inicio real', fmtDt(res.usageSession.actual_start)],
-              ['Fin real',    res.usageSession.actual_end?fmtDt(res.usageSession.actual_end):'—'],
+              [t('admin.envActualStart'), fmtDt(res.usageSession.actual_start)],
+              [t('admin.envActualEnd'),   res.usageSession.actual_end?fmtDt(res.usageSession.actual_end):'—'],
             ]:[]),
           ].map(([l,v])=>(
             <div key={l}>
-              <div style={{fontSize:10,fontWeight:700,color:'var(--tx3,#50506a)',
+              <div style={{fontSize:10,fontWeight:700,color:'var(--tx3)',
                 textTransform:'uppercase',letterSpacing:'.04em',marginBottom:2}}>{l}</div>
-              <div style={{color:'var(--tx,#e4e4ef)'}}>{v}</div>
+              <div style={{color:'var(--tx)'}}>{v}</div>
             </div>
           ))}
         </div>
         {allRepos.length>0&&<div style={{display:'flex',flexWrap:'wrap',gap:4}}>
           {allRepos.map(n=><span key={n} style={{padding:'2px 8px',borderRadius:4,fontSize:12,
-            background:'var(--sf2,#1b1b22)',color:'var(--tx3,#50506a)'}}>📦 {n}</span>)}
+            background:'var(--sf2)',color:'var(--tx3)'}}>📦 {n}</span>)}
         </div>}
         {(res.usageSession?.branches??[]).length>0&&<div style={{display:'flex',flexWrap:'wrap',gap:4}}>
           {res.usageSession.branches.map(b=><span key={b} style={{padding:'2px 8px',borderRadius:4,
@@ -318,26 +321,26 @@ function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEd
                   style={inpStyle({fontFamily:'monospace',flex:1,width:'auto'})}
                   onKeyDown={e=>{if(e.key==='Enter'&&branch.trim()){onAddBranch(branch.trim());setBranch('');setShowB(false);}}}/>
                 <button style={btnStyle('primary',{padding:'6px 12px'})}
-                  onClick={()=>{if(branch.trim()){onAddBranch(branch.trim());setBranch('');setShowB(false);}}}>Añadir</button>
+                  onClick={()=>{if(branch.trim()){onAddBranch(branch.trim());setBranch('');setShowB(false);}}}>{t('admin.envAddBtn')}</button>
                 <button style={btnStyle('ghost',{padding:'6px 12px'})} onClick={()=>setShowB(false)}>×</button>
               </div>
             ):(
-              <button style={btnStyle('outline',{fontSize:12})} onClick={()=>setShowB(true)}>+ Añadir rama</button>
+              <button style={btnStyle('outline',{fontSize:12})} onClick={()=>setShowB(true)}>{t('admin.envAddBranch')}</button>
             )}
           </div>
         )}
         {env?.url&&<a href={env.url} target="_blank" rel="noopener noreferrer"
           style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'9px 14px',
-            background:'var(--ac,#4f6ef7)',color:'#fff',borderRadius:8,textDecoration:'none',fontSize:14,fontWeight:600}}>
-          🔗 Acceder al entorno
+            background:'var(--ac)',color:'#fff',borderRadius:8,textDecoration:'none',fontSize:14,fontWeight:600}}>
+          {t('admin.envAccessEnv')}
         </a>}
-        <div style={{display:'flex',flexWrap:'wrap',gap:8,paddingTop:12,borderTop:'1px solid var(--bd,#2a2a38)'}}>
-          {canEdit  &&<button style={btnStyle('primary')} onClick={()=>onEdit(res)}>✏️ Editar</button>}
-          {canCI    &&<button style={btnStyle('success')} onClick={onCheckIn}>▶ Iniciar</button>}
-          {canCO    &&<button style={btnStyle('warn')}    onClick={onCheckOut}>⏹ Finalizar</button>}
-          {canCancel&&<button style={btnStyle('danger')}  onClick={onCancel}>✕ Cancelar</button>}
+        <div style={{display:'flex',flexWrap:'wrap',gap:8,paddingTop:12,borderTop:'1px solid var(--bd)'}}>
+          {canEdit  &&<button style={btnStyle('primary')} onClick={()=>onEdit(res)}>{t('common.edit')}</button>}
+          {canCI    &&<button style={btnStyle('success')} onClick={onCheckIn}>{t('admin.envCheckIn')}</button>}
+          {canCO    &&<button style={btnStyle('warn')}    onClick={onCheckOut}>{t('admin.envCheckOut')}</button>}
+          {canCancel&&<button style={btnStyle('danger')}  onClick={onCancel}>{t('common.cancel')}</button>}
           <div style={{marginLeft:'auto'}}>
-            <button style={btnStyle('ghost')} onClick={onClose}>Cerrar</button>
+            <button style={btnStyle('ghost')} onClick={onClose}>{t('common.close')}</button>
           </div>
         </div>
       </div>
@@ -347,21 +350,22 @@ function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEd
 
 // ── Confirm ───────────────────────────────────────────────────────────────────
 function ConfirmDialog({ message, onConfirm, onCancel }) {
+  const { t } = useTranslation();
   return (
     <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',
       justifyContent:'center',background:'rgba(0,0,0,.7)',padding:16}} onClick={onCancel}>
       <div onClick={e=>e.stopPropagation()}
-        style={{background:'var(--sf,#141418)',border:'1px solid var(--bd,#2a2a38)',
+        style={{background:'var(--sf)',border:'1px solid var(--bd)',
           borderRadius:14,maxWidth:400,width:'100%',overflow:'hidden',
           boxShadow:'0 24px 60px rgba(0,0,0,.6)'}}>
-        <div style={{padding:'18px 20px 16px',borderBottom:'1px solid var(--bd,#2a2a38)'}}>
-          <span style={{fontWeight:700,fontSize:15,color:'var(--tx,#e4e4ef)'}}>⚠️ Confirmar acción</span>
+        <div style={{padding:'18px 20px 16px',borderBottom:'1px solid var(--bd)'}}>
+          <span style={{fontWeight:700,fontSize:15,color:'var(--tx)'}}>{t('admin.envConfirmTitle')}</span>
         </div>
         <div style={{padding:'16px 20px'}}>
-          <p style={{color:'var(--tx3,#50506a)',fontSize:13,lineHeight:1.6,marginBottom:20}}>{message}</p>
+          <p style={{color:'var(--tx3)',fontSize:13,lineHeight:1.6,marginBottom:20}}>{message}</p>
           <div style={{display:'flex',justifyContent:'flex-end',gap:8}}>
-            <button style={btnStyle('ghost')} onClick={onCancel}>Cancelar</button>
-            <button style={btnStyle('danger')} onClick={()=>{onConfirm();onCancel();}}>Confirmar</button>
+            <button style={btnStyle('ghost')} onClick={onCancel}>{t('common.cancel')}</button>
+            <button style={btnStyle('danger')} onClick={()=>{onConfirm();onCancel();}}>{t('common.confirm')}</button>
           </div>
         </div>
       </div>
@@ -377,6 +381,7 @@ const GANTT_CAT_COLORS = {
 };
 
 function GanttView({ reservations, envs, onBarClick }) {
+  const { t } = useTranslation();
   const bars = useMemo(() => reservations
     .filter(r => r.plannedStart && r.plannedEnd)
     .map(r => {
@@ -399,8 +404,8 @@ function GanttView({ reservations, envs, onBarClick }) {
 
   if (!bars.length) {
     return (
-      <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
-        No hay reservas con fechas para mostrar en el Gantt.
+      <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize:13}}>
+        {t('admin.envNoGanttData')}
       </div>
     );
   }
@@ -410,17 +415,22 @@ function GanttView({ reservations, envs, onBarClick }) {
 
 // ── History view ──────────────────────────────────────────────────────────────
 function HistoryView({ onSelect }) {
-  const [history, setHistory]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [selected, setSelected] = useState(null);
+  const { t } = useTranslation();
+  const [history, setHistory]       = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [selected, setSelected]     = useState(null);
+  const [historyNote, setHistoryNote] = useState('');
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
-        const data = await historyRepo.findRecent(2);
-        if (!cancelled) setHistory(data);
+        const [data, note] = await Promise.all([
+          historyRepo.findRecent(2),
+          historyNoteRepo.get(),
+        ]);
+        if (!cancelled) { setHistory(data); setHistoryNote(note); }
       } catch (err) {
         console.error('[HistoryView] error cargando historial', err);
       } finally { if (!cancelled) setLoading(false); }
@@ -428,104 +438,169 @@ function HistoryView({ onSelect }) {
     return () => { cancelled = true; };
   }, []);
 
-  const thStyle = {
-    padding:'8px 12px', fontSize:11, fontWeight:700, color:'var(--tx3,#50506a)',
-    textTransform:'uppercase', letterSpacing:'.04em', textAlign:'left',
-    borderBottom:'1px solid var(--bd,#2a2a38)', background:'var(--sf2,#1b1b22)',
-  };
-  const tdStyle = {
-    padding:'8px 12px', fontSize:12, color:'var(--tx,#e4e4ef)',
-    borderBottom:'1px solid var(--bd,#2a2a38)',
-  };
+  // ── Computed metrics ─────────────────────────────────────────────────────
+  const metrics = useMemo(() => {
+    const total = history.length;
+    const completed = history.filter(h => h.status === 'Completed').length;
+    const cancelled = history.filter(h => h.status === 'Cancelled').length;
+    const durations = history
+      .filter(h => h.planned_start && h.planned_end)
+      .map(h => parseFloat(durH(h.planned_start, h.actual_end ?? h.planned_end)));
+    const avg = durations.length ? (durations.reduce((a,b)=>a+b,0) / durations.length).toFixed(1) : '0';
+    const completionRate = total ? Math.round((completed / total) * 100) : 0;
+    return { total, completed, cancelled, avg, completionRate };
+  }, [history]);
 
   const statusBadge = (status) => {
     const map = {
-      Reserved:  { color:'#4f6ef7', bg:'rgba(79,110,247,.12)' },
-      InUse:     { color:'#22c55e', bg:'rgba(34,197,94,.12)' },
-      Completed: { color:'#a78bfa', bg:'rgba(124,58,237,.12)' },
-      Cancelled: { color:'#ef4444', bg:'rgba(239,68,68,.12)' },
+      Reserved:  { color:'#adc6ff', bg:'rgba(173,198,255,.1)' },
+      InUse:     { color:'#4ae176', bg:'rgba(74,225,118,.1)' },
+      Completed: { color:'#4ae176', bg:'rgba(74,225,118,.1)' },
+      Cancelled: { color:'#ffb779', bg:'rgba(255,183,121,.1)' },
     };
     const s = map[status] ?? map.Reserved;
     return (
-      <span style={{padding:'2px 8px',borderRadius:12,fontSize:11,fontWeight:600,
+      <span style={{padding:'3px 10px',borderRadius:4,fontSize:10,fontWeight:700,
+        textTransform:'uppercase',letterSpacing:'.04em',
         background:s.bg,color:s.color}}>{status}</span>
     );
   };
 
   if (loading) {
     return (
-      <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
-        Cargando historial…
+      <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize:13}}>
+        {t('admin.envLoadingHistory')}
       </div>
     );
   }
 
-  if (!history.length) {
-    return (
-      <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
-        Sin registros en los últimos 2 meses.
-      </div>
-    );
-  }
+  const thStyle = {
+    padding:'12px 20px', fontSize:11, fontWeight:700, color:'var(--tx3)',
+    textTransform:'uppercase', letterSpacing:'.06em', textAlign:'left',
+    background:'var(--sf2)',
+  };
+  const tdStyle = {
+    padding:'12px 20px', fontSize:13, color:'var(--tx)',
+    borderBottom:'1px solid var(--bd)',
+  };
 
   return (
-    <div style={{overflowX:'auto'}}>
-      <table style={{width:'100%',borderCollapse:'collapse',minWidth:800}}>
-        <thead>
-          <tr>
-            <th style={thStyle}>Fecha</th>
-            <th style={thStyle}>Usuario</th>
-            <th style={thStyle}>Entorno</th>
-            <th style={thStyle}>Claves Jira</th>
-            <th style={thStyle}>Repos</th>
-            <th style={thStyle}>Duración</th>
-            <th style={thStyle}>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          {history.map(h => (
-            <tr key={h.id} onClick={()=>setSelected(h)}
-              style={{cursor:'pointer',transition:'background .1s'}}
-              onMouseEnter={e=>e.currentTarget.style.background='rgba(79,110,247,.06)'}
-              onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-              <td style={tdStyle}>{fmtDt(h.created_at)}</td>
-              <td style={tdStyle}>{h.reserved_by_name || '—'}</td>
-              <td style={tdStyle}>{h.environment_name || '—'}</td>
-              <td style={tdStyle}>
-                <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
-                  {(h.jira_issue_keys??[]).map(k=>(
-                    <span key={k} style={{padding:'1px 6px',borderRadius:4,fontSize:11,fontFamily:'monospace',
-                      background:'rgba(124,58,237,.12)',color:'#a78bfa'}}>{k}</span>
-                  ))}
-                </div>
-              </td>
-              <td style={tdStyle}>
-                <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
-                  {(h.repos??[]).map(r=>(
-                    <span key={r} style={{padding:'1px 6px',borderRadius:4,fontSize:11,
-                      background:'var(--sf2,#1b1b22)',color:'var(--tx3,#50506a)'}}>{r}</span>
-                  ))}
-                  {(!h.repos||!h.repos.length)&&<span style={{color:'var(--tx3,#50506a)'}}>—</span>}
-                </div>
-              </td>
-              <td style={tdStyle}>
-                {h.planned_start && h.planned_end
-                  ? durH(h.planned_start, h.actual_end ?? h.planned_end) + 'h'
-                  : '—'}
-              </td>
-              <td style={tdStyle}>{statusBadge(h.status)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div>
+      {/* ── Stats Overview ────────────────────────────────────── */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16,marginBottom:28}}>
+        {[
+          { label: t('admin.envHistoryMetricTotal'), value: metrics.total, sub: null, subColor: null },
+          { label: t('admin.envHistoryMetricCompleted'), value: metrics.completed, sub: `${metrics.completionRate}%`, subColor: '#4ae176' },
+          { label: t('admin.envHistoryMetricAvgDuration'), value: `${metrics.avg}h`, sub: null, subColor: null },
+          { label: t('admin.envHistoryMetricCancelled'), value: metrics.cancelled, sub: metrics.total ? `${((metrics.cancelled/metrics.total)*100).toFixed(1)}%` : '0%', subColor: '#ffb4ab' },
+        ].map(m => (
+          <div key={m.label} style={{padding:16,background:'var(--sf2)',borderRadius:8,
+            border:'1px solid var(--bd)',transition:'border-color .15s'}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(77,142,255,.2)';}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor='var(--bd)';}}>
+            <p style={{fontSize:10,fontWeight:700,letterSpacing:'.1em',color:'var(--tx3)',
+              textTransform:'uppercase',marginBottom:4}}>{m.label}</p>
+            <div style={{display:'flex',alignItems:'baseline',gap:8}}>
+              <span style={{fontSize:24,fontWeight:600,letterSpacing:'-0.02em'}}>{m.value}</span>
+              {m.sub && <span style={{fontSize:12,fontWeight:500,color:m.subColor}}>{m.sub}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Audit Trail Table ─────────────────────────────────── */}
+      {!history.length ? (
+        <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize:13}}>
+          {t('admin.envHistoryNoRecords')}
+        </div>
+      ) : (
+        <div style={{background:'var(--sf2)',borderRadius:12,overflow:'hidden',
+          border:'1px solid var(--bd)',boxShadow:'0 8px 40px rgba(0,0,0,.3)'}}>
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%',borderCollapse:'collapse',minWidth:900}}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>{t('admin.envHistoryColEnv')}</th>
+                  <th style={thStyle}>{t('admin.envHistoryColUser')}</th>
+                  <th style={thStyle}>{t('admin.envHistoryColRange')}</th>
+                  <th style={thStyle}>{t('admin.envHistoryColDuration')}</th>
+                  <th style={thStyle}>{t('admin.envHistoryColStatus')}</th>
+                  <th style={thStyle}>{t('admin.envHistoryColJira')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map(h => (
+                  <tr key={h.id} onClick={()=>setSelected(h)}
+                    style={{cursor:'pointer',transition:'background .15s'}}
+                    onMouseEnter={e=>{e.currentTarget.style.background='var(--sf3)';}}
+                    onMouseLeave={e=>{e.currentTarget.style.background='transparent';}}>
+                    <td style={tdStyle}>
+                      <div style={{display:'flex',alignItems:'center',gap:10}}>
+                        <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
+                          background: h.status==='Completed'?'var(--green)' : h.status==='Cancelled'?'var(--amber)' : h.status==='InUse'?'var(--ac2)':'var(--red)'}} />
+                        <div>
+                          <div style={{fontSize:13,fontWeight:600,color:'var(--tx)'}}>{h.environment_name || '—'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{fontSize:13,color:'var(--tx2)'}}>{h.reserved_by_name || '—'}</span>
+                    </td>
+                    <td style={tdStyle}>
+                      <div style={{fontSize:13,color:'var(--tx)'}}>
+                        {h.planned_start ? new Date(h.planned_start).toLocaleDateString(undefined,{day:'numeric',month:'short'}) : '—'}
+                        {h.planned_end ? ` – ${new Date(h.planned_end).toLocaleDateString(undefined,{day:'numeric',month:'short'})}` : ''}
+                      </div>
+                      {h.created_at && <div style={{fontSize:10,color:'var(--tx3)'}}>
+                        {new Date(h.created_at).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})}
+                      </div>}
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{fontSize:13,fontWeight:500}}>
+                        {h.planned_start && h.planned_end
+                          ? durH(h.planned_start, h.actual_end ?? h.planned_end) + 'h' : '—'}
+                      </span>
+                    </td>
+                    <td style={tdStyle}>{statusBadge(h.status)}</td>
+                    <td style={tdStyle}>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                        {(h.jira_issue_keys??[]).map(k=>(
+                          <span key={k} style={{padding:'2px 8px',borderRadius:4,fontSize:10,fontWeight:700,
+                            fontFamily:'monospace',background:'var(--sf3)',color:'var(--ac2)'}}>{k}</span>
+                        ))}
+                        {(!h.jira_issue_keys||!h.jira_issue_keys.length)&&<span style={{color:'var(--tx3)'}}>—</span>}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Retention Policy Section ──────────────────────────── */}
+      {historyNote && (
+        <div style={{marginTop:40,marginBottom:24}}>
+          <div style={{background:'var(--sf2)',borderRadius:12,padding:28,
+            borderTop:'1px solid var(--bd)'}}>
+            <h3 style={{fontSize:18,fontWeight:600,marginBottom:12,display:'flex',alignItems:'center',gap:10,color:'var(--tx)'}}>
+              <span className="material-symbols-outlined" style={{fontSize:22,color:'var(--ac2)'}}>analytics</span>
+              {t('admin.envRetentionTitle')}
+            </h3>
+            <div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.7,maxWidth:720}}
+              dangerouslySetInnerHTML={{__html: historyNote}} />
+          </div>
+        </div>
+      )}
 
       {/* History detail modal */}
       {selected && (
-        <Modal title="Detalle de reserva (historial)" onClose={()=>setSelected(null)} width={560}>
+        <Modal title={t('admin.envHistoryDetail')} onClose={()=>setSelected(null)} width={560}>
           <div style={{display:'flex',flexDirection:'column',gap:12}}>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               {statusBadge(selected.status)}
-              <span style={{fontWeight:700,fontSize:16,color:'var(--tx,#e4e4ef)'}}>{selected.environment_name}</span>
+              <span style={{fontWeight:700,fontSize:16,color:'var(--tx)'}}>{selected.environment_name}</span>
             </div>
 
             <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
@@ -535,42 +610,42 @@ function HistoryView({ onSelect }) {
               ))}
             </div>
 
-            {selected.description&&<p style={{fontSize:13,color:'var(--tx3,#50506a)',lineHeight:1.5}}>{selected.description}</p>}
+            {selected.description&&<p style={{fontSize:13,color:'var(--tx3)',lineHeight:1.5}}>{selected.description}</p>}
 
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,fontSize:12}}>
               {[
-                ['Responsable',  selected.reserved_by_name || '—'],
-                ['Entorno',      selected.environment_name || '—'],
-                ['Inicio plan.', selected.planned_start ? fmtDt(selected.planned_start) : '—'],
-                ['Fin plan.',    selected.planned_end   ? fmtDt(selected.planned_end)   : '—'],
-                ['Fin real',     selected.actual_end    ? fmtDt(selected.actual_end)     : '—'],
-                ['Duración',     selected.planned_start && selected.planned_end
+                [t('admin.envHistoryResponsible'),  selected.reserved_by_name || '—'],
+                [t('admin.envHistoryEnv'),      selected.environment_name || '—'],
+                [t('admin.envHistoryPlannedStart'), selected.planned_start ? fmtDt(selected.planned_start) : '—'],
+                [t('admin.envHistoryPlannedEnd'),    selected.planned_end   ? fmtDt(selected.planned_end)   : '—'],
+                [t('admin.envHistoryActualEnd'),     selected.actual_end    ? fmtDt(selected.actual_end)     : '—'],
+                [t('admin.envHistoryDuration'),     selected.planned_start && selected.planned_end
                                    ? durH(selected.planned_start, selected.actual_end ?? selected.planned_end) + 'h' : '—'],
-                ['Registrado',   selected.created_at ? fmtDt(selected.created_at) : '—'],
+                [t('admin.envHistoryCreated'),   selected.created_at ? fmtDt(selected.created_at) : '—'],
               ].map(([l,v])=>(
                 <div key={l}>
-                  <div style={{fontSize:10,fontWeight:700,color:'var(--tx3,#50506a)',
+                  <div style={{fontSize:10,fontWeight:700,color:'var(--tx3)',
                     textTransform:'uppercase',letterSpacing:'.04em',marginBottom:2}}>{l}</div>
-                  <div style={{color:'var(--tx,#e4e4ef)'}}>{v}</div>
+                  <div style={{color:'var(--tx)'}}>{v}</div>
                 </div>
               ))}
             </div>
 
             {(selected.repos??[]).length>0&&(
               <div>
-                <div style={{fontSize:10,fontWeight:700,color:'var(--tx3,#50506a)',textTransform:'uppercase',
-                  letterSpacing:'.04em',marginBottom:4}}>Repositorios</div>
+                <div style={{fontSize:10,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',
+                  letterSpacing:'.04em',marginBottom:4}}>{t('admin.envHistoryRepos')}</div>
                 <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
                   {selected.repos.map(r=>(
                     <span key={r} style={{padding:'3px 8px',borderRadius:4,fontSize:12,
-                      background:'var(--sf2,#1b1b22)',color:'var(--tx3,#50506a)'}}>📦 {r}</span>
+                      background:'var(--sf2)',color:'var(--tx3)'}}>{r}</span>
                   ))}
                 </div>
               </div>
             )}
 
-            <div style={{display:'flex',justifyContent:'flex-end',paddingTop:8,borderTop:'1px solid var(--bd,#2a2a38)'}}>
-              <button style={btnStyle('ghost')} onClick={()=>setSelected(null)}>Cerrar</button>
+            <div style={{display:'flex',justifyContent:'flex-end',paddingTop:8,borderTop:'1px solid var(--bd)'}}>
+              <button style={btnStyle('ghost')} onClick={()=>setSelected(null)}>{t('common.close')}</button>
             </div>
           </div>
         </Modal>
@@ -581,6 +656,7 @@ function HistoryView({ onSelect }) {
 
 // ── Main view ──────────────────────────────────────────────────────────────────
 export function EnvironmentsView({ currentUser, wsUsers }) {
+  const { t } = useTranslation();
   const [envs,   setEnvs]   = useState([]);
   const [res,    setRes]    = useState([]);
   const [repos,  setRepos]  = useState([]);
@@ -591,6 +667,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   const [loading, setLoading] = useState(true);
   const [filter,  setFilter]  = useState('active');
   const [search,  setSearch]  = useState('');
+  const [viewMode, setViewMode] = useState<'list'|'grid'>('list');
   const [form,    setForm]    = useState(null);
   const [detail,  setDetail]  = useState(null);
   const [confirm, setConfirm] = useState(null);
@@ -737,7 +814,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
     setDetail(null);
   };
   const handleCancel = r => setConfirm({
-    message:'¿Seguro que quieres cancelar esta reserva?',
+    message:t('admin.envConfirmCancel'),
     onConfirm:async()=>{
       if (!cancelledStatus) { console.error('[EnvironmentsView] no cancelled status configured'); return; }
       const actualEnd = new Date().toISOString();
@@ -768,8 +845,12 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
     if (reservation) setDetail(reservation);
   };
 
-  const filterTabs=[{id:'all',label:'Todas'},{id:'active',label:'Activas'},{id:'mine',label:'Mis reservas'}];
-  const mainTabs=[{id:'reservas',label:'Reservas'},{id:'gantt',label:'Timeline'},{id:'historial',label:'Historial'}];
+  const filterTabs=[{id:'all',label:t('admin.envFilterAll')},{id:'active',label:t('admin.envFilterActive')},{id:'mine',label:t('admin.envFilterMine')}];
+  const mainTabs=[
+    {id:'reservas', label:t('admin.envTabReservas'),  icon:'event_note'},
+    {id:'gantt',    label:t('admin.envTabTimeline'),  icon:'timeline'},
+    {id:'historial',label:t('admin.envTabHistorial'), icon:'history'},
+  ];
 
   // ── Environment sidebar data ────────────────────────────────────────────────
   const [sidebarAvailOnly, setSidebarAvailOnly] = useState(false);
@@ -791,129 +872,241 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   }, [res]);
 
   return (
-    <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
-      {/* Main tabs */}
-      <div style={{display:'flex',alignItems:'center',gap:10,padding:'12px 20px',
-        borderBottom:'1px solid var(--bd,#2a2a38)',background:'var(--sf,#141418)',flexShrink:0}}>
-        <div style={{display:'flex',gap:2,background:'var(--sf2,#1b1b22)',
-          border:'1px solid var(--bd,#2a2a38)',borderRadius:8,padding:3}}>
-          {mainTabs.map(t=>(
-            <button key={t.id} onClick={()=>setMainTab(t.id)}
-              style={{padding:'4px 12px',fontSize:12,fontWeight:mainTab===t.id?600:400,borderRadius:6,
-                border:'none',cursor:'pointer',fontFamily:'inherit',
-                background:mainTab===t.id?'var(--ac,#4f6ef7)':'transparent',
-                color:mainTab===t.id?'#fff':'var(--tx3,#50506a)',
-                boxShadow:mainTab===t.id?'0 1px 3px rgba(0,0,0,.15)':'none'}}>
-              {t.label}
-            </button>
-          ))}
+    <div className="ev" style={{display:'flex',height:'100%',overflow:'hidden',fontFamily:"'Inter',system-ui,-apple-system,sans-serif",background:'var(--bg)',color:'var(--tx)'}}>
+      <style>{`
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+.ev *{box-sizing:border-box;}
+.ev button,.ev select,.ev input,.ev textarea{font-family:'Inter',system-ui,-apple-system,sans-serif;}
+.ev .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:300;font-style:normal;display:inline-block;line-height:1;text-transform:none;letter-spacing:normal;word-wrap:normal;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased;font-size:inherit;}
+.ev ::-webkit-scrollbar{width:4px;height:4px;}
+.ev ::-webkit-scrollbar-track{background:var(--bg);}
+.ev ::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px;}
+/* Nav sidebar */
+.ev .ev-sidebar{position:sticky;top:0;width:240px;min-width:240px;height:100%;min-height:calc(100vh - 52px);align-self:stretch;background:var(--sf);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid var(--bd);display:flex;flex-direction:column;padding:16px;gap:4px;z-index:30;overflow-y:auto;}
+.ev .ev-nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:500;letter-spacing:.02em;cursor:pointer;border:none;background:transparent;color:var(--tx);opacity:.6;transition:all .2s;text-align:left;width:100%;font-family:inherit;}
+.ev .ev-nav-item:hover{opacity:1;background:var(--sf2);transform:translateX(2px);}
+.ev .ev-nav-item.active{opacity:1;color:var(--ac);background:rgba(79,110,247,.1);font-weight:600;box-shadow:0 0 20px rgba(79,110,247,.1);}
+/* Right sidebar */
+.ev .ev-right-sidebar{width:240px;min-width:240px;align-self:stretch;background:var(--sf);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-left:1px solid var(--bd);overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:6px;}
+/* CTA button */
+.ev .ev-cta{width:100%;background:linear-gradient(135deg,var(--ac2),var(--ac));color:#fff;font-weight:600;padding:10px 16px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;letter-spacing:.02em;transition:all .3s;font-family:inherit;}
+.ev .ev-cta:hover{filter:drop-shadow(0 0 12px rgba(79,110,247,.3));}
+.ev .ev-cta:active{transform:scale(.95);}
+/* View toggle */
+.ev .ev-view-toggle{display:flex;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:3px;height:34px;}
+.ev .ev-view-btn{display:flex;align-items:center;justify-content:center;padding:0 10px;border-radius:6px;border:none;cursor:pointer;background:transparent;color:var(--tx3);transition:all .15s;font-family:inherit;}
+.ev .ev-view-btn.active{background:var(--sf3);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.15);}
+.ev .ev-view-btn:hover:not(.active){color:var(--tx2);}
+/* Grid cards */
+.ev .ev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;}
+.ev .ev-grid-card{position:relative;background:var(--sf2);border-radius:8px;padding:20px;overflow:hidden;cursor:pointer;transition:all .2s;border:1px solid var(--bd);}
+.ev .ev-grid-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(79,110,247,.15),transparent);border-radius:8px 8px 0 0;}
+.ev .ev-grid-card:hover{box-shadow:0 8px 40px rgba(79,110,247,.08);}
+/* List cards */
+.ev .ev-list{display:flex;flex-direction:column;gap:8px;}
+.ev .ev-list-card{position:relative;display:flex;align-items:center;gap:16px;background:var(--sf2);border-radius:8px;padding:14px 16px 14px 20px;overflow:hidden;cursor:pointer;transition:all .2s;border:1px solid var(--bd);}
+.ev .ev-list-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(79,110,247,.15),transparent);border-radius:8px 8px 0 0;}
+.ev .ev-list-card:hover{box-shadow:0 8px 40px rgba(79,110,247,.08);}
+      `}</style>
+
+      {/* ── Left Navigation Sidebar ─────────────────────────────────── */}
+      <aside className="ev-sidebar">
+        {/* Brand header */}
+        <div style={{padding:'24px 12px 8px',display:'flex',alignItems:'center',gap:12}}>
+          <div style={{width:40,height:40,borderRadius:8,background:'rgba(77,142,255,.2)',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            border:'1px solid rgba(77,142,255,.3)'}}>
+            <span className="material-symbols-outlined" style={{fontSize:22,color:'#4d8eff'}}>hub</span>
+          </div>
+          <div>
+            <h1 style={{fontSize:16,fontWeight:700,color:'var(--tx)',letterSpacing:'-0.01em',lineHeight:1,margin:0}}>{t('admin.envTracker')}</h1>
+            <p style={{fontSize:10,color:'var(--tx)',opacity:.4,fontWeight:700,letterSpacing:'.1em',marginTop:4,textTransform:'uppercase'}}>{t('admin.envModuleSubtitle')}</p>
+          </div>
         </div>
 
-        {/* Filter bar solo en vista Reservas */}
+        {/* CTA */}
+        <div style={{padding:'0 4px',margin:'16px 0 24px'}}>
+          <button className="ev-cta" onClick={()=>{ setForm('new'); void loadAvailableTickets(); }}>
+            <span className="material-symbols-outlined" style={{fontSize:18}}>add_circle</span>
+            <span>{t('admin.envNewReservation')}</span>
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav style={{flex:1,display:'flex',flexDirection:'column',gap:2}}>
+          {mainTabs.map(t=>(
+            <button key={t.id}
+              className={`ev-nav-item${mainTab===t.id?' active':''}`}
+              onClick={()=>setMainTab(t.id)}>
+              <span className="material-symbols-outlined" style={{fontSize:20}}>{t.icon}</span>
+              <span>{t.label}</span>
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      {/* ── Main Content ────────────────────────────────────────────── */}
+      <div style={{flex:1,minWidth:0,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        {/* Filter bar (only on Reservas tab) */}
         {mainTab==='reservas'&&(
-          <>
-            <div style={{display:'flex',gap:2,background:'var(--sf2,#1b1b22)',
-              border:'1px solid var(--bd,#2a2a38)',borderRadius:8,padding:3,marginLeft:8}}>
-              {filterTabs.map(t=>(
-                <button key={t.id} onClick={()=>setFilter(t.id)}
-                  style={{padding:'4px 12px',fontSize:12,fontWeight:filter===t.id?600:400,borderRadius:6,
+          <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 20px',
+            borderBottom:'1px solid var(--bd)',flexShrink:0}}>
+            {/* View toggle */}
+            <div className="ev-view-toggle">
+              <button className={`ev-view-btn${viewMode==='list'?' active':''}`} onClick={()=>setViewMode('list')} title={t('admin.envViewList')}>
+                <span className="material-symbols-outlined" style={{fontSize:18}}>view_list</span>
+              </button>
+              <button className={`ev-view-btn${viewMode==='grid'?' active':''}`} onClick={()=>setViewMode('grid')} title={t('admin.envViewGrid')}>
+                <span className="material-symbols-outlined" style={{fontSize:18}}>grid_view</span>
+              </button>
+            </div>
+            {/* Filters */}
+            <div style={{display:'flex',gap:2,background:'var(--sf2)',
+              border:'1px solid var(--bd)',borderRadius:8,padding:3}}>
+              {filterTabs.map(ft=>(
+                <button key={ft.id} onClick={()=>setFilter(ft.id)}
+                  style={{padding:'4px 12px',fontSize:12,fontWeight:filter===ft.id?600:400,borderRadius:6,
                     border:'none',cursor:'pointer',fontFamily:'inherit',
-                    background:filter===t.id?'var(--sf,#141418)':'transparent',
-                    color:filter===t.id?'var(--tx,#e4e4ef)':'var(--tx3,#50506a)',
-                    boxShadow:filter===t.id?'0 1px 3px rgba(0,0,0,.15)':'none'}}>
-                  {t.label}
+                    background:filter===ft.id?'var(--sf3)':'transparent',
+                    color:filter===ft.id?'var(--tx)':'var(--tx3)',
+                    boxShadow:filter===ft.id?'0 1px 3px rgba(0,0,0,.15)':'none',transition:'all .15s'}}>
+                  {ft.label}
                 </button>
               ))}
             </div>
-            <input placeholder="Buscar por ticket o entorno…" value={search} onChange={e=>setSearch(e.target.value)}
-              style={inpStyle({width:200,padding:'6px 10px',fontSize:12})}/>
-          </>
+            <input placeholder={t('admin.envSearchPlaceholder')} value={search} onChange={e=>setSearch(e.target.value)}
+              style={{width:220,padding:'7px 12px',fontSize:12,fontFamily:'inherit',
+                background:'var(--sf2)',border:'1px solid var(--bd)',
+                borderRadius:8,color:'var(--tx)',outline:'none'}}/>
+          </div>
         )}
 
-        <div style={{marginLeft:'auto'}}>
-          <button style={btnStyle('primary',{padding:'7px 14px'})} onClick={()=>{ setForm('new'); void loadAvailableTickets(); }}>
-            + Nueva reserva
-          </button>
-        </div>
-      </div>
-
-      {/* Body: sidebar + content */}
-      <div style={{display:'flex',flex:1,overflow:'hidden'}}>
-        {/* ── Environment Sidebar ──────────────────────────────────────── */}
-        <div style={{width:220,flexShrink:0,borderRight:'1px solid var(--bd,#2a2a38)',
-          background:'var(--sf,#141418)',overflowY:'auto',padding:'12px 10px',
-          display:'flex',flexDirection:'column',gap:6}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4,padding:'0 4px'}}>
-            <span style={{fontSize:11,fontWeight:700,color:'var(--tx3,#50506a)',textTransform:'uppercase',letterSpacing:'.05em'}}>Entornos</span>
-            <button onClick={()=>setSidebarAvailOnly(v=>!v)}
-              style={{fontSize:10,padding:'2px 8px',borderRadius:10,cursor:'pointer',fontFamily:'inherit',fontWeight:600,
-                border:`1px solid ${sidebarAvailOnly?'#22c55e':'var(--bd,#2a2a38)'}`,
-                background:sidebarAvailOnly?'rgba(34,197,94,.12)':'transparent',
-                color:sidebarAvailOnly?'#22c55e':'var(--tx3,#50506a)',transition:'all .12s'}}>
-              {sidebarAvailOnly?'✓ Libres':'Todos'}
-            </button>
-          </div>
-          {sortedEnvs.map(env => {
-            const st = getEnvStatus(env);
-            const cc = CAT[env.category] ?? CAT.DEV;
-            const activeRes = res.find(r => r.environmentId === env.id && ['reserved','in_use','violation'].includes(r.statusCategory));
-            const handleClick = () => {
-              if (st.occupied && activeRes) {
-                setDetail(activeRes);
-              } else if (!st.occupied) {
-                setForm('new');
-                void loadAvailableTickets();
-                // Pre-select this environment after form renders
-                setTimeout(() => {
-                  const sel = document.querySelector('select') as HTMLSelectElement;
-                  if (sel) { sel.value = env.id; sel.dispatchEvent(new Event('change', { bubbles: true })); }
-                }, 100);
-              }
-            };
-            return (
-              <div key={env.id} onClick={handleClick} style={{padding:'10px 10px',borderRadius:10,
-                background:'var(--sf2,#1b1b22)',border:`1px solid ${st.occupied?'rgba(239,68,68,.3)':'rgba(34,197,94,.3)'}`,
-                transition:'all .15s',cursor:'pointer'}}
-                onMouseEnter={e=>(e.currentTarget.style.background='var(--sf,#141418)')}
-                onMouseLeave={e=>(e.currentTarget.style.background='var(--sf2,#1b1b22)')}>
-                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
-                  <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
-                    background:st.occupied?'#ef4444':'#22c55e'}}/>
-                  <span style={{fontSize:12,fontWeight:700,color:'var(--tx,#e4e4ef)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{env.name}</span>
-                  <span style={{fontSize:9,padding:'1px 5px',borderRadius:8,fontWeight:600,
-                    background:cc.bg,color:cc.color,flexShrink:0}}>{env.category}</span>
-                </div>
-                {st.occupied ? (
-                  <div style={{fontSize:10,color:'#f87171',marginLeft:14}}>
-                    {st.label}{st.endDate ? ` · hasta ${new Date(st.endDate).toLocaleDateString('es-ES',{day:'numeric',month:'short'})}` : ''}
-                  </div>
-                ) : (
-                  <div style={{fontSize:10,color:'#4ade80',marginLeft:14}}>Disponible</div>
-                )}
-              </div>
-            );
-          })}
-          {sortedEnvs.length===0&&(
-            <div style={{fontSize:11,color:'var(--tx3,#50506a)',textAlign:'center',padding:'20px 0'}}>
-              {sidebarAvailOnly?'No hay entornos libres':'Sin entornos'}
-            </div>
-          )}
-        </div>
-
-        {/* ── Tab content ──────────────────────────────────────────────── */}
+        {/* Tab content */}
         <div style={{flex:1,overflowY:'auto',padding:'16px 20px'}}>
           {mainTab==='reservas' && (
             <>
               {loading ? (
-                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
-                  Cargando reservas…
+                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize:13}}>
+                  {t('admin.envLoadingReservations')}
+                </div>
+              ) : visible.length === 0 ? (
+                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize:13}}>
+                  {t('admin.envNoReservations')}
+                </div>
+              ) : viewMode==='list' ? (
+                /* ── List View ──────────────────────────────────────── */
+                <div className="ev-list">
+                  {visible.map(r => {
+                    const env = envs.find(e=>e.id===r.environmentId);
+                    const cc = CAT[env?.category] ?? CAT.DEV;
+                    const owner = (wsUsers??[]).find(u=>u.id===r.reservedByUserId);
+                    const statusBadge = r.statusCategory==='in_use'
+                      ? {color:'#4ae176',bg:'rgba(74,225,118,.1)',label:r.statusName??'In Use'}
+                      : r.statusCategory==='reserved'
+                      ? {color:'#adc6ff',bg:'rgba(173,198,255,.1)',label:r.statusName??'Reserved'}
+                      : r.statusCategory==='violation'
+                      ? {color:'#f59e0b',bg:'rgba(245,158,11,.1)',label:r.statusName??'Violation'}
+                      : {color:'var(--tx3)',bg:'rgba(140,144,159,.1)',label:r.statusName??r.statusCategory};
+                    return (
+                      <div key={r.id} className="ev-list-card" onClick={()=>setDetail(r)}
+                        style={{borderLeft:`4px solid ${cc.color}`}}
+                        onMouseEnter={e=>{e.currentTarget.style.background='var(--sf3)';}}
+                        onMouseLeave={e=>{e.currentTarget.style.background='var(--sf2)';}}>
+                        {/* Left: env info */}
+                        <div style={{minWidth:120}}>
+                          <span style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',
+                            color:cc.color,display:'block',marginBottom:2}}>{env?.category??'—'}</span>
+                          <span style={{fontSize:15,fontWeight:700,color:cc.color}}>{env?.name??'—'}</span>
+                        </div>
+                        {/* Center: tickets & repos */}
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:4}}>
+                            {(r.jiraIssueKeys??[]).map(k=>(
+                              <span key={k} style={{padding:'2px 8px',borderRadius:4,fontSize:11,fontFamily:'monospace',
+                                background:'rgba(124,58,237,.12)',color:'#a78bfa'}}>{k}</span>
+                            ))}
+                          </div>
+                          {(r.extractedRepos??[]).length>0&&(
+                            <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                              {r.extractedRepos.map(name=>(
+                                <span key={name} style={{padding:'2px 8px',borderRadius:4,fontSize:10,
+                                  background:'var(--bg)',color:'var(--tx3)'}}>{name}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {/* Right: status & meta */}
+                        <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,flexShrink:0}}>
+                          <span style={{padding:'3px 10px',borderRadius:20,fontSize:10,fontWeight:700,
+                            background:statusBadge.bg,color:statusBadge.color}}>{statusBadge.label}</span>
+                          <span style={{fontSize:10,color:'var(--tx3)'}}>{owner?.name??owner?.email??'—'}</span>
+                          <span style={{fontSize:10,color:'var(--tx3)'}}>{durH(r.plannedStart,r.plannedEnd)}h</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
-                <div style={{maxWidth:760}}>
-                  <DeployTimeline
-                    deployments={deploymentShapes}
-                    onSelect={handleSelect}
-                  />
+                /* ── Grid View ─────────────────────────────────────── */
+                <div className="ev-grid">
+                  {visible.map(r => {
+                    const env = envs.find(e=>e.id===r.environmentId);
+                    const cc = CAT[env?.category] ?? CAT.DEV;
+                    const owner = (wsUsers??[]).find(u=>u.id===r.reservedByUserId);
+                    const statusBadge = r.statusCategory==='in_use'
+                      ? {color:'#4ae176',bg:'rgba(74,225,118,.1)',label:r.statusName??'In Use'}
+                      : r.statusCategory==='reserved'
+                      ? {color:'#adc6ff',bg:'rgba(173,198,255,.1)',label:r.statusName??'Reserved'}
+                      : r.statusCategory==='violation'
+                      ? {color:'#f59e0b',bg:'rgba(245,158,11,.1)',label:r.statusName??'Violation'}
+                      : {color:'var(--tx3)',bg:'rgba(140,144,159,.1)',label:r.statusName??r.statusCategory};
+                    return (
+                      <div key={r.id} className="ev-grid-card" onClick={()=>setDetail(r)}
+                        style={{borderLeft:`4px solid ${cc.color}`}}
+                        onMouseEnter={e=>{e.currentTarget.style.background='var(--sf3)';}}
+                        onMouseLeave={e=>{e.currentTarget.style.background='var(--sf2)';}}>
+                        {/* Header */}
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
+                          <div>
+                            <span style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',
+                              color:cc.color,display:'block',marginBottom:4}}>{env?.category??'—'}</span>
+                            <h3 style={{fontSize:18,fontWeight:700,color:cc.color,margin:0}}>{env?.name??'—'}</h3>
+                          </div>
+                          <span style={{padding:'4px 10px',borderRadius:20,fontSize:10,fontWeight:700,
+                            background:statusBadge.bg,color:statusBadge.color}}>{statusBadge.label}</span>
+                        </div>
+                        {/* Jira tickets */}
+                        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
+                          <span className="material-symbols-outlined" style={{fontSize:16,color:'var(--tx3)'}}>confirmation_number</span>
+                          <span style={{fontSize:13,fontWeight:500,color:'var(--tx2)'}}>
+                            {(r.jiraIssueKeys??[]).join(', ')||'—'}
+                          </span>
+                        </div>
+                        {/* Repos */}
+                        {(r.extractedRepos??[]).length>0&&(
+                          <div style={{marginBottom:12}}>
+                            <div style={{fontSize:10,fontWeight:700,color:'rgba(140,144,159,.5)',textTransform:'uppercase',
+                              letterSpacing:'.04em',marginBottom:6}}>Repos</div>
+                            <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                              {r.extractedRepos.map(name=>(
+                                <span key={name} style={{padding:'4px 10px',fontSize:11,borderRadius:4,
+                                  background:'var(--bg)',color:'var(--tx2)',border:'1px solid rgba(66,71,83,.1)'}}>{name}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {/* Footer */}
+                        <div style={{paddingTop:12,borderTop:'1px solid rgba(66,71,83,.1)',
+                          display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                          <span style={{fontSize:11,fontWeight:500,color:'var(--tx3)'}}>{owner?.name??owner?.email??'—'}</span>
+                          <span style={{fontSize:11,color:'rgba(140,144,159,.6)',fontWeight:500}}>
+                            {durH(r.plannedStart,r.plannedEnd)}h
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </>
@@ -922,8 +1115,8 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
           {mainTab==='gantt' && (
             <>
               {loading ? (
-                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3,#50506a)',fontSize:13}}>
-                  Cargando…
+                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize:13}}>
+                  {t('admin.envLoading')}
                 </div>
               ) : (
                 <GanttView reservations={visible} envs={envs} onBarClick={handleGanttBarClick} />
@@ -934,6 +1127,65 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
           {mainTab==='historial' && <HistoryView />}
         </div>
       </div>
+
+      {/* ── Right Environment Sidebar ───────────────────────────────── */}
+      <aside className="ev-right-sidebar">
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4,padding:'8px 4px 0'}}>
+          <span style={{fontSize:11,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:'.05em'}}>{t('admin.envSidebarTitle')}</span>
+          <button onClick={()=>setSidebarAvailOnly(v=>!v)}
+            style={{fontSize:10,padding:'2px 8px',borderRadius:10,cursor:'pointer',fontFamily:'inherit',fontWeight:600,
+              border:`1px solid ${sidebarAvailOnly?'#22c55e':'rgba(66,71,83,.15)'}`,
+              background:sidebarAvailOnly?'rgba(34,197,94,.12)':'transparent',
+              color:sidebarAvailOnly?'#22c55e':'#8c909f',transition:'all .12s'}}>
+            {sidebarAvailOnly?`✓ ${t('admin.envSidebarFreeOnly')}`:t('admin.envSidebarAll')}
+          </button>
+        </div>
+        {sortedEnvs.map(env => {
+          const st = getEnvStatus(env);
+          const cc = CAT[env.category] ?? CAT.DEV;
+          const activeRes = res.find(r => r.environmentId === env.id && ['reserved','in_use','violation'].includes(r.statusCategory));
+          const handleClick = () => {
+            if (st.occupied && activeRes) {
+              setDetail(activeRes);
+            } else if (!st.occupied) {
+              setForm('new');
+              void loadAvailableTickets();
+              setTimeout(() => {
+                const sel = document.querySelector('select') as HTMLSelectElement;
+                if (sel) { sel.value = env.id; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+              }, 100);
+            }
+          };
+          return (
+            <div key={env.id} onClick={handleClick} style={{padding:'10px 10px',borderRadius:8,
+              background:'var(--sf2)',border:'1px solid var(--bd)',
+              borderTop:'1px solid rgba(79,110,247,.08)',
+              transition:'all .15s',cursor:'pointer'}}
+              onMouseEnter={e=>{e.currentTarget.style.background='var(--sf3)';}}
+              onMouseLeave={e=>{e.currentTarget.style.background='var(--sf2)';}}>
+              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+                <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
+                  background:st.occupied?'var(--red)':'var(--green)'}}/>
+                <span style={{fontSize:12,fontWeight:700,color:'var(--tx)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{env.name}</span>
+                <span style={{fontSize:9,padding:'1px 5px',borderRadius:8,fontWeight:600,
+                  background:cc.bg,color:cc.color,flexShrink:0}}>{env.category}</span>
+              </div>
+              {st.occupied ? (
+                <div style={{fontSize:10,color:'#ffb4ab',marginLeft:14}}>
+                  {st.label}{st.endDate ? ` · ${t('admin.envSidebarUntil')} ${new Date(st.endDate).toLocaleDateString(undefined,{day:'numeric',month:'short'})}` : ''}
+                </div>
+              ) : (
+                <div style={{fontSize:10,color:'var(--green)',marginLeft:14}}>{t('admin.envSidebarAvailable')}</div>
+              )}
+            </div>
+          );
+        })}
+        {sortedEnvs.length===0&&(
+          <div style={{fontSize:11,color:'var(--tx3)',textAlign:'center',padding:'20px 0'}}>
+            {sidebarAvailOnly?t('admin.envSidebarNoFree'):t('admin.envSidebarNoEnvs')}
+          </div>
+        )}
+      </aside>
 
       {form&&<ReservationForm res={form==='new'?null:form} envs={envs} repos={repos} allRes={res}
         policy={policy} currentUser={currentUser} onSave={handleSave} onClose={()=>setForm(null)}

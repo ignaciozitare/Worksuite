@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from '@worksuite/i18n';
-import { AdminEnvEnvironments, AdminEnvPolicy, AdminEnvStatuses, AdminEnvJiraFilter } from '../../modules/environments';
+import { AdminEnvEnvironments, AdminEnvPolicy, AdminEnvStatuses, AdminEnvJiraFilter, AdminEnvHistoryNote } from '../../modules/environments';
 
 function AdminEnvTrackerSection() {
   const { t } = useTranslation();
@@ -12,6 +12,7 @@ function AdminEnvTrackerSection() {
     { id:"statuses",     label:t("admin.envTabStatuses"),     icon:"🏷️" },
     { id:"jirafilter",   label:t("admin.envTabJiraFilter"),   icon:"🔎" },
     { id:"policy",       label:t("admin.envTabPolicy"),       icon:"📋" },
+    { id:"historynote",  label:t("admin.envTabRetentionNote"), icon:"📝" },
   ];
   return (
     <div>
@@ -29,6 +30,7 @@ function AdminEnvTrackerSection() {
         {sub==="statuses"     && <AdminEnvStatuses/>}
         {sub==="jirafilter"   && <AdminEnvJiraFilter/>}
         {sub==="policy"       && <AdminEnvPolicy/>}
+        {sub==="historynote"  && <AdminEnvHistoryNote/>}
       </div>
     </div>
   );
