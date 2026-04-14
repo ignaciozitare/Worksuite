@@ -1,18 +1,16 @@
 // Deploy Planner — root view. Routes between Planning / Timeline / History /
 // Metrics and delegates heavy rendering to small components under ./internal/.
 import { useState, useEffect, type ReactNode } from 'react';
-import { supabase } from '../../../shared/lib/supabaseClient';
 import { extractReposFromTickets } from '@worksuite/jira-service';
 import { RepoGroupService, type LinkedGroup } from '../domain/services/RepoGroupService';
 import { SubtaskService, type ClassifiedSubtask } from '../domain/services/SubtaskService';
 import type { SubtaskConfig } from '../domain/ports/SubtaskConfigPort';
 import type { JiraSubtask } from '../domain/ports/SubtaskPort';
-import { JiraSubtaskAdapter } from '../infra/JiraSubtaskAdapter';
-import { SupabaseSubtaskConfigRepo } from '../infra/supabase/SupabaseSubtaskConfigRepo';
-import { SupabaseDeployConfigRepo } from '../infra/supabase/SupabaseDeployConfigRepo';
-import { SupabaseDeployReleaseRawRepo } from '../infra/supabase/SupabaseDeployReleaseRawRepo';
-import { HttpJiraApiAdapter } from '@/shared/infra/HttpJiraApiAdapter';
 import type { JiraIssueRow } from '@/shared/domain/ports/JiraApiPort';
+import {
+  jiraApi, subtaskAdapter, subtaskConfigRepo,
+  deployConfigRepo, releaseRawRepo,
+} from '../container';
 import { today, fmt, addD } from './internal/helpers';
 import { Metrics } from './internal/Metrics';
 import { History } from './internal/History';
@@ -83,24 +81,7 @@ const CSS = `
 .spin{display:inline-block;animation:spin .8s linear infinite;}
 `;
 
-/* ─── Infra wiring ────────────────────────────────────────────── */
-// Vite injects env vars into import.meta.env at build time, but the
-// project doesn't include the `vite/client` types globally, so cast here.
-const VITE_ENV = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {};
-const API_BASE = (VITE_ENV['VITE_API_URL'] || 'http://localhost:3001').replace(/\/$/, '');
-
-async function authHeaders(): Promise<Record<string, string>> {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token
-    ? { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }
-    : { 'Content-Type': 'application/json' };
-}
-
-const subtaskAdapter = new JiraSubtaskAdapter(API_BASE, authHeaders);
-const subtaskConfigRepo = new SupabaseSubtaskConfigRepo(supabase);
-const deployConfigRepo = new SupabaseDeployConfigRepo(supabase);
-const releaseRawRepo = new SupabaseDeployReleaseRawRepo(supabase);
-const jiraApi = new HttpJiraApiAdapter(API_BASE, authHeaders);
+/* ─── Infra wiring moved to ../container.ts ──────────────────── */
 
 /* ─── JIRA SYNC ──────────────────────────────────────────────── */
 async function jiraTransition(

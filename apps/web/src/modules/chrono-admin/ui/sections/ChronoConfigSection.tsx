@@ -1,11 +1,8 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
-import { supabase } from '@/shared/lib/supabaseClient';
-import { ConfigSupabaseRepository } from '../../infra/supabase/ConfigSupabaseRepository';
 import type { ConfigEmpresa } from '../../domain/entities/ConfigEmpresa';
-
-const configRepo = new ConfigSupabaseRepository(supabase);
+import { configRepo } from '../../container';
 
 const lblStyle = {
   fontSize: 11, fontWeight: 700, color: 'var(--tx3,#50506a)',

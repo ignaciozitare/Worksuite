@@ -1,16 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
-import { supabase } from '@/shared/lib/supabaseClient';
-import { SupabaseUserRepo } from '@/shared/infra/SupabaseUserRepo';
-import { SupabaseNotificationRepo } from '@/shared/infra/SupabaseNotificationRepo';
-import { AdminFichajeSupabaseRepository } from '../infra/supabase/AdminFichajeSupabaseRepository';
-import { AdminVacacionSupabaseRepository } from '../infra/supabase/AdminVacacionSupabaseRepository';
-import { ConfigSupabaseRepository } from '../infra/supabase/ConfigSupabaseRepository';
-import { EquipoSupabaseRepository } from '../infra/supabase/EquipoSupabaseRepository';
-import { EmpleadoConfigSupabaseRepository } from '../infra/supabase/EmpleadoConfigSupabaseRepository';
-import { FichaEmpleadoSupabaseRepository } from '../infra/supabase/FichaEmpleadoSupabaseRepository';
-import { JiraResumenSupabaseRepository } from '../infra/supabase/JiraResumenSupabaseRepository';
 import { AprobacionesView } from './views/AprobacionesView';
 import { InformesEmpresaView } from './views/InformesEmpresaView';
 import { DashboardAdminView } from './views/DashboardAdminView';
@@ -18,21 +8,12 @@ import { EmpleadosView } from './views/EmpleadosView';
 import { EquiposView } from './views/EquiposView';
 import { JiraView } from './views/JiraView';
 import { ChronoConfigSection } from './sections/ChronoConfigSection';
-// Stitch-inspired design tokens shared with the Chrono module. Now
-// consumed by the topbar tab bar; the rest of the view still uses the
-// legacy `C` object below and will migrate in follow-up commits.
 import { CHRONO_THEME as T } from '../../chrono/shared/theme';
-
-/* ─── Repository instances ────────────────────────────────────────────────── */
-const fichajeRepo = new AdminFichajeSupabaseRepository(supabase);
-const vacacionRepo = new AdminVacacionSupabaseRepository(supabase);
-const configRepo = new ConfigSupabaseRepository(supabase);
-const equipoRepo = new EquipoSupabaseRepository(supabase);
-const empleadoConfigRepo = new EmpleadoConfigSupabaseRepository(supabase);
-const fichaEmpleadoRepo = new FichaEmpleadoSupabaseRepository(supabase);
-const notificacionRepo = new SupabaseNotificationRepo(supabase);
-const jiraResumenRepo = new JiraResumenSupabaseRepository(supabase);
-const userRepo = new SupabaseUserRepo(supabase);
+import {
+  fichajeRepo, vacacionRepo, configRepo, equipoRepo,
+  empleadoConfigRepo, fichaEmpleadoRepo, notificacionRepo,
+  jiraResumenRepo, userRepo,
+} from '../container';
 
 /* ─── Design tokens ───────────────────────────────────────────────────────── */
 import { CHRONO_ADMIN_COLORS } from '../shared/adminColors';

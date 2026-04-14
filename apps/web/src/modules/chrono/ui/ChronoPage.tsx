@@ -2,32 +2,16 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from '@worksuite/i18n';
-import { supabase } from '@/shared/lib/supabaseClient';
-import { FichajeSupabaseRepository } from '../infra/supabase/FichajeSupabaseRepository';
-import { BolsaHorasSupabaseRepository } from '../infra/supabase/BolsaHorasSupabaseRepository';
-import { VacacionSupabaseRepository } from '../infra/supabase/VacacionSupabaseRepository';
-import { IncidenciaSupabaseRepository } from '../infra/supabase/IncidenciaSupabaseRepository';
-import { AlarmaSupabaseRepository } from '../infra/supabase/AlarmaSupabaseRepository';
-import { ConfigEmpresaSupabaseRepository } from '../infra/supabase/ConfigEmpresaSupabaseRepository';
 import { DashboardView } from './views/DashboardView';
 import { RegistrosView } from './views/RegistrosView';
 import { IncompletosView } from './views/IncompletosView';
 import { VacacionesView } from './views/VacacionesView';
 import { AlarmasView } from './views/AlarmasView';
-// Stitch-inspired design tokens. Now consumed by the sidebar — see
-// ../shared/theme.ts for the full palette. The legacy `C` object below
-// is still used by the main content area and will migrate piece by
-// piece in follow-up commits.
 import { CHRONO_THEME as T } from '../shared/theme';
-import { NominatimGeoLocationService } from '../infra/NominatimGeoLocationService';
-
-const fichajeRepo = new FichajeSupabaseRepository(supabase);
-const bolsaRepo = new BolsaHorasSupabaseRepository(supabase);
-const vacacionRepo = new VacacionSupabaseRepository(supabase);
-const incidenciaRepo = new IncidenciaSupabaseRepository(supabase);
-const alarmaRepo = new AlarmaSupabaseRepository(supabase);
-const configEmpresaRepo = new ConfigEmpresaSupabaseRepository(supabase);
-const geoService = new NominatimGeoLocationService();
+import {
+  fichajeRepo, bolsaRepo, vacacionRepo,
+  incidenciaRepo, alarmaRepo, configEmpresaRepo, geoService,
+} from '../container';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────────── */
 const C = {
