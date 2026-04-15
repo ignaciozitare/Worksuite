@@ -17,6 +17,7 @@
     "@worksuite/jira-service": "*",
     "@worksuite/shared-types": "*",
     "@worksuite/ui": "*",
+    "@xyflow/react": "^12.10.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.23.1"
