@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   MiniMap,
@@ -44,7 +45,15 @@ interface Props {
   currentUser: { id: string; [k: string]: unknown };
 }
 
-export function CanvasDesignerView({ currentUser }: Props) {
+export function CanvasDesignerView(props: Props) {
+  return (
+    <ReactFlowProvider>
+      <CanvasDesignerInner {...props} />
+    </ReactFlowProvider>
+  );
+}
+
+function CanvasDesignerInner({ currentUser }: Props) {
   const { t } = useTranslation();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [selected, setSelected] = useState<Workflow | null>(null);
@@ -217,9 +226,9 @@ export function CanvasDesignerView({ currentUser }: Props) {
   }
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 120px)', gap: 0 }}>
+    <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: 0 }}>
       {/* Canvas */}
-      <div style={{ flex: 1, position: 'relative', background: 'var(--bg)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--bd)' }}>
+      <div style={{ flex: 1, minWidth: 0, position: 'relative', background: 'var(--bg)', overflow: 'hidden', borderRight: '1px solid var(--bd)' }}>
         {/* Workflow tabs */}
         {workflows.length > 0 && (
           <div style={{

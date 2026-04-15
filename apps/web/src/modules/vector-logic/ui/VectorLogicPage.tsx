@@ -105,7 +105,17 @@ export function VectorLogicPage({ currentUser }: Props) {
       </aside>
 
       {/* ── Main content ──────────────────────────────────── */}
-      <div style={{flex:1,minWidth:0,overflow:'auto',padding:'28px 32px'}}>
+      {/*
+        Canvas needs full-bleed with no padding so React Flow can
+        measure its container properly. Other views get the padded
+        scrollable shell.
+      */}
+      <div style={{
+        flex: 1, minWidth: 0,
+        display: 'flex', flexDirection: 'column',
+        overflow: view === 'canvas' || view === 'kanban' || view === 'chat' ? 'hidden' : 'auto',
+        padding: view === 'canvas' || view === 'chat' ? 0 : '28px 32px',
+      }}>
         {view === 'kanban' && <KanbanView currentUser={currentUser} />}
         {view === 'chat' && <ChatView currentUser={currentUser} />}
         {view === 'states' && <StateManagerView currentUser={currentUser} />}
