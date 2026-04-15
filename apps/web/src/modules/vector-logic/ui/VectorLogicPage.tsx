@@ -4,6 +4,7 @@ import { useTranslation } from '@worksuite/i18n';
 import { StateManagerView } from './views/StateManagerView';
 import { CanvasDesignerView } from './views/CanvasDesignerView';
 import { AssignmentManagerView } from './views/AssignmentManagerView';
+import { SchemaBuilderView } from './views/SchemaBuilderView';
 
 /* ─── CSS (Stitch / Carbon Logic) ────────────────────────────────────────── */
 const CSS = `
@@ -24,7 +25,7 @@ const CSS = `
 .vl .vl-section-label{font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.12em;padding:16px 12px 6px;user-select:none;}
 `;
 
-type Tab = 'states' | 'canvas' | 'assignment';
+type Tab = 'states' | 'canvas' | 'assignment' | 'entities';
 
 interface Props {
   currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown };
@@ -40,7 +41,7 @@ export function VectorLogicPage({ currentUser }: Props) {
     { id: 'canvas',     label: t('vectorLogic.canvasDesigner'),     icon: 'schema' },
     { id: 'assignment', label: t('vectorLogic.assignmentManager'),  icon: 'assignment' },
     { section: t('vectorLogic.title') },
-    { id: 'entities',   label: t('vectorLogic.taskEntities'),       icon: 'category',  disabled: true },
+    { id: 'entities',   label: t('vectorLogic.taskEntities'),       icon: 'category' },
     { id: 'ai-rules',   label: t('vectorLogic.aiRules'),            icon: 'psychology', disabled: true },
     { id: 'settings',   label: t('vectorLogic.settings'),           icon: 'settings',   disabled: true },
   ];
@@ -101,6 +102,7 @@ export function VectorLogicPage({ currentUser }: Props) {
         {view === 'states' && <StateManagerView currentUser={currentUser} />}
         {view === 'canvas' && <CanvasDesignerView currentUser={currentUser} />}
         {view === 'assignment' && <AssignmentManagerView />}
+        {view === 'entities' && <SchemaBuilderView currentUser={currentUser} />}
       </div>
     </div>
   );
