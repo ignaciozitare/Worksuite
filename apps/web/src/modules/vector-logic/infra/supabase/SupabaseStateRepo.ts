@@ -48,7 +48,8 @@ export class SupabaseStateRepo implements IStateRepo {
     const { data, error } = await this.sb
       .from('vl_workflow_states')
       .select('*, state:vl_states(*)')
-      .eq('workflow_id', workflowId);
+      .eq('workflow_id', workflowId)
+      .order('sort_order', { ascending: true });
     if (error) throw error;
     return (data ?? []).map((row) => this.toWorkflowState(row));
   }
@@ -62,6 +63,7 @@ export class SupabaseStateRepo implements IStateRepo {
         position_x: ws.positionX,
         position_y: ws.positionY,
         is_initial: ws.isInitial,
+        sort_order: ws.sortOrder ?? 0,
       })
       .select('*, state:vl_states(*)')
       .single();
@@ -101,7 +103,17 @@ export class SupabaseStateRepo implements IStateRepo {
       positionX: row.position_x,
       positionY: row.position_y,
       isInitial: row.is_initial,
+      sortOrder: row.sort_order ?? 0,
       state: row.state ? this.toState(row.state) : undefined,
     };
+  }
+
+  /** Persist a new column order for a list of workflow states. */
+  async reorderWorkflowStates(updates: Array<{ id: string; sortOrder: number }>): Promise<void> {
+    // Run updates in parallel; the table is small (a few states per workflow)
+    // so a single batch is fine.
+    await Promise.all(updates.map(({ id, sortOrder }) =>
+      this.sb.from('vl_workflow_states').update({ sort_order: sortOrder }).eq('id', id),
+    ));
   }
 }

@@ -16,5 +16,7 @@ export interface WorkflowState {
   positionX: number;
   positionY: number;
   isInitial: boolean;
+  /** Order of the column in the Kanban view. Drag-and-drop in Kanban updates this. */
+  sortOrder: number;
   state?: State;
 }

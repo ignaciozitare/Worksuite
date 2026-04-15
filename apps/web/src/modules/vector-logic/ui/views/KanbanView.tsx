@@ -46,6 +46,8 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
+  const [dragColumnId, setDragColumnId] = useState<string | null>(null);
+  const [dropColumnId, setDropColumnId] = useState<string | null>(null);
 
   useEffect(() => {
     taskTypeRepo.findAll().then(tts => {
@@ -138,6 +140,57 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
     }
   };
 
+  // ── Column reorder ───────────────────────────────────────────────
+  const onColumnDragStart = (wsId: string) => (e: React.DragEvent) => {
+    setDragColumnId(wsId);
+    e.dataTransfer.effectAllowed = 'move';
+    // Use a custom MIME type so this drag is distinct from task drag
+    e.dataTransfer.setData('application/vl-column', wsId);
+  };
+
+  const onColumnDragOver = (wsId: string) => (e: React.DragEvent) => {
+    if (!dragColumnId || dragColumnId === wsId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDropColumnId(wsId);
+  };
+
+  const onColumnDragLeave = () => setDropColumnId(null);
+
+  const onColumnDrop = (targetWsId: string) => async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!dragColumnId || dragColumnId === targetWsId) {
+      setDragColumnId(null); setDropColumnId(null);
+      return;
+    }
+
+    // Compute the new ordering by removing dragged column and inserting
+    // it at the target's index.
+    const ordered = [...wfStates].sort(byCurrentOrder);
+    const fromIdx = ordered.findIndex(ws => ws.id === dragColumnId);
+    const toIdx = ordered.findIndex(ws => ws.id === targetWsId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [moved] = ordered.splice(fromIdx, 1);
+    ordered.splice(toIdx, 0, moved);
+
+    // Renumber sortOrder sequentially and persist
+    const updates = ordered.map((ws, i) => ({ id: ws.id, sortOrder: i }));
+    setWfStates(prev => prev.map(ws => {
+      const u = updates.find(x => x.id === ws.id);
+      return u ? { ...ws, sortOrder: u.sortOrder } : ws;
+    }));
+    setDragColumnId(null); setDropColumnId(null);
+    await stateRepo.reorderWorkflowStates(updates);
+  };
+
+  // Sort comparator: prefer explicit sortOrder, fall back to category order
+  // for workflows that have not been manually reordered yet.
+  const byCurrentOrder = (a: WorkflowState, b: WorkflowState): number => {
+    if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+    return catOrder(a.state?.category) - catOrder(b.state?.category);
+  };
+
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--tx3)' }}>{t('common.loading')}</div>;
   }
@@ -198,21 +251,51 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
           gridTemplateColumns: `repeat(${wfStates.length}, minmax(260px, 1fr))`,
           gap: 12, overflowX: 'auto', overflowY: 'hidden',
         }}>
-          {wfStates
-            .sort((a, b) => catOrder(a.state?.category) - catOrder(b.state?.category))
+          {[...wfStates]
+            .sort(byCurrentOrder)
             .map(ws => {
               const cc = CAT_COLORS[ws.state?.category ?? 'BACKLOG'];
               const colTasks = tasksByState[ws.stateId] ?? [];
+              const isDragging = dragColumnId === ws.id;
+              const isDropTarget = dropColumnId === ws.id;
               return (
                 <div key={ws.id}
-                  onDragOver={onDragOverCol}
-                  onDrop={onDropCol(ws.stateId)}
+                  onDragOver={(e) => {
+                    onDragOverCol(e);
+                    if (dragColumnId) onColumnDragOver(ws.id)(e);
+                  }}
+                  onDragLeave={onColumnDragLeave}
+                  onDrop={(e) => {
+                    if (dragColumnId) {
+                      onColumnDrop(ws.id)(e);
+                    } else {
+                      onDropCol(ws.stateId)(e);
+                    }
+                  }}
                   style={{
-                    background: 'var(--sf2)', borderRadius: 10,
+                    background: isDropTarget ? 'rgba(79,110,247,.08)' : 'var(--sf2)',
+                    borderRadius: 10,
                     borderTop: `3px solid ${ws.state?.color || cc.color}`,
+                    border: isDropTarget ? '1px dashed var(--ac)' : '1px solid transparent',
+                    borderTopColor: ws.state?.color || cc.color,
                     display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden',
+                    opacity: isDragging ? .4 : 1,
+                    transform: isDropTarget ? 'scale(1.02)' : 'scale(1)',
+                    transition: 'all .2s cubic-bezier(.215,.61,.355,1)',
                   }}>
-                  <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  <div
+                    draggable
+                    onDragStart={onColumnDragStart(ws.id)}
+                    style={{
+                      padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8,
+                      flexShrink: 0, cursor: 'grab', userSelect: 'none',
+                    }}
+                    onMouseDown={e => (e.currentTarget.style.cursor = 'grabbing')}
+                    onMouseUp={e => (e.currentTarget.style.cursor = 'grab')}>
+                    <span className="material-symbols-outlined"
+                      style={{ fontSize: 14, color: 'var(--tx3)', opacity: .5 }}>
+                      drag_indicator
+                    </span>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: ws.state?.color || cc.color }} />
                     <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tx)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
                       {ws.state?.name}
