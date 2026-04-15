@@ -97,23 +97,53 @@ worksuite/
     │           │   ├── infra/     ← Supabase{Fichaje,Vacacion,Incidencia,Alarma,BolsaHoras}Repository
     │           │   └── ui/        ← ChronoPage (sidebar tabs: dashboard, registros, incompletos,
     │           │                     vacaciones, alarmas, informes), reads ?view= from URL
-    │           └── chrono-admin/  ← Administración del chrono (RRHH)
-    │               ├── domain/    ← entities (EmpleadoConfig, EmpleadoResumen, Equipo, ConfigEmpresa,
-    │               │                 FichaEmpleado, JiraResumen, Notificacion), ports
-    │               ├── infra/     ← AdminFichajeRepo, EmpleadoConfigRepo, EquipoRepo, ConfigRepo,
-    │               │                 FichaEmpleadoRepo (encrypt/decrypt), JiraResumenRepo,
-    │               │                 NotificacionRepo, AdminVacacionRepo
-    │               └── ui/        ← ChronoAdminPage (tabs: dashboard, empleados, equipos,
-    │                                 aprobaciones, jira, informes), FichaEmpleadoDrawer
+    │           ├── chrono-admin/  ← Administración del chrono (RRHH)
+    │           │   ├── domain/    ← entities (EmpleadoConfig, EmpleadoResumen, Equipo, ConfigEmpresa,
+    │           │   │                 FichaEmpleado, JiraResumen, Notificacion), ports
+    │           │   ├── infra/     ← AdminFichajeRepo, EmpleadoConfigRepo, EquipoRepo, ConfigRepo,
+    │           │   │                 FichaEmpleadoRepo (encrypt/decrypt), JiraResumenRepo,
+    │           │   │                 NotificacionRepo, AdminVacacionRepo
+    │           │   └── ui/        ← ChronoAdminPage (tabs: dashboard, empleados, equipos,
+    │           │                     aprobaciones, jira, informes), FichaEmpleadoDrawer
+    │           └── vector-logic/  ← Task orchestration platform (workflows + tasks + AI)
+    │               ├── domain/    ← entities (Workflow, State, Transition, TaskType, Task,
+    │               │                 FieldType, AI{Settings,Conversation,Message,Rule}),
+    │               │                 ports (IWorkflowRepo, IStateRepo, ITransitionRepo,
+    │               │                 ITaskTypeRepo, ITaskRepo, IAIRepo, ILLMService)
+    │               ├── infra/     ← Supabase{Workflow,State,Transition,TaskType,Task,AI}Repo,
+    │               │                 LLMService (thin HTTP client → apps/api /ai/chat)
+    │               ├── container.ts ← Wires infra adapters; UI imports from here
+    │               └── ui/        ← VectorLogicPage (Stitch sidebar: Workspace / Workflow Engine /
+    │                                 Configuration), 8 views:
+    │                                   • KanbanView — drag-and-drop tasks across states
+    │                                   • ChatView — embedded AI chat with tool use (create_task)
+    │                                   • StateManagerView — 4 columns by category, one-OPEN rule
+    │                                   • CanvasDesignerView — React Flow visual state machine
+    │                                   • AssignmentManagerView — task types → workflows
+    │                                   • SchemaBuilderView — 20+ field types, dual visibility
+    │                                   • AIRulesView — natural-language rules injected as context
+    │                                   • SettingsView — AI provider, API key, MCP endpoint
     │
     └── api/                   ← Fastify backend
         └── src/
-            ├── domain/        ← interfaces (IJiraConnectionRepository, IUserRepository, etc.)
+            ├── domain/        ← interfaces (IJiraConnectionRepository, IUserRepository,
+            │                     ILLMService, etc.)
             ├── infrastructure/
-            │   ├── http/      ← authRoutes, worklogRoutes, hotdeskRoutes, jiraRoutes
-            │   └── jira/      ← JiraCloudAdapter (projects, issues, subtasks, fields, search, worklogs)
+            │   ├── http/      ← authRoutes, worklogRoutes, hotdeskRoutes, jiraRoutes, aiRoutes
+            │   ├── jira/      ← JiraCloudAdapter (projects, issues, subtasks, fields, search, worklogs)
+            │   └── llm/       ← LLMServiceAdapter (Anthropic Messages API, OpenAI Chat
+            │                     Completions, tool use / function calling)
             └── app.ts         ← Fastify setup, plugin registration
 ```
+
+### AI proxy route
+
+The `/ai/chat` route exists so API keys never leave the server. The frontend
+reads the user's per-user settings from `vl_ai_settings` and forwards the key
+in the POST body to `/ai/chat`; the backend `LLMServiceAdapter` holds the
+actual HTTPS call to Anthropic/OpenAI. The browser never talks to
+`api.anthropic.com` or `api.openai.com` directly.
+
 
 ---
 
