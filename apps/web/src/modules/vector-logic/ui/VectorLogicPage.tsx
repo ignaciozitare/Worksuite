@@ -6,6 +6,9 @@ import { CanvasDesignerView } from './views/CanvasDesignerView';
 import { AssignmentManagerView } from './views/AssignmentManagerView';
 import { SchemaBuilderView } from './views/SchemaBuilderView';
 import { KanbanView } from './views/KanbanView';
+import { ChatView } from './views/ChatView';
+import { AIRulesView } from './views/AIRulesView';
+import { SettingsView } from './views/SettingsView';
 
 /* ─── CSS (Stitch / Carbon Logic) ────────────────────────────────────────── */
 const CSS = `
@@ -26,7 +29,7 @@ const CSS = `
 .vl .vl-section-label{font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.12em;padding:16px 12px 6px;user-select:none;}
 `;
 
-type Tab = 'states' | 'canvas' | 'assignment' | 'entities' | 'kanban';
+type Tab = 'states' | 'canvas' | 'assignment' | 'entities' | 'kanban' | 'chat' | 'ai-rules' | 'settings';
 
 interface Props {
   currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown };
@@ -39,14 +42,15 @@ export function VectorLogicPage({ currentUser }: Props) {
   const NAV = [
     { section: t('vectorLogic.workspace') },
     { id: 'kanban',     label: t('vectorLogic.smartKanban'),        icon: 'view_kanban' },
+    { id: 'chat',       label: t('vectorLogic.chat'),               icon: 'smart_toy' },
     { section: t('vectorLogic.workflowEngine') },
     { id: 'states',     label: t('vectorLogic.stateManager'),      icon: 'account_tree' },
     { id: 'canvas',     label: t('vectorLogic.canvasDesigner'),     icon: 'schema' },
     { id: 'assignment', label: t('vectorLogic.assignmentManager'),  icon: 'assignment' },
     { section: t('vectorLogic.title') },
     { id: 'entities',   label: t('vectorLogic.taskEntities'),       icon: 'category' },
-    { id: 'ai-rules',   label: t('vectorLogic.aiRules'),            icon: 'psychology', disabled: true },
-    { id: 'settings',   label: t('vectorLogic.settings'),           icon: 'settings',   disabled: true },
+    { id: 'ai-rules',   label: t('vectorLogic.aiRules'),            icon: 'psychology' },
+    { id: 'settings',   label: t('vectorLogic.settings'),           icon: 'settings' },
   ];
 
   return (
@@ -103,10 +107,13 @@ export function VectorLogicPage({ currentUser }: Props) {
       {/* ── Main content ──────────────────────────────────── */}
       <div style={{flex:1,minWidth:0,overflow:'auto',padding:'28px 32px'}}>
         {view === 'kanban' && <KanbanView currentUser={currentUser} />}
+        {view === 'chat' && <ChatView currentUser={currentUser} />}
         {view === 'states' && <StateManagerView currentUser={currentUser} />}
         {view === 'canvas' && <CanvasDesignerView currentUser={currentUser} />}
         {view === 'assignment' && <AssignmentManagerView />}
         {view === 'entities' && <SchemaBuilderView currentUser={currentUser} />}
+        {view === 'ai-rules' && <AIRulesView currentUser={currentUser} />}
+        {view === 'settings' && <SettingsView currentUser={currentUser} />}
       </div>
     </div>
   );
