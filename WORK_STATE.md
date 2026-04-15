@@ -6,59 +6,34 @@ _Última actualización: 2026-04-15_
 
 ## 🎯 Tarea en curso
 
-**Vector Logic — Final QA + merge prep.** El módulo completo (las 4 fases) está construido en la rama `feat/vector-logic-phase1-workflow-engine` esperando merge a main. QA Agent ejecutándose.
+Ninguna. **Vector Logic mergeado a main.** Pendiente: el usuario prueba el chat con API key real en producción y valida light/dark manualmente.
 
 ## 📍 Punto exacto
 
-Rama: `feat/vector-logic-phase1-workflow-engine` (10 commits, pusheados)
+- **Main**: `ba56e5d` merge commit de Vector Logic (12 commits de la rama `feat/vector-logic-phase1-workflow-engine`)
+- **Frontend prod**: `worksuite-phi.vercel.app` — Vercel rebuilding
+- **API prod**: `worksuite-api.vercel.app` — `/ai/chat` endpoint verificado live (responde 400 a body vacío = OK, ruta registrada)
 
-**Hecho (todas las fases completas):**
-- SPEC completo en `specs/modules/vector-logic/SPEC.md`
-- DB: 10 tablas `vl_*` (workflows, states, transitions, task_types, tasks, ai_settings, ai_conversations, ai_messages, ai_rules, workflow_states)
-- Domain: 8 entidades + 7 ports (Workflow, State, Transition, TaskType, Task, FieldType, AI*, ILLMService)
-- Infra frontend: 7 repos Supabase + LLMService HTTP client
-- Infra backend: ILLMService port + LLMServiceAdapter + aiRoutes (Fastify)
-- Container frontend: wiring completo, zero infra en UI
-- UI: VectorLogicPage + 8 vistas (Kanban, Chat, StateManager, CanvasDesigner, AssignmentManager, SchemaBuilder, AIRules, Settings)
-- React Flow integrado (`@xyflow/react`) para el Canvas Designer con StateNode custom
-- i18n: 122 claves en vectorLogic namespace (es + en), 1029 total en sync
-- Integrado en WorkSuiteApp.tsx con ruta `/vector-logic`
-- Backend proxy `/ai/chat` para que API keys nunca vayan al navegador
-- 6 agentes en `.claude/commands/` (spec, dba, scaffold, review, qa, deploy)
-- CLAUDE.md actualizado con sección "Project Structure" y regla dura "secrets → apps/api"
-- ARCHITECTURE.md actualizado con Vector Logic y AI proxy route
+Vector Logic tiene las 4 fases completas + el proxy backend de LLM + los 6 agentes del workflow en `.claude/commands/`.
 
-**QA Agent en curso:**
-- Step 1 Review Agent: ✓ limpio
-- Step 3 Deep Architecture: ✓ limpio
-- Step 4 Deep Security: ✓ limpio
-- Step 5 Shared Packages: ⚠️ Modal duplicado en 5 módulos (preexistente, recomendación)
-- Step 6 i18n: ✓ 1029 keys en sync
-- Step 7 Documentation: ✓ ARCHITECTURE.md actualizado en este commit
-- Step 8 WORK_STATE: ✓ este archivo
-- Step 2 Spec Compliance: pendiente — esperando mode block/warn del usuario
-- Step 9 Final build: pendiente
-- Step 10 Light/Dark manual: pendiente
-- Step 11 Pre-merge checklist: pendiente
+## ✅ Decisiones tomadas (recientes)
 
-## ✅ Decisiones tomadas
-
-- Módulo dentro de WorkSuite (Vite + React + CSS vars), NO Next.js/Tailwind
-- React Flow para Canvas Designer
-- Hexagonal estricto: container.ts, zero infra in /ui/
-- Prefijo DB: `vl_`
-- Max 1 OPEN per workflow (domain validation, no DB constraint por limitación PG)
-- 4 fases: Workflow Engine → Schema Builder → Kanban → Email Intelligence
-- LLM calls proxied por backend (`/ai/chat`) — API keys nunca en el navegador
-- ChatView tiene tool use con `create_task` y `list_task_types`
-- AI Rules en lenguaje natural se inyectan en el system prompt
+- Mergeamos a main aunque la rama tuviera el API fallando en producción (pre-merge) porque el API es un proyecto Vercel separado y solo redeploya desde main. Fue la única vía para llevar `/ai/chat` a prod.
+- Modal duplicado en 5 módulos sigue siendo deuda técnica preexistente, NO blocker.
+- LLM calls pasan por backend Fastify (`/ai/chat`) — zero API keys en el browser.
 
 ## ⏭ Siguiente paso inmediato
 
-Esperar respuesta del usuario para spec compliance mode (block/warn), luego terminar QA y proponer merge.
+Esperar feedback del usuario tras probar el chat en producción. Si funciona:
+- Validar light/dark mode visualmente en las 8 vistas de Vector Logic
+- Actualizar SPEC_CONTEXT.md con los cambios estables en prod
+
+Si falla:
+- Diagnóstico del error real (network response + console)
+- Hotfix en main o rollback del merge
 
 ## 🚫 Bloqueos / notas
 
-- **Modal duplicado**: 5 módulos (environments x2, chrono, vector-logic x2) tienen función `Modal` inline. El shared `@worksuite/ui` Modal existe pero usa `--ws-*` vars en vez de `--bg/--sf` del app. Refactor requiere 5 archivos, preexistente, flag como recomendación no blocker.
-- **MCP endpoint real no implementado**: está configurable en Settings pero el cliente MCP desde navegador requiere backend adicional, documentado como extension point.
-- **Llamadas LLM desde frontend**: el LLMService es HTTP client al backend; build correcto, no expone keys.
+- **MCP real no implementado**: endpoint configurable en Settings pero conexión cliente desde navegador requiere infra adicional. Extension point documentado.
+- **tsc baseline API**: ~24 errores preexistentes en `apps/api` que no bloquean porque Vercel usa `@vercel/node` (compila on-the-fly, más lenient que `tsc --noEmit`).
+- **Deuda técnica Modal**: 5 módulos con `function Modal()` inline en lugar de `@worksuite/ui` Modal. Requiere refactor de 5 archivos, no urgente.
