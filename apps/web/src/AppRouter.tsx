@@ -47,6 +47,9 @@ export function AppRouter(): JSX.Element {
         <Route path="/chrono" element={<Protected />} />
         <Route path="/chrono-admin" element={<Protected />} />
 
+        {/* Vector Logic */}
+        <Route path="/vector-logic" element={<Protected />} />
+
         {/* Profile */}
         <Route path="/profile" element={<Protected />} />
 
