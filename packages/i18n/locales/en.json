@@ -1072,6 +1072,27 @@
     "loadModels":         "Load models",
     "loadModelsFirst":    "Paste your API key and click \"Load models\"",
     "modelsAvailable":    "models available",
-    "needApiKey":         "Paste your API key first"
+    "needApiKey":         "Paste your API key first",
+    "mcpAccess":          "MCP Access",
+    "mcpDesc":            "Vector Logic exposes itself as an MCP server. Connect your Claude client (Claude Desktop, Claude Code, Cursor) and talk to your workspace using your existing subscription — no separate API billing. Claude uses the tools below to read and modify Vector Logic.",
+    "mcpToolsAvailable":  "Available tools",
+    "mcpAuthToken":       "Authentication token",
+    "mcpGenerateToken":   "Generate session token",
+    "mcpTokenWarning":    "⚠ This token expires with your session. If it expires, come back here and generate a new one.",
+    "mcpClaudeDesktop":   "Connect Claude Desktop",
+    "mcpClaudeCode":      "Connect Claude Code (CLI)",
+    "mcpClaudeCodeDesc":  "Run this command in your terminal:",
+    "mcpStepDesktop1":    "Generate your token above",
+    "mcpStepDesktop2":    "Edit your config file:",
+    "mcpStepDesktop3":    "Paste this configuration under \"mcpServers\"",
+    "mcpStepDesktop4":    "Restart Claude Desktop. Vector Logic will appear as an active MCP server.",
+    "toolListWorkflows":  "List all defined workflows",
+    "toolListStates":     "List states for a given workflow",
+    "toolListTaskTypes":  "List task types (with workflow and schema)",
+    "toolListTasks":      "List tasks, optionally filtered by type, state or assignee",
+    "toolCreateTask":     "Create a new task in the initial OPEN state",
+    "toolUpdateTask":     "Update title, priority, or custom fields",
+    "toolMoveTask":       "Move a task to a different state",
+    "toolDeleteTask":     "Permanently delete a task"
   }
 }

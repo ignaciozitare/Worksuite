@@ -11,13 +11,13 @@ import { authRoutes }    from './infrastructure/http/authRoutes.js';
 import { worklogRoutes } from './infrastructure/http/worklogRoutes.js';
 import { hotdeskRoutes } from './infrastructure/http/hotdeskRoutes.js';
 import { jiraRoutes }    from './infrastructure/http/jiraRoutes.js';
-import { aiRoutes }      from './infrastructure/http/aiRoutes.js';
+import { mcpRoutes }     from './infrastructure/http/mcpRoutes.js';
 import { SupabaseWorklogRepo }        from './infrastructure/supabase/SupabaseWorklogRepo.js';
 import { SupabaseHotDeskRepo }        from './infrastructure/supabase/SupabaseHotDeskRepo.js';
 import { SupabaseUserRepo }           from './infrastructure/supabase/SupabaseUserRepo.js';
 import { SupabaseAuthService }        from './infrastructure/supabase/SupabaseAuthService.js';
 import { SupabaseJiraConnectionRepo } from './infrastructure/supabase/SupabaseJiraConnectionRepo.js';
-import { LLMServiceAdapter }          from './infrastructure/llm/LLMServiceAdapter.js';
+import { VectorLogicMCPServer }       from './infrastructure/mcp/VectorLogicMCPServer.js';
 
 const {
   SUPABASE_URL,
@@ -36,7 +36,7 @@ const hotdeskRepo      = new SupabaseHotDeskRepo(supabase);
 const userRepo         = new SupabaseUserRepo(supabase);
 const authService      = new SupabaseAuthService(supabase);
 const jiraConnectionRepo = new SupabaseJiraConnectionRepo(supabase);
-const llmService         = new LLMServiceAdapter();
+const mcpServer          = new VectorLogicMCPServer(supabase);
 
 let _app: FastifyInstance | null = null;
 
@@ -119,7 +119,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(worklogRoutes, { prefix: '/worklogs', worklogRepo });
   await app.register(hotdeskRoutes, { prefix: '/hotdesk',  hotdeskRepo });
   await app.register(jiraRoutes,    { prefix: '/jira',     jiraConnectionRepo, userRepo, worklogRepo });
-  await app.register(aiRoutes,      { prefix: '/ai',       llmService });
+  await app.register(mcpRoutes,     { prefix: '/mcp',      mcpServer });
 
   app.get('/health', async () => ({ ok: true, ts: new Date().toISOString() }));
 

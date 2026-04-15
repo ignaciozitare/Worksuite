@@ -6,9 +6,8 @@ import { CanvasDesignerView } from './views/CanvasDesignerView';
 import { AssignmentManagerView } from './views/AssignmentManagerView';
 import { SchemaBuilderView } from './views/SchemaBuilderView';
 import { KanbanView } from './views/KanbanView';
-import { ChatView } from './views/ChatView';
 import { AIRulesView } from './views/AIRulesView';
-import { SettingsView } from './views/SettingsView';
+import { MCPInfoView } from './views/MCPInfoView';
 
 /* ─── CSS (Stitch / Carbon Logic) ────────────────────────────────────────── */
 const CSS = `
@@ -29,7 +28,7 @@ const CSS = `
 .vl .vl-section-label{font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.12em;padding:16px 12px 6px;user-select:none;}
 `;
 
-type Tab = 'states' | 'canvas' | 'assignment' | 'entities' | 'kanban' | 'chat' | 'ai-rules' | 'settings';
+type Tab = 'states' | 'canvas' | 'assignment' | 'entities' | 'kanban' | 'ai-rules' | 'mcp';
 
 interface Props {
   currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown };
@@ -42,7 +41,6 @@ export function VectorLogicPage({ currentUser }: Props) {
   const NAV = [
     { section: t('vectorLogic.workspace') },
     { id: 'kanban',     label: t('vectorLogic.smartKanban'),        icon: 'view_kanban' },
-    { id: 'chat',       label: t('vectorLogic.chat'),               icon: 'smart_toy' },
     { section: t('vectorLogic.workflowEngine') },
     { id: 'states',     label: t('vectorLogic.stateManager'),      icon: 'account_tree' },
     { id: 'canvas',     label: t('vectorLogic.canvasDesigner'),     icon: 'schema' },
@@ -50,7 +48,7 @@ export function VectorLogicPage({ currentUser }: Props) {
     { section: t('vectorLogic.title') },
     { id: 'entities',   label: t('vectorLogic.taskEntities'),       icon: 'category' },
     { id: 'ai-rules',   label: t('vectorLogic.aiRules'),            icon: 'psychology' },
-    { id: 'settings',   label: t('vectorLogic.settings'),           icon: 'settings' },
+    { id: 'mcp',        label: t('vectorLogic.mcpAccess'),          icon: 'hub' },
   ];
 
   return (
@@ -113,17 +111,16 @@ export function VectorLogicPage({ currentUser }: Props) {
       <div style={{
         flex: 1, minWidth: 0,
         display: 'flex', flexDirection: 'column',
-        overflow: view === 'canvas' || view === 'kanban' || view === 'chat' ? 'hidden' : 'auto',
-        padding: view === 'canvas' || view === 'chat' ? 0 : '28px 32px',
+        overflow: view === 'canvas' || view === 'kanban' ? 'hidden' : 'auto',
+        padding: view === 'canvas' ? 0 : '28px 32px',
       }}>
         {view === 'kanban' && <KanbanView currentUser={currentUser} />}
-        {view === 'chat' && <ChatView currentUser={currentUser} />}
         {view === 'states' && <StateManagerView currentUser={currentUser} />}
         {view === 'canvas' && <CanvasDesignerView currentUser={currentUser} />}
         {view === 'assignment' && <AssignmentManagerView />}
         {view === 'entities' && <SchemaBuilderView currentUser={currentUser} />}
         {view === 'ai-rules' && <AIRulesView currentUser={currentUser} />}
-        {view === 'settings' && <SettingsView currentUser={currentUser} />}
+        {view === 'mcp' && <MCPInfoView currentUser={currentUser} />}
       </div>
     </div>
   );
