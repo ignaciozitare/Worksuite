@@ -34,6 +34,11 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
   const [renamingType, setRenamingType] = useState(false);
   const [renameValue, setRenameValue] = useState('');
 
+  // DnD state
+  const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null);
+  const [draggingLibField, setDraggingLibField] = useState<FieldTypeId | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
   useEffect(() => {
     taskTypeRepo.findAll().then(tts => {
       setTaskTypes(tts);
@@ -87,7 +92,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
     setSelected({ ...selected, icon });
   };
 
-  const addField = (typeId: FieldTypeId) => {
+  const addField = (typeId: FieldTypeId, insertAt?: number) => {
     const def = FIELD_TYPES.find(f => f.id === typeId);
     if (!def) return;
     const newField: SchemaField = {
@@ -98,10 +103,30 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
       showOnCreate: true,
       showOnDetail: true,
       options: def.hasOptions ? ['Option 1', 'Option 2'] : undefined,
-      order: fields.length,
+      order: 0,
     };
-    setFields(prev => [...prev, newField]);
+    setFields(prev => {
+      const idx = insertAt == null ? prev.length : Math.max(0, Math.min(insertAt, prev.length));
+      const next = [...prev];
+      next.splice(idx, 0, newField);
+      return next.map((f, i) => ({ ...f, order: i }));
+    });
     setSelectedField(newField);
+  };
+
+  // Move an existing field to a new index (drag reorder)
+  const moveFieldTo = (id: string, targetIdx: number) => {
+    setFields(prev => {
+      const fromIdx = prev.findIndex(f => f.id === id);
+      if (fromIdx === -1) return prev;
+      // Normalize: if dropping after the source, the target shifts by -1
+      let to = Math.max(0, Math.min(targetIdx, prev.length));
+      const next = [...prev];
+      const [item] = next.splice(fromIdx, 1);
+      if (fromIdx < to) to -= 1;
+      next.splice(to, 0, item);
+      return next.map((f, i) => ({ ...f, order: i }));
+    });
   };
 
   const updateField = (id: string, patch: Partial<SchemaField>) => {
@@ -229,18 +254,28 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                       {cat}
                     </div>
                     {items.map(f => (
-                      <button key={f.id} onClick={() => addField(f.id)}
+                      <div key={f.id}
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggingLibField(f.id);
+                          e.dataTransfer.effectAllowed = 'copy';
+                          e.dataTransfer.setData('text/plain', f.id);
+                        }}
+                        onDragEnd={() => { setDraggingLibField(null); setDragOverIdx(null); }}
+                        onClick={() => addField(f.id)}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-                          padding: '6px 8px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                          padding: '6px 8px', borderRadius: 6, cursor: 'grab',
                           background: 'transparent', color: 'var(--tx)', fontSize: 11,
                           fontFamily: 'inherit', transition: 'all .12s', textAlign: 'left',
+                          userSelect: 'none',
                         }}
                         onMouseEnter={e => { e.currentTarget.style.background = 'var(--sf2)'; e.currentTarget.style.transform = 'translateX(2px)'; }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateX(0)'; }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)', opacity: .5 }}>drag_indicator</span>
                         <span className="material-symbols-outlined" style={{ fontSize: 15, color: 'var(--ac)' }}>{f.icon}</span>
                         <span>{t(f.labelKey)}</span>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 );
@@ -288,7 +323,21 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
               </div>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
+            <div
+              style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}
+              onDragOver={(e) => {
+                if ((draggingLibField || draggingFieldId) && fields.length === 0) {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = draggingLibField ? 'copy' : 'move';
+                }
+              }}
+              onDrop={(e) => {
+                if (fields.length === 0 && draggingLibField) {
+                  e.preventDefault();
+                  addField(draggingLibField, 0);
+                  setDraggingLibField(null);
+                }
+              }}>
               {fields.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--tx3)' }}>
                   <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: .2, display: 'block', marginBottom: 12 }}>drag_indicator</span>
@@ -298,25 +347,56 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
               {fields.map((field, i) => {
                 const def = FIELD_TYPES.find(f => f.id === field.fieldType);
                 const isSelected = selectedField?.id === field.id;
+                const isDraggingThis = draggingFieldId === field.id;
                 return (
-                  <div key={field.id} onClick={() => setSelectedField(field)}
-                    style={{
-                      background: isSelected ? 'rgba(79,110,247,.06)' : 'var(--sf2)',
-                      border: `1px solid ${isSelected ? 'var(--ac)' : 'var(--bd)'}`,
-                      borderRadius: 10, padding: '14px 16px', marginBottom: 10,
-                      cursor: 'pointer', transition: 'all .15s',
-                    }}>
+                  <div key={field.id}>
+                    {/* Insert indicator above this card */}
+                    <div
+                      onDragOver={(e) => {
+                        if (draggingLibField || draggingFieldId) {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = draggingLibField ? 'copy' : 'move';
+                          if (dragOverIdx !== i) setDragOverIdx(i);
+                        }
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (draggingLibField) {
+                          addField(draggingLibField, i);
+                          setDraggingLibField(null);
+                        } else if (draggingFieldId) {
+                          moveFieldTo(draggingFieldId, i);
+                          setDraggingFieldId(null);
+                        }
+                        setDragOverIdx(null);
+                      }}
+                      style={{
+                        height: dragOverIdx === i ? 10 : 6,
+                        margin: '2px 0',
+                        background: dragOverIdx === i ? 'var(--ac)' : 'transparent',
+                        borderRadius: 4,
+                        transition: 'all .12s',
+                      }}
+                    />
+                    <div
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggingFieldId(field.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', field.id);
+                      }}
+                      onDragEnd={() => { setDraggingFieldId(null); setDragOverIdx(null); }}
+                      onClick={() => setSelectedField(field)}
+                      style={{
+                        background: isSelected ? 'rgba(79,110,247,.06)' : 'var(--sf2)',
+                        border: `1px solid ${isSelected ? 'var(--ac)' : 'var(--bd)'}`,
+                        borderRadius: 10, padding: '14px 16px',
+                        cursor: isDraggingThis ? 'grabbing' : 'grab',
+                        transition: 'all .15s',
+                        opacity: isDraggingThis ? .4 : 1,
+                      }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                      <button onClick={e => { e.stopPropagation(); moveField(field.id, -1); }}
-                        disabled={i === 0}
-                        style={{ background: 'none', border: 'none', cursor: i === 0 ? 'not-allowed' : 'pointer', color: 'var(--tx3)', opacity: i === 0 ? .2 : .6, padding: 0 }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_upward</span>
-                      </button>
-                      <button onClick={e => { e.stopPropagation(); moveField(field.id, 1); }}
-                        disabled={i === fields.length - 1}
-                        style={{ background: 'none', border: 'none', cursor: i === fields.length - 1 ? 'not-allowed' : 'pointer', color: 'var(--tx3)', opacity: i === fields.length - 1 ? .2 : .6, padding: 0 }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_downward</span>
-                      </button>
+                      <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--tx3)', opacity: .5 }}>drag_indicator</span>
                       <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--ac)' }}>{def?.icon}</span>
                       <span style={{
                         fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
@@ -343,9 +423,40 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                         </div>
                       )}
                     </div>
+                    </div>
                   </div>
                 );
               })}
+              {/* Trailing drop zone — appends at end */}
+              {fields.length > 0 && (
+                <div
+                  onDragOver={(e) => {
+                    if (draggingLibField || draggingFieldId) {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = draggingLibField ? 'copy' : 'move';
+                      if (dragOverIdx !== fields.length) setDragOverIdx(fields.length);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggingLibField) {
+                      addField(draggingLibField, fields.length);
+                      setDraggingLibField(null);
+                    } else if (draggingFieldId) {
+                      moveFieldTo(draggingFieldId, fields.length);
+                      setDraggingFieldId(null);
+                    }
+                    setDragOverIdx(null);
+                  }}
+                  style={{
+                    height: dragOverIdx === fields.length ? 40 : 24,
+                    marginTop: 4,
+                    borderRadius: 6,
+                    border: `2px dashed ${dragOverIdx === fields.length ? 'var(--ac)' : 'transparent'}`,
+                    transition: 'all .15s',
+                  }}
+                />
+              )}
             </div>
           </div>
 

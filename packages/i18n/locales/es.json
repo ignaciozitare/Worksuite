@@ -1119,6 +1119,17 @@
     "icon":               "Icono",
     "noTaskTypesYet":     "Aún no hay tipos de tarea. Crea uno para empezar.",
     "noTaskTypeSelected": "Selecciona un tipo de tarea",
-    "clickToRename":      "Click para renombrar"
+    "clickToRename":      "Click para renombrar",
+    "priorities":         "Prioridades",
+    "priorityNamePlaceholder": "Nombre de la prioridad",
+    "taskType":           "Tipo de tarea",
+    "filterAssignee":     "Filtrar por asignado",
+    "filterPriority":     "Filtrar por prioridad",
+    "allAssignees":       "Todos los asignados",
+    "allPriorities":      "Todas las prioridades",
+    "sortBy":             "Ordenar",
+    "sortManual":         "Manual",
+    "sortPriority":       "Prioridad",
+    "sortAssignee":       "Asignado"
   }
 }

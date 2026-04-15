@@ -11,6 +11,7 @@ import { SupabaseTransitionRepo } from './infra/supabase/SupabaseTransitionRepo'
 import { SupabaseTaskTypeRepo } from './infra/supabase/SupabaseTaskTypeRepo';
 import { SupabaseTaskRepo } from './infra/supabase/SupabaseTaskRepo';
 import { SupabaseAIRepo } from './infra/supabase/SupabaseAIRepo';
+import { SupabasePriorityRepo } from './infra/supabase/SupabasePriorityRepo';
 import { LLMService } from './infra/LLMService';
 
 export const workflowRepo = new SupabaseWorkflowRepo(supabase);
@@ -19,4 +20,5 @@ export const transitionRepo = new SupabaseTransitionRepo(supabase);
 export const taskTypeRepo = new SupabaseTaskTypeRepo(supabase);
 export const taskRepo = new SupabaseTaskRepo(supabase);
 export const aiRepo = new SupabaseAIRepo(supabase);
+export const priorityRepo = new SupabasePriorityRepo(supabase);
 export const llmService = new LLMService();

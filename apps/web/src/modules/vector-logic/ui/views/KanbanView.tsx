@@ -5,8 +5,9 @@ import type { Task, TaskPriority } from '../../domain/entities/Task';
 import type { TaskType } from '../../domain/entities/TaskType';
 import type { WorkflowState, StateCategory } from '../../domain/entities/State';
 import type { SchemaField } from '../../domain/entities/FieldType';
+import type { Priority } from '../../domain/entities/Priority';
 import { FIELD_TYPES } from '../../domain/entities/FieldType';
-import { taskRepo, taskTypeRepo, stateRepo } from '../../container';
+import { taskRepo, taskTypeRepo, stateRepo, priorityRepo } from '../../container';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { UserPicker } from '../components/UserPicker';
 
@@ -15,13 +16,6 @@ const CAT_COLORS: Record<StateCategory, { color: string; bg: string }> = {
   OPEN:        { color: 'var(--amber)', bg: 'rgba(245,158,11,.08)' },
   IN_PROGRESS: { color: 'var(--ac)',    bg: 'rgba(79,110,247,.08)' },
   DONE:        { color: 'var(--green)', bg: 'rgba(62,207,142,.08)' },
-};
-
-const PRIORITY_COLORS: Record<TaskPriority, string> = {
-  low: 'var(--tx3)',
-  medium: 'var(--ac)',
-  high: 'var(--amber)',
-  urgent: 'var(--red)',
 };
 
 interface WSUser {
@@ -42,23 +36,51 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   const [selectedType, setSelectedType] = useState<TaskType | null>(null);
   const [wfStates, setWfStates] = useState<WorkflowState[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [priorities, setPriorities] = useState<Priority[]>([]);
   const [loading, setLoading] = useState(true);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
   const [dragColumnId, setDragColumnId] = useState<string | null>(null);
   const [dropColumnId, setDropColumnId] = useState<string | null>(null);
+  // Within-column reorder target index
+  const [dropTaskIdx, setDropTaskIdx] = useState<{ stateId: string; idx: number } | null>(null);
+
+  // Filters and sort
+  const [filterAssignee, setFilterAssignee] = useState<string>('all');
+  const [filterPriority, setFilterPriority] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'manual' | 'priority' | 'assignee'>('manual');
 
   useEffect(() => {
-    taskTypeRepo.findAll().then(tts => {
+    (async () => {
+      const [tts, prs] = await Promise.all([
+        taskTypeRepo.findAll(),
+        priorityRepo.ensureDefaults(currentUser.id),
+      ]);
       const assigned = tts.filter(tt => tt.workflowId);
       setTaskTypes(assigned);
+      setPriorities(prs);
       if (assigned.length > 0) {
-        loadType(assigned[0]);
+        await loadType(assigned[0]);
       }
       setLoading(false);
-    });
+    })();
   }, []);
+
+  // Map priority name → color for rendering badges
+  const priorityColorByName = useMemo(() => {
+    const map: Record<string, string> = {};
+    priorities.forEach(p => { map[p.name.toLowerCase()] = p.color; });
+    return map;
+  }, [priorities]);
+
+  // Priority sort rank: follow priorities.sortOrder (urgent first typically)
+  const priorityRankByName = useMemo(() => {
+    const map: Record<string, number> = {};
+    const sorted = [...priorities].sort((a, b) => b.sortOrder - a.sortOrder);
+    sorted.forEach((p, i) => { map[p.name.toLowerCase()] = i; });
+    return map;
+  }, [priorities]);
 
   const loadType = async (tt: TaskType) => {
     setSelectedType(tt);
@@ -71,38 +93,103 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
     setTasks(tsks);
   };
 
+  // Apply filters and sort, then group by stateId
   const tasksByState = useMemo(() => {
+    const filtered = tasks.filter(t => {
+      if (filterAssignee !== 'all' && t.assigneeId !== (filterAssignee === 'unassigned' ? null : filterAssignee)) return false;
+      if (filterPriority !== 'all' && (t.priority ?? '').toLowerCase() !== filterPriority.toLowerCase()) return false;
+      return true;
+    });
+
     const map: Record<string, Task[]> = {};
     wfStates.forEach(ws => { map[ws.stateId] = []; });
-    tasks.forEach(task => {
+    filtered.forEach(task => {
       if (task.stateId && map[task.stateId] != null) {
         map[task.stateId].push(task);
       }
     });
-    return map;
-  }, [tasks, wfStates]);
 
-  const createTask = async (title: string, stateId: string) => {
-    // Pre-fill the assignee field in the task data with the current user
-    // if the schema has an assignee field. This is in addition to the
-    // top-level assigneeId so the field renders correctly in the modal.
-    const schema = (selectedType?.schema as any[]) ?? [];
+    // Sort each column
+    Object.keys(map).forEach(sid => {
+      const arr = map[sid];
+      if (sortBy === 'manual') {
+        arr.sort((a, b) => a.sortOrder - b.sortOrder);
+      } else if (sortBy === 'priority') {
+        arr.sort((a, b) => {
+          const ra = priorityRankByName[(a.priority ?? '').toLowerCase()] ?? -1;
+          const rb = priorityRankByName[(b.priority ?? '').toLowerCase()] ?? -1;
+          return rb - ra;
+        });
+      } else if (sortBy === 'assignee') {
+        arr.sort((a, b) => (a.assigneeId ?? '').localeCompare(b.assigneeId ?? ''));
+      }
+    });
+
+    return map;
+  }, [tasks, wfStates, filterAssignee, filterPriority, sortBy, priorityRankByName]);
+
+  // Distinct assignees present in loaded tasks
+  const assigneesInTasks = useMemo(() => {
+    const ids = new Set<string>();
+    tasks.forEach(t => { if (t.assigneeId) ids.add(t.assigneeId); });
+    return Array.from(ids).map(id => wsUsers.find(u => u.id === id)).filter(Boolean) as WSUser[];
+  }, [tasks, wsUsers]);
+
+  const createTask = async (title: string, stateId: string, taskTypeId: string) => {
+    const tt = taskTypes.find(x => x.id === taskTypeId) ?? selectedType;
+    const schema = (tt?.schema as any[]) ?? [];
     const initialData: Record<string, unknown> = {};
     for (const f of schema) {
       if (f.fieldType === 'assignee') {
         initialData[f.id] = currentUser.id;
       }
     }
+    const defaultPriority = priorities.find(p => p.name.toLowerCase() === 'medium')?.name
+      ?? priorities[0]?.name ?? null;
     const created = await taskRepo.create({
-      taskTypeId: selectedType!.id,
+      taskTypeId: tt!.id,
       stateId,
       title,
       data: initialData,
       assigneeId: currentUser.id,
-      priority: 'medium',
+      priority: defaultPriority,
+      sortOrder: 0,
       createdBy: currentUser.id,
     });
     setTasks(prev => [created, ...prev]);
+  };
+
+  // Reorder within same column using sort_order
+  const reorderWithinColumn = async (taskId: string, stateId: string, targetIdx: number) => {
+    const colTasks = [...(tasksByState[stateId] ?? [])];
+    const fromIdx = colTasks.findIndex(t => t.id === taskId);
+    if (fromIdx === -1) {
+      // Moving from a different column → treat as move + place at target
+      await moveTask(taskId, stateId);
+      // After state move, insert into local arr at target and renumber
+      const moving = tasks.find(t => t.id === taskId);
+      if (!moving) return;
+      const arr = [...colTasks];
+      arr.splice(Math.min(targetIdx, arr.length), 0, { ...moving, stateId });
+      const updates = arr.map((t, i) => ({ id: t.id, sortOrder: i, stateId }));
+      setTasks(prev => prev.map(t => {
+        const u = updates.find(u => u.id === t.id);
+        return u ? { ...t, sortOrder: u.sortOrder, stateId } : t;
+      }));
+      await taskRepo.reorder(updates);
+      return;
+    }
+    // Same column reorder
+    let to = Math.max(0, Math.min(targetIdx, colTasks.length));
+    const [moved] = colTasks.splice(fromIdx, 1);
+    if (fromIdx < to) to -= 1;
+    colTasks.splice(to, 0, moved);
+    const updates = colTasks.map((t, i) => ({ id: t.id, sortOrder: i }));
+    setTasks(prev => prev.map(t => {
+      const u = updates.find(u => u.id === t.id);
+      return u ? { ...t, sortOrder: u.sortOrder } : t;
+    }));
+    await taskRepo.reorder(updates);
   };
 
   const moveTask = async (taskId: string, toStateId: string) => {
@@ -125,6 +212,12 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   const onDragStart = (taskId: string) => (e: React.DragEvent) => {
     setDragTaskId(taskId);
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', taskId);
+  };
+
+  const onTaskDragEnd = () => {
+    setDragTaskId(null);
+    setDropTaskIdx(null);
   };
 
   const onDragOverCol = (e: React.DragEvent) => {
@@ -208,7 +301,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
       {/* Header */}
-      <div style={{ padding: '0 4px 16px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+      <div style={{ padding: '0 4px 14px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
           {t('vectorLogic.smartKanban')}
         </h2>
@@ -216,18 +309,50 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
           <div style={{ display: 'flex', gap: 4, background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 8, padding: 3 }}>
             {taskTypes.map(tt => (
               <button key={tt.id} onClick={() => loadType(tt)}
+                title={tt.name}
                 style={{
                   background: selectedType?.id === tt.id ? 'var(--ac)' : 'transparent',
                   color: selectedType?.id === tt.id ? '#fff' : 'var(--tx3)',
                   border: 'none', borderRadius: 6, cursor: 'pointer',
                   fontWeight: selectedType?.id === tt.id ? 600 : 400,
                   fontSize: 11, padding: '5px 12px', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 6,
                 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{tt.icon || 'task_alt'}</span>
                 {tt.name}
               </button>
             ))}
           </div>
         )}
+
+        {/* Filters */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <select value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)}
+            title={t('vectorLogic.filterAssignee') || 'Assignee'}
+            style={selectStyle}>
+            <option value="all">{t('vectorLogic.allAssignees') || 'All assignees'}</option>
+            <option value="unassigned">{t('vectorLogic.unassigned') || 'Unassigned'}</option>
+            {assigneesInTasks.map(u => (
+              <option key={u.id} value={u.id}>{u.name || u.email}</option>
+            ))}
+          </select>
+          <select value={filterPriority} onChange={e => setFilterPriority(e.target.value)}
+            title={t('vectorLogic.filterPriority') || 'Priority'}
+            style={selectStyle}>
+            <option value="all">{t('vectorLogic.allPriorities') || 'All priorities'}</option>
+            {priorities.map(p => (
+              <option key={p.id} value={p.name}>{p.name}</option>
+            ))}
+          </select>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value as any)}
+            title={t('vectorLogic.sortBy') || 'Sort'}
+            style={selectStyle}>
+            <option value="manual">{t('vectorLogic.sortManual') || 'Manual'}</option>
+            <option value="priority">{t('vectorLogic.sortPriority') || 'Priority'}</option>
+            <option value="assignee">{t('vectorLogic.sortAssignee') || 'Assignee'}</option>
+          </select>
+        </div>
+
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           <span style={{ fontSize: 11, color: 'var(--tx3)', alignSelf: 'center' }}>
             {tasks.length} {t('vectorLogic.tasks')}
@@ -273,15 +398,20 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                     }
                   }}
                   style={{
-                    background: isDropTarget ? 'rgba(79,110,247,.08)' : 'var(--sf2)',
-                    borderRadius: 10,
+                    background: isDropTarget
+                      ? `linear-gradient(180deg, rgba(79,110,247,.14) 0%, rgba(79,110,247,.04) 100%)`
+                      : 'var(--sf2)',
+                    borderRadius: 12,
                     borderTop: `3px solid ${ws.state?.color || cc.color}`,
                     border: isDropTarget ? '1px dashed var(--ac)' : '1px solid transparent',
                     borderTopColor: ws.state?.color || cc.color,
                     display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden',
                     opacity: isDragging ? .4 : 1,
-                    transform: isDropTarget ? 'scale(1.02)' : 'scale(1)',
-                    transition: 'all .2s cubic-bezier(.215,.61,.355,1)',
+                    transform: isDropTarget ? 'scale(1.015)' : 'scale(1)',
+                    boxShadow: isDropTarget
+                      ? `0 0 0 4px rgba(79,110,247,.08), 0 16px 40px rgba(79,110,247,.2)`
+                      : '0 2px 8px rgba(0,0,0,.18)',
+                    transition: 'all .22s cubic-bezier(.215,.61,.355,1)',
                   }}>
                   <div
                     draggable
@@ -304,11 +434,81 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                       {colTasks.length}
                     </span>
                   </div>
-                  <div style={{ flex: 1, overflowY: 'auto', padding: '0 10px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {colTasks.map(task => (
-                      <TaskCard key={task.id} task={task} onClick={() => setDetailTask(task)}
-                        onDragStart={onDragStart(task.id)} />
-                    ))}
+                  <div style={{ flex: 1, overflowY: 'auto', padding: '0 10px 12px', display: 'flex', flexDirection: 'column' }}>
+                    {colTasks.map((task, ti) => {
+                      const isInsertHere = dropTaskIdx?.stateId === ws.stateId && dropTaskIdx.idx === ti;
+                      return (
+                        <div key={task.id}>
+                          {sortBy === 'manual' && (
+                            <div
+                              onDragOver={(e) => {
+                                if (!dragTaskId || dragColumnId) return;
+                                e.preventDefault();
+                                e.stopPropagation();
+                                e.dataTransfer.dropEffect = 'move';
+                                if (!dropTaskIdx || dropTaskIdx.stateId !== ws.stateId || dropTaskIdx.idx !== ti) {
+                                  setDropTaskIdx({ stateId: ws.stateId, idx: ti });
+                                }
+                              }}
+                              onDrop={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (dragTaskId) {
+                                  await reorderWithinColumn(dragTaskId, ws.stateId, ti);
+                                  setDragTaskId(null);
+                                  setDropTaskIdx(null);
+                                }
+                              }}
+                              style={{
+                                height: isInsertHere ? 10 : 6,
+                                margin: '1px 0',
+                                background: isInsertHere ? 'var(--ac)' : 'transparent',
+                                borderRadius: 3,
+                                transition: 'all .12s',
+                              }}
+                            />
+                          )}
+                          <TaskCard task={task}
+                            priorityColor={priorityColorByName[(task.priority ?? '').toLowerCase()] ?? 'var(--tx3)'}
+                            assignee={wsUsers.find(u => u.id === task.assigneeId) ?? null}
+                            onClick={() => setDetailTask(task)}
+                            onDragStart={onDragStart(task.id)}
+                            onDragEnd={onTaskDragEnd}
+                            isDragging={dragTaskId === task.id} />
+                        </div>
+                      );
+                    })}
+                    {sortBy === 'manual' && colTasks.length > 0 && (
+                      <div
+                        onDragOver={(e) => {
+                          if (!dragTaskId || dragColumnId) return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          e.dataTransfer.dropEffect = 'move';
+                          const idx = colTasks.length;
+                          if (!dropTaskIdx || dropTaskIdx.stateId !== ws.stateId || dropTaskIdx.idx !== idx) {
+                            setDropTaskIdx({ stateId: ws.stateId, idx });
+                          }
+                        }}
+                        onDrop={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (dragTaskId) {
+                            await reorderWithinColumn(dragTaskId, ws.stateId, colTasks.length);
+                            setDragTaskId(null);
+                            setDropTaskIdx(null);
+                          }
+                        }}
+                        style={{
+                          height: dropTaskIdx?.stateId === ws.stateId && dropTaskIdx.idx === colTasks.length ? 32 : 16,
+                          marginTop: 4,
+                          borderRadius: 6,
+                          border: dropTaskIdx?.stateId === ws.stateId && dropTaskIdx.idx === colTasks.length
+                            ? '2px dashed var(--ac)' : '2px dashed transparent',
+                          transition: 'all .15s',
+                        }}
+                      />
+                    )}
                     {colTasks.length === 0 && (
                       <div style={{ fontSize: 10, color: 'var(--tx3)', textAlign: 'center', padding: '20px 0', opacity: .4 }}>
                         {t('vectorLogic.noneYet')}
@@ -324,15 +524,23 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
       {/* New task modal */}
       {showNew && selectedType && (
         <NewTaskModal
+          taskTypes={taskTypes}
+          defaultTypeId={selectedType.id}
           onClose={() => setShowNew(false)}
-          onCreate={async (title) => {
-            // Default state when creating a task: prefer OPEN, then is_initial,
-            // then first state. This guarantees new tasks land in OPEN if it
-            // exists in the workflow (per user request).
-            const openState = wfStates.find(ws => ws.state?.category === 'OPEN');
-            const initialState = openState ?? wfStates.find(ws => ws.isInitial) ?? wfStates[0];
+          onCreate={async (title, typeId) => {
+            // If the chosen type differs from the current one, load its workflow states
+            // to find the initial OPEN state.
+            let targetStates = wfStates;
+            if (typeId !== selectedType.id) {
+              const tt = taskTypes.find(t => t.id === typeId);
+              if (tt?.workflowId) {
+                targetStates = await stateRepo.findByWorkflow(tt.workflowId);
+              }
+            }
+            const openState = targetStates.find(ws => ws.state?.category === 'OPEN');
+            const initialState = openState ?? targetStates.find(ws => ws.isInitial) ?? targetStates[0];
             if (initialState) {
-              await createTask(title, initialState.stateId);
+              await createTask(title, initialState.stateId, typeId);
               setShowNew(false);
             }
           }}
@@ -346,6 +554,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
           taskType={selectedType}
           wfStates={wfStates}
           wsUsers={wsUsers}
+          priorities={priorities}
           currentUser={currentUser}
           onClose={() => setDetailTask(null)}
           onUpdate={(patch) => updateTask(detailTask.id, patch)}
@@ -357,47 +566,110 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
 }
 
 /* ── Task Card ─────────────────────────────────────────────────────────── */
-function TaskCard({ task, onClick, onDragStart }: { task: Task; onClick: () => void; onDragStart: (e: React.DragEvent) => void }) {
-  const priorityColor = task.priority ? PRIORITY_COLORS[task.priority] : 'var(--tx3)';
+function TaskCard({ task, priorityColor, assignee, onClick, onDragStart, onDragEnd, isDragging }: {
+  task: Task;
+  priorityColor: string;
+  assignee: WSUser | null;
+  onClick: () => void;
+  onDragStart: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
+  isDragging?: boolean;
+}) {
+  const initials = assignee ? (assignee.name || assignee.email).trim().split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase() : '';
   return (
     <div
       draggable
       onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       onClick={onClick}
       style={{
-        background: 'var(--sf3)', borderRadius: 8, padding: '10px 12px',
-        cursor: 'pointer', transition: 'all .15s',
+        background: 'var(--sf3)', borderRadius: 10, padding: '10px 12px',
+        cursor: isDragging ? 'grabbing' : 'grab',
+        transition: 'all .15s',
         borderLeft: `3px solid ${priorityColor}`,
+        opacity: isDragging ? .4 : 1,
+        boxShadow: '0 1px 2px rgba(0,0,0,.2)',
       }}
-      onMouseEnter={e => e.currentTarget.style.background = 'rgba(79,110,247,.06)'}
-      onMouseLeave={e => e.currentTarget.style.background = 'var(--sf3)'}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.3 }}>{task.title}</div>
-      {task.priority && (
-        <div style={{ marginTop: 6, display: 'flex', gap: 4 }}>
+      onMouseEnter={e => {
+        e.currentTarget.style.background = 'rgba(79,110,247,.08)';
+        e.currentTarget.style.transform = 'translateY(-1px)';
+        e.currentTarget.style.boxShadow = '0 4px 14px rgba(79,110,247,.18)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = 'var(--sf3)';
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,.2)';
+      }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.35 }}>{task.title}</div>
+      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+        {task.priority && (
           <span style={{
             fontSize: 9, padding: '2px 6px', borderRadius: 3,
-            background: `${priorityColor}20`, color: priorityColor,
+            background: `${priorityColor}22`, color: priorityColor,
             fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase',
           }}>{task.priority}</span>
-        </div>
-      )}
+        )}
+        <div style={{ flex: 1 }} />
+        {assignee && (
+          <div title={assignee.name || assignee.email}
+            style={{
+              width: 22, height: 22, borderRadius: '50%',
+              background: 'linear-gradient(135deg, var(--ac), var(--ac2, #6366f1))',
+              color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 9, fontWeight: 700, letterSpacing: '.02em',
+              border: '1px solid rgba(255,255,255,.12)',
+            }}>
+            {initials}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 /* ── New Task Modal ────────────────────────────────────────────────────── */
-function NewTaskModal({ onClose, onCreate }: { onClose: () => void; onCreate: (title: string) => Promise<void> }) {
+function NewTaskModal({ taskTypes, defaultTypeId, onClose, onCreate }: {
+  taskTypes: TaskType[];
+  defaultTypeId: string;
+  onClose: () => void;
+  onCreate: (title: string, typeId: string) => Promise<void>;
+}) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
+  const [typeId, setTypeId] = useState(defaultTypeId);
 
   const submit = async () => {
-    if (!title.trim()) return;
-    await onCreate(title.trim());
+    if (!title.trim() || !typeId) return;
+    await onCreate(title.trim(), typeId);
   };
 
   return (
     <Modal title={t('vectorLogic.newTask')} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {taskTypes.length > 1 && (
+          <div>
+            <label style={lblStyle}>{t('vectorLogic.taskType') || 'Task type'}</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {taskTypes.map(tt => {
+                const active = typeId === tt.id;
+                return (
+                  <button key={tt.id} onClick={() => setTypeId(tt.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px',
+                      borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 600,
+                      background: active ? 'rgba(79,110,247,.12)' : 'var(--sf2)',
+                      color: active ? 'var(--ac)' : 'var(--tx)',
+                      border: `1px solid ${active ? 'var(--ac)' : 'var(--bd)'}`,
+                      transition: 'all .15s',
+                    }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{tt.icon || 'task_alt'}</span>
+                    {tt.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div>
           <label style={lblStyle}>{t('vectorLogic.taskTitle')}</label>
           <input value={title} onChange={e => setTitle(e.target.value)} autoFocus
@@ -414,9 +686,10 @@ function NewTaskModal({ onClose, onCreate }: { onClose: () => void; onCreate: (t
 }
 
 /* ── Task Detail Modal ─────────────────────────────────────────────────── */
-function TaskDetailModal({ task, taskType, wfStates, wsUsers, currentUser, onClose, onUpdate, onDelete }: {
+function TaskDetailModal({ task, taskType, wfStates, wsUsers, priorities, currentUser, onClose, onUpdate, onDelete }: {
   task: Task; taskType: TaskType; wfStates: WorkflowState[];
   wsUsers: WSUser[];
+  priorities: Priority[];
   currentUser: { id: string; [k: string]: unknown };
   onClose: () => void; onUpdate: (patch: Partial<Task>) => void; onDelete: () => void;
 }) {
@@ -446,12 +719,12 @@ function TaskDetailModal({ task, taskType, wfStates, wsUsers, currentUser, onClo
               <option key={ws.stateId} value={ws.stateId}>{ws.state?.name}</option>
             ))}
           </select>
-          <select value={priority ?? 'medium'} onChange={e => { setPriority(e.target.value as any); onUpdate({ priority: e.target.value as any }); }}
+          <select value={priority ?? ''} onChange={e => { setPriority(e.target.value); onUpdate({ priority: e.target.value }); }}
             style={{ ...inpStyle({ width: 'auto' }), fontSize: 12 }}>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="urgent">Urgent</option>
+            <option value="">—</option>
+            {priorities.map(p => (
+              <option key={p.id} value={p.name}>{p.name}</option>
+            ))}
           </select>
         </div>
 
@@ -617,6 +890,12 @@ const inpStyle = (extra = {}) => ({
   background: 'var(--sf2)', border: '1px solid var(--bd)',
   borderRadius: 8, color: 'var(--tx)', outline: 'none', ...extra,
 });
+
+const selectStyle: React.CSSProperties = {
+  padding: '5px 10px', fontSize: 11, fontFamily: 'inherit', fontWeight: 500,
+  background: 'var(--sf2)', border: '1px solid var(--bd)',
+  borderRadius: 6, color: 'var(--tx)', outline: 'none', cursor: 'pointer',
+};
 
 const lblStyle = {
   fontSize: 11, fontWeight: 700, color: 'var(--tx3)',

@@ -4,7 +4,8 @@ import { useTranslation } from '@worksuite/i18n';
 import type { AISettings, AIProvider, AIMode } from '../../domain/entities/AI';
 import { DEFAULT_SYSTEM_PROMPT } from '../../domain/entities/AI';
 import type { LLMModel } from '../../domain/ports/ILLMService';
-import { aiRepo, llmService } from '../../container';
+import type { Priority } from '../../domain/entities/Priority';
+import { aiRepo, llmService, priorityRepo } from '../../container';
 
 interface Props {
   currentUser: { id: string; [k: string]: unknown };
@@ -28,18 +29,52 @@ export function SettingsView({ currentUser }: Props) {
   const [loadingModels, setLoadingModels] = useState(false);
   const [modelsError, setModelsError] = useState('');
 
+  // Priorities list (CRUD)
+  const [priorities, setPriorities] = useState<Priority[]>([]);
+  const [newPriorityName, setNewPriorityName] = useState('');
+  const [newPriorityColor, setNewPriorityColor] = useState('#4f6ef7');
+
   useEffect(() => {
-    aiRepo.getSettings(currentUser.id).then(s => {
-      if (s) {
-        setMode(s.mode);
-        setProvider(s.provider);
-        setModel(s.model ?? '');
-        setApiKey(s.apiKey ?? '');
-        setSystemPrompt(s.systemPrompt ?? DEFAULT_SYSTEM_PROMPT);
+    (async () => {
+      const [settings, prs] = await Promise.all([
+        aiRepo.getSettings(currentUser.id),
+        priorityRepo.ensureDefaults(currentUser.id),
+      ]);
+      if (settings) {
+        setMode(settings.mode);
+        setProvider(settings.provider);
+        setModel(settings.model ?? '');
+        setApiKey(settings.apiKey ?? '');
+        setSystemPrompt(settings.systemPrompt ?? DEFAULT_SYSTEM_PROMPT);
       }
+      setPriorities(prs);
       setLoading(false);
-    });
+    })();
   }, [currentUser.id]);
+
+  const addPriority = async () => {
+    if (!newPriorityName.trim()) return;
+    const created = await priorityRepo.create({
+      userId: currentUser.id,
+      name: newPriorityName.trim(),
+      color: newPriorityColor,
+      sortOrder: priorities.length,
+    });
+    setPriorities(prev => [...prev, created]);
+    setNewPriorityName('');
+    setNewPriorityColor('#4f6ef7');
+  };
+
+  const updatePriority = async (id: string, patch: Partial<Priority>) => {
+    await priorityRepo.update(id, patch);
+    setPriorities(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p));
+  };
+
+  const removePriority = async (id: string) => {
+    if (!confirm(t('common.delete') + '?')) return;
+    await priorityRepo.remove(id);
+    setPriorities(prev => prev.filter(p => p.id !== id));
+  };
 
   const save = async () => {
     setSaving(true);
@@ -246,6 +281,51 @@ export function SettingsView({ currentUser }: Props) {
           </p>
         </Section>
       )}
+
+      {/* Priorities CRUD */}
+      <Section title={t('vectorLogic.priorities') || 'Priorities'}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+          {priorities.map(p => (
+            <div key={p.id} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 12px', background: 'var(--sf3)', borderRadius: 8,
+              border: '1px solid var(--bd)',
+            }}>
+              <input type="color" value={p.color}
+                onChange={e => updatePriority(p.id, { color: e.target.value })}
+                style={{ width: 28, height: 28, border: 'none', borderRadius: 6, background: 'transparent', cursor: 'pointer' }} />
+              <input value={p.name}
+                onChange={e => setPriorities(prev => prev.map(x => x.id === p.id ? { ...x, name: e.target.value } : x))}
+                onBlur={e => updatePriority(p.id, { name: e.target.value.trim() || p.name })}
+                style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--tx)', fontSize: 13, fontWeight: 600, outline: 'none', fontFamily: 'inherit' }} />
+              <span style={{ fontSize: 10, color: 'var(--tx3)', fontFamily: 'monospace' }}>{p.color}</span>
+              <button onClick={() => removePriority(p.id)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', opacity: .6, display: 'flex', alignItems: 'center', padding: 4 }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '.6'}>
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+              </button>
+            </div>
+          ))}
+          {priorities.length === 0 && (
+            <div style={{ fontSize: 11, color: 'var(--tx3)', textAlign: 'center', padding: '12px 0', opacity: .6 }}>
+              {t('vectorLogic.noneYet')}
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input type="color" value={newPriorityColor} onChange={e => setNewPriorityColor(e.target.value)}
+            style={{ width: 36, height: 36, border: '1px solid var(--bd)', borderRadius: 6, cursor: 'pointer', background: 'var(--sf)' }} />
+          <input value={newPriorityName} onChange={e => setNewPriorityName(e.target.value)}
+            placeholder={t('vectorLogic.priorityNamePlaceholder') || 'Priority name'}
+            onKeyDown={e => { if (e.key === 'Enter') addPriority(); }}
+            style={inpStyle()} />
+          <button onClick={addPriority} disabled={!newPriorityName.trim()} style={btnStyle('primary')}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+            {t('common.add') || t('common.create')}
+          </button>
+        </div>
+      </Section>
 
       {/* Save */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24 }}>

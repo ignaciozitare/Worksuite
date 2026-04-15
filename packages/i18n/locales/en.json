@@ -1119,6 +1119,17 @@
     "icon":               "Icon",
     "noTaskTypesYet":     "No task types yet. Create one to get started.",
     "noTaskTypeSelected": "Select a task type",
-    "clickToRename":      "Click to rename"
+    "clickToRename":      "Click to rename",
+    "priorities":         "Priorities",
+    "priorityNamePlaceholder": "Priority name",
+    "taskType":           "Task type",
+    "filterAssignee":     "Filter by assignee",
+    "filterPriority":     "Filter by priority",
+    "allAssignees":       "All assignees",
+    "allPriorities":      "All priorities",
+    "sortBy":             "Sort",
+    "sortManual":         "Manual",
+    "sortPriority":       "Priority",
+    "sortAssignee":       "Assignee"
   }
 }

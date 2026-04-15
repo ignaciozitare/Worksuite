@@ -10,9 +10,21 @@ export class SupabaseTaskRepo implements ITaskRepo {
       .from('vl_tasks')
       .select('*')
       .eq('task_type_id', taskTypeId)
+      .order('sort_order', { ascending: true })
       .order('updated_at', { ascending: false });
     if (error) throw error;
-    return (data ?? []).map(this.toDomain);
+    return (data ?? []).map((row) => this.toDomain(row));
+  }
+
+  /** Find ALL tasks across task types — used by the unified Kanban view */
+  async findAll(): Promise<Task[]> {
+    const { data, error } = await this.sb
+      .from('vl_tasks')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((row) => this.toDomain(row));
   }
 
   async findById(id: string): Promise<Task | null> {
@@ -35,6 +47,7 @@ export class SupabaseTaskRepo implements ITaskRepo {
         data: draft.data,
         assignee_id: draft.assigneeId,
         priority: draft.priority,
+        sort_order: draft.sortOrder ?? 0,
         created_by: draft.createdBy,
       })
       .select()
@@ -50,6 +63,7 @@ export class SupabaseTaskRepo implements ITaskRepo {
     if (patch.stateId !== undefined) row.state_id = patch.stateId;
     if (patch.assigneeId !== undefined) row.assignee_id = patch.assigneeId;
     if (patch.priority !== undefined) row.priority = patch.priority;
+    if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
     const { error } = await this.sb.from('vl_tasks').update(row).eq('id', id);
     if (error) throw error;
   }
@@ -60,6 +74,15 @@ export class SupabaseTaskRepo implements ITaskRepo {
       .update({ state_id: stateId, updated_at: new Date().toISOString() })
       .eq('id', id);
     if (error) throw error;
+  }
+
+  /** Bulk update sort_order for tasks (used after drag-and-drop reorder) */
+  async reorder(updates: Array<{ id: string; sortOrder: number; stateId?: string | null }>): Promise<void> {
+    await Promise.all(updates.map(({ id, sortOrder, stateId }) => {
+      const row: Record<string, unknown> = { sort_order: sortOrder, updated_at: new Date().toISOString() };
+      if (stateId !== undefined) row.state_id = stateId;
+      return this.sb.from('vl_tasks').update(row).eq('id', id);
+    }));
   }
 
   async remove(id: string): Promise<void> {
@@ -76,6 +99,7 @@ export class SupabaseTaskRepo implements ITaskRepo {
       data: row.data ?? {},
       assigneeId: row.assignee_id,
       priority: row.priority,
+      sortOrder: row.sort_order ?? 0,
       createdBy: row.created_by,
       createdAt: row.created_at,
       updatedAt: row.updated_at,

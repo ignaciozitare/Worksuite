@@ -9,6 +9,8 @@ import {
   addEdge,
   useNodesState,
   useEdgesState,
+  useReactFlow,
+  MarkerType,
   type Connection,
   type Edge,
   type Node,
@@ -55,6 +57,7 @@ export function CanvasDesignerView(props: Props) {
 
 function CanvasDesignerInner({ currentUser }: Props) {
   const { t } = useTranslation();
+  const { screenToFlowPosition } = useReactFlow();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [selected, setSelected] = useState<Workflow | null>(null);
   const [allStates, setAllStates] = useState<State[]>([]);
@@ -62,6 +65,8 @@ function CanvasDesignerInner({ currentUser }: Props) {
   const [transitions, setTransitions] = useState<Transition[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [draggingLibState, setDraggingLibState] = useState<State | null>(null);
+  const [canvasDragOver, setCanvasDragOver] = useState(false);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -113,8 +118,16 @@ function CanvasDesignerInner({ currentUser }: Props) {
       target: ws.find(s => s.stateId === t.toStateId)?.id ?? '',
       label: t.label ?? '',
       animated: t.isGlobal,
-      style: { stroke: 'var(--ac)', strokeWidth: 2 },
-      labelStyle: { fontSize: 10, fontWeight: 600, fill: 'var(--tx3)' },
+      // Arrow head at the target end so direction is visible
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 18,
+        height: 18,
+        color: '#4f6ef7',
+      },
+      style: { stroke: '#4f6ef7', strokeWidth: 2 },
+      labelStyle: { fontSize: 10, fontWeight: 600, fill: '#8c909f' },
+      labelBgStyle: { fill: '#1c1b1b', fillOpacity: 0.9 },
     }));
 
     setNodes(newNodes);
@@ -145,7 +158,8 @@ function CanvasDesignerInner({ currentUser }: Props) {
       ...connection,
       id: tr.id,
       animated: false,
-      style: { stroke: 'var(--ac)', strokeWidth: 2 },
+      markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: '#4f6ef7' },
+      style: { stroke: '#4f6ef7', strokeWidth: 2 },
     }, eds));
   }, [selected, wfStates]);
 
@@ -197,8 +211,8 @@ function CanvasDesignerInner({ currentUser }: Props) {
     }
   }, []);
 
-  // Add state from library
-  const addStateToCanvas = async (state: State) => {
+  // Add state from library at a specific position (or random if not provided)
+  const addStateToCanvas = async (state: State, dropPosition?: { x: number; y: number }) => {
     if (!selected) return;
     if (wfStates.some(ws => ws.stateId === state.id)) return;
 
@@ -206,14 +220,15 @@ function CanvasDesignerInner({ currentUser }: Props) {
     const hasOpen = wfStates.some(ws => ws.state?.category === 'OPEN');
     if (state.category === 'OPEN' && hasOpen) return;
 
-    const x = 100 + Math.random() * 400;
-    const y = 100 + Math.random() * 300;
+    const x = dropPosition?.x ?? 100 + Math.random() * 400;
+    const y = dropPosition?.y ?? 100 + Math.random() * 300;
     const ws = await stateRepo.addToWorkflow({
       workflowId: selected.id,
       stateId: state.id,
       positionX: x,
       positionY: y,
       isInitial: state.category === 'OPEN',
+      sortOrder: wfStates.length,
     });
     setWfStates(prev => [...prev, ws]);
     setNodes(nds => [...nds, {
@@ -246,7 +261,32 @@ function CanvasDesignerInner({ currentUser }: Props) {
   return (
     <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: 0 }}>
       {/* Canvas */}
-      <div style={{ flex: 1, minWidth: 0, position: 'relative', background: 'var(--bg)', overflow: 'hidden', borderRight: '1px solid var(--bd)' }}>
+      <div
+        onDragOver={(e) => {
+          if (draggingLibState) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            setCanvasDragOver(true);
+          }
+        }}
+        onDragLeave={(e) => {
+          // Only clear when leaving the wrapper (not its children)
+          if (e.currentTarget === e.target) setCanvasDragOver(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (!draggingLibState) return;
+          const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+          addStateToCanvas(draggingLibState, pos);
+          setDraggingLibState(null);
+          setCanvasDragOver(false);
+        }}
+        style={{
+          flex: 1, minWidth: 0, position: 'relative',
+          background: canvasDragOver ? 'rgba(79,110,247,.04)' : 'var(--bg)',
+          overflow: 'hidden', borderRight: '1px solid var(--bd)',
+          transition: 'background .2s',
+        }}>
         {/* Workflow tabs */}
         {workflows.length > 0 && (
           <div style={{
@@ -337,15 +377,28 @@ function CanvasDesignerInner({ currentUser }: Props) {
             const catColor = CAT_VARS[s.category] ?? 'var(--tx3)';
             const hasOpen = wfStates.some(ws => ws.state?.category === 'OPEN');
             const blocked = s.category === 'OPEN' && hasOpen;
+            const isDragging = draggingLibState?.id === s.id;
             return (
               <div key={s.id}
+                draggable={!blocked}
+                onDragStart={(e) => {
+                  if (blocked) { e.preventDefault(); return; }
+                  setDraggingLibState(s);
+                  e.dataTransfer.effectAllowed = 'copy';
+                  // Firefox requires data to be set for drag to start
+                  e.dataTransfer.setData('text/plain', s.id);
+                }}
+                onDragEnd={() => {
+                  setDraggingLibState(null);
+                  setCanvasDragOver(false);
+                }}
                 onClick={() => !blocked && addStateToCanvas(s)}
                 style={{
                   padding: '8px 10px', borderRadius: 6, marginBottom: 4,
-                  cursor: blocked ? 'not-allowed' : 'pointer',
-                  opacity: blocked ? .35 : 1,
+                  cursor: blocked ? 'not-allowed' : 'grab',
+                  opacity: blocked ? .35 : (isDragging ? .5 : 1),
                   borderLeft: `3px solid ${s.color || catColor}`,
-                  transition: 'background .12s',
+                  transition: 'background .12s, opacity .12s',
                 }}
                 onMouseEnter={e => { if (!blocked) e.currentTarget.style.background = 'var(--sf2)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>

@@ -35,6 +35,11 @@ export function StateManagerView({ currentUser }: Props) {
   const [formColor, setFormColor] = useState('#6366f1');
   const [formError, setFormError] = useState('');
 
+  // DnD state
+  const [draggingWs, setDraggingWs] = useState<WorkflowState | null>(null);
+  const [draggingLib, setDraggingLib] = useState<State | null>(null);
+  const [dragOverCat, setDragOverCat] = useState<StateCategory | null>(null);
+
   // New workflow form
   const [showWfForm, setShowWfForm] = useState(false);
   const [wfName, setWfName] = useState('');
@@ -164,6 +169,60 @@ export function StateManagerView({ currentUser }: Props) {
     setWfStates(prev => prev.filter(ws => ws.id !== wsId));
   };
 
+  // Delete a state permanently from the library
+  const deleteLibraryState = async (s: State) => {
+    if (!confirm(t('common.delete') + ': ' + s.name + '?')) return;
+    try {
+      await stateRepo.remove(s.id);
+      setStates(prev => prev.filter(x => x.id !== s.id));
+      // Also drop any workflow usage locally
+      setWfStates(prev => prev.filter(ws => ws.stateId !== s.id));
+    } catch (err) { console.error('[DeleteState]', err); alert(String(err)); }
+  };
+
+  // Drop handler — change category when dropping into a column
+  const handleDropOnColumn = async (cat: StateCategory) => {
+    setDragOverCat(null);
+    try {
+      // Case A: dragging an existing workflow state card
+      if (draggingWs && draggingWs.state) {
+        const cur = draggingWs;
+        setDraggingWs(null);
+        if (cur.state!.category === cat) return;
+        // One-OPEN rule
+        if (cat === 'OPEN' && grouped.OPEN.length > 0) return;
+        await stateRepo.update(cur.stateId, { category: cat });
+        setStates(prev => prev.map(s => s.id === cur.stateId ? { ...s, category: cat } : s));
+        setWfStates(prev => prev.map(ws => ws.stateId === cur.stateId
+          ? { ...ws, state: ws.state ? { ...ws.state, category: cat } : ws.state }
+          : ws));
+        return;
+      }
+      // Case B: dragging a library state
+      if (draggingLib) {
+        const lib = draggingLib;
+        setDraggingLib(null);
+        if (wfStates.some(ws => ws.stateId === lib.id)) return;
+        if (cat === 'OPEN' && grouped.OPEN.length > 0) return;
+        if (lib.category !== cat) {
+          await stateRepo.update(lib.id, { category: cat });
+          setStates(prev => prev.map(s => s.id === lib.id ? { ...s, category: cat } : s));
+        }
+        const ws = await stateRepo.addToWorkflow({
+          workflowId: selected!.id,
+          stateId: lib.id,
+          positionX: 100 + Math.random() * 200,
+          positionY: 100 + Math.random() * 200,
+          isInitial: cat === 'OPEN',
+        });
+        // Attach updated state to ws for local render
+        setWfStates(prev => [...prev, { ...ws, state: { ...lib, category: cat } }]);
+      }
+    } catch (err) {
+      console.error('[DropCategory]', err);
+    }
+  };
+
   if (loading) {
     return <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize:13}}>{t('common.loading')}</div>;
   }
@@ -226,9 +285,26 @@ export function StateManagerView({ currentUser }: Props) {
           {CATEGORIES.map(cat => {
             const cc = CAT_COLORS[cat];
             const items = grouped[cat];
+            const isOver = dragOverCat === cat;
             return (
-              <div key={cat} style={{background:'var(--sf2)',borderRadius:10,padding:16,
-                borderTop:`2px solid ${cc.color}`,minHeight:200}}>
+              <div key={cat}
+                onDragOver={(e) => {
+                  if (draggingWs || draggingLib) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = draggingLib ? 'copy' : 'move';
+                    if (dragOverCat !== cat) setDragOverCat(cat);
+                  }
+                }}
+                onDragLeave={(e) => {
+                  if (e.currentTarget === e.target) setDragOverCat(null);
+                }}
+                onDrop={(e) => { e.preventDefault(); handleDropOnColumn(cat); }}
+                style={{background:'var(--sf2)',borderRadius:10,padding:16,
+                borderTop:`2px solid ${cc.color}`,minHeight:200,
+                outline: isOver ? `2px dashed ${cc.color}` : 'none',
+                outlineOffset: isOver ? '-4px' : '0',
+                transition: 'outline .12s',
+              }}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
                   <span style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',color:cc.color}}>
                     {t(`vectorLogic.category${cat.charAt(0) + cat.slice(1).toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase())}`)}
@@ -238,12 +314,21 @@ export function StateManagerView({ currentUser }: Props) {
                 <div style={{display:'flex',flexDirection:'column',gap:8}}>
                   {items.map(ws => (
                     <div key={ws.id}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggingWs(ws);
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', ws.id);
+                      }}
+                      onDragEnd={() => { setDraggingWs(null); setDragOverCat(null); }}
                       onClick={() => ws.state && openEditForm(ws.state)}
                       style={{
                         background:'var(--sf3)',borderRadius:8,padding:'10px 12px',
                         borderLeft:`3px solid ${ws.state?.color || cc.color}`,
                         display:'flex',alignItems:'center',justifyContent:'space-between',
-                        transition:'background .15s, transform .15s',cursor:'pointer',
+                        transition:'background .15s, transform .15s',
+                        cursor: draggingWs?.id === ws.id ? 'grabbing' : 'grab',
+                        opacity: draggingWs?.id === ws.id ? .4 : 1,
                       }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(79,110,247,.06)'; e.currentTarget.style.transform = 'translateX(2px)'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'var(--sf3)'; e.currentTarget.style.transform = 'translateX(0)'; }}>
@@ -284,18 +369,47 @@ export function StateManagerView({ currentUser }: Props) {
             {states.filter(s => !wfStates.some(ws => ws.stateId === s.id)).map(s => {
               const cc = CAT_COLORS[s.category];
               const blocked = s.category === 'OPEN' && grouped.OPEN.length > 0;
+              const isDragging = draggingLib?.id === s.id;
               return (
-                <button key={s.id} onClick={() => !blocked && addExistingState(s)}
+                <div key={s.id}
+                  draggable={!blocked}
+                  onDragStart={(e) => {
+                    if (blocked) { e.preventDefault(); return; }
+                    setDraggingLib(s);
+                    e.dataTransfer.effectAllowed = 'copy';
+                    e.dataTransfer.setData('text/plain', s.id);
+                  }}
+                  onDragEnd={() => { setDraggingLib(null); setDragOverCat(null); }}
                   style={{
-                    display:'flex',alignItems:'center',gap:6,padding:'6px 12px',borderRadius:8,
+                    display:'flex',alignItems:'center',gap:6,padding:'6px 10px',borderRadius:8,
                     background:cc.bg,border:`1px solid ${cc.border}`,color:cc.color,
-                    fontSize:12,fontWeight:600,cursor:blocked?'not-allowed':'pointer',
-                    opacity:blocked?.4:1,fontFamily:'inherit',transition:'all .15s',
+                    fontSize:12,fontWeight:600,
+                    cursor: blocked ? 'not-allowed' : 'grab',
+                    opacity: blocked ? .4 : (isDragging ? .5 : 1),
+                    fontFamily:'inherit',transition:'all .15s',
                   }}>
                   <span style={{width:6,height:6,borderRadius:'50%',background:s.color || cc.color}}/>
-                  {s.name}
+                  <span onClick={() => !blocked && addExistingState(s)} style={{ cursor: blocked ? 'not-allowed' : 'pointer' }}>
+                    {s.name}
+                  </span>
                   <span style={{fontSize:9,opacity:.6}}>{s.category}</span>
-                </button>
+                  <button
+                    title={t('common.edit')}
+                    onClick={(e) => { e.stopPropagation(); openEditForm(s); }}
+                    style={{ background:'none', border:'none', padding:0, marginLeft:4, cursor:'pointer', color:cc.color, opacity:.7, display:'flex', alignItems:'center' }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                    onMouseLeave={e => e.currentTarget.style.opacity = '.7'}>
+                    <span className="material-symbols-outlined" style={{fontSize:14}}>edit</span>
+                  </button>
+                  <button
+                    title={t('common.delete')}
+                    onClick={(e) => { e.stopPropagation(); deleteLibraryState(s); }}
+                    style={{ background:'none', border:'none', padding:0, cursor:'pointer', color:'var(--red)', opacity:.7, display:'flex', alignItems:'center' }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                    onMouseLeave={e => e.currentTarget.style.opacity = '.7'}>
+                    <span className="material-symbols-outlined" style={{fontSize:14}}>delete</span>
+                  </button>
+                </div>
               );
             })}
           </div>
