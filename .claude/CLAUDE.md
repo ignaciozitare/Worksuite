@@ -34,6 +34,58 @@ Never skip steps. Never start coding without a confirmed spec.
 
 ---
 
+## Project Structure (READ THIS BEFORE WRITING ANY CODE)
+
+WorkSuite is a **monorepo** with a frontend, a backend, and shared packages.
+You MUST understand this layout before placing any file. Failure to read this
+section has caused real bugs (e.g. putting API keys in the frontend because
+the backend was assumed not to exist).
+
+```
+Worksuite-1/
+├── apps/
+│   ├── web/                 Frontend — Vite + React + CSS vars
+│   │   └── src/
+│   │       ├── modules/     Feature modules (hexagonal: domain/infra/ui/container.ts)
+│   │       └── shared/      Cross-module UI, hooks, libs
+│   └── api/                 Backend — Fastify + hexagonal
+│       └── src/
+│           ├── domain/      Ports and entities (no framework deps)
+│           ├── application/ Use cases
+│           ├── infrastructure/
+│           │   ├── http/    Fastify routes
+│           │   ├── supabase/ Supabase adapters
+│           │   └── llm/     LLM provider adapters
+│           └── app.ts       Fastify app factory (registers routes)
+├── packages/                Shared libraries used by both apps
+│   ├── ui/                  Reusable React components (@worksuite/ui)
+│   ├── i18n/                Translation keys (@worksuite/i18n)
+│   ├── shared-types/        Cross-app types
+│   ├── jira-client/         Jira HTTP client
+│   └── jira-service/        Jira domain services
+├── specs/                   Functional specs per module (source of truth)
+└── supabase/                Supabase config (migrations via DBA Agent)
+```
+
+### Rules that follow from this structure
+
+1. **Secrets, API keys, provider SDK calls (Claude/OpenAI/Jira/etc.) → `apps/api`, NEVER `apps/web`.**
+   The frontend may only call the WorkSuite backend. Third-party calls from
+   the browser expose credentials and break CORS.
+
+2. **New feature that needs an HTTP endpoint → create BOTH sides:**
+   - Backend route in `apps/api/src/infrastructure/http/{name}Routes.ts`
+   - Frontend adapter in `apps/web/src/modules/{name}/infra/` that `fetch`es
+     the backend (not the third-party).
+
+3. **Before starting any work, run** `ls apps/` **and** `ls packages/` **to
+   refresh your mental model of what already exists.** Never assume.
+
+4. **Reuse over duplication.** Check `packages/` before writing a new adapter,
+   utility, or component. Extract to `packages/` when something becomes shared.
+
+---
+
 ## Design Principles
 - Apply SOLID principles when they improve clarity, maintainability, and extensibility.
 - Prioritize KISS: choose the simplest solution that correctly solves the problem.
