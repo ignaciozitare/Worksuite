@@ -33,13 +33,37 @@ export class LLMServiceAdapter implements ILLMService {
       throw new Error(`OpenAI models error ${res.status}: ${err}`);
     }
     const data = await res.json() as { data?: Array<{ id: string }> };
-    // Filter to chat-capable models: gpt-* excluding embeddings, dall-e, whisper, tts, etc.
+
+    // OpenAI's /v1/models does not indicate capability, so we filter by name.
+    // Keep only models compatible with /v1/chat/completions.
+    const EXCLUDE = [
+      'instruct',         // gpt-3.5-turbo-instruct (legacy /v1/completions)
+      'embedding',        // text-embedding-*
+      'whisper',          // audio transcription
+      'tts',              // text-to-speech
+      'dall-e',           // image generation
+      'moderation',       // classification, not chat
+      'davinci',          // legacy base models
+      'babbage',          // legacy base models
+      'gpt-base',         // base model, not chat
+      'realtime',         // WebSocket-only realtime API
+      'audio-preview',    // audio input/output, not chat
+      'transcribe',       // speech-to-text
+      'search',           // search models, different endpoint
+      'computer-use',     // separate API
+      'image',            // image generation variants
+    ];
+
     const ids = (data.data ?? [])
       .map((m) => m.id)
-      .filter((id) =>
-        /^(gpt|o1|o3|chatgpt)/i.test(id) &&
-        !/embedding|whisper|tts|dall-e|moderation|realtime|audio|transcribe/i.test(id),
-      )
+      .filter((id) => {
+        // Must match one of the chat-capable families
+        const isChat = /^(gpt-4|gpt-3\.5-turbo|o1|o3|o4|chatgpt)/i.test(id);
+        if (!isChat) return false;
+        // Reject any model whose id contains a known non-chat keyword
+        const lower = id.toLowerCase();
+        return !EXCLUDE.some((k) => lower.includes(k));
+      })
       .sort();
     return ids.map((id) => ({ id, name: id }));
   }
