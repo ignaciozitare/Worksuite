@@ -8,30 +8,12 @@
  */
 import { supabase } from '@/shared/lib/supabaseClient';
 import type { AIProvider } from '../domain/entities/AI';
-
-export interface ToolDefinition {
-  name: string;
-  description: string;
-  input_schema: Record<string, unknown>;
-}
-
-export interface ToolCall {
-  id: string;
-  name: string;
-  arguments: Record<string, unknown>;
-}
-
-export interface LLMResponse {
-  content: string;
-  toolCalls: ToolCall[];
-}
-
-export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system' | 'tool';
-  content: string;
-  tool_call_id?: string;
-  tool_calls?: ToolCall[];
-}
+import type {
+  ILLMService,
+  ToolDefinition,
+  LLMResponse,
+  ChatMessage,
+} from '../domain/ports/ILLMService';
 
 const API_BASE = ((import.meta as any).env?.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 
@@ -42,7 +24,7 @@ async function authHeaders(): Promise<Record<string, string>> {
     : { 'Content-Type': 'application/json' };
 }
 
-export class LLMService {
+export class LLMService implements ILLMService {
   async chat(
     provider: AIProvider,
     model: string,

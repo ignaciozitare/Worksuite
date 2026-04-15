@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import type { AISettings, AIConversation, AIMessage, AIRule } from '../../domain/entities/AI';
 import type { TaskType } from '../../domain/entities/TaskType';
-import type { ToolDefinition, ChatMessage } from '../../infra/LLMService';
+import type { ToolDefinition, ChatMessage } from '../../domain/ports/ILLMService';
 import { aiRepo, llmService, taskTypeRepo, taskRepo, stateRepo } from '../../container';
 
 interface Props {

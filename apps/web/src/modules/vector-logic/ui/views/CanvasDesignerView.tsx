@@ -23,11 +23,21 @@ import { workflowRepo, stateRepo, transitionRepo } from '../../container';
 
 const nodeTypes = { stateNode: StateNode };
 
-const CAT_COLORS: Record<StateCategory, string> = {
+// React Flow MiniMap renders SVG and cannot resolve CSS variables at runtime.
+// These hex values mirror the CSS vars (--tx3, --amber, --ac, --green) and are
+// used ONLY by the MiniMap. For regular DOM elements, use CAT_VARS below.
+const MINIMAP_HEX: Record<StateCategory, string> = {
   BACKLOG: '#8c909f',
   OPEN: '#f5a623',
   IN_PROGRESS: '#4f6ef7',
   DONE: '#3ecf8e',
+};
+
+const CAT_VARS: Record<StateCategory, string> = {
+  BACKLOG: 'var(--tx3)',
+  OPEN: 'var(--amber)',
+  IN_PROGRESS: 'var(--ac)',
+  DONE: 'var(--green)',
 };
 
 interface Props {
@@ -253,7 +263,7 @@ export function CanvasDesignerView({ currentUser }: Props) {
             style={{ background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 8 }}
           />
           <MiniMap
-            nodeColor={(n) => CAT_COLORS[n.data?.category] ?? '#8c909f'}
+            nodeColor={(n) => MINIMAP_HEX[n.data?.category] ?? '#8c909f'}
             style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 8 }}
           />
         </ReactFlow>
@@ -297,7 +307,7 @@ export function CanvasDesignerView({ currentUser }: Props) {
             </div>
           )}
           {libraryStates.map(s => {
-            const catColor = CAT_COLORS[s.category] ?? '#8c909f';
+            const catColor = CAT_VARS[s.category] ?? 'var(--tx3)';
             const hasOpen = wfStates.some(ws => ws.state?.category === 'OPEN');
             const blocked = s.category === 'OPEN' && hasOpen;
             return (
