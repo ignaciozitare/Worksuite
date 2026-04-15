@@ -50,7 +50,7 @@ export class SupabaseStateRepo implements IStateRepo {
       .select('*, state:vl_states(*)')
       .eq('workflow_id', workflowId);
     if (error) throw error;
-    return (data ?? []).map(this.toWorkflowState);
+    return (data ?? []).map((row) => this.toWorkflowState(row));
   }
 
   async addToWorkflow(ws: Omit<WorkflowState, 'id'>): Promise<WorkflowState> {
