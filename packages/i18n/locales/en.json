@@ -1029,6 +1029,15 @@
     "fieldFileUpload":    "File / Media",
     "fieldTags":          "Tags",
     "fieldStatusRef":     "Status Reference",
-    "fieldLogicConnector":"Logic Connector"
+    "fieldLogicConnector":"Logic Connector",
+    "workspace":          "Workspace",
+    "smartKanban":        "Smart Kanban",
+    "tasks":              "tasks",
+    "newTask":            "New task",
+    "taskTitle":          "Title",
+    "deleteTaskConfirm":  "Delete this task?",
+    "noTaskTypesAssigned":"No task types with assigned workflow",
+    "goToAssignmentManager":"Go to Assignment Manager to link a workflow to a task type",
+    "workflowHasNoStates":"This workflow has no states configured yet"
   }
 }

@@ -1029,6 +1029,15 @@
     "fieldFileUpload":    "Archivo / Media",
     "fieldTags":          "Etiquetas",
     "fieldStatusRef":     "Referencia de estado",
-    "fieldLogicConnector":"Conector lógico"
+    "fieldLogicConnector":"Conector lógico",
+    "workspace":          "Workspace",
+    "smartKanban":        "Smart Kanban",
+    "tasks":              "tareas",
+    "newTask":            "Nueva tarea",
+    "taskTitle":          "Título",
+    "deleteTaskConfirm":  "¿Eliminar esta tarea?",
+    "noTaskTypesAssigned":"No hay tipos de tarea con flujo asignado",
+    "goToAssignmentManager":"Ve al Assignment Manager para asignar un flujo a un tipo de tarea",
+    "workflowHasNoStates":"Este flujo aún no tiene estados configurados"
   }
 }

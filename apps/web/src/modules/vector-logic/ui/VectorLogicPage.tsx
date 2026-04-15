@@ -5,6 +5,7 @@ import { StateManagerView } from './views/StateManagerView';
 import { CanvasDesignerView } from './views/CanvasDesignerView';
 import { AssignmentManagerView } from './views/AssignmentManagerView';
 import { SchemaBuilderView } from './views/SchemaBuilderView';
+import { KanbanView } from './views/KanbanView';
 
 /* ─── CSS (Stitch / Carbon Logic) ────────────────────────────────────────── */
 const CSS = `
@@ -25,7 +26,7 @@ const CSS = `
 .vl .vl-section-label{font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.12em;padding:16px 12px 6px;user-select:none;}
 `;
 
-type Tab = 'states' | 'canvas' | 'assignment' | 'entities';
+type Tab = 'states' | 'canvas' | 'assignment' | 'entities' | 'kanban';
 
 interface Props {
   currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown };
@@ -33,9 +34,11 @@ interface Props {
 
 export function VectorLogicPage({ currentUser }: Props) {
   const { t } = useTranslation();
-  const [view, setView] = useState<Tab>('states');
+  const [view, setView] = useState<Tab>('kanban');
 
   const NAV = [
+    { section: t('vectorLogic.workspace') },
+    { id: 'kanban',     label: t('vectorLogic.smartKanban'),        icon: 'view_kanban' },
     { section: t('vectorLogic.workflowEngine') },
     { id: 'states',     label: t('vectorLogic.stateManager'),      icon: 'account_tree' },
     { id: 'canvas',     label: t('vectorLogic.canvasDesigner'),     icon: 'schema' },
@@ -99,6 +102,7 @@ export function VectorLogicPage({ currentUser }: Props) {
 
       {/* ── Main content ──────────────────────────────────── */}
       <div style={{flex:1,minWidth:0,overflow:'auto',padding:'28px 32px'}}>
+        {view === 'kanban' && <KanbanView currentUser={currentUser} />}
         {view === 'states' && <StateManagerView currentUser={currentUser} />}
         {view === 'canvas' && <CanvasDesignerView currentUser={currentUser} />}
         {view === 'assignment' && <AssignmentManagerView />}
