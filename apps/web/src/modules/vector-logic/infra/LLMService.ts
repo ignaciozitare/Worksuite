@@ -1,11 +1,12 @@
 /**
- * LLM Service — calls the Anthropic or OpenAI API from the browser.
+ * LLM Service — Frontend adapter that proxies through the WorkSuite backend.
  *
- * NOTE: Calling LLM APIs directly from the frontend exposes the API key.
- * In production, this should be proxied through a backend endpoint that
- * holds the key server-side. For now, the key is stored per-user in
- * vl_ai_settings and sent with CORS-allowed headers.
+ * All LLM calls go through POST /ai/chat so API keys never leave the
+ * Supabase/server side. The frontend sends the user's stored API key
+ * (fetched from vl_ai_settings) along with the request, but the actual
+ * HTTPS call to Anthropic/OpenAI is made by the backend.
  */
+import { supabase } from '@/shared/lib/supabaseClient';
 import type { AIProvider } from '../domain/entities/AI';
 
 export interface ToolDefinition {
@@ -32,6 +33,15 @@ export interface ChatMessage {
   tool_calls?: ToolCall[];
 }
 
+const API_BASE = ((import.meta as any).env?.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token
+    ? { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }
+    : { 'Content-Type': 'application/json' };
+}
+
 export class LLMService {
   async chat(
     provider: AIProvider,
@@ -41,105 +51,29 @@ export class LLMService {
     messages: ChatMessage[],
     tools: ToolDefinition[],
   ): Promise<LLMResponse> {
-    if (provider === 'anthropic') return this.callAnthropic(model, apiKey, systemPrompt, messages, tools);
-    return this.callOpenAI(model, apiKey, systemPrompt, messages, tools);
-  }
-
-  private async callAnthropic(
-    model: string, apiKey: string, systemPrompt: string,
-    messages: ChatMessage[], tools: ToolDefinition[],
-  ): Promise<LLMResponse> {
-    const body = {
-      model,
-      max_tokens: 4096,
-      system: systemPrompt,
-      messages: messages
-        .filter(m => m.role !== 'system')
-        .map(m => ({ role: m.role === 'tool' ? 'user' : m.role, content: m.content })),
-      tools: tools.map(t => ({
-        name: t.name,
-        description: t.description,
-        input_schema: t.input_schema,
-      })),
-    };
-
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_BASE}/ai/chat`, {
       method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(body),
+      headers,
+      body: JSON.stringify({
+        provider,
+        model,
+        apiKey,
+        systemPrompt,
+        messages,
+        tools,
+      }),
     });
 
     if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Anthropic API error: ${res.status} ${err}`);
+      const err = await res.json().catch(() => ({ error: { message: res.statusText } }));
+      throw new Error(err?.error?.message ?? `HTTP ${res.status}`);
     }
 
-    const data = await res.json();
-    const textBlocks = data.content?.filter((b: any) => b.type === 'text') ?? [];
-    const toolBlocks = data.content?.filter((b: any) => b.type === 'tool_use') ?? [];
-    return {
-      content: textBlocks.map((b: any) => b.text).join('\n'),
-      toolCalls: toolBlocks.map((b: any) => ({
-        id: b.id,
-        name: b.name,
-        arguments: b.input,
-      })),
-    };
-  }
-
-  private async callOpenAI(
-    model: string, apiKey: string, systemPrompt: string,
-    messages: ChatMessage[], tools: ToolDefinition[],
-  ): Promise<LLMResponse> {
-    const body = {
-      model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages.map(m => ({
-          role: m.role === 'tool' ? 'tool' : m.role,
-          content: m.content,
-          ...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
-        })),
-      ],
-      tools: tools.map(t => ({
-        type: 'function',
-        function: {
-          name: t.name,
-          description: t.description,
-          parameters: t.input_schema,
-        },
-      })),
-    };
-
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`OpenAI API error: ${res.status} ${err}`);
+    const body = await res.json();
+    if (!body?.ok) {
+      throw new Error(body?.error?.message ?? 'LLM request failed');
     }
-
-    const data = await res.json();
-    const msg = data.choices?.[0]?.message ?? {};
-    const calls = (msg.tool_calls ?? []).map((tc: any) => ({
-      id: tc.id,
-      name: tc.function?.name,
-      arguments: JSON.parse(tc.function?.arguments ?? '{}'),
-    }));
-    return {
-      content: msg.content ?? '',
-      toolCalls: calls,
-    };
+    return body.data as LLMResponse;
   }
 }
