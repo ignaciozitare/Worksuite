@@ -9,12 +9,56 @@ import type {
   LLMResponse,
   LLMMessage,
   LLMToolDefinition,
+  LLMProvider,
+  LLMModel,
 } from '../../domain/ai/ILLMService.js';
 
 export class LLMServiceAdapter implements ILLMService {
   async chat(req: LLMChatRequest): Promise<LLMResponse> {
     if (req.provider === 'anthropic') return this.callAnthropic(req);
     return this.callOpenAI(req);
+  }
+
+  async listModels(provider: LLMProvider, apiKey: string): Promise<LLMModel[]> {
+    if (provider === 'anthropic') return this.listAnthropicModels(apiKey);
+    return this.listOpenAIModels(apiKey);
+  }
+
+  private async listOpenAIModels(apiKey: string): Promise<LLMModel[]> {
+    const res = await fetch('https://api.openai.com/v1/models', {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`OpenAI models error ${res.status}: ${err}`);
+    }
+    const data = await res.json() as { data?: Array<{ id: string }> };
+    // Filter to chat-capable models: gpt-* excluding embeddings, dall-e, whisper, tts, etc.
+    const ids = (data.data ?? [])
+      .map((m) => m.id)
+      .filter((id) =>
+        /^(gpt|o1|o3|chatgpt)/i.test(id) &&
+        !/embedding|whisper|tts|dall-e|moderation|realtime|audio|transcribe/i.test(id),
+      )
+      .sort();
+    return ids.map((id) => ({ id, name: id }));
+  }
+
+  private async listAnthropicModels(apiKey: string): Promise<LLMModel[]> {
+    const res = await fetch('https://api.anthropic.com/v1/models', {
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Anthropic models error ${res.status}: ${err}`);
+    }
+    const data = await res.json() as { data?: Array<{ id: string; display_name?: string }> };
+    return (data.data ?? [])
+      .map((m) => ({ id: m.id, name: m.display_name ?? m.id }))
+      .sort((a, b) => b.id.localeCompare(a.id));
   }
 
   private async callAnthropic(req: LLMChatRequest): Promise<LLMResponse> {

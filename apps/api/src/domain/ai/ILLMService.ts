@@ -39,6 +39,12 @@ export interface LLMChatRequest {
   tools: LLMToolDefinition[];
 }
 
+export interface LLMModel {
+  id: string;
+  name: string;
+}
+
 export interface ILLMService {
   chat(req: LLMChatRequest): Promise<LLMResponse>;
+  listModels(provider: LLMProvider, apiKey: string): Promise<LLMModel[]>;
 }

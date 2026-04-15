@@ -1068,6 +1068,10 @@
     "ruleDescriptionHint":"La IA leerá estas reglas en cada conversación y las aplicará automáticamente cuando procese correos o interactúe contigo.",
     "aiRulesDesc":        "Define reglas en lenguaje natural que la IA seguirá al procesar correos y crear tareas. Estas reglas se pasan como contexto en cada conversación.",
     "noRules":            "Sin reglas configuradas",
-    "noRulesHint":        "Crea una regla para que la IA sepa cómo procesar tus correos"
+    "noRulesHint":        "Crea una regla para que la IA sepa cómo procesar tus correos",
+    "loadModels":         "Cargar modelos",
+    "loadModelsFirst":    "Pega tu API key y pulsa \"Cargar modelos\"",
+    "modelsAvailable":    "modelos disponibles",
+    "needApiKey":         "Primero pega tu API key"
   }
 }

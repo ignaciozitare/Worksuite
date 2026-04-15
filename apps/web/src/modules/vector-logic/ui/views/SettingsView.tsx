@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import type { AISettings, AIProvider } from '../../domain/entities/AI';
-import { DEFAULT_SYSTEM_PROMPT, MODELS } from '../../domain/entities/AI';
-import { aiRepo } from '../../container';
+import { DEFAULT_SYSTEM_PROMPT } from '../../domain/entities/AI';
+import type { LLMModel } from '../../domain/ports/ILLMService';
+import { aiRepo, llmService } from '../../container';
 
 interface Props {
   currentUser: { id: string; [k: string]: unknown };
@@ -17,11 +18,16 @@ export function SettingsView({ currentUser }: Props) {
   const [saved, setSaved] = useState(false);
 
   const [provider, setProvider] = useState<AIProvider>('anthropic');
-  const [model, setModel] = useState('claude-opus-4-5');
+  const [model, setModel] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [systemPrompt, setSystemPrompt] = useState(DEFAULT_SYSTEM_PROMPT);
   const [mcpEndpoint, setMcpEndpoint] = useState('');
+
+  // Dynamic model list
+  const [models, setModels] = useState<LLMModel[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [modelsError, setModelsError] = useState('');
 
   useEffect(() => {
     aiRepo.getSettings(currentUser.id).then(s => {
@@ -36,6 +42,24 @@ export function SettingsView({ currentUser }: Props) {
       setLoading(false);
     });
   }, [currentUser.id]);
+
+  const loadModels = async () => {
+    if (!apiKey) { setModelsError(t('vectorLogic.needApiKey')); return; }
+    setLoadingModels(true);
+    setModelsError('');
+    try {
+      const list = await llmService.listModels(provider, apiKey);
+      setModels(list);
+      if (list.length > 0 && !list.find(m => m.id === model)) {
+        setModel(list[0].id);
+      }
+    } catch (err: any) {
+      setModelsError(err.message ?? String(err));
+      setModels([]);
+    } finally {
+      setLoadingModels(false);
+    }
+  };
 
   const save = async () => {
     setSaving(true);
@@ -56,10 +80,12 @@ export function SettingsView({ currentUser }: Props) {
     }
   };
 
-  // Update model when provider changes
+  // Clear model when provider changes (user must re-fetch models)
   const onProviderChange = (p: AIProvider) => {
     setProvider(p);
-    setModel(MODELS[p][0]);
+    setModel('');
+    setModels([]);
+    setModelsError('');
   };
 
   if (loading) {
@@ -97,13 +123,6 @@ export function SettingsView({ currentUser }: Props) {
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label style={lblStyle}>{t('vectorLogic.model')}</label>
-          <select value={model} onChange={e => setModel(e.target.value)} style={inpStyle()}>
-            {MODELS[provider].map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-        </div>
-
-        <div style={{ marginBottom: 14 }}>
           <label style={lblStyle}>{t('vectorLogic.apiKey')}</label>
           <div style={{ display: 'flex', gap: 6 }}>
             <input type={showKey ? 'text' : 'password'} value={apiKey} onChange={e => setApiKey(e.target.value)}
@@ -118,6 +137,36 @@ export function SettingsView({ currentUser }: Props) {
           <p style={{ fontSize: 10, color: 'var(--tx3)', marginTop: 6, lineHeight: 1.5 }}>
             {t('vectorLogic.apiKeyWarning')}
           </p>
+        </div>
+
+        {/* Model (fetched dynamically) */}
+        <div>
+          <label style={lblStyle}>{t('vectorLogic.model')}</label>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <select value={model} onChange={e => setModel(e.target.value)} style={inpStyle()} disabled={models.length === 0}>
+              {models.length === 0 ? (
+                <option value="">{t('vectorLogic.loadModelsFirst')}</option>
+              ) : (
+                models.map(m => <option key={m.id} value={m.id}>{m.name}</option>)
+              )}
+            </select>
+            <button onClick={loadModels} disabled={loadingModels || !apiKey} style={btnStyle('primary')}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                {loadingModels ? 'hourglass_empty' : 'download'}
+              </span>
+              {loadingModels ? t('common.loading') : t('vectorLogic.loadModels')}
+            </button>
+          </div>
+          {modelsError && (
+            <p style={{ fontSize: 10, color: 'var(--red)', marginTop: 6, lineHeight: 1.5, fontFamily: 'monospace', wordBreak: 'break-word' }}>
+              ⚠ {modelsError}
+            </p>
+          )}
+          {models.length > 0 && !modelsError && (
+            <p style={{ fontSize: 10, color: 'var(--green)', marginTop: 6 }}>
+              ✓ {models.length} {t('vectorLogic.modelsAvailable')}
+            </p>
+          )}
         </div>
       </Section>
 

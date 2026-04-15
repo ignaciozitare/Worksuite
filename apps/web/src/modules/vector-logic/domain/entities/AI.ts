@@ -46,8 +46,3 @@ export const DEFAULT_SYSTEM_PROMPT = `You are the Vector Logic AI assistant. You
 When you detect action items in emails or when users request task creation, use the create_task tool with the appropriate task_type and relevant details.
 
 Be concise, practical, and always confirm before creating tasks.`;
-
-export const MODELS: Record<AIProvider, string[]> = {
-  anthropic: ['claude-opus-4-5', 'claude-sonnet-4-5', 'claude-haiku-4-5-20251001'],
-  openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'],
-};

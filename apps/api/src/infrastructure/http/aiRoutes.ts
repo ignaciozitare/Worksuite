@@ -18,6 +18,11 @@ interface ChatRequestBody {
   tools: LLMToolDefinition[];
 }
 
+interface ModelsRequestBody {
+  provider: LLMProvider;
+  apiKey: string;
+}
+
 const chatBodySchema = {
   type: 'object',
   required: ['provider', 'model', 'apiKey', 'systemPrompt', 'messages'],
@@ -28,6 +33,15 @@ const chatBodySchema = {
     systemPrompt: { type: 'string' },
     messages:     { type: 'array' },
     tools:        { type: 'array' },
+  },
+} as const;
+
+const modelsBodySchema = {
+  type: 'object',
+  required: ['provider', 'apiKey'],
+  properties: {
+    provider: { type: 'string', enum: ['anthropic', 'openai'] },
+    apiKey:   { type: 'string', minLength: 1 },
   },
 } as const;
 
@@ -55,6 +69,24 @@ export async function aiRoutes(app: FastifyInstance, opts: AIRoutesOptions): Pro
           tools: req.body.tools ?? [],
         });
         return reply.send({ ok: true, data: response });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return reply.status(500).send({ ok: false, error: { code: 'LLM_ERROR', message: msg } });
+      }
+    },
+  );
+
+  // ── POST /ai/models ─────────────────────────────────────────────────────
+  // Lists available models for the given provider using the user's API key.
+  // Used by SettingsView to populate the model dropdown dynamically — avoids
+  // hardcoded lists that go stale.
+  app.post<{ Body: ModelsRequestBody }>(
+    '/models',
+    { schema: { body: modelsBodySchema } },
+    async (req: FastifyRequest<{ Body: ModelsRequestBody }>, reply: FastifyReply) => {
+      try {
+        const models = await llmService.listModels(req.body.provider, req.body.apiKey);
+        return reply.send({ ok: true, data: models });
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         return reply.status(500).send({ ok: false, error: { code: 'LLM_ERROR', message: msg } });

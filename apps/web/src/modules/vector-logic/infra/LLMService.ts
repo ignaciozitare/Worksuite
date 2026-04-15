@@ -13,6 +13,7 @@ import type {
   ToolDefinition,
   LLMResponse,
   ChatMessage,
+  LLMModel,
 } from '../domain/ports/ILLMService';
 
 const API_BASE = ((import.meta as any).env?.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
@@ -57,5 +58,25 @@ export class LLMService implements ILLMService {
       throw new Error(body?.error?.message ?? 'LLM request failed');
     }
     return body.data as LLMResponse;
+  }
+
+  async listModels(provider: AIProvider, apiKey: string): Promise<LLMModel[]> {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_BASE}/ai/models`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ provider, apiKey }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: { message: res.statusText } }));
+      throw new Error(err?.error?.message ?? `HTTP ${res.status}`);
+    }
+
+    const body = await res.json();
+    if (!body?.ok) {
+      throw new Error(body?.error?.message ?? 'Failed to list models');
+    }
+    return body.data as LLMModel[];
   }
 }

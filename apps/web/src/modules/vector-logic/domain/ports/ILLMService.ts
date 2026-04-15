@@ -24,6 +24,11 @@ export interface ChatMessage {
   tool_calls?: ToolCall[];
 }
 
+export interface LLMModel {
+  id: string;
+  name: string;
+}
+
 export interface ILLMService {
   chat(
     provider: AIProvider,
@@ -33,4 +38,5 @@ export interface ILLMService {
     messages: ChatMessage[],
     tools: ToolDefinition[],
   ): Promise<LLMResponse>;
+  listModels(provider: AIProvider, apiKey: string): Promise<LLMModel[]>;
 }

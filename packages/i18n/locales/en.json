@@ -1068,6 +1068,10 @@
     "ruleDescriptionHint":"The AI reads these rules on every conversation and applies them automatically when processing emails or interacting with you.",
     "aiRulesDesc":        "Define natural language rules the AI will follow when processing emails and creating tasks. These are passed as context on every conversation.",
     "noRules":            "No rules configured",
-    "noRulesHint":        "Create a rule so the AI knows how to process your emails"
+    "noRulesHint":        "Create a rule so the AI knows how to process your emails",
+    "loadModels":         "Load models",
+    "loadModelsFirst":    "Paste your API key and click \"Load models\"",
+    "modelsAvailable":    "models available",
+    "needApiKey":         "Paste your API key first"
   }
 }
