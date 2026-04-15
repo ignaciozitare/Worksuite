@@ -12,12 +12,14 @@ import { worklogRoutes } from './infrastructure/http/worklogRoutes.js';
 import { hotdeskRoutes } from './infrastructure/http/hotdeskRoutes.js';
 import { jiraRoutes }    from './infrastructure/http/jiraRoutes.js';
 import { mcpRoutes }     from './infrastructure/http/mcpRoutes.js';
+import { aiRoutes }      from './infrastructure/http/aiRoutes.js';
 import { SupabaseWorklogRepo }        from './infrastructure/supabase/SupabaseWorklogRepo.js';
 import { SupabaseHotDeskRepo }        from './infrastructure/supabase/SupabaseHotDeskRepo.js';
 import { SupabaseUserRepo }           from './infrastructure/supabase/SupabaseUserRepo.js';
 import { SupabaseAuthService }        from './infrastructure/supabase/SupabaseAuthService.js';
 import { SupabaseJiraConnectionRepo } from './infrastructure/supabase/SupabaseJiraConnectionRepo.js';
 import { VectorLogicMCPServer }       from './infrastructure/mcp/VectorLogicMCPServer.js';
+import { LLMServiceAdapter }          from './infrastructure/llm/LLMServiceAdapter.js';
 
 const {
   SUPABASE_URL,
@@ -37,6 +39,7 @@ const userRepo         = new SupabaseUserRepo(supabase);
 const authService      = new SupabaseAuthService(supabase);
 const jiraConnectionRepo = new SupabaseJiraConnectionRepo(supabase);
 const mcpServer          = new VectorLogicMCPServer(supabase);
+const llmService         = new LLMServiceAdapter();
 
 let _app: FastifyInstance | null = null;
 
@@ -120,6 +123,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(hotdeskRoutes, { prefix: '/hotdesk',  hotdeskRepo });
   await app.register(jiraRoutes,    { prefix: '/jira',     jiraConnectionRepo, userRepo, worklogRepo });
   await app.register(mcpRoutes,     { prefix: '/mcp',      mcpServer });
+  await app.register(aiRoutes,      { prefix: '/ai',       llmService });
 
   app.get('/health', async () => ({ ok: true, ts: new Date().toISOString() }));
 

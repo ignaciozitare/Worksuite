@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import type { AIRule } from '../../domain/entities/AI';
-import { aiRulesRepo } from '../../container';
+import { aiRepo } from '../../container';
 
 interface Props {
   currentUser: { id: string; [k: string]: unknown };
@@ -19,7 +19,7 @@ export function AIRulesView({ currentUser }: Props) {
   const [formDesc, setFormDesc] = useState('');
 
   useEffect(() => {
-    aiRulesRepo.list(currentUser.id).then(r => { setRules(r); setLoading(false); });
+    aiRepo.listRules(currentUser.id).then(r => { setRules(r); setLoading(false); });
   }, [currentUser.id]);
 
   const openNew = () => {
@@ -39,10 +39,10 @@ export function AIRulesView({ currentUser }: Props) {
   const save = async () => {
     if (!formName.trim() || !formDesc.trim()) return;
     if (editing) {
-      await aiRulesRepo.update(editing.id, { name: formName.trim(), description: formDesc.trim() });
+      await aiRepo.updateRule(editing.id, { name: formName.trim(), description: formDesc.trim() });
       setRules(prev => prev.map(r => r.id === editing.id ? { ...r, name: formName, description: formDesc } : r));
     } else {
-      const created = await aiRulesRepo.create({
+      const created = await aiRepo.createRule({
         userId: currentUser.id,
         name: formName.trim(),
         description: formDesc.trim(),
@@ -54,12 +54,12 @@ export function AIRulesView({ currentUser }: Props) {
   };
 
   const toggleActive = async (r: AIRule) => {
-    await aiRulesRepo.update(r.id, { isActive: !r.isActive });
+    await aiRepo.updateRule(r.id, { isActive: !r.isActive });
     setRules(prev => prev.map(x => x.id === r.id ? { ...x, isActive: !x.isActive } : x));
   };
 
   const remove = async (r: AIRule) => {
-    await aiRulesRepo.remove(r.id);
+    await aiRepo.deleteRule(r.id);
     setRules(prev => prev.filter(x => x.id !== r.id));
   };
 

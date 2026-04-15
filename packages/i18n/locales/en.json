@@ -1093,6 +1093,21 @@
     "toolCreateTask":     "Create a new task in the initial OPEN state",
     "toolUpdateTask":     "Update title, priority, or custom fields",
     "toolMoveTask":       "Move a task to a different state",
-    "toolDeleteTask":     "Permanently delete a task"
+    "toolDeleteTask":     "Permanently delete a task",
+    "aiMode":             "AI Mode",
+    "modeEmbedded":       "Embedded chat",
+    "modeEmbeddedDesc":   "Talk to AI inside Vector Logic",
+    "modeEmbeddedHint":   "The chat appears in the sidebar. Uses the provider you configure below (free Gemini, or your Claude/ChatGPT API key). The Chat tab is visible.",
+    "modeExternal":       "External client (MCP)",
+    "modeExternalDesc":   "Use Claude Desktop or Claude Code via MCP",
+    "modeExternalHint":   "The embedded chat is hidden. You connect your Claude client (Desktop or Code) to the Vector Logic MCP server following the steps in the MCP Access tab. Uses your existing Claude subscription.",
+    "modeExternalSetup":  "To configure the Claude client, go to the MCP Access tab. There you'll find the endpoint, session token and config snippets for Claude Desktop and Claude Code.",
+    "providerGoogleDesc": "Real free tier, no card",
+    "providerAnthropicDesc": "Paid separately (not in Plus)",
+    "providerOpenaiDesc": "Paid separately (not in Plus)",
+    "providerFreeTier":   "FREE",
+    "providerGoogleHelp": "Generate your key free at",
+    "providerAnthropicHelp": "Generate your key at",
+    "providerOpenaiHelp": "Generate your key at"
   }
 }
