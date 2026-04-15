@@ -7,6 +7,8 @@ import type { WorkflowState, StateCategory } from '../../domain/entities/State';
 import type { SchemaField } from '../../domain/entities/FieldType';
 import { FIELD_TYPES } from '../../domain/entities/FieldType';
 import { taskRepo, taskTypeRepo, stateRepo } from '../../container';
+import { RichTextEditor } from '../components/RichTextEditor';
+import { UserPicker } from '../components/UserPicker';
 
 const CAT_COLORS: Record<StateCategory, { color: string; bg: string }> = {
   BACKLOG:     { color: 'var(--tx3)',   bg: 'rgba(140,144,159,.08)' },
@@ -22,11 +24,19 @@ const PRIORITY_COLORS: Record<TaskPriority, string> = {
   urgent: 'var(--red)',
 };
 
-interface Props {
-  currentUser: { id: string; name?: string; email: string; [k: string]: unknown };
+interface WSUser {
+  id: string;
+  name?: string;
+  email: string;
+  avatar?: string;
 }
 
-export function KanbanView({ currentUser }: Props) {
+interface Props {
+  currentUser: { id: string; name?: string; email: string; [k: string]: unknown };
+  wsUsers?: WSUser[];
+}
+
+export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   const { t } = useTranslation();
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
   const [selectedType, setSelectedType] = useState<TaskType | null>(null);
@@ -71,12 +81,22 @@ export function KanbanView({ currentUser }: Props) {
   }, [tasks, wfStates]);
 
   const createTask = async (title: string, stateId: string) => {
+    // Pre-fill the assignee field in the task data with the current user
+    // if the schema has an assignee field. This is in addition to the
+    // top-level assigneeId so the field renders correctly in the modal.
+    const schema = (selectedType?.schema as any[]) ?? [];
+    const initialData: Record<string, unknown> = {};
+    for (const f of schema) {
+      if (f.fieldType === 'assignee') {
+        initialData[f.id] = currentUser.id;
+      }
+    }
     const created = await taskRepo.create({
       taskTypeId: selectedType!.id,
       stateId,
       title,
-      data: {},
-      assigneeId: null,
+      data: initialData,
+      assigneeId: currentUser.id,
       priority: 'medium',
       createdBy: currentUser.id,
     });
@@ -223,7 +243,11 @@ export function KanbanView({ currentUser }: Props) {
         <NewTaskModal
           onClose={() => setShowNew(false)}
           onCreate={async (title) => {
-            const initialState = wfStates.find(ws => ws.isInitial) ?? wfStates[0];
+            // Default state when creating a task: prefer OPEN, then is_initial,
+            // then first state. This guarantees new tasks land in OPEN if it
+            // exists in the workflow (per user request).
+            const openState = wfStates.find(ws => ws.state?.category === 'OPEN');
+            const initialState = openState ?? wfStates.find(ws => ws.isInitial) ?? wfStates[0];
             if (initialState) {
               await createTask(title, initialState.stateId);
               setShowNew(false);
@@ -238,6 +262,8 @@ export function KanbanView({ currentUser }: Props) {
           task={detailTask}
           taskType={selectedType}
           wfStates={wfStates}
+          wsUsers={wsUsers}
+          currentUser={currentUser}
           onClose={() => setDetailTask(null)}
           onUpdate={(patch) => updateTask(detailTask.id, patch)}
           onDelete={() => removeTask(detailTask.id)}
@@ -305,8 +331,10 @@ function NewTaskModal({ onClose, onCreate }: { onClose: () => void; onCreate: (t
 }
 
 /* ── Task Detail Modal ─────────────────────────────────────────────────── */
-function TaskDetailModal({ task, taskType, wfStates, onClose, onUpdate, onDelete }: {
+function TaskDetailModal({ task, taskType, wfStates, wsUsers, currentUser, onClose, onUpdate, onDelete }: {
   task: Task; taskType: TaskType; wfStates: WorkflowState[];
+  wsUsers: WSUser[];
+  currentUser: { id: string; [k: string]: unknown };
   onClose: () => void; onUpdate: (patch: Partial<Task>) => void; onDelete: () => void;
 }) {
   const { t } = useTranslation();
@@ -344,25 +372,33 @@ function TaskDetailModal({ task, taskType, wfStates, onClose, onUpdate, onDelete
           </select>
         </div>
 
-        {/* Title (editable) */}
-        <div>
-          <label style={lblStyle}>{t('vectorLogic.taskTitle')}</label>
-          <input value={title} onChange={e => setTitle(e.target.value)} onBlur={() => onUpdate({ title })}
-            style={inpStyle()} />
-        </div>
-
-        {/* Dynamic schema fields */}
+        {/* Dynamic schema fields (title is rendered as a special big input
+            via the title field type if present; otherwise we still show the
+            built-in editable title input below as a safety net). */}
+        {detailFields.some(f => f.fieldType === 'title') ? null : (
+          <div>
+            <label style={lblStyle}>{t('vectorLogic.taskTitle')}</label>
+            <input value={title} onChange={e => setTitle(e.target.value)} onBlur={() => onUpdate({ title })}
+              style={inpStyle()} />
+          </div>
+        )}
         {detailFields.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 8, borderTop: '1px solid var(--bd)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 8, borderTop: '1px solid var(--bd)' }}>
             {detailFields.map(field => (
               <DynamicFieldRenderer
                 key={field.id}
                 field={field}
-                value={data[field.id]}
+                value={field.fieldType === 'title' ? title : data[field.id]}
+                wsUsers={wsUsers}
                 onChange={(v) => {
-                  const newData = { ...data, [field.id]: v };
-                  setData(newData);
-                  onUpdate({ data: newData });
+                  if (field.fieldType === 'title') {
+                    setTitle(v as string);
+                    onUpdate({ title: v as string });
+                  } else {
+                    const newData = { ...data, [field.id]: v };
+                    setData(newData);
+                    onUpdate({ data: newData });
+                  }
                 }}
               />
             ))}
@@ -382,8 +418,24 @@ function TaskDetailModal({ task, taskType, wfStates, onClose, onUpdate, onDelete
 }
 
 /* ── Dynamic Field Renderer ─────────────────────────────────────────────── */
-function DynamicFieldRenderer({ field, value, onChange }: { field: SchemaField; value: unknown; onChange: (v: unknown) => void }) {
+function DynamicFieldRenderer({ field, value, onChange, wsUsers }: { field: SchemaField; value: unknown; onChange: (v: unknown) => void; wsUsers: WSUser[] }) {
   const def = FIELD_TYPES.find(f => f.id === field.fieldType);
+
+  // Title gets a special big input — no label, just the input itself
+  if (field.fieldType === 'title') {
+    return (
+      <input value={(value as string) || ''} onChange={e => onChange(e.target.value)}
+        placeholder={field.label || 'Untitled'}
+        style={{
+          width: '100%', padding: '6px 0', fontSize: 22, fontFamily: "'Space Grotesk',sans-serif",
+          fontWeight: 700, background: 'transparent', border: 'none', borderBottom: '1px solid transparent',
+          color: 'var(--tx)', outline: 'none', transition: 'border-color .15s',
+        }}
+        onFocus={e => e.currentTarget.style.borderBottomColor = 'var(--ac)'}
+        onBlur={e => e.currentTarget.style.borderBottomColor = 'transparent'} />
+    );
+  }
+
   const renderInput = () => {
     switch (field.fieldType) {
       case 'short_text':
@@ -393,14 +445,17 @@ function DynamicFieldRenderer({ field, value, onChange }: { field: SchemaField; 
         return <input value={(value as string) || ''} onChange={e => onChange(e.target.value)}
           style={inpStyle()} type={field.fieldType === 'email' ? 'email' : field.fieldType === 'url' ? 'url' : 'text'} />;
       case 'long_text':
-      case 'rich_text':
         return <textarea value={(value as string) || ''} onChange={e => onChange(e.target.value)}
           rows={3} style={{ ...inpStyle(), resize: 'vertical' }} />;
+      case 'rich_text':
+        return <RichTextEditor value={(value as string) || ''} onChange={onChange} placeholder={field.label} />;
       case 'number':
       case 'currency':
         return <input type="number" value={(value as number) || ''} onChange={e => onChange(Number(e.target.value))}
           style={inpStyle()} />;
       case 'date':
+      case 'start_date':
+      case 'due_date':
         return <input type="date" value={(value as string) || ''} onChange={e => onChange(e.target.value)}
           style={inpStyle()} />;
       case 'time':
@@ -409,6 +464,9 @@ function DynamicFieldRenderer({ field, value, onChange }: { field: SchemaField; 
       case 'checkbox':
         return <input type="checkbox" checked={!!value} onChange={e => onChange(e.target.checked)}
           style={{ width: 18, height: 18, cursor: 'pointer' }} />;
+      case 'assignee':
+      case 'user_picker':
+        return <UserPicker users={wsUsers} value={(value as string) || null} onChange={onChange} placeholder="Unassigned" />;
       case 'single_select':
       case 'radio_group':
         return (
@@ -457,7 +515,8 @@ function DynamicFieldRenderer({ field, value, onChange }: { field: SchemaField; 
 
 /* ── Helpers ──────────────────────────────────────────────────────────── */
 function catOrder(cat?: StateCategory) {
-  return { BACKLOG: 0, OPEN: 1, IN_PROGRESS: 2, DONE: 3 }[cat ?? 'BACKLOG'];
+  // Column order: OPEN → BACKLOG → IN_PROGRESS → DONE
+  return { OPEN: 0, BACKLOG: 1, IN_PROGRESS: 2, DONE: 3 }[cat ?? 'OPEN'];
 }
 
 const btnStyle = (variant = 'primary', extra = {}) => ({

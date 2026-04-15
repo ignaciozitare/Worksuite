@@ -345,7 +345,7 @@ function WorkSuiteApp() {
               )}
               {mod === "vector-logic" && (
                 <main className="content" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
-                  <VectorLogicPage currentUser={CURRENT_USER} />
+                  <VectorLogicPage currentUser={CURRENT_USER} wsUsers={users} />
                 </main>
               )}
               {mod === "profile" && (

@@ -1108,6 +1108,17 @@
     "providerFreeTier":   "GRATIS",
     "providerGoogleHelp": "Genera tu key gratis en",
     "providerAnthropicHelp": "Genera tu key en",
-    "providerOpenaiHelp": "Genera tu key en"
+    "providerOpenaiHelp": "Genera tu key en",
+    "editState":          "Editar estado",
+    "fieldTitle":         "Título",
+    "fieldStartDate":     "Fecha de inicio",
+    "fieldDueDate":       "Fecha de vencimiento",
+    "fieldAssignee":      "Asignado",
+    "newTaskType":        "Nuevo tipo de tarea",
+    "newTaskTypeHint":    "Se creará con campos por defecto: Título, Descripción, Asignado, Fecha de inicio y Fecha de vencimiento. Podés añadir, editar o quitar campos después.",
+    "icon":               "Icono",
+    "noTaskTypesYet":     "Aún no hay tipos de tarea. Crea uno para empezar.",
+    "noTaskTypeSelected": "Selecciona un tipo de tarea",
+    "clickToRename":      "Click para renombrar"
   }
 }

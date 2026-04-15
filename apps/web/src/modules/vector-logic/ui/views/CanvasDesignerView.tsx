@@ -102,7 +102,7 @@ function CanvasDesignerInner({ currentUser }: Props) {
         category: s.state?.category ?? 'BACKLOG',
         color: s.state?.color ?? null,
         isInitial: s.isInitial,
-        onConfigure: () => {},
+        onRename: (newName: string) => renameNode(s.stateId, newName),
         onDelete: () => removeNode(s.id),
       },
     }));
@@ -153,6 +153,24 @@ function CanvasDesignerInner({ currentUser }: Props) {
   const onNodeDragStop = useCallback(async (_: any, node: Node) => {
     await stateRepo.updatePosition(node.id, node.position.x, node.position.y);
   }, []);
+
+  // Rename a state (called from the node when user double-clicks the title)
+  const renameNode = async (stateId: string, newName: string) => {
+    await stateRepo.update(stateId, { name: newName });
+    // Update local state references so the node re-renders with the new name
+    setAllStates(prev => prev.map(s => s.id === stateId ? { ...s, name: newName } : s));
+    setWfStates(prev => prev.map(ws => ws.stateId === stateId
+      ? { ...ws, state: ws.state ? { ...ws.state, name: newName } : ws.state }
+      : ws));
+    setNodes(nds => nds.map(n => {
+      // Find the corresponding wfState to check if it matches this stateId
+      const ws = wfStates.find(x => x.id === n.id);
+      if (ws?.stateId === stateId) {
+        return { ...n, data: { ...n.data, label: newName } };
+      }
+      return n;
+    }));
+  };
 
   // Remove a node from workflow
   const removeNode = async (wsId: string) => {
@@ -207,7 +225,7 @@ function CanvasDesignerInner({ currentUser }: Props) {
         category: state.category,
         color: state.color,
         isInitial: state.category === 'OPEN',
-        onConfigure: () => {},
+        onRename: (newName: string) => renameNode(state.id, newName),
         onDelete: () => removeNode(ws.id),
       },
     }]);

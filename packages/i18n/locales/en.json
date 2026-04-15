@@ -1108,6 +1108,17 @@
     "providerFreeTier":   "FREE",
     "providerGoogleHelp": "Generate your key free at",
     "providerAnthropicHelp": "Generate your key at",
-    "providerOpenaiHelp": "Generate your key at"
+    "providerOpenaiHelp": "Generate your key at",
+    "editState":          "Edit state",
+    "fieldTitle":         "Title",
+    "fieldStartDate":     "Start date",
+    "fieldDueDate":       "Due date",
+    "fieldAssignee":      "Assignee",
+    "newTaskType":        "New task type",
+    "newTaskTypeHint":    "Will be created with default fields: Title, Description, Assignee, Start date and Due date. You can add, edit or remove fields afterwards.",
+    "icon":               "Icon",
+    "noTaskTypesYet":     "No task types yet. Create one to get started.",
+    "noTaskTypeSelected": "Select a task type",
+    "clickToRename":      "Click to rename"
   }
 }

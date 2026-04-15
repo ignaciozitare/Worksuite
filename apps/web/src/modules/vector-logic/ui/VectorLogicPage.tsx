@@ -36,9 +36,10 @@ type Tab = 'states' | 'canvas' | 'assignment' | 'entities' | 'kanban' | 'chat' |
 
 interface Props {
   currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown };
+  wsUsers?: Array<{ id: string; name?: string; email: string; avatar?: string }>;
 }
 
-export function VectorLogicPage({ currentUser }: Props) {
+export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
   const { t } = useTranslation();
   const [view, setView] = useState<Tab>('kanban');
   const [mode, setMode] = useState<AIMode>('embedded');
@@ -132,12 +133,12 @@ export function VectorLogicPage({ currentUser }: Props) {
         overflow: view === 'canvas' || view === 'kanban' || view === 'chat' ? 'hidden' : 'auto',
         padding: view === 'canvas' || view === 'chat' ? 0 : '28px 32px',
       }}>
-        {view === 'kanban' && <KanbanView currentUser={currentUser} />}
+        {view === 'kanban' && <KanbanView currentUser={currentUser} wsUsers={wsUsers} />}
         {view === 'chat' && mode === 'embedded' && <ChatView currentUser={currentUser} />}
         {view === 'states' && <StateManagerView currentUser={currentUser} />}
         {view === 'canvas' && <CanvasDesignerView currentUser={currentUser} />}
         {view === 'assignment' && <AssignmentManagerView />}
-        {view === 'entities' && <SchemaBuilderView currentUser={currentUser} />}
+        {view === 'entities' && <SchemaBuilderView currentUser={currentUser} wsUsers={wsUsers} />}
         {view === 'ai-rules' && <AIRulesView currentUser={currentUser} />}
         {view === 'mcp' && <MCPInfoView currentUser={currentUser} />}
         {view === 'settings' && <SettingsView currentUser={currentUser} />}

@@ -5,7 +5,8 @@ import type { State, StateCategory, WorkflowState } from '../../domain/entities/
 import type { Workflow } from '../../domain/entities/Workflow';
 import { workflowRepo, stateRepo } from '../../container';
 
-const CATEGORIES: StateCategory[] = ['BACKLOG', 'OPEN', 'IN_PROGRESS', 'DONE'];
+// Column order requested by user: open → backlog → in_progress → done
+const CATEGORIES: StateCategory[] = ['OPEN', 'BACKLOG', 'IN_PROGRESS', 'DONE'];
 
 const CAT_COLORS: Record<StateCategory, { color: string; bg: string; border: string }> = {
   BACKLOG:     { color: 'var(--tx3)',    bg: 'rgba(140,144,159,.08)', border: 'rgba(140,144,159,.15)' },
@@ -26,10 +27,11 @@ export function StateManagerView({ currentUser }: Props) {
   const [wfStates, setWfStates] = useState<WorkflowState[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // New state form
+  // State form (create OR edit)
   const [showForm, setShowForm] = useState(false);
+  const [editingState, setEditingState] = useState<State | null>(null);
   const [formName, setFormName] = useState('');
-  const [formCategory, setFormCategory] = useState<StateCategory>('BACKLOG');
+  const [formCategory, setFormCategory] = useState<StateCategory>('OPEN');
   const [formColor, setFormColor] = useState('#6366f1');
   const [formError, setFormError] = useState('');
 
@@ -67,34 +69,66 @@ export function StateManagerView({ currentUser }: Props) {
     return map;
   }, [wfStates]);
 
-  const createState = async () => {
+  const openCreateForm = () => {
+    setEditingState(null);
+    setFormName(''); setFormCategory('OPEN'); setFormColor('#6366f1');
+    setFormError(''); setShowForm(true);
+  };
+
+  const openEditForm = (s: State) => {
+    setEditingState(s);
+    setFormName(s.name);
+    setFormCategory(s.category);
+    setFormColor(s.color ?? '#6366f1');
+    setFormError(''); setShowForm(true);
+  };
+
+  const saveState = async () => {
     if (!formName.trim()) { setFormError(t('admin.envNameRequired')); return; }
     try {
-      const created = await stateRepo.create({
-        name: formName.trim(),
-        category: formCategory,
-        color: formColor,
-        isGlobal: false,
-      });
-      setStates(prev => [...prev, created]);
-      // Auto-add to current workflow if one is selected
-      if (selected) {
-        // Check one-OPEN rule
-        if (formCategory === 'OPEN' && grouped.OPEN.length > 0) {
-          setFormError(t('vectorLogic.oneOpenWarning'));
-          return;
-        }
-        const ws = await stateRepo.addToWorkflow({
-          workflowId: selected.id,
-          stateId: created.id,
-          positionX: 100 + Math.random() * 200,
-          positionY: 100 + Math.random() * 200,
-          isInitial: formCategory === 'OPEN',
+      if (editingState) {
+        // Update existing state
+        await stateRepo.update(editingState.id, {
+          name: formName.trim(),
+          category: formCategory,
+          color: formColor,
         });
-        setWfStates(prev => [...prev, ws]);
+        setStates(prev => prev.map(s => s.id === editingState.id
+          ? { ...s, name: formName.trim(), category: formCategory, color: formColor }
+          : s));
+        // Refresh wfStates so the columns reflect any category change
+        if (selected) {
+          const ws = await stateRepo.findByWorkflow(selected.id);
+          setWfStates(ws);
+        }
+      } else {
+        // Create new state
+        const created = await stateRepo.create({
+          name: formName.trim(),
+          category: formCategory,
+          color: formColor,
+          isGlobal: false,
+        });
+        setStates(prev => [...prev, created]);
+        // Auto-add to current workflow if one is selected
+        if (selected) {
+          if (formCategory === 'OPEN' && grouped.OPEN.length > 0) {
+            setFormError(t('vectorLogic.oneOpenWarning'));
+            return;
+          }
+          const ws = await stateRepo.addToWorkflow({
+            workflowId: selected.id,
+            stateId: created.id,
+            positionX: 100 + Math.random() * 200,
+            positionY: 100 + Math.random() * 200,
+            isInitial: formCategory === 'OPEN',
+          });
+          setWfStates(prev => [...prev, ws]);
+        }
       }
-      setFormName(''); setFormCategory('BACKLOG'); setFormError(''); setShowForm(false);
-    } catch (err) { console.error('[CreateState]', err); setFormError(String(err)); }
+      setShowForm(false);
+      setEditingState(null);
+    } catch (err) { console.error('[SaveState]', err); setFormError(String(err)); }
   };
 
   const createWorkflow = async () => {
@@ -147,7 +181,7 @@ export function StateManagerView({ currentUser }: Props) {
           </p>
         </div>
         <div style={{display:'flex',gap:8}}>
-          <button onClick={() => setShowForm(true)} style={btnStyle('primary')}>
+          <button onClick={openCreateForm} style={btnStyle('primary')}>
             <span className="material-symbols-outlined" style={{fontSize:16}}>add</span>
             {t('vectorLogic.newState')}
           </button>
@@ -203,22 +237,29 @@ export function StateManagerView({ currentUser }: Props) {
                 </div>
                 <div style={{display:'flex',flexDirection:'column',gap:8}}>
                   {items.map(ws => (
-                    <div key={ws.id} style={{
-                      background:'var(--sf3)',borderRadius:8,padding:'10px 12px',
-                      borderLeft:`3px solid ${ws.state?.color || cc.color}`,
-                      display:'flex',alignItems:'center',justifyContent:'space-between',
-                      transition:'background .15s',cursor:'default',
-                    }}>
+                    <div key={ws.id}
+                      onClick={() => ws.state && openEditForm(ws.state)}
+                      style={{
+                        background:'var(--sf3)',borderRadius:8,padding:'10px 12px',
+                        borderLeft:`3px solid ${ws.state?.color || cc.color}`,
+                        display:'flex',alignItems:'center',justifyContent:'space-between',
+                        transition:'background .15s, transform .15s',cursor:'pointer',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(79,110,247,.06)'; e.currentTarget.style.transform = 'translateX(2px)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'var(--sf3)'; e.currentTarget.style.transform = 'translateX(0)'; }}>
                       <div>
                         <div style={{fontSize:13,fontWeight:600,color:'var(--tx)'}}>{ws.state?.name}</div>
                         {ws.isInitial && <span style={{fontSize:9,color:'var(--amber)',fontWeight:700}}>INITIAL</span>}
                       </div>
-                      <button onClick={() => removeState(ws.id)}
-                        style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',fontSize:14,fontFamily:'inherit',opacity:.5,transition:'opacity .15s'}}
-                        onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-                        onMouseLeave={e => e.currentTarget.style.opacity = '.5'}>
-                        <span className="material-symbols-outlined" style={{fontSize:16}}>close</span>
-                      </button>
+                      <div style={{display:'flex',gap:4}}>
+                        <span className="material-symbols-outlined" style={{fontSize:14,color:'var(--tx3)',opacity:.4}}>edit</span>
+                        <button onClick={(e) => { e.stopPropagation(); removeState(ws.id); }}
+                          style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',fontSize:14,fontFamily:'inherit',opacity:.5,transition:'opacity .15s'}}
+                          onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                          onMouseLeave={e => e.currentTarget.style.opacity = '.5'}>
+                          <span className="material-symbols-outlined" style={{fontSize:16}}>close</span>
+                        </button>
+                      </div>
                     </div>
                   ))}
                   {items.length === 0 && (
@@ -263,7 +304,7 @@ export function StateManagerView({ currentUser }: Props) {
 
       {/* New State modal */}
       {showForm && (
-        <Modal title={t('vectorLogic.newState')} onClose={() => { setShowForm(false); setFormError(''); }}>
+        <Modal title={editingState ? t('vectorLogic.editState') : t('vectorLogic.newState')} onClose={() => { setShowForm(false); setEditingState(null); setFormError(''); }}>
           <div style={{display:'flex',flexDirection:'column',gap:14}}>
             <div>
               <label style={lblStyle}>{t('vectorLogic.stateName')}</label>
@@ -285,8 +326,8 @@ export function StateManagerView({ currentUser }: Props) {
             </div>
             {formError && <div style={{fontSize:12,color:'var(--red)',padding:'6px 10px',background:'rgba(224,82,82,.08)',borderRadius:6}}>{formError}</div>}
             <div style={{display:'flex',justifyContent:'flex-end',gap:8,paddingTop:8,borderTop:'1px solid var(--bd)'}}>
-              <button style={btnStyle('ghost')} onClick={() => setShowForm(false)}>{t('common.cancel')}</button>
-              <button style={btnStyle('primary')} onClick={createState}>{t('common.create')}</button>
+              <button style={btnStyle('ghost')} onClick={() => { setShowForm(false); setEditingState(null); }}>{t('common.cancel')}</button>
+              <button style={btnStyle('primary')} onClick={saveState}>{editingState ? t('common.save') : t('common.create')}</button>
             </div>
           </div>
         </Modal>
