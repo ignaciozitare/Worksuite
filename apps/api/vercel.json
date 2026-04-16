@@ -23,7 +23,7 @@
   "crons": [
     {
       "path": "/email-intel/ingest/cron",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 9 * * *"
     }
   ]
 }
