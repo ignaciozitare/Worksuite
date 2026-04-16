@@ -5,7 +5,9 @@ import type { AISettings, AIProvider, AIMode } from '../../domain/entities/AI';
 import { DEFAULT_SYSTEM_PROMPT } from '../../domain/entities/AI';
 import type { LLMModel } from '../../domain/ports/ILLMService';
 import type { Priority } from '../../domain/entities/Priority';
-import { aiRepo, llmService, priorityRepo } from '../../container';
+import type { GmailConnectionStatus } from '../../domain/entities/GmailConnection';
+import type { TaskType } from '../../domain/entities/TaskType';
+import { aiRepo, llmService, priorityRepo, gmailConnectionRepo, taskTypeRepo } from '../../container';
 
 interface Props {
   currentUser: { id: string; [k: string]: unknown };
@@ -34,11 +36,18 @@ export function SettingsView({ currentUser }: Props) {
   const [newPriorityName, setNewPriorityName] = useState('');
   const [newPriorityColor, setNewPriorityColor] = useState('#4f6ef7');
 
+  // Gmail / Email Intelligence
+  const [gmail, setGmail] = useState<GmailConnectionStatus | null>(null);
+  const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
+  const [gmailError, setGmailError] = useState('');
+
   useEffect(() => {
     (async () => {
-      const [settings, prs] = await Promise.all([
+      const [settings, prs, gmailStatus, tts] = await Promise.all([
         aiRepo.getSettings(currentUser.id),
         priorityRepo.ensureDefaults(currentUser.id),
+        gmailConnectionRepo.getStatus().catch(() => ({ connection: null, oauthConfigured: false })),
+        taskTypeRepo.findAll().catch(() => []),
       ]);
       if (settings) {
         setMode(settings.mode);
@@ -48,9 +57,64 @@ export function SettingsView({ currentUser }: Props) {
         setSystemPrompt(settings.systemPrompt ?? DEFAULT_SYSTEM_PROMPT);
       }
       setPriorities(prs);
+      setGmail(gmailStatus);
+      setTaskTypes(tts);
       setLoading(false);
     })();
+
+    // Handle OAuth callback query params (?gmail=connected|denied|error)
+    const params = new URLSearchParams(window.location.search);
+    const gmailFlag = params.get('gmail');
+    if (gmailFlag) {
+      if (gmailFlag === 'connected') {
+        // Refresh status
+        gmailConnectionRepo.getStatus().then(setGmail).catch(() => {});
+      } else if (gmailFlag === 'denied') {
+        setGmailError(t('vectorLogic.gmailDenied'));
+      } else if (gmailFlag === 'error') {
+        setGmailError(t('vectorLogic.gmailError'));
+      }
+      // Clean the URL so a refresh doesn't re-show the message
+      const url = new URL(window.location.href);
+      url.searchParams.delete('gmail');
+      window.history.replaceState({}, '', url.toString());
+    }
   }, [currentUser.id]);
+
+  const connectGmail = async () => {
+    setGmailError('');
+    try {
+      const url = await gmailConnectionRepo.startOAuth();
+      window.location.href = url;
+    } catch (err: any) {
+      setGmailError(err?.message ?? String(err));
+    }
+  };
+
+  const disconnectGmail = async () => {
+    if (!confirm(t('vectorLogic.disconnectGmailConfirm'))) return;
+    await gmailConnectionRepo.disconnect();
+    setGmail(prev => prev ? { ...prev, connection: null } : prev);
+  };
+
+  const updateGmailSettings = async (patch: {
+    pollingIntervalMinutes?: number;
+    confidenceThreshold?: number;
+    defaultPriorityId?: string | null;
+    defaultTaskTypeId?: string | null;
+  }) => {
+    await gmailConnectionRepo.updateSettings(patch);
+    setGmail(prev => prev && prev.connection ? {
+      ...prev,
+      connection: {
+        ...prev.connection,
+        pollingIntervalMinutes: patch.pollingIntervalMinutes ?? prev.connection.pollingIntervalMinutes,
+        confidenceThreshold: patch.confidenceThreshold ?? prev.connection.confidenceThreshold,
+        defaultPriorityId: patch.defaultPriorityId !== undefined ? patch.defaultPriorityId : prev.connection.defaultPriorityId,
+        defaultTaskTypeId: patch.defaultTaskTypeId !== undefined ? patch.defaultTaskTypeId : prev.connection.defaultTaskTypeId,
+      },
+    } : prev);
+  };
 
   const addPriority = async () => {
     if (!newPriorityName.trim()) return;
@@ -281,6 +345,101 @@ export function SettingsView({ currentUser }: Props) {
           </p>
         </Section>
       )}
+
+      {/* Email Intelligence — Gmail connection + settings */}
+      <Section title={t('vectorLogic.emailIntelligence') || 'Email Intelligence'}>
+        {!gmail?.oauthConfigured && (
+          <div style={{
+            fontSize: 11, color: 'var(--amber)', padding: '8px 12px',
+            background: 'rgba(245,158,11,.08)', borderRadius: 8, marginBottom: 12,
+            border: '1px solid rgba(245,158,11,.2)',
+          }}>
+            {t('vectorLogic.gmailNotConfiguredServer')}
+          </div>
+        )}
+        {gmailError && (
+          <div style={{
+            fontSize: 11, color: 'var(--red)', padding: '8px 12px',
+            background: 'rgba(224,82,82,.08)', borderRadius: 8, marginBottom: 12,
+          }}>{gmailError}</div>
+        )}
+        {!gmail?.connection ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 32, color: 'var(--tx3)' }}>mail</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>{t('vectorLogic.gmailNotConnected')}</div>
+              <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 2 }}>{t('vectorLogic.gmailConnectHint')}</div>
+            </div>
+            <button onClick={connectGmail} disabled={!gmail?.oauthConfigured} style={btnStyle('primary')}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>link</span>
+              {t('vectorLogic.connectGmail')}
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '10px 14px', background: 'var(--sf3)', borderRadius: 8,
+              border: '1px solid rgba(62,207,142,.25)',
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 22, color: 'var(--green)' }}>check_circle</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>{gmail.connection.email}</div>
+                <div style={{ fontSize: 10, color: 'var(--tx3)' }}>
+                  {gmail.connection.lastPolledAt
+                    ? `${t('vectorLogic.lastChecked')}: ${new Date(gmail.connection.lastPolledAt).toLocaleString()}`
+                    : t('vectorLogic.neverPolledYet')}
+                </div>
+              </div>
+              <button onClick={disconnectGmail} style={btnStyle('ghost')}>
+                {t('vectorLogic.disconnect')}
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={lblStyle}>
+                  {t('vectorLogic.confidenceThreshold')}: <b style={{ color: 'var(--ac)' }}>{Math.round(gmail.connection.confidenceThreshold * 100)}%</b>
+                </label>
+                <input type="range" min={0} max={100} step={5}
+                  value={Math.round(gmail.connection.confidenceThreshold * 100)}
+                  onChange={e => updateGmailSettings({ confidenceThreshold: Number(e.target.value) / 100 })}
+                  style={{ width: '100%' }} />
+                <p style={{ fontSize: 10, color: 'var(--tx3)', lineHeight: 1.4, marginTop: 4 }}>
+                  {t('vectorLogic.confidenceThresholdHint')}
+                </p>
+              </div>
+              <div>
+                <label style={lblStyle}>{t('vectorLogic.pollingInterval')} ({t('vectorLogic.minutes')})</label>
+                <input type="number" min={1} max={1440}
+                  value={gmail.connection.pollingIntervalMinutes}
+                  onChange={e => updateGmailSettings({ pollingIntervalMinutes: Number(e.target.value) })}
+                  style={inpStyle()} />
+              </div>
+              <div>
+                <label style={lblStyle}>{t('vectorLogic.defaultTaskType')}</label>
+                <select
+                  value={gmail.connection.defaultTaskTypeId ?? ''}
+                  onChange={e => updateGmailSettings({ defaultTaskTypeId: e.target.value || null })}
+                  style={inpStyle()}>
+                  <option value="">—</option>
+                  {taskTypes.map(tt => <option key={tt.id} value={tt.id}>{tt.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={lblStyle}>{t('vectorLogic.defaultPriority')}</label>
+                <select
+                  value={gmail.connection.defaultPriorityId ?? ''}
+                  onChange={e => updateGmailSettings({ defaultPriorityId: e.target.value || null })}
+                  style={inpStyle()}>
+                  <option value="">—</option>
+                  {priorities.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+      </Section>
 
       {/* Priorities CRUD */}
       <Section title={t('vectorLogic.priorities') || 'Priorities'}>

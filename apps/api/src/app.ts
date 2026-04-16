@@ -13,13 +13,18 @@ import { hotdeskRoutes } from './infrastructure/http/hotdeskRoutes.js';
 import { jiraRoutes }    from './infrastructure/http/jiraRoutes.js';
 import { mcpRoutes }     from './infrastructure/http/mcpRoutes.js';
 import { aiRoutes }      from './infrastructure/http/aiRoutes.js';
+import { emailIntelRoutes }   from './infrastructure/http/emailIntelRoutes.js';
 import { SupabaseWorklogRepo }        from './infrastructure/supabase/SupabaseWorklogRepo.js';
 import { SupabaseHotDeskRepo }        from './infrastructure/supabase/SupabaseHotDeskRepo.js';
 import { SupabaseUserRepo }           from './infrastructure/supabase/SupabaseUserRepo.js';
 import { SupabaseAuthService }        from './infrastructure/supabase/SupabaseAuthService.js';
 import { SupabaseJiraConnectionRepo } from './infrastructure/supabase/SupabaseJiraConnectionRepo.js';
+import { SupabaseGmailConnectionRepo } from './infrastructure/supabase/SupabaseGmailConnectionRepo.js';
+import { SupabaseEmailRuleRepo }      from './infrastructure/supabase/SupabaseEmailRuleRepo.js';
+import { SupabaseEmailDetectionRepo } from './infrastructure/supabase/SupabaseEmailDetectionRepo.js';
 import { VectorLogicMCPServer }       from './infrastructure/mcp/VectorLogicMCPServer.js';
 import { LLMServiceAdapter }          from './infrastructure/llm/LLMServiceAdapter.js';
+import { GmailOAuthService }          from './infrastructure/gmail/GmailOAuthService.js';
 
 const {
   SUPABASE_URL,
@@ -38,8 +43,12 @@ const hotdeskRepo      = new SupabaseHotDeskRepo(supabase);
 const userRepo         = new SupabaseUserRepo(supabase);
 const authService      = new SupabaseAuthService(supabase);
 const jiraConnectionRepo = new SupabaseJiraConnectionRepo(supabase);
+const gmailConnectionRepo = new SupabaseGmailConnectionRepo(supabase);
+const emailRuleRepo       = new SupabaseEmailRuleRepo(supabase);
+const emailDetectionRepo  = new SupabaseEmailDetectionRepo(supabase);
 const mcpServer          = new VectorLogicMCPServer(supabase);
 const llmService         = new LLMServiceAdapter();
+const gmailOAuthService  = new GmailOAuthService();
 
 let _app: FastifyInstance | null = null;
 
@@ -124,6 +133,14 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(jiraRoutes,    { prefix: '/jira',     jiraConnectionRepo, userRepo, worklogRepo });
   await app.register(mcpRoutes,     { prefix: '/mcp',      mcpServer });
   await app.register(aiRoutes,      { prefix: '/ai',       llmService });
+  await app.register(emailIntelRoutes, {
+    prefix: '/email-intel',
+    gmailConnectionRepo,
+    emailRuleRepo,
+    emailDetectionRepo,
+    oauthService: gmailOAuthService,
+    supabase,
+  });
 
   app.get('/health', async () => ({ ok: true, ts: new Date().toISOString() }));
 

@@ -10,6 +10,8 @@ import { ChatView } from './views/ChatView';
 import { AIRulesView } from './views/AIRulesView';
 import { MCPInfoView } from './views/MCPInfoView';
 import { SettingsView } from './views/SettingsView';
+import { EmailRulesView } from './views/EmailRulesView';
+import { AIDetectionsView } from './views/AIDetectionsView';
 import { aiRepo } from '../container';
 import type { AIMode } from '../domain/entities/AI';
 
@@ -32,7 +34,7 @@ const CSS = `
 .vl .vl-section-label{font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.12em;padding:16px 12px 6px;user-select:none;}
 `;
 
-type Tab = 'states' | 'canvas' | 'assignment' | 'entities' | 'kanban' | 'chat' | 'ai-rules' | 'mcp' | 'settings';
+type Tab = 'states' | 'canvas' | 'assignment' | 'entities' | 'kanban' | 'chat' | 'ai-rules' | 'mcp' | 'settings' | 'email-rules' | 'detections';
 
 interface Props {
   currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown };
@@ -63,6 +65,9 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
     { id: 'states',     label: t('vectorLogic.stateManager'),      icon: 'account_tree' },
     { id: 'canvas',     label: t('vectorLogic.canvasDesigner'),     icon: 'schema' },
     { id: 'assignment', label: t('vectorLogic.assignmentManager'),  icon: 'assignment' },
+    { section: t('vectorLogic.emailIntelligence') },
+    { id: 'detections',  label: t('vectorLogic.aiDetections'), icon: 'mark_email_unread' },
+    { id: 'email-rules', label: t('vectorLogic.emailRules'),   icon: 'rule' },
     { section: t('vectorLogic.title') },
     { id: 'entities',   label: t('vectorLogic.taskEntities'),       icon: 'category' },
     { id: 'ai-rules',   label: t('vectorLogic.aiRules'),            icon: 'psychology' },
@@ -142,6 +147,8 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
         {view === 'ai-rules' && <AIRulesView currentUser={currentUser} />}
         {view === 'mcp' && <MCPInfoView currentUser={currentUser} />}
         {view === 'settings' && <SettingsView currentUser={currentUser} />}
+        {view === 'email-rules' && <EmailRulesView currentUser={currentUser} />}
+        {view === 'detections' && <AIDetectionsView currentUser={currentUser} />}
       </div>
     </div>
   );

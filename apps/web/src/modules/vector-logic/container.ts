@@ -13,6 +13,7 @@ import { SupabaseTaskRepo } from './infra/supabase/SupabaseTaskRepo';
 import { SupabaseAIRepo } from './infra/supabase/SupabaseAIRepo';
 import { SupabasePriorityRepo } from './infra/supabase/SupabasePriorityRepo';
 import { LLMService } from './infra/LLMService';
+import { GmailConnectionApi, EmailRuleApi, EmailDetectionApi } from './infra/EmailIntelApi';
 
 export const workflowRepo = new SupabaseWorkflowRepo(supabase);
 export const stateRepo = new SupabaseStateRepo(supabase);
@@ -22,3 +23,6 @@ export const taskRepo = new SupabaseTaskRepo(supabase);
 export const aiRepo = new SupabaseAIRepo(supabase);
 export const priorityRepo = new SupabasePriorityRepo(supabase);
 export const llmService = new LLMService();
+export const gmailConnectionRepo = new GmailConnectionApi();
+export const emailRuleRepo = new EmailRuleApi();
+export const emailDetectionRepo = new EmailDetectionApi();
