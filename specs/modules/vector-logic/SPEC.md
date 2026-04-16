@@ -287,4 +287,24 @@ apps/api/src/
 ```
 
 ### Data Model
-> Pending — DBA Agent will complete this section.
+
+Three new tables, plus a small extension to the existing `vl_tasks` table so any task knows whether it came from an email.
+
+**1. Gmail connection (`vl_gmail_connections`).** One row per user. Stores the Gmail address the user connected, the OAuth tokens needed to keep reading their inbox (tokens are encrypted by `apps/api` before being written, and the browser never sees them), and the per-user settings that shape the AI behavior: polling interval, confidence threshold, default priority, and default task type to fall back on when the AI can't deduce one. Also tracks `last_polled_at` and `last_message_timestamp` so each poll only looks at new emails since the previous run.
+
+**2. Email rules (`vl_email_rules`).** One row per rule the user defines. Each rule has a name, an active flag, and a list of filter criteria (stored as a JSON array of `{type, value}` entries — type is one of `label`, `category`, `sender`, `domain`, or `all`). If **any** filter in a rule matches an email, the rule matches. Each rule can optionally specify override actions: force a specific task type, force a priority by name, or force an assignee. If multiple rules match the same email, the rule with the lowest `sort_order` wins.
+
+**3. Email detections (`vl_email_detections`).** One row per email that the system processed. Holds the Gmail identifiers (`gmail_message_id`, `gmail_thread_id`, `gmail_received_at`), the sender, the subject and body preview, which rule matched, the AI's confidence score, and the proposed task fields (title, description, task type, priority, due date). The `status` column tracks the lifecycle: `pending_review` (waiting in the review inbox), `approved` (user confirmed), `rejected` (user discarded), `auto_created` (confidence beat the threshold, task created without review), or `failed` (something went wrong during processing — `error_message` explains). Once a task is actually created, `task_id` points back to it. A unique constraint on `(user_id, gmail_message_id)` ensures the same email is never processed twice.
+
+**4. Extension to `vl_tasks`.** Three new columns: `gmail_message_id` and `gmail_thread_id` (so the Kanban card can link back to the original thread in Gmail), and `created_by_ai` (a boolean so the UI can show the `AI` badge without joining against `vl_email_detections`).
+
+**Relationships in plain language.**
+A user has at most one Gmail connection. That user can have many email rules and many detections. Each detection was (optionally) matched by one rule, and (optionally) resulted in one task. A rule can be referenced by many detections. A task can be referenced by at most one detection.
+
+**Security.**
+Every new table has Row Level Security enabled with policies scoped by `auth.uid() = user_id` — a user can only see and modify their own connection, rules, and detections. OAuth tokens are stored as `text` but encrypted by the backend before insert; the decryption key lives only in `apps/api` environment variables.
+
+**Indexes.**
+Fast lookups for: the user's Gmail connection, the user's active rules in priority order, the user's pending detections in recent-first order, and the reverse lookup from a `gmail_message_id` back to a task.
+
+Migration file: `supabase/migrations/20260416_vl_email_intelligence_initial.sql` (applied to prod).
