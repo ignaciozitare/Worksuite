@@ -139,6 +139,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     emailRuleRepo,
     emailDetectionRepo,
     oauthService: gmailOAuthService,
+    llm: llmService,
     supabase,
   });
 

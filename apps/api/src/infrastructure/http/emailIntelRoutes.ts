@@ -23,8 +23,11 @@ import type { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyRepl
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { IGmailConnectionRepo, IEmailRuleRepo, IEmailDetectionRepo } from '../../domain/emailIntel/IEmailIntelRepos.js';
 import type { EmailRuleFilter, EmailDetectionStatus } from '../../domain/emailIntel/types.js';
+import type { ILLMService } from '../../domain/ai/ILLMService.js';
 import { GmailOAuthService } from '../gmail/GmailOAuthService.js';
+import { GmailProvider } from '../gmail/GmailProvider.js';
 import { encryptToken } from '../gmail/tokenCrypto.js';
+import { pollInboxForUser } from '../../application/emailIntel/PollInboxForUser.js';
 import { randomBytes } from 'node:crypto';
 
 interface EmailIntelRoutesOptions extends FastifyPluginOptions {
@@ -32,6 +35,7 @@ interface EmailIntelRoutesOptions extends FastifyPluginOptions {
   emailRuleRepo:       IEmailRuleRepo;
   emailDetectionRepo:  IEmailDetectionRepo;
   oauthService:        GmailOAuthService;
+  llm:                 ILLMService;
   supabase:            SupabaseClient;
 }
 
@@ -46,7 +50,8 @@ function gcStates(): void {
 }
 
 export async function emailIntelRoutes(app: FastifyInstance, opts: EmailIntelRoutesOptions): Promise<void> {
-  const { gmailConnectionRepo, emailRuleRepo, emailDetectionRepo, oauthService, supabase } = opts;
+  const { gmailConnectionRepo, emailRuleRepo, emailDetectionRepo, oauthService, llm, supabase } = opts;
+  const gmail = new GmailProvider();
 
   // Most routes need auth — but the OAuth callback is hit by Google's redirect
   // so we register auth per-route instead of globally.
@@ -354,5 +359,51 @@ export async function emailIntelRoutes(app: FastifyInstance, opts: EmailIntelRou
     }
     await emailDetectionRepo.update(req.params.id, { status: 'rejected' });
     return reply.send({ ok: true });
+  });
+
+  // ── Manual ingestion trigger (authenticated user polls their own inbox) ───
+  app.post('/ingest', authHook, async (req: FastifyRequest, reply: FastifyReply) => {
+    const userId = (req.user as { sub: string }).sub;
+    try {
+      const result = await pollInboxForUser(userId, {
+        supabase, gmailConnectionRepo, emailRuleRepo, emailDetectionRepo, oauthService, llm, gmail,
+      });
+      return reply.send({ ok: true, data: result });
+    } catch (err) {
+      app.log.error({ err }, 'Ingest failed');
+      return reply.status(500).send({ ok: false, error: { code: 'INGEST_FAILED', message: String(err) } });
+    }
+  });
+
+  // ── Cron trigger — iterates ALL active Gmail connections ──────────────────
+  // Vercel Cron sends GET requests with Authorization: Bearer <CRON_SECRET>.
+  // Any other caller is rejected. Not protected by the Supabase auth hook.
+  app.get('/ingest/cron', async (req: FastifyRequest, reply: FastifyReply) => {
+    const expected = process.env.CRON_SECRET;
+    const header = req.headers['authorization'];
+    if (!expected || !header || header !== `Bearer ${expected}`) {
+      return reply.status(401).send({ ok: false, error: { code: 'UNAUTHORIZED' } });
+    }
+    // Pull active connections from DB directly (service role client bypasses RLS)
+    const { data, error } = await supabase
+      .from('vl_gmail_connections')
+      .select('user_id')
+      .eq('is_active', true);
+    if (error) {
+      return reply.status(500).send({ ok: false, error: { code: 'DB_ERROR', message: error.message } });
+    }
+    const userIds = (data ?? []).map((r: any) => r.user_id as string);
+    const results: unknown[] = [];
+    for (const uid of userIds) {
+      try {
+        const r = await pollInboxForUser(uid, {
+          supabase, gmailConnectionRepo, emailRuleRepo, emailDetectionRepo, oauthService, llm, gmail,
+        });
+        results.push(r);
+      } catch (err) {
+        results.push({ user_id: uid, error: String(err) });
+      }
+    }
+    return reply.send({ ok: true, data: { processed: userIds.length, results } });
   });
 }

@@ -2,6 +2,17 @@ import type { EmailRule, EmailRuleFilter } from '../entities/EmailRule';
 import type { EmailDetection, EmailDetectionStatus } from '../entities/EmailDetection';
 import type { GmailConnectionStatus } from '../entities/GmailConnection';
 
+export interface PollResult {
+  listed: number;
+  new: number;
+  matched: number;
+  auto_created: number;
+  queued: number;
+  failed: number;
+  skipped_not_configured: boolean;
+  error?: string;
+}
+
 export interface IGmailConnectionRepo {
   getStatus(): Promise<GmailConnectionStatus>;
   startOAuth(): Promise<string>;               // returns URL to redirect the browser to
@@ -13,6 +24,7 @@ export interface IGmailConnectionRepo {
     defaultTaskTypeId?: string | null;
     isActive?: boolean;
   }): Promise<void>;
+  pollNow(): Promise<PollResult>;
 }
 
 export interface IEmailRuleRepo {

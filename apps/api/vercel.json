@@ -19,5 +19,11 @@
         "Access-Control-Allow-Headers": "Authorization, Content-Type"
       }
     }
+  ],
+  "crons": [
+    {
+      "path": "/email-intel/ingest/cron",
+      "schedule": "*/5 * * * *"
+    }
   ]
 }

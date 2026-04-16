@@ -1196,7 +1196,12 @@
     "minutes":            "minutos",
     "defaultTaskType":    "Tipo de tarea por defecto",
     "defaultPriority":    "Prioridad por defecto",
-    "noSubject":          "(sin asunto)"
+    "noSubject":          "(sin asunto)",
+    "pollNow":            "Revisar ahora",
+    "pollListed":         "listados",
+    "pollAutoCreated":    "auto-creados",
+    "pollQueued":         "en cola",
+    "pollSkippedNotConnected": "Gmail no está conectado"
   },
   "richText": {
     "bold":            "Negrita",

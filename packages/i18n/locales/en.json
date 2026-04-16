@@ -1196,7 +1196,12 @@
     "minutes":            "minutes",
     "defaultTaskType":    "Default task type",
     "defaultPriority":    "Default priority",
-    "noSubject":          "(no subject)"
+    "noSubject":          "(no subject)",
+    "pollNow":            "Poll now",
+    "pollListed":         "listed",
+    "pollAutoCreated":    "auto-created",
+    "pollQueued":         "queued",
+    "pollSkippedNotConnected": "Gmail is not connected"
   },
   "richText": {
     "bold":            "Bold",

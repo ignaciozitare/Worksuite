@@ -82,13 +82,16 @@ export function AIDetectionsView({ currentUser }: Props) {
 
   return (
     <div style={{ maxWidth: 980 }}>
-      <div style={{ marginBottom: 18 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
-          {t('vectorLogic.aiDetections')}
-        </h2>
-        <p style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 4 }}>
-          {t('vectorLogic.aiDetectionsDesc')}
-        </p>
+      <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ flex: 1 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
+            {t('vectorLogic.aiDetections')}
+          </h2>
+          <p style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 4 }}>
+            {t('vectorLogic.aiDetectionsDesc')}
+          </p>
+        </div>
+        <PollNowButton onComplete={() => load(tab)} />
       </div>
 
       {/* Tabs */}
@@ -326,6 +329,49 @@ function DetectionDetail({ detection, taskTypes, priorities, canAct, onApprove, 
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function PollNowButton({ onComplete }: { onComplete: () => void | Promise<void> }) {
+  const { t } = useTranslation();
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  const run = async () => {
+    setBusy(true);
+    setResult(null);
+    try {
+      const r = await gmailConnectionRepo.pollNow();
+      if (r.skipped_not_configured) {
+        setResult(t('vectorLogic.pollSkippedNotConnected'));
+      } else if (r.error) {
+        setResult(r.error);
+      } else {
+        const msg = `${t('vectorLogic.pollListed')}: ${r.listed} · ${t('vectorLogic.pollAutoCreated')}: ${r.auto_created} · ${t('vectorLogic.pollQueued')}: ${r.queued}`;
+        setResult(msg);
+        await onComplete();
+      }
+    } catch (err: any) {
+      setResult(err?.message ?? String(err));
+    } finally {
+      setBusy(false);
+      setTimeout(() => setResult(null), 5000);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {result && <span style={{ fontSize: 10, color: 'var(--tx3)', maxWidth: 260, textAlign: 'right' }}>{result}</span>}
+      <button onClick={run} disabled={busy}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+          borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: busy ? 'wait' : 'pointer', border: 'none',
+          fontFamily: 'inherit', background: 'var(--ac)', color: '#fff',
+        }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{busy ? 'hourglass_empty' : 'refresh'}</span>
+        {busy ? t('common.loading') : t('vectorLogic.pollNow')}
+      </button>
     </div>
   );
 }
