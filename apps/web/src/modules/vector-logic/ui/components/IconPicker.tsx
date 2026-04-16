@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState } from 'react';
+import { useTranslation } from '@worksuite/i18n';
 
 interface Props {
   value: string;
@@ -56,6 +57,7 @@ const ICONS = [
 ];
 
 export function IconPicker({ value, onChange, size = 24 }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
@@ -99,7 +101,7 @@ export function IconPicker({ value, onChange, size = 24 }: Props) {
           }}>
             <div style={{ padding: 10, borderBottom: '1px solid var(--bd)' }}>
               <input value={search} onChange={e => setSearch(e.target.value)} autoFocus
-                placeholder="Search icons…"
+                placeholder={t('vectorLogic.searchIcons')}
                 style={{
                   width: '100%', padding: '6px 10px', fontSize: 12, fontFamily: 'inherit',
                   background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6,

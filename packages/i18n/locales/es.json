@@ -1130,6 +1130,22 @@
     "sortBy":             "Ordenar",
     "sortManual":         "Manual",
     "sortPriority":       "Prioridad",
-    "sortAssignee":       "Asignado"
+    "sortAssignee":       "Asignado",
+    "searchIcons":        "Buscar iconos…",
+    "selectUser":         "Seleccionar usuario…"
+  },
+  "richText": {
+    "bold":            "Negrita",
+    "italic":          "Cursiva",
+    "underline":       "Subrayado",
+    "strikethrough":   "Tachado",
+    "heading":         "Encabezado",
+    "quote":           "Cita",
+    "code":            "Código",
+    "bulletedList":    "Lista con viñetas",
+    "numberedList":    "Lista numerada",
+    "link":            "Enlace",
+    "clearFormatting": "Quitar formato",
+    "urlPrompt":       "URL:"
   }
 }

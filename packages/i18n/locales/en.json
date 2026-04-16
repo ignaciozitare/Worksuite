@@ -1130,6 +1130,22 @@
     "sortBy":             "Sort",
     "sortManual":         "Manual",
     "sortPriority":       "Priority",
-    "sortAssignee":       "Assignee"
+    "sortAssignee":       "Assignee",
+    "searchIcons":        "Search icons…",
+    "selectUser":         "Select user…"
+  },
+  "richText": {
+    "bold":            "Bold",
+    "italic":          "Italic",
+    "underline":       "Underline",
+    "strikethrough":   "Strikethrough",
+    "heading":         "Heading",
+    "quote":           "Quote",
+    "code":            "Code",
+    "bulletedList":    "Bulleted list",
+    "numberedList":    "Numbered list",
+    "link":            "Link",
+    "clearFormatting": "Clear formatting",
+    "urlPrompt":       "URL:"
   }
 }

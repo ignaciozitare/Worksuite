@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useRef, useEffect } from 'react';
+import { useTranslation } from '@worksuite/i18n';
 
 interface Props {
   value: string;
@@ -19,6 +20,7 @@ interface Props {
  * we rely on browser sanitization of execCommand.
  */
 export function RichTextEditor({ value, onChange, placeholder, minHeight = 120 }: Props) {
+  const { t } = useTranslation();
   const ref = useRef<HTMLDivElement | null>(null);
 
   // Initial paint and external value sync: only update when value changes
@@ -49,23 +51,23 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 120 }
         display: 'flex', alignItems: 'center', gap: 2, padding: '6px 8px',
         background: 'var(--sf3)', borderBottom: '1px solid var(--bd)',
       }}>
-        <ToolButton title="Bold" onClick={() => exec('bold')} icon="format_bold" />
-        <ToolButton title="Italic" onClick={() => exec('italic')} icon="format_italic" />
-        <ToolButton title="Underline" onClick={() => exec('underline')} icon="format_underlined" />
-        <ToolButton title="Strikethrough" onClick={() => exec('strikeThrough')} icon="strikethrough_s" />
+        <ToolButton title={t('richText.bold')} onClick={() => exec('bold')} icon="format_bold" />
+        <ToolButton title={t('richText.italic')} onClick={() => exec('italic')} icon="format_italic" />
+        <ToolButton title={t('richText.underline')} onClick={() => exec('underline')} icon="format_underlined" />
+        <ToolButton title={t('richText.strikethrough')} onClick={() => exec('strikeThrough')} icon="strikethrough_s" />
         <Sep />
-        <ToolButton title="Heading" onClick={() => exec('formatBlock', 'H3')} icon="title" />
-        <ToolButton title="Quote" onClick={() => exec('formatBlock', 'BLOCKQUOTE')} icon="format_quote" />
-        <ToolButton title="Code" onClick={() => exec('formatBlock', 'PRE')} icon="code" />
+        <ToolButton title={t('richText.heading')} onClick={() => exec('formatBlock', 'H3')} icon="title" />
+        <ToolButton title={t('richText.quote')} onClick={() => exec('formatBlock', 'BLOCKQUOTE')} icon="format_quote" />
+        <ToolButton title={t('richText.code')} onClick={() => exec('formatBlock', 'PRE')} icon="code" />
         <Sep />
-        <ToolButton title="Bulleted list" onClick={() => exec('insertUnorderedList')} icon="format_list_bulleted" />
-        <ToolButton title="Numbered list" onClick={() => exec('insertOrderedList')} icon="format_list_numbered" />
+        <ToolButton title={t('richText.bulletedList')} onClick={() => exec('insertUnorderedList')} icon="format_list_bulleted" />
+        <ToolButton title={t('richText.numberedList')} onClick={() => exec('insertOrderedList')} icon="format_list_numbered" />
         <Sep />
-        <ToolButton title="Link" onClick={() => {
-          const url = prompt('URL:');
+        <ToolButton title={t('richText.link')} onClick={() => {
+          const url = prompt(t('richText.urlPrompt'));
           if (url) exec('createLink', url);
         }} icon="link" />
-        <ToolButton title="Clear formatting" onClick={() => exec('removeFormat')} icon="format_clear" />
+        <ToolButton title={t('richText.clearFormatting')} onClick={() => exec('removeFormat')} icon="format_clear" />
       </div>
 
       {/* Editable area */}

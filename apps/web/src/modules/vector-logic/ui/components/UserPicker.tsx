@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useMemo } from 'react';
+import { useTranslation } from '@worksuite/i18n';
 
 interface User {
   id: string;
@@ -15,7 +16,9 @@ interface Props {
   placeholder?: string;
 }
 
-export function UserPicker({ users, value, onChange, placeholder = 'Select userâ€¦' }: Props) {
+export function UserPicker({ users, value, onChange, placeholder }: Props) {
+  const { t } = useTranslation();
+  const effectivePlaceholder = placeholder ?? t('vectorLogic.selectUser');
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
@@ -51,7 +54,7 @@ export function UserPicker({ users, value, onChange, placeholder = 'Select userâ
             </span>
           </>
         ) : (
-          <span style={{ flex: 1 }}>{placeholder}</span>
+          <span style={{ flex: 1 }}>{effectivePlaceholder}</span>
         )}
         <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--tx3)' }}>
           {open ? 'expand_less' : 'expand_more'}
@@ -70,7 +73,7 @@ export function UserPicker({ users, value, onChange, placeholder = 'Select userâ
           }}>
             <div style={{ padding: 8, borderBottom: '1px solid var(--bd)' }}>
               <input value={search} onChange={e => setSearch(e.target.value)} autoFocus
-                placeholder="Searchâ€¦"
+                placeholder={t('common.search')}
                 style={{
                   width: '100%', padding: '6px 10px', fontSize: 12, fontFamily: 'inherit',
                   background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6,
@@ -86,7 +89,7 @@ export function UserPicker({ users, value, onChange, placeholder = 'Select userâ
                   onMouseEnter={e => e.currentTarget.style.background = 'var(--sf2)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
-                  <span>Clear</span>
+                  <span>{t('common.clear')}</span>
                 </button>
               )}
               {filtered.map(u => {
@@ -120,7 +123,7 @@ export function UserPicker({ users, value, onChange, placeholder = 'Select userâ
               })}
               {filtered.length === 0 && (
                 <div style={{ fontSize: 11, color: 'var(--tx3)', textAlign: 'center', padding: '16px 0' }}>
-                  No users found
+                  {t('common.noResults')}
                 </div>
               )}
             </div>

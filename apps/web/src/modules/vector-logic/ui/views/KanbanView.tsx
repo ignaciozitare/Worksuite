@@ -614,7 +614,7 @@ function TaskCard({ task, priorityColor, assignee, onClick, onDragStart, onDragE
           <div title={assignee.name || assignee.email}
             style={{
               width: 22, height: 22, borderRadius: '50%',
-              background: 'linear-gradient(135deg, var(--ac), var(--ac2, #6366f1))',
+              background: 'linear-gradient(135deg, var(--ac), var(--ac2))',
               color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 9, fontWeight: 700, letterSpacing: '.02em',
               border: '1px solid rgba(255,255,255,.12)',
@@ -822,7 +822,7 @@ function DynamicFieldRenderer({ field, value, onChange, wsUsers }: { field: Sche
           style={{ width: 18, height: 18, cursor: 'pointer' }} />;
       case 'assignee':
       case 'user_picker':
-        return <UserPicker users={wsUsers} value={(value as string) || null} onChange={onChange} placeholder="Unassigned" />;
+        return <UserPicker users={wsUsers} value={(value as string) || null} onChange={onChange} />;
       case 'single_select':
       case 'radio_group':
         return (
