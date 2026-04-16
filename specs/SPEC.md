@@ -10,7 +10,7 @@ This index is updated automatically by the Spec Agent when a new spec is created
 
 | Module | Spec | Status |
 |---|---|---|
-| *(none yet — specs will appear here as they are created)* | | |
+| Vector Logic | [specs/modules/vector-logic/SPEC.md](modules/vector-logic/SPEC.md) | Phases 1–3 shipped · Phase 4 (Email Intelligence) spec confirmed, pending DBA |
 
 ---
 
