@@ -309,7 +309,10 @@ export async function emailIntelRoutes(app: FastifyInstance, opts: EmailIntelRou
         .select('state_id, is_initial, vl_states!inner(category)')
         .eq('workflow_id', workflowId);
       const ws = (states ?? []) as any[];
+      // Email-originated tasks land in BACKLOG (AI or approved). Fall back
+      // to OPEN → is_initial → first state if BACKLOG isn't in the workflow.
       initialStateId =
+        ws.find(s => s.vl_states?.category === 'BACKLOG')?.state_id ??
         ws.find(s => s.vl_states?.category === 'OPEN')?.state_id ??
         ws.find(s => s.is_initial)?.state_id ??
         ws[0]?.state_id ??

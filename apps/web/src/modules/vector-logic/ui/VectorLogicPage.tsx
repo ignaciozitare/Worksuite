@@ -1,16 +1,8 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
-import { StateManagerView } from './views/StateManagerView';
-import { CanvasDesignerView } from './views/CanvasDesignerView';
-import { AssignmentManagerView } from './views/AssignmentManagerView';
-import { SchemaBuilderView } from './views/SchemaBuilderView';
 import { KanbanView } from './views/KanbanView';
 import { ChatView } from './views/ChatView';
-import { AIRulesView } from './views/AIRulesView';
-import { MCPInfoView } from './views/MCPInfoView';
-import { SettingsView } from './views/SettingsView';
-import { EmailRulesView } from './views/EmailRulesView';
 import { AIDetectionsView } from './views/AIDetectionsView';
 import { aiRepo } from '../container';
 import type { AIMode } from '../domain/entities/AI';
@@ -34,7 +26,7 @@ const CSS = `
 .vl .vl-section-label{font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.12em;padding:16px 12px 6px;user-select:none;}
 `;
 
-type Tab = 'states' | 'canvas' | 'assignment' | 'entities' | 'kanban' | 'chat' | 'ai-rules' | 'mcp' | 'settings' | 'email-rules' | 'detections';
+type Tab = 'kanban' | 'chat' | 'detections';
 
 interface Props {
   currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown };
@@ -57,22 +49,14 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
   // - Chat tab is hidden in 'external' mode (user goes via Claude Desktop + MCP)
   // - MCP Access tab is always visible (also useful in embedded mode if you want
   //   to ALSO connect Claude Desktop alongside the embedded chat)
+  // User-facing nav only. All configuration (workflows, states, schema,
+  // assignment, rules, priorities, provider settings) lives under the
+  // global Admin panel → Vector Logic tab.
   const NAV: Array<{ section?: string; id?: Tab; label?: string; icon?: string }> = [
     { section: t('vectorLogic.workspace') },
-    { id: 'kanban', label: t('vectorLogic.smartKanban'), icon: 'view_kanban' },
+    { id: 'kanban',     label: t('vectorLogic.smartKanban'),  icon: 'view_kanban' },
+    { id: 'detections', label: t('vectorLogic.aiDetections'), icon: 'mark_email_unread' },
     ...(mode === 'embedded' ? [{ id: 'chat' as Tab, label: t('vectorLogic.chat'), icon: 'forum' }] : []),
-    { section: t('vectorLogic.workflowEngine') },
-    { id: 'states',     label: t('vectorLogic.stateManager'),      icon: 'account_tree' },
-    { id: 'canvas',     label: t('vectorLogic.canvasDesigner'),     icon: 'schema' },
-    { id: 'assignment', label: t('vectorLogic.assignmentManager'),  icon: 'assignment' },
-    { section: t('vectorLogic.emailIntelligence') },
-    { id: 'detections',  label: t('vectorLogic.aiDetections'), icon: 'mark_email_unread' },
-    { id: 'email-rules', label: t('vectorLogic.emailRules'),   icon: 'rule' },
-    { section: t('vectorLogic.title') },
-    { id: 'entities',   label: t('vectorLogic.taskEntities'),       icon: 'category' },
-    { id: 'ai-rules',   label: t('vectorLogic.aiRules'),            icon: 'psychology' },
-    { id: 'mcp',        label: t('vectorLogic.mcpAccess'),          icon: 'hub' },
-    { id: 'settings',   label: t('vectorLogic.settings'),           icon: 'settings' },
   ];
 
   return (
@@ -135,20 +119,12 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
       <div style={{
         flex: 1, minWidth: 0,
         display: 'flex', flexDirection: 'column',
-        overflow: view === 'canvas' || view === 'kanban' || view === 'chat' ? 'hidden' : 'auto',
-        padding: view === 'canvas' || view === 'chat' ? 0 : '28px 32px',
+        overflow: view === 'kanban' || view === 'chat' ? 'hidden' : 'auto',
+        padding: view === 'chat' ? 0 : '28px 32px',
       }}>
-        {view === 'kanban' && <KanbanView currentUser={currentUser} wsUsers={wsUsers} />}
-        {view === 'chat' && mode === 'embedded' && <ChatView currentUser={currentUser} />}
-        {view === 'states' && <StateManagerView currentUser={currentUser} />}
-        {view === 'canvas' && <CanvasDesignerView currentUser={currentUser} />}
-        {view === 'assignment' && <AssignmentManagerView />}
-        {view === 'entities' && <SchemaBuilderView currentUser={currentUser} wsUsers={wsUsers} />}
-        {view === 'ai-rules' && <AIRulesView currentUser={currentUser} />}
-        {view === 'mcp' && <MCPInfoView currentUser={currentUser} />}
-        {view === 'settings' && <SettingsView currentUser={currentUser} />}
-        {view === 'email-rules' && <EmailRulesView currentUser={currentUser} />}
-        {view === 'detections' && <AIDetectionsView currentUser={currentUser} />}
+        {view === 'kanban'     && <KanbanView        currentUser={currentUser} wsUsers={wsUsers} />}
+        {view === 'chat'       && mode === 'embedded' && <ChatView currentUser={currentUser} />}
+        {view === 'detections' && <AIDetectionsView  currentUser={currentUser} />}
       </div>
     </div>
   );

@@ -271,7 +271,10 @@ export async function pollInboxForUser(userId: string, deps: Deps): Promise<Poll
             .select('state_id, is_initial, vl_states!inner(category)')
             .eq('workflow_id', tt.workflow_id);
           const ws = (states ?? []) as any[];
+          // AI-created tasks land in BACKLOG (per user rule). Fall back to
+          // OPEN → is_initial → first state if the workflow has no BACKLOG.
           initialStateId =
+            ws.find(s => s.vl_states?.category === 'BACKLOG')?.state_id ??
             ws.find(s => s.vl_states?.category === 'OPEN')?.state_id ??
             ws.find(s => s.is_initial)?.state_id ??
             ws[0]?.state_id ?? null;
