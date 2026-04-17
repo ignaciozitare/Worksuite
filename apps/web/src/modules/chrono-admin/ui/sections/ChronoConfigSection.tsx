@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { useAuth } from '@/shared/hooks/useAuth';
 import type { ConfigEmpresa } from '../../domain/entities/ConfigEmpresa';
 import { configRepo } from '../../container';
 
@@ -17,6 +18,7 @@ const inpStyle = (extra = {}) => ({
 
 export function ChronoConfigSection() {
   const { t } = useTranslation();
+  const { user: currentUser } = useAuth();
   const [config, setConfig] = useState<ConfigEmpresa | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -57,7 +59,6 @@ export function ChronoConfigSection() {
     setSaving(true);
     setSaveMsg('');
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       const updated = await configRepo.update({
         horasJornadaMinutos: horasJornada,
         pausaComidaMinMinutos: pausaMin,
@@ -67,7 +68,7 @@ export function ChronoConfigSection() {
         requiereGeo,
         requiereAprobacionFichaje: requiereAprobacion,
         slackWebhookUrl: slackWebhook.trim() || null,
-      }, user?.id ?? 'unknown');
+      }, currentUser?.id ?? 'unknown');
       setConfig(updated);
       setSaveMsg('OK');
       setTimeout(() => setSaveMsg(''), 2000);

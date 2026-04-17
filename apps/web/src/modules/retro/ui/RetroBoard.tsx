@@ -3,15 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from '@worksuite/i18n';
-import { supabase } from '@/shared/lib/api';
-import { SupabaseRetroSessionRepo } from '../infra/SupabaseRetroSessionRepo';
-import { SupabaseRetroActionableRepo } from '../infra/SupabaseRetroActionableRepo';
-import { SupabaseRetroTeamRepo } from '../infra/SupabaseRetroTeamRepo';
-
-// ── Port implementations (singleton) ──
-const sessionRepo    = new SupabaseRetroSessionRepo(supabase);
-const actionableRepo = new SupabaseRetroActionableRepo(supabase);
-const teamRepo       = new SupabaseRetroTeamRepo(supabase);
+import { sessionRepo, actionableRepo, teamRepo } from '../container';
 
 // ════════════════════════════════════════════════════════════════
 // CONSTANTS

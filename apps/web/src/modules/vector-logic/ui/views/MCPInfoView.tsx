@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState } from 'react';
 import { useTranslation } from '@worksuite/i18n';
-import { supabase } from '@/shared/lib/supabaseClient';
+import { getSessionToken } from '../../container';
 
 interface Props {
   currentUser: { id: string; [k: string]: unknown };
@@ -16,8 +16,8 @@ export function MCPInfoView({ currentUser }: Props) {
   const [copied, setCopied] = useState('');
 
   const loadToken = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.access_token) setToken(session.access_token);
+    const accessToken = await getSessionToken();
+    if (accessToken) setToken(accessToken);
   };
 
   const copy = (text: string, label: string) => {

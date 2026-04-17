@@ -26,3 +26,9 @@ export const llmService = new LLMService();
 export const gmailConnectionRepo = new GmailConnectionApi();
 export const emailRuleRepo = new EmailRuleApi();
 export const emailDetectionRepo = new EmailDetectionApi();
+
+/** Auth helper — keeps supabase out of UI files */
+export async function getSessionToken(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
+}
