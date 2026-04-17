@@ -127,7 +127,10 @@ export class GmailConnectionApi implements IGmailConnectionRepo {
   }
 
   async pollNow() {
-    const body = await request<{ ok: true; data: any }>('/email-intel/ingest', { method: 'POST' });
+    const body = await request<{ ok: true; data: any }>('/email-intel/ingest', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
     return body.data;
   }
 }
