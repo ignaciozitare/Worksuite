@@ -328,28 +328,28 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
         {/* Filters */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <select value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)}
-            title={t('vectorLogic.filterAssignee') || 'Assignee'}
+            title={t('vectorLogic.filterAssignee')}
             style={selectStyle}>
-            <option value="all">{t('vectorLogic.allAssignees') || 'All assignees'}</option>
-            <option value="unassigned">{t('vectorLogic.unassigned') || 'Unassigned'}</option>
+            <option value="all">{t('vectorLogic.allAssignees')}</option>
+            <option value="unassigned">{t('vectorLogic.unassigned')}</option>
             {assigneesInTasks.map(u => (
               <option key={u.id} value={u.id}>{u.name || u.email}</option>
             ))}
           </select>
           <select value={filterPriority} onChange={e => setFilterPriority(e.target.value)}
-            title={t('vectorLogic.filterPriority') || 'Priority'}
+            title={t('vectorLogic.filterPriority')}
             style={selectStyle}>
-            <option value="all">{t('vectorLogic.allPriorities') || 'All priorities'}</option>
+            <option value="all">{t('vectorLogic.allPriorities')}</option>
             {priorities.map(p => (
               <option key={p.id} value={p.name}>{p.name}</option>
             ))}
           </select>
           <select value={sortBy} onChange={e => setSortBy(e.target.value as any)}
-            title={t('vectorLogic.sortBy') || 'Sort'}
+            title={t('vectorLogic.sortBy')}
             style={selectStyle}>
-            <option value="manual">{t('vectorLogic.sortManual') || 'Manual'}</option>
-            <option value="priority">{t('vectorLogic.sortPriority') || 'Priority'}</option>
-            <option value="assignee">{t('vectorLogic.sortAssignee') || 'Assignee'}</option>
+            <option value="manual">{t('vectorLogic.sortManual')}</option>
+            <option value="priority">{t('vectorLogic.sortPriority')}</option>
+            <option value="assignee">{t('vectorLogic.sortAssignee')}</option>
           </select>
         </div>
 
@@ -648,7 +648,7 @@ function NewTaskModal({ taskTypes, defaultTypeId, onClose, onCreate }: {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {taskTypes.length > 1 && (
           <div>
-            <label style={lblStyle}>{t('vectorLogic.taskType') || 'Task type'}</label>
+            <label style={lblStyle}>{t('vectorLogic.taskType')}</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {taskTypes.map(tt => {
                 const active = typeId === tt.id;
@@ -674,7 +674,7 @@ function NewTaskModal({ taskTypes, defaultTypeId, onClose, onCreate }: {
           <label style={lblStyle}>{t('vectorLogic.taskTitle')}</label>
           <input value={title} onChange={e => setTitle(e.target.value)} autoFocus
             onKeyDown={e => { if (e.key === 'Enter') submit(); }}
-            style={inpStyle()} placeholder="e.g. Fix login bug" />
+            style={inpStyle()} placeholder={t('vectorLogic.placeholderFixBug')} />
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 8, borderTop: '1px solid var(--bd)' }}>
           <button style={btnStyle('ghost')} onClick={onClose}>{t('common.cancel')}</button>
@@ -781,7 +781,7 @@ function DynamicFieldRenderer({ field, value, onChange, wsUsers }: { field: Sche
   if (field.fieldType === 'title') {
     return (
       <input value={(value as string) || ''} onChange={e => onChange(e.target.value)}
-        placeholder={field.label || 'Untitled'}
+        placeholder={field.label || t('vectorLogic.untitledChat')}
         style={{
           width: '100%', padding: '6px 0', fontSize: 22, fontFamily: "'Space Grotesk',sans-serif",
           fontWeight: 700, background: 'transparent', border: 'none', borderBottom: '1px solid transparent',

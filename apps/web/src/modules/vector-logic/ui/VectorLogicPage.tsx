@@ -98,7 +98,7 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
               >
                 <span className="material-symbols-outlined" style={{fontSize:20}}>{item.icon}</span>
                 <span style={{flex:1}}>{item.label}</span>
-                {disabled && <span style={{fontSize:8,padding:'2px 6px',borderRadius:4,background:'var(--sf3)',color:'var(--tx3)',fontWeight:700,letterSpacing:'.05em'}}>SOON</span>}
+                {disabled && <span style={{fontSize:8,padding:'2px 6px',borderRadius:4,background:'var(--sf3)',color:'var(--tx3)',fontWeight:700,letterSpacing:'.05em'}}>{t('vectorLogic.badgeSoon')}</span>}
               </button>
             );
           })}

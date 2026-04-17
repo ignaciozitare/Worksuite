@@ -171,7 +171,7 @@ export function StateManagerView({ currentUser }: Props) {
 
   // Delete a state permanently from the library
   const deleteLibraryState = async (s: State) => {
-    if (!confirm(t('common.delete') + ': ' + s.name + '?')) return;
+    if (!confirm(t('vectorLogic.deleteStateConfirm', { name: s.name }))) return;
     try {
       await stateRepo.remove(s.id);
       setStates(prev => prev.filter(x => x.id !== s.id));
@@ -334,7 +334,7 @@ export function StateManagerView({ currentUser }: Props) {
                       onMouseLeave={e => { e.currentTarget.style.background = 'var(--sf3)'; e.currentTarget.style.transform = 'translateX(0)'; }}>
                       <div>
                         <div style={{fontSize:13,fontWeight:600,color:'var(--tx)'}}>{ws.state?.name}</div>
-                        {ws.isInitial && <span style={{fontSize:9,color:'var(--amber)',fontWeight:700}}>INITIAL</span>}
+                        {ws.isInitial && <span style={{fontSize:9,color:'var(--amber)',fontWeight:700}}>{t('vectorLogic.badgeInitial')}</span>}
                       </div>
                       <div style={{display:'flex',gap:4}}>
                         <span className="material-symbols-outlined" style={{fontSize:14,color:'var(--tx3)',opacity:.4}}>edit</span>
@@ -392,7 +392,7 @@ export function StateManagerView({ currentUser }: Props) {
                   <span onClick={() => !blocked && addExistingState(s)} style={{ cursor: blocked ? 'not-allowed' : 'pointer' }}>
                     {s.name}
                   </span>
-                  <span style={{fontSize:9,opacity:.6}}>{s.category}</span>
+                  <span style={{fontSize:9,opacity:.6}}>{t(`vectorLogic.category${s.category.charAt(0) + s.category.slice(1).toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase())}`)}</span>
                   <button
                     title={t('common.edit')}
                     onClick={(e) => { e.stopPropagation(); openEditForm(s); }}
@@ -423,13 +423,13 @@ export function StateManagerView({ currentUser }: Props) {
             <div>
               <label style={lblStyle}>{t('vectorLogic.stateName')}</label>
               <input style={inpStyle()} value={formName} onChange={e => { setFormName(e.target.value); setFormError(''); }}
-                placeholder="e.g. Code Review" autoFocus />
+                placeholder={t('vectorLogic.placeholderCodeReview')} autoFocus />
             </div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
               <div>
                 <label style={lblStyle}>{t('vectorLogic.stateCategory')}</label>
                 <select style={inpStyle()} value={formCategory} onChange={e => setFormCategory(e.target.value as StateCategory)}>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  {CATEGORIES.map(c => <option key={c} value={c}>{t(`vectorLogic.category${c.charAt(0) + c.slice(1).toLowerCase().replace(/_([a-z])/g, (_, ch) => ch.toUpperCase())}`)}</option>)}
                 </select>
               </div>
               <div>
@@ -454,7 +454,7 @@ export function StateManagerView({ currentUser }: Props) {
             <div>
               <label style={lblStyle}>{t('common.name')}</label>
               <input style={inpStyle()} value={wfName} onChange={e => setWfName(e.target.value)}
-                placeholder="e.g. Standard Agile" autoFocus onKeyDown={e => { if (e.key === 'Enter') createWorkflow(); }} />
+                placeholder={t('vectorLogic.placeholderAgile')} autoFocus onKeyDown={e => { if (e.key === 'Enter') createWorkflow(); }} />
             </div>
             <div style={{display:'flex',justifyContent:'flex-end',gap:8,paddingTop:8,borderTop:'1px solid var(--bd)'}}>
               <button style={btnStyle('ghost')} onClick={() => setShowWfForm(false)}>{t('common.cancel')}</button>

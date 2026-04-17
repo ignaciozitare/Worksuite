@@ -347,7 +347,7 @@ export function SettingsView({ currentUser }: Props) {
       )}
 
       {/* Email Intelligence — Gmail connection + settings */}
-      <Section title={t('vectorLogic.emailIntelligence') || 'Email Intelligence'}>
+      <Section title={t('vectorLogic.emailIntelligence')}>
         {!gmail?.oauthConfigured && (
           <div style={{
             fontSize: 11, color: 'var(--amber)', padding: '8px 12px',
@@ -442,7 +442,7 @@ export function SettingsView({ currentUser }: Props) {
       </Section>
 
       {/* Priorities CRUD */}
-      <Section title={t('vectorLogic.priorities') || 'Priorities'}>
+      <Section title={t('vectorLogic.priorities')}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
           {priorities.map(p => (
             <div key={p.id} style={{
@@ -476,12 +476,12 @@ export function SettingsView({ currentUser }: Props) {
           <input type="color" value={newPriorityColor} onChange={e => setNewPriorityColor(e.target.value)}
             style={{ width: 36, height: 36, border: '1px solid var(--bd)', borderRadius: 6, cursor: 'pointer', background: 'var(--sf)' }} />
           <input value={newPriorityName} onChange={e => setNewPriorityName(e.target.value)}
-            placeholder={t('vectorLogic.priorityNamePlaceholder') || 'Priority name'}
+            placeholder={t('vectorLogic.priorityNamePlaceholder')}
             onKeyDown={e => { if (e.key === 'Enter') addPriority(); }}
             style={inpStyle()} />
           <button onClick={addPriority} disabled={!newPriorityName.trim()} style={btnStyle('primary')}>
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
-            {t('common.add') || t('common.create')}
+            {t('common.add')}
           </button>
         </div>
       </Section>

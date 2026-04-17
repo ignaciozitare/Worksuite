@@ -70,7 +70,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
 
   const deleteSelectedType = async () => {
     if (!selected) return;
-    if (!confirm(`Delete task type "${selected.name}"?`)) return;
+    if (!confirm(t('vectorLogic.deleteTaskTypeConfirm', { name: selected.name }))) return;
     await taskTypeRepo.remove(selected.id);
     setTaskTypes(prev => prev.filter(t => t.id !== selected.id));
     setSelected(null);
@@ -102,7 +102,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
       required: false,
       showOnCreate: true,
       showOnDetail: true,
-      options: def.hasOptions ? ['Option 1', 'Option 2'] : undefined,
+      options: def.hasOptions ? [`${t('vectorLogic.defaultOption')} 1`, `${t('vectorLogic.defaultOption')} 2`] : undefined,
       order: 0,
     };
     setFields(prev => {
@@ -165,6 +165,16 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
 
   const categories: Array<'core' | 'text' | 'selection' | 'date' | 'system' | 'media' | 'relation'> =
     ['core', 'text', 'selection', 'date', 'system', 'media', 'relation'];
+
+  const catLabel: Record<string, string> = {
+    core: t('vectorLogic.categoryCoreFields'),
+    text: t('vectorLogic.categoryTextFields'),
+    selection: t('vectorLogic.categorySelectionFields'),
+    date: t('vectorLogic.categoryDateFields'),
+    system: t('vectorLogic.categorySystemFields'),
+    media: t('vectorLogic.categoryMediaFields'),
+    relation: t('vectorLogic.categoryRelationFields'),
+  };
 
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--tx3)' }}>{t('common.loading')}</div>;
@@ -251,7 +261,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                 return (
                   <div key={cat}>
                     <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.1em', padding: '10px 4px 4px' }}>
-                      {cat}
+                      {catLabel[cat] || cat}
                     </div>
                     {items.map(f => (
                       <div key={f.id}
@@ -402,11 +412,11 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                         fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
                         background: 'rgba(79,110,247,.1)', color: 'var(--ac)',
                         letterSpacing: '.05em', textTransform: 'uppercase',
-                      }}>{def?.id.replace(/_/g, ' ')}</span>
-                      {field.required && <span style={{ fontSize: 9, color: 'var(--red)', fontWeight: 700 }}>REQUIRED</span>}
+                      }}>{def ? t(def.labelKey) : field.fieldType}</span>
+                      {field.required && <span style={{ fontSize: 9, color: 'var(--red)', fontWeight: 700 }}>{t('vectorLogic.badgeRequired')}</span>}
                       <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
-                        {field.showOnCreate && <span style={{ fontSize: 8, padding: '2px 6px', borderRadius: 3, background: 'rgba(62,207,142,.1)', color: 'var(--green)', fontWeight: 700 }}>CREATE</span>}
-                        {field.showOnDetail && <span style={{ fontSize: 8, padding: '2px 6px', borderRadius: 3, background: 'rgba(79,110,247,.1)', color: 'var(--ac)', fontWeight: 700 }}>DETAIL</span>}
+                        {field.showOnCreate && <span style={{ fontSize: 8, padding: '2px 6px', borderRadius: 3, background: 'rgba(62,207,142,.1)', color: 'var(--green)', fontWeight: 700 }}>{t('vectorLogic.badgeCreate')}</span>}
+                        {field.showOnDetail && <span style={{ fontSize: 8, padding: '2px 6px', borderRadius: 3, background: 'rgba(79,110,247,.1)', color: 'var(--ac)', fontWeight: 700 }}>{t('vectorLogic.badgeDetail')}</span>}
                       </div>
                       <button onClick={e => { e.stopPropagation(); removeField(field.id); }}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', opacity: .5 }}>
@@ -506,7 +516,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
               <div style={{ flex: 1 }}>
                 <label style={lblStyle}>{t('common.name')}</label>
                 <input value={newTypeName} onChange={e => setNewTypeName(e.target.value)} autoFocus
-                  placeholder="e.g. Bug, Feature Request"
+                  placeholder={t('vectorLogic.placeholderBugFeature')}
                   onKeyDown={e => { if (e.key === 'Enter') createTaskType(); }}
                   style={inpStyle()} />
               </div>
@@ -578,7 +588,7 @@ function FieldSettingsPanel({ field, onUpdate }: { field: SchemaField; onUpdate:
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', fontSize: 14 }}>×</button>
             </div>
           ))}
-          <button onClick={() => onUpdate({ options: [...(field.options ?? []), `Option ${(field.options?.length || 0) + 1}`] })}
+          <button onClick={() => onUpdate({ options: [...(field.options ?? []), `${t('vectorLogic.defaultOption')} ${(field.options?.length || 0) + 1}`] })}
             style={{
               background: 'none', border: '1px dashed var(--bd)', borderRadius: 6,
               padding: '4px 10px', fontSize: 11, color: 'var(--tx3)', cursor: 'pointer',

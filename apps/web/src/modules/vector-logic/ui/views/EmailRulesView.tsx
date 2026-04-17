@@ -133,7 +133,7 @@ export function EmailRulesView({ currentUser }: Props) {
                       padding: '2px 8px', borderRadius: 10, background: 'var(--sf3)',
                       fontFamily: 'monospace', fontSize: 10,
                     }}>
-                      {f.type === 'all' ? 'all' : `${f.type}: ${f.value}`}
+                      {f.type === 'all' ? t('vectorLogic.filterDisplayAll') : `${t(`vectorLogic.filterType_${f.type}`)}: ${f.value}`}
                     </span>
                   ))}
                   {taskTypeName && (
@@ -226,7 +226,7 @@ function RuleForm({ rule, taskTypes, priorities, onSave, onClose }: {
           <div>
             <label style={lblStyle}>{t('common.name')}</label>
             <input value={name} onChange={e => setName(e.target.value)} autoFocus style={inpStyle()}
-              placeholder="e.g. VIP clients" />
+              placeholder={t('vectorLogic.placeholderVipClients')} />
           </div>
 
           <div>

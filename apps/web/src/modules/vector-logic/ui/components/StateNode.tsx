@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { memo, useState, useEffect, useRef } from 'react';
+import { useTranslation } from '@worksuite/i18n';
 import { Handle, Position } from '@xyflow/react';
 import type { StateCategory } from '../../domain/entities/State';
 
@@ -20,6 +21,7 @@ interface StateNodeData {
 }
 
 function StateNodeComponent({ data, selected }: { data: StateNodeData; selected?: boolean }) {
+  const { t } = useTranslation();
   const catColor = CAT_COLORS[data.category] ?? 'var(--tx3)';
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(data.label);
@@ -130,7 +132,7 @@ function StateNodeComponent({ data, selected }: { data: StateNodeData; selected?
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         fontSize: 9, color: 'var(--tx3)', opacity: .6,
       }}>
-        <span>Double-click to rename</span>
+        <span>{t('vectorLogic.clickToRename')}</span>
         {data.onDelete && (
           <button onClick={(e) => { e.stopPropagation(); data.onDelete?.(); }}
             style={{
