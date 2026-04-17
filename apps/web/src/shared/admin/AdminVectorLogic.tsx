@@ -42,8 +42,8 @@ export function AdminVectorLogic({ currentUser, wsUsers = [] }: Props) {
 
   const TABS: Array<{ id: Tab; label: string; icon: string }> = [
     { id: 'settings',    label: t('vectorLogic.settings'),          icon: 'settings' },
-    { id: 'workflows',   label: t('vectorLogic.canvasDesigner'),    icon: 'schema' },
     { id: 'states',      label: t('vectorLogic.stateManager'),      icon: 'account_tree' },
+    { id: 'workflows',   label: t('vectorLogic.canvasDesigner'),    icon: 'schema' },
     { id: 'schema',      label: t('vectorLogic.taskEntities'),      icon: 'category' },
     { id: 'assignment',  label: t('vectorLogic.assignmentManager'), icon: 'assignment' },
     { id: 'email-rules', label: t('vectorLogic.emailRules'),        icon: 'rule' },

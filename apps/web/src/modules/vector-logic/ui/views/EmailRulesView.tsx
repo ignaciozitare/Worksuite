@@ -296,19 +296,27 @@ function RuleForm({ rule, taskTypes, priorities, onSave, onClose }: {
 const btnPrimary = {
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px',
   borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer', border: 'none',
-  fontFamily: 'inherit', background: 'var(--ac)', color: '#fff', transition: 'all .15s',
+  fontFamily: 'inherit', transition: 'all .2s',
+  background: 'linear-gradient(135deg, #adc6ff, #4d8eff)',
+  color: '#fff',
+  boxShadow: '0 2px 12px rgba(77,142,255,.3)',
 } as const;
 
 const btnGhost = {
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px',
   borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer',
-  fontFamily: 'inherit', background: 'var(--sf3)', color: 'var(--tx3)', border: '1px solid var(--bd)',
+  fontFamily: 'inherit', transition: 'all .2s',
+  background: 'rgba(42,42,42,.8)',
+  backdropFilter: 'blur(12px)',
+  color: 'var(--tx3)', border: '1px solid var(--bd)',
 } as const;
 
 const btnDanger = {
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px',
   borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer',
-  fontFamily: 'inherit', background: 'rgba(224,82,82,.08)', color: 'var(--red)', border: '1px solid rgba(224,82,82,.2)',
+  fontFamily: 'inherit', transition: 'all .2s',
+  background: 'linear-gradient(135deg, rgba(239,68,68,.15), rgba(239,68,68,.08))',
+  color: 'var(--red)', border: '1px solid rgba(224,82,82,.2)',
 } as const;
 
 const iconBtn = {

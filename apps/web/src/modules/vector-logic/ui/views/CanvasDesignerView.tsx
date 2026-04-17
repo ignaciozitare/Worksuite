@@ -112,23 +112,31 @@ function CanvasDesignerInner({ currentUser }: Props) {
       },
     }));
 
-    const newEdges: Edge[] = tr.map(t => ({
-      id: t.id,
-      source: ws.find(s => s.stateId === t.fromStateId)?.id ?? '',
-      target: ws.find(s => s.stateId === t.toStateId)?.id ?? '',
-      label: t.label ?? '',
-      animated: t.isGlobal,
-      // Arrow head at the target end so direction is visible
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        width: 18,
-        height: 18,
-        color: '#4f6ef7',
-      },
-      style: { stroke: '#4f6ef7', strokeWidth: 2 },
-      labelStyle: { fontSize: 10, fontWeight: 600, fill: '#8c909f' },
-      labelBgStyle: { fill: '#1c1b1b', fillOpacity: 0.9 },
-    }));
+    const newEdges: Edge[] = tr
+      .map(t => {
+        const src = ws.find(s => s.stateId === t.fromStateId)?.id;
+        const tgt = ws.find(s => s.stateId === t.toStateId)?.id;
+        if (!src || !tgt) return null;
+        return {
+          id: t.id,
+          source: src,
+          target: tgt,
+          sourceHandle: 'b-source',
+          targetHandle: 't-target',
+          label: t.label ?? '',
+          animated: t.isGlobal,
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            width: 18,
+            height: 18,
+            color: '#4f6ef7',
+          },
+          style: { stroke: '#4f6ef7', strokeWidth: 2 },
+          labelStyle: { fontSize: 10, fontWeight: 600, fill: '#8c909f' },
+          labelBgStyle: { fill: '#1c1b1b', fillOpacity: 0.9 },
+        };
+      })
+      .filter(Boolean) as Edge[];
 
     setNodes(newNodes);
     setEdges(newEdges);
@@ -142,9 +150,15 @@ function CanvasDesignerInner({ currentUser }: Props) {
   // Handle new connection (transition)
   const onConnect = useCallback(async (connection: Connection) => {
     if (!selected || !connection.source || !connection.target) return;
+    if (connection.source === connection.target) return;
     const fromWs = wfStates.find(ws => ws.id === connection.source);
     const toWs = wfStates.find(ws => ws.id === connection.target);
     if (!fromWs || !toWs) return;
+
+    const alreadyExists = transitions.some(
+      t => t.fromStateId === fromWs.stateId && t.toStateId === toWs.stateId,
+    );
+    if (alreadyExists) return;
 
     const tr = await transitionRepo.create({
       workflowId: selected.id,
@@ -155,13 +169,16 @@ function CanvasDesignerInner({ currentUser }: Props) {
     });
     setTransitions(prev => [...prev, tr]);
     setEdges(eds => addEdge({
-      ...connection,
+      source: connection.source,
+      target: connection.target,
+      sourceHandle: connection.sourceHandle ?? 'b-source',
+      targetHandle: connection.targetHandle ?? 't-target',
       id: tr.id,
       animated: false,
       markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: '#4f6ef7' },
       style: { stroke: '#4f6ef7', strokeWidth: 2 },
     }, eds));
-  }, [selected, wfStates]);
+  }, [selected, wfStates, transitions]);
 
   // Handle node drag end — save position
   const onNodeDragStop = useCallback(async (_: any, node: Node) => {
@@ -403,7 +420,7 @@ function CanvasDesignerInner({ currentUser }: Props) {
                 onMouseEnter={e => { if (!blocked) e.currentTarget.style.background = 'var(--sf2)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx)' }}>{s.name}</div>
-                <div style={{ fontSize: 9, color: catColor, fontWeight: 700, letterSpacing: '.05em', marginTop: 2 }}>{s.category}</div>
+                <div style={{ fontSize: 9, color: catColor, fontWeight: 700, letterSpacing: '.05em', marginTop: 2 }}>{t(`vectorLogic.category${s.category.charAt(0) + s.category.slice(1).toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase())}`)}</div>
               </div>
             );
           })}
@@ -412,10 +429,12 @@ function CanvasDesignerInner({ currentUser }: Props) {
         {/* Add state CTA */}
         <div style={{ padding: '10px 14px', borderTop: '1px solid var(--bd)' }}>
           <button style={{
-            width: '100%', background: 'var(--ac)', color: '#fff', border: 'none',
+            width: '100%', background: 'linear-gradient(135deg, #adc6ff, #4d8eff)',
+            color: '#fff', border: 'none',
             borderRadius: 8, padding: '8px 0', fontSize: 12, fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit', display: 'flex',
             alignItems: 'center', justifyContent: 'center', gap: 6,
+            boxShadow: '0 2px 12px rgba(77,142,255,.3)', transition: 'all .2s',
           }}>
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
             {t('vectorLogic.addState')}

@@ -114,7 +114,7 @@ function StateNodeComponent({ data, selected }: { data: StateNodeData; selected?
             fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
             background: 'rgba(245,158,11,.15)', color: 'var(--amber)',
             letterSpacing: '.05em', textTransform: 'uppercase',
-          }}>INITIAL</span>
+          }}>{t('vectorLogic.badgeInitial')}</span>
         )}
       </div>
 
@@ -123,7 +123,7 @@ function StateNodeComponent({ data, selected }: { data: StateNodeData; selected?
         <span style={{
           fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
           color: catColor, opacity: .8,
-        }}>{data.category}</span>
+        }}>{t(`vectorLogic.category${data.category.charAt(0) + data.category.slice(1).toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase())}`)}</span>
       </div>
 
       {/* Hint */}

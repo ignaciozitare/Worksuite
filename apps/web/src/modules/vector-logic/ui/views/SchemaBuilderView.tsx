@@ -212,7 +212,8 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                   padding: '8px 10px', borderRadius: 6, marginBottom: 3, cursor: 'pointer',
                   background: isSelected ? 'rgba(79,110,247,.1)' : 'transparent',
                   border: `1px solid ${isSelected ? 'var(--ac)' : 'transparent'}`,
-                  transition: 'all .12s',
+                  transition: 'all .2s ease',
+                  boxShadow: isSelected ? '0 0 20px rgba(79,110,247,.1)' : 'none',
                 }}
                 onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--sf2)'; }}
                 onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}>
@@ -397,13 +398,16 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                       }}
                       onDragEnd={() => { setDraggingFieldId(null); setDragOverIdx(null); }}
                       onClick={() => setSelectedField(field)}
+                      onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--sf3)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,.2)'; }}
+                      onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'var(--sf2)'; e.currentTarget.style.boxShadow = isSelected ? '0 0 0 1px var(--ac), 0 4px 24px rgba(79,110,247,.15)' : 'none'; }}
                       style={{
                         background: isSelected ? 'rgba(79,110,247,.06)' : 'var(--sf2)',
-                        border: `1px solid ${isSelected ? 'var(--ac)' : 'var(--bd)'}`,
+                        border: `1px solid ${isSelected ? 'var(--ac)' : 'rgba(255,255,255,.04)'}`,
                         borderRadius: 10, padding: '14px 16px',
                         cursor: isDraggingThis ? 'grabbing' : 'grab',
-                        transition: 'all .15s',
+                        transition: 'all .2s ease',
                         opacity: isDraggingThis ? .4 : 1,
+                        boxShadow: isSelected ? '0 0 0 1px var(--ac), 0 4px 24px rgba(79,110,247,.15)' : 'none',
                       }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                       <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--tx3)', opacity: .5 }}>drag_indicator</span>
@@ -621,10 +625,23 @@ function ToggleRow({ label, value, onChange, color }: { label: string; value: bo
 const btnStyle = (variant = 'primary', extra = {}) => ({
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px',
   borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer', border: 'none',
-  fontFamily: 'inherit', transition: 'all .15s',
-  ...(variant === 'primary' && { background: 'var(--ac)', color: '#fff' }),
-  ...(variant === 'ghost' && { background: 'var(--sf2)', color: 'var(--tx3)', border: '1px solid var(--bd)' }),
-  ...(variant === 'danger' && { background: 'rgba(224,82,82,.1)', color: 'var(--red)', border: '1px solid rgba(224,82,82,.3)' }),
+  fontFamily: 'inherit', transition: 'all .2s',
+  ...(variant === 'primary' && {
+    background: 'linear-gradient(135deg, #adc6ff, #4d8eff)',
+    color: '#fff',
+    boxShadow: '0 2px 12px rgba(77,142,255,.3)',
+  }),
+  ...(variant === 'ghost' && {
+    background: 'rgba(42,42,42,.8)',
+    backdropFilter: 'blur(12px)',
+    color: 'var(--tx3)',
+    border: '1px solid var(--bd)',
+  }),
+  ...(variant === 'danger' && {
+    background: 'linear-gradient(135deg, rgba(239,68,68,.15), rgba(239,68,68,.08))',
+    color: 'var(--red)',
+    border: '1px solid rgba(224,82,82,.3)',
+  }),
   ...extra,
 });
 

@@ -471,9 +471,18 @@ export function StateManagerView({ currentUser }: Props) {
 const btnStyle = (variant = 'primary', extra = {}) => ({
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px',
   borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer', border: 'none',
-  fontFamily: 'inherit', transition: 'all .15s',
-  ...(variant === 'primary' && { background: 'var(--ac)', color: '#fff' }),
-  ...(variant === 'ghost' && { background: 'var(--sf2)', color: 'var(--tx3)', border: '1px solid var(--bd)' }),
+  fontFamily: 'inherit', transition: 'all .2s',
+  ...(variant === 'primary' && {
+    background: 'linear-gradient(135deg, #adc6ff, #4d8eff)',
+    color: '#fff',
+    boxShadow: '0 2px 12px rgba(77,142,255,.3)',
+  }),
+  ...(variant === 'ghost' && {
+    background: 'rgba(42,42,42,.8)',
+    backdropFilter: 'blur(12px)',
+    color: 'var(--tx3)',
+    border: '1px solid var(--bd)',
+  }),
   ...extra,
 });
 
