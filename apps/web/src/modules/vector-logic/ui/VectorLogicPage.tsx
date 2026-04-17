@@ -9,12 +9,9 @@ import type { AIMode } from '../domain/entities/AI';
 
 /* ─── CSS (Stitch / Carbon Logic) ────────────────────────────────────────── */
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 .vl *{box-sizing:border-box;margin:0;padding:0;}
 .vl{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--tx);height:100%;overflow:hidden;display:flex;}
 .vl button,.vl select,.vl input,.vl textarea{font-family:'Inter',system-ui,sans-serif;}
-.vl .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:300;font-style:normal;display:inline-block;line-height:1;text-transform:none;letter-spacing:normal;word-wrap:normal;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased;font-size:inherit;}
 .vl ::-webkit-scrollbar{width:4px;height:4px;}
 .vl ::-webkit-scrollbar-track{background:var(--bg);}
 .vl ::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px;}
