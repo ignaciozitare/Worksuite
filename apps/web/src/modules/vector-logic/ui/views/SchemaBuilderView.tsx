@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import type { TaskType } from '../../domain/entities/TaskType';
 import type { SchemaField, FieldTypeId } from '../../domain/entities/FieldType';
@@ -109,33 +109,43 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
       const idx = insertAt == null ? prev.length : Math.max(0, Math.min(insertAt, prev.length));
       const next = [...prev];
       next.splice(idx, 0, newField);
-      return next.map((f, i) => ({ ...f, order: i }));
+      const result = next.map((f, i) => ({ ...f, order: i }));
+      autoSave(result);
+      return result;
     });
     setSelectedField(newField);
   };
 
-  // Move an existing field to a new index (drag reorder)
   const moveFieldTo = (id: string, targetIdx: number) => {
     setFields(prev => {
       const fromIdx = prev.findIndex(f => f.id === id);
       if (fromIdx === -1) return prev;
-      // Normalize: if dropping after the source, the target shifts by -1
       let to = Math.max(0, Math.min(targetIdx, prev.length));
       const next = [...prev];
       const [item] = next.splice(fromIdx, 1);
       if (fromIdx < to) to -= 1;
       next.splice(to, 0, item);
-      return next.map((f, i) => ({ ...f, order: i }));
+      const result = next.map((f, i) => ({ ...f, order: i }));
+      autoSave(result);
+      return result;
     });
   };
 
   const updateField = (id: string, patch: Partial<SchemaField>) => {
-    setFields(prev => prev.map(f => f.id === id ? { ...f, ...patch } : f));
+    setFields(prev => {
+      const result = prev.map(f => f.id === id ? { ...f, ...patch } : f);
+      autoSave(result);
+      return result;
+    });
     if (selectedField?.id === id) setSelectedField(prev => prev ? { ...prev, ...patch } : prev);
   };
 
   const removeField = (id: string) => {
-    setFields(prev => prev.filter(f => f.id !== id));
+    setFields(prev => {
+      const result = prev.filter(f => f.id !== id);
+      autoSave(result);
+      return result;
+    });
     if (selectedField?.id === id) setSelectedField(null);
   };
 
@@ -150,14 +160,21 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
     });
   };
 
-  const saveSchema = async () => {
+  const saveSchema = async (fieldsToSave?: SchemaField[]) => {
     if (!selected) return;
+    const data = fieldsToSave ?? fields;
     setSaving(true);
-    await taskTypeRepo.update(selected.id, { schema: fields as unknown[] });
-    setTaskTypes(prev => prev.map(tt => tt.id === selected.id ? { ...tt, schema: fields } : tt));
+    await taskTypeRepo.update(selected.id, { schema: data as unknown[] });
+    setTaskTypes(prev => prev.map(tt => tt.id === selected.id ? { ...tt, schema: data } : tt));
     setSaving(false); setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
+
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSave = useCallback((updatedFields: SchemaField[]) => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => saveSchema(updatedFields), 400);
+  }, [selected]);
 
   const filteredTypes = FIELD_TYPES.filter(f =>
     !search || t(f.labelKey).toLowerCase().includes(search.toLowerCase()),

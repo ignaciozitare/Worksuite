@@ -1222,7 +1222,8 @@
     "placeholderAgile":       "e.g. Standard Agile",
     "placeholderVipClients":  "e.g. VIP clients",
     "placeholderFixBug":      "e.g. Fix login bug",
-    "filterDisplayAll":       "all emails"
+    "filterDisplayAll":       "all emails",
+    "stateInUseError":        "This state is used in one or more workflows. Remove it from workflows first before deleting."
   },
   "richText": {
     "bold":            "Bold",

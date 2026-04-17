@@ -171,13 +171,24 @@ export function StateManagerView({ currentUser }: Props) {
 
   // Delete a state permanently from the library
   const deleteLibraryState = async (s: State) => {
+    const isUsedInWorkflow = wfStates.some(ws => ws.stateId === s.id);
+    if (isUsedInWorkflow) {
+      alert(t('vectorLogic.stateInUseError'));
+      return;
+    }
     if (!confirm(t('vectorLogic.deleteStateConfirm', { name: s.name }))) return;
     try {
       await stateRepo.remove(s.id);
       setStates(prev => prev.filter(x => x.id !== s.id));
-      // Also drop any workflow usage locally
-      setWfStates(prev => prev.filter(ws => ws.stateId !== s.id));
-    } catch (err) { console.error('[DeleteState]', err); alert(String(err)); }
+    } catch (err) {
+      console.error('[DeleteState]', err);
+      const msg = String(err);
+      if (msg.includes('foreign key') || msg.includes('violates')) {
+        alert(t('vectorLogic.stateInUseError'));
+      } else {
+        alert(msg);
+      }
+    }
   };
 
   // Drop handler — change category when dropping into a column

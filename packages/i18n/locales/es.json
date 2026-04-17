@@ -1222,7 +1222,8 @@
     "placeholderAgile":       "ej. Agile estándar",
     "placeholderVipClients":  "ej. Clientes VIP",
     "placeholderFixBug":      "ej. Arreglar bug de login",
-    "filterDisplayAll":       "todos los emails"
+    "filterDisplayAll":       "todos los emails",
+    "stateInUseError":        "Este estado se usa en uno o más flujos. Quitalo de los flujos primero antes de eliminarlo."
   },
   "richText": {
     "bold":            "Negrita",
