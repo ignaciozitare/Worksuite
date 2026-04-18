@@ -439,7 +439,8 @@
     "currentSelection":     "Current Selection",
     "desk":                 "Desk",
     "noBookingToday":       "No booking today",
-    "clickToReserve":       "Click a free seat on the map to reserve"
+    "clickToReserve":       "Click a free seat on the map to reserve",
+    "campusFilter":         "Campus Filter"
   },
   "retro": {
     "title":           "RetroBoard",

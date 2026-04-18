@@ -314,19 +314,25 @@ function WorkSuiteApp() {
             {mod === "jt" && view === "calendar" && <main className="content" style={{display:'flex'}}><div style={{flex:1,minWidth:0,overflow:'auto'}}><CalendarView filters={filters} worklogs={worklogs} onDayClick={handleDayClick} onOpenLog={handleOpenLog} /></div><RecentTasksSidebar worklogs={worklogs} onOpenLog={handleOpenLog} /></main>}
             {mod === "jt" && view === "day" && <main className="content" style={{display:'flex'}}><div style={{flex:1,minWidth:0,overflow:'auto'}}><DayView date={activeDay} filters={filters} worklogs={worklogs} onDateChange={setActiveDay} onOpenLog={handleOpenLog} onDeleteWorklog={handleDeleteWorklog} /></div><RecentTasksSidebar worklogs={worklogs} onOpenLog={handleOpenLog} /></main>}
             {mod === "jt" && view === "tasks" && <main className="content" style={{display:'flex'}}><div style={{flex:1,minWidth:0,overflow:'auto'}}><TasksView filters={filters} onOpenLog={handleOpenLog} worklogs={worklogs} jiraIssues={jiraIssues} jiraProjects={jiraProjects} /></div><RecentTasksSidebar worklogs={worklogs} onOpenLog={handleOpenLog} /></main>}
-            {mod === "hd" && view === "map" && (
-              <main className="content" style={{ padding: 0, overflow: 'auto' }}>
-                <HDMapView hd={hd} onSeat={sid => handleHdSeatClick(sid, TODAY)} currentUser={CURRENT_USER} onConfirmPresence={handleHdConfirmPresence}>
-                  {selectedBlueprint
-                    ? <BlueprintHDMap hd={hd} onSeat={sid => handleHdSeatClick(sid, TODAY)} currentUser={CURRENT_USER} blueprint={selectedBlueprint} theme={theme} />
-                    : <div style={{ padding: 32, textAlign: 'center', color: 'var(--tx3)', fontSize: 13 }}>{t('hotdesk.selectBuildingFloor')}</div>
-                  }
+            {mod === "hd" && (view === "map" || view === "table") && (
+              <main className="content" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <HDMapView
+                  hd={hd}
+                  onSeat={sid => handleHdSeatClick(sid, TODAY)}
+                  currentUser={CURRENT_USER}
+                  onConfirmPresence={handleHdConfirmPresence}
+                  view={view as 'map' | 'table'}
+                  onViewChange={v => navigate(`/hotdesk/${v}`)}
+                  buildingFloorSelector={<BuildingFloorSelectors selectedBuilding={selectedBuilding} selectedBlueprint={selectedBlueprint} onChange={handleBuildingFloorChange} />}
+                >
+                  {view === 'map' ? (
+                    selectedBlueprint
+                      ? <BlueprintHDMap hd={hd} onSeat={sid => handleHdSeatClick(sid, TODAY)} currentUser={CURRENT_USER} blueprint={selectedBlueprint} theme={theme} />
+                      : null
+                  ) : (
+                    <HDTableView hd={hd} onCell={(sid, date) => handleHdSeatClick(sid, date)} currentUser={CURRENT_USER} blueprint={selectedBlueprint} theme={theme} />
+                  )}
                 </HDMapView>
-              </main>
-            )}
-            {mod === "hd" && view === "table" && (
-              <main className="content">
-                <HDTableView hd={hd} onCell={(sid, date) => handleHdSeatClick(sid, date)} currentUser={CURRENT_USER} blueprint={selectedBlueprint} theme={theme} />
               </main>
             )}
             <Suspense fallback={<main className="content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx3)' }}>Loading…</main>}>

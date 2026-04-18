@@ -439,7 +439,8 @@
     "currentSelection":     "Selección Actual",
     "desk":                 "Puesto",
     "noBookingToday":       "Sin reserva hoy",
-    "clickToReserve":       "Haz clic en un puesto libre del mapa para reservar"
+    "clickToReserve":       "Haz clic en un puesto libre del mapa para reservar",
+    "campusFilter":         "Filtro de Campus"
   },
   "retro": {
     "title":           "RetroBoard",
