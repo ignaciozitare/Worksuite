@@ -378,7 +378,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                 const isDraggingThis = draggingFieldId === field.id;
                 return (
                   <div key={field.id}>
-                    {/* Insert indicator above this card */}
+                    {/* Drop zone above this card */}
                     <div
                       onDragOver={(e) => {
                         if (draggingLibField || draggingFieldId) {
@@ -387,6 +387,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                           if (dragOverIdx !== i) setDragOverIdx(i);
                         }
                       }}
+                      onDragLeave={() => { if (dragOverIdx === i) setDragOverIdx(null); }}
                       onDrop={(e) => {
                         e.preventDefault();
                         if (draggingLibField) {
@@ -399,13 +400,23 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                         setDragOverIdx(null);
                       }}
                       style={{
-                        height: dragOverIdx === i ? 10 : 6,
-                        margin: '2px 0',
-                        background: dragOverIdx === i ? 'var(--ac)' : 'transparent',
-                        borderRadius: 4,
-                        transition: 'all .12s',
+                        height: dragOverIdx === i ? 48 : 8,
+                        margin: '0',
+                        background: dragOverIdx === i ? 'rgba(79,110,247,.15)' : 'transparent',
+                        border: dragOverIdx === i ? '2px dashed var(--ac)' : '2px dashed transparent',
+                        borderRadius: 8,
+                        transition: 'all .15s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
-                    />
+                    >
+                      {dragOverIdx === i && (
+                        <span style={{ fontSize: 10, color: 'var(--ac)', fontWeight: 600, opacity: .7 }}>
+                          {t('vectorLogic.dropFieldHere')}
+                        </span>
+                      )}
+                    </div>
                     <div
                       draggable
                       onDragStart={(e) => {
@@ -480,11 +491,15 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                     setDragOverIdx(null);
                   }}
                   style={{
-                    height: dragOverIdx === fields.length ? 40 : 24,
+                    height: dragOverIdx === fields.length ? 56 : 32,
                     marginTop: 4,
-                    borderRadius: 6,
+                    borderRadius: 8,
                     border: `2px dashed ${dragOverIdx === fields.length ? 'var(--ac)' : 'transparent'}`,
+                    background: dragOverIdx === fields.length ? 'rgba(79,110,247,.1)' : 'transparent',
                     transition: 'all .15s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 />
               )}
