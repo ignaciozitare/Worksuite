@@ -333,6 +333,15 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
 
   const handleDrop = (targetId: string): void => {
     if (!drag || drag.fromId === targetId) return;
+    // If dragged from sidebar, only add to target (no removal needed)
+    if (drag.fromId === '__sidebar__') {
+      const toRel = releases.find(r => r.id === targetId);
+      if (toRel && !(toRel.ticket_ids ?? []).includes(drag.key)) {
+        void upd(targetId, { ticket_ids: [...(toRel.ticket_ids ?? []), drag.key] });
+      }
+      setDrag(null);
+      return;
+    }
     const fromRel = releases.find(r => r.id === drag.fromId);
     if (!fromRel) return;
     void upd(drag.fromId, { ticket_ids: (fromRel.ticket_ids ?? []).filter(x => x !== drag.key) });
@@ -686,6 +695,8 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
         onToggle={toggleTaskSidebar}
         onRefresh={() => void fetchJiraTickets()}
         refreshing={fetchingJira}
+        drag={drag}
+        setDrag={setDrag}
       />
     </div>
   );

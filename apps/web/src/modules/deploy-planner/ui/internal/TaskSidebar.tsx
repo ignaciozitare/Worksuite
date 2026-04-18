@@ -12,7 +12,9 @@
  */
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from '@worksuite/i18n';
-import type { DpTicket, Release } from './types';
+import type { DpTicket, Release, DragState } from './types';
+
+export const SIDEBAR_SOURCE = '__sidebar__';
 
 /* ─── Props ──────────────────────────────────────────────────── */
 export interface TaskSidebarProps {
@@ -23,6 +25,8 @@ export interface TaskSidebarProps {
   onToggle: () => void;
   onRefresh: () => void;
   refreshing?: boolean;
+  drag: DragState | null;
+  setDrag: (d: DragState | null) => void;
 }
 
 /* ─── Type → Material Symbol map ─────────────────────────────── */
@@ -66,6 +70,8 @@ export function TaskSidebar({
   onToggle,
   onRefresh,
   refreshing = false,
+  drag,
+  setDrag,
 }: TaskSidebarProps) {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
@@ -334,6 +340,14 @@ export function TaskSidebar({
             return (
               <div
                 key={ticket.key}
+                draggable={!assigned}
+                onDragStart={e => {
+                  if (assigned) { e.preventDefault(); return; }
+                  setDrag({ key: ticket.key, fromId: SIDEBAR_SOURCE });
+                  e.dataTransfer.effectAllowed = 'copy';
+                  e.dataTransfer.setData('text/plain', ticket.key);
+                }}
+                onDragEnd={() => setDrag(null)}
                 onClick={() => handleClick(ticket.key)}
                 style={{
                   display: 'flex',
@@ -341,9 +355,9 @@ export function TaskSidebar({
                   gap: 8,
                   padding: '10px 8px',
                   borderRadius: 8,
-                  cursor: jiraBaseUrl ? 'pointer' : 'default',
-                  transition: 'background .15s',
-                  opacity: assigned ? 0.5 : 1,
+                  cursor: assigned ? 'default' : 'grab',
+                  transition: 'background .15s, opacity .15s',
+                  opacity: assigned ? 0.5 : (drag?.key === ticket.key ? 0.4 : 1),
                   marginBottom: 2,
                 }}
                 onMouseEnter={e => {
