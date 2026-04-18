@@ -324,6 +324,7 @@ function WorkSuiteApp() {
                   view={view as 'map' | 'table'}
                   onViewChange={v => navigate(`/hotdesk/${v}`)}
                   buildingFloorSelector={<BuildingFloorSelectors selectedBuilding={selectedBuilding} selectedBlueprint={selectedBlueprint} onChange={handleBuildingFloorChange} />}
+                  building={selectedBuilding}
                 >
                   {view === 'map' ? (
                     selectedBlueprint

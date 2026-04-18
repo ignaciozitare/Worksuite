@@ -14,7 +14,7 @@ function AdminBlueprint() {
   const [saving,    setSaving]      = useState(false);
   const [msg,       setMsg]         = useState('');
   const [showEdit,  setShowEdit]    = useState(false);
-  const [bForm,     setBForm]       = useState({name:'',address:''});
+  const [bForm,     setBForm]       = useState({name:'',address:'',city:''});
   const [collapsed, setCollapsed]   = useState({}); // {[bId]: bool}
   const [editorKey, setEditorKey]   = useState(0);
   const dragFloorRef = useRef(null);
@@ -36,8 +36,8 @@ function AdminBlueprint() {
     if(!bForm.name.trim()) return;
     setSaving(true);
     try{
-      const data=await buildingRepo.createBuilding(bForm.name.trim(),bForm.address.trim()||null);
-      setBuildings(b=>[...b,data]);setSelBldg(data);setBForm({name:'',address:''});setShowEdit(false);setMsg('Building created');setTimeout(()=>setMsg(''),3000);
+      const data=await buildingRepo.createBuilding(bForm.name.trim(),bForm.address.trim()||null,bForm.city.trim()||null);
+      setBuildings(b=>[...b,data]);setSelBldg(data);setBForm({name:'',address:'',city:''});setShowEdit(false);setMsg('Building created');setTimeout(()=>setMsg(''),3000);
     }catch(e){console.error(e);}
     setSaving(false);
   };
@@ -118,6 +118,7 @@ function AdminBlueprint() {
         {showEdit && (
           <div style={{padding:'8px 10px',borderBottom:'1px solid var(--bd)',display:'flex',flexDirection:'column',gap:6,background:'var(--sf2)',flexShrink:0}}>
             <input className="a-inp" placeholder="Building name *" value={bForm.name} onChange={e=>setBForm(b=>({...b,name:e.target.value}))} style={{fontSize:11,padding:'4px 7px'}}/>
+            <input className="a-inp" placeholder="City (optional)" value={bForm.city} onChange={e=>setBForm(b=>({...b,city:e.target.value}))} style={{fontSize:11,padding:'4px 7px'}}/>
             <input className="a-inp" placeholder="Address (optional)" value={bForm.address} onChange={e=>setBForm(b=>({...b,address:e.target.value}))} style={{fontSize:11,padding:'4px 7px'}}/>
             <div style={{display:'flex',gap:5}}>
               <button className="b-cancel" style={{flex:1,padding:'4px',fontSize:11}} onClick={()=>setShowEdit(false)}>Cancel</button>

@@ -2,6 +2,7 @@ export interface BuildingData {
   id: string;
   name: string;
   address?: string;
+  city?: string;
   active: boolean;
 }
 
@@ -16,7 +17,7 @@ export interface BlueprintData {
 
 export interface BuildingPort {
   findAllBuildings(): Promise<BuildingData[]>;
-  createBuilding(name: string, address?: string): Promise<BuildingData>;
+  createBuilding(name: string, address?: string, city?: string): Promise<BuildingData>;
   deleteBuilding(id: string): Promise<void>;
   renameBuilding(id: string, name: string): Promise<void>;
   findBlueprints(buildingId: string): Promise<BlueprintData[]>;

@@ -13,14 +13,19 @@ export class SupabaseBuildingRepo implements BuildingPort {
     return data || [];
   }
 
-  async createBuilding(name: string, address?: string): Promise<BuildingData> {
+  async createBuilding(name: string, address?: string, city?: string): Promise<BuildingData> {
     const { data, error } = await this.db
       .from('buildings')
-      .insert({ name, address, active: true })
+      .insert({ name, address, city, active: true })
       .select()
       .single();
     if (error) throw error;
     return data;
+  }
+
+  async updateBuilding(id: string, patch: { name?: string; address?: string; city?: string }): Promise<void> {
+    const { error } = await this.db.from('buildings').update(patch).eq('id', id);
+    if (error) throw error;
   }
 
   async deleteBuilding(id: string): Promise<void> {
