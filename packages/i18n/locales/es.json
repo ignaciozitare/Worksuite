@@ -421,7 +421,10 @@
     "scrollZoomHint":       "Rueda para zoom, arrastra para mover",
     "fitMap":               "Ajustar",
     "delegateConfirm":      "Delegar",
-    "selectDatesLabel":     "Selecciona fechas para delegar"
+    "selectDatesLabel":     "Selecciona fechas para delegar",
+    "checkIn":              "Check In",
+    "checkInDesc":          "Tienes una reserva pendiente para hoy. Confirma tu presencia.",
+    "moduleSubtitle":       "Gestion de Puestos"
   },
   "retro": {
     "title":           "RetroBoard",

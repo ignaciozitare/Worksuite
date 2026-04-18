@@ -71,18 +71,42 @@ HotDesk currently lets users reserve seats instantly with no confirmation step. 
 - `is_blocked: boolean DEFAULT false`
 - `blocked_reason: text` — optional reason shown in UI
 
-### UI Changes
+#### 5. Check-In Flow
 
-1. **HDMapView / HDTableView:** Show `pending` seats with a pulsing/dashed border. Show `confirmed` as solid. Show `blocked` with a distinct icon/overlay.
-2. **HDReserveModal:** After reserving, show "Awaiting confirmation" state. Add "Confirm" button for today's pending reservations.
-3. **Fixed Seat Card:** Add "Delegate" action with user picker + date picker.
-4. **Admin Panel → HotDesk:** New config section with confirmation settings + blocked seat management.
+**Goal:** When a user arrives at their reserved desk, they check in. This is the primary confirmation mechanism — similar to the "CLOCK IN" button in Time Clock.
+
+| Rule | Detail |
+|------|--------|
+| **When** | User arrives, opens HotDesk, sees their pending reservation for today. |
+| **UI** | A prominent "CHECK IN" button (same visual weight as Time Clock's CLOCK IN — gradient, glow, large). |
+| **Effect** | Reservation status changes from `pending` → `confirmed`. `confirmed_at` is set. |
+| **Visibility** | The check-in button only appears for the current user's pending reservation for TODAY. |
+| **Auto-release** | If the user doesn't check in before the deadline, the reservation is auto-released. |
+| **Feedback** | After check-in, the seat visually transitions from pulsing/pending to solid/confirmed with a success animation. |
+
+### UI Redesign — Chrono/Time Clock Style
+
+The entire HotDesk UI must be redesigned to match the Time Clock (Chrono) module's look and feel. This is the "command center" aesthetic from the Stitch design system.
+
+| Element | Implementation |
+|---------|---------------|
+| **Design tokens** | Import and use `CHRONO_THEME` from `chrono/shared/theme.ts` — same colors, typography, radius, shadows. |
+| **Wrapper class** | Use `.hd` namespace (analogous to `.ch` in Chrono). |
+| **Sidebar** | Same nav-item style as Time Clock: surfaceHigh background on active, primary glow. IBM Plex Mono for labels. |
+| **Cards** | Use `.ch-card` / `.ch-stat` patterns: surface background, ghost borders, top-edge accent line. |
+| **Buttons** | Gradient CTAs (`.ch-btn-amber` for primary, `.ch-btn-green` for check-in, `.ch-btn-ghost` for secondary). |
+| **Typography** | Inter for body, IBM Plex Mono for data/stats (seat counts, percentages). |
+| **Stats bar** | Top stat cards showing Free/Occupied/Fixed/Mine counts — same layout as Time Clock's "Hours Today" / "This Week" cards. |
+| **Check-in button** | Large, centered, gradient green with glow — same visual impact as "CLOCK IN" button. |
+| **Badges** | Use `.ch-badge-*` classes for status indicators (green for confirmed, amber for pending, red for blocked). |
+| **Animations** | `fade-in`, `pulse-ring`, `pulse-green` from Chrono CSS. |
+| **DO NOT TOUCH** | The office blueprint SVG (OfficeSVG.tsx, BlueprintHDMap.tsx) — these keep their current rendering logic. Only the shell/chrome around them changes. |
 
 ### Out of Scope (v1)
 - Push/email notifications for confirmation reminders
-- Check-in via QR code or NFC
 - Recurring delegations (only per-date for now)
+- QR code check-in (button check-in only for now)
 
 ---
 
-## Status: DRAFT — awaiting user confirmation
+## Status: CONFIRMED — ready for development

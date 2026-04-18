@@ -5,10 +5,28 @@ import { ReservationService } from '../domain/services/ReservationService';
 import { TODAY } from '@/shared/lib/constants';
 import { fmtMonthYear } from '@/shared/lib/utils';
 import { MiniCalendar } from '@/shared/ui/MiniCalendar';
+import { CHRONO_THEME as T } from '../../chrono/shared/theme';
 import { configRepo, reservationRepo } from '../container';
 import type { HotDeskConfig } from '../domain/entities/HotDeskConfig';
 
 const MOCK_TODAY = TODAY;
+
+/* ─── Local design tokens (derived from CHRONO_THEME) ─────────────────────── */
+const C = {
+  bg: T.color.bg, sf: T.color.surface, sfHigh: T.color.surfaceHigh,
+  sfBright: T.color.surfaceBright, sfLow: T.color.surfaceLow,
+  tx: T.color.text, txMuted: T.color.textMuted, txDim: T.color.textDim,
+  primary: T.color.primary, primaryStrong: T.color.primaryStrong,
+  primaryDim: T.color.primaryDim, primaryOn: T.color.primaryOn,
+  green: T.color.secondary, greenStrong: T.color.secondaryStrong,
+  greenDim: T.color.secondaryDim,
+  red: T.color.dangerStrong, redDim: T.color.dangerDim,
+  danger: T.color.danger,
+  amber: T.color.warning, amberDim: T.color.warningDim,
+  purple: T.color.tertiary, purpleStrong: T.color.tertiaryStrong,
+  purpleDim: T.color.tertiaryDim,
+  border: T.color.border,
+};
 
 function HDReserveModal({
   seatId, initDate, hd, onConfirm, onRelease, onClose, currentUser, wsUsers = [],
@@ -43,32 +61,27 @@ function HDReserveModal({
   const isBlocked = st === SeatStatus.BLOCKED;
   const isDelegated = st === SeatStatus.DELEGATED;
 
-  // Fixed seat detection
   const fixedOwner   = hd.fixed[seatId];
   const isMyFixed    = fixedOwner === currentUser.name;
   const isOtherFixed = st === SeatStatus.FIXED && !isMyFixed;
 
-  // Load config on mount
   useEffect(() => {
     configRepo.getConfig().then(setConfig).catch(() => {});
   }, []);
 
   const confirmationEnabled = config?.confirmationEnabled ?? false;
 
-  // Dates where user already has a reservation on another seat
   const myReservedDates = hd.reservations
     .filter((r: any) => r.userId === currentUser.id && r.seatId !== seatId)
     .map((r: any) => r.date);
 
-  // Occupied dates for this seat (by others)
   const occupiedDates = hd.reservations.filter((r: any) => r.seatId === seatId).map((r: any) => r.date);
-
   const blockedDates = [...new Set([...occupiedDates, ...myReservedDates])];
 
   const toggle = (iso: string) => sSel(p => p.includes(iso) ? p.filter(x => x !== iso) : [...p, iso]);
   const toggleDelegateDate = (iso: string) => setDelegateDates(p => p.includes(iso) ? p.filter(x => x !== iso) : [...p, iso]);
-  const prev = () => mo === 0 ? (sMo(11), sYr(y => y-1)) : sMo(m => m-1);
-  const next = () => mo === 11 ? (sMo(0), sYr(y => y+1)) : sMo(m => m+1);
+  const prev = () => mo === 0 ? (sMo(11), sYr(y => y - 1)) : sMo(m => m - 1);
+  const next = () => mo === 11 ? (sMo(0), sYr(y => y + 1)) : sMo(m => m + 1);
 
   const handleReserve = () => {
     onConfirm(seatId, sel);
@@ -104,86 +117,213 @@ function HDReserveModal({
     onClose();
   };
 
-  // Dynamic title
   let title = t("hotdesk.reserveTitle");
   if (isBlocked) title = t("hotdesk.blockedSeat");
   else if (isMyFixed) title = isMine ? t("hotdesk.releaseTitle") : t("hotdesk.myFixedSeat");
   else if (isMine) title = t("hotdesk.releaseTitle");
   else if (isOtherFixed) title = t("hotdesk.adminManage");
 
+  /* ── Shared inline styles ────────────────────────────────────────────────── */
+  const btnGhost: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+    padding: '9px 18px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+    cursor: 'pointer', border: `1px solid ${C.border}50`,
+    fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '.05em', textTransform: 'uppercase',
+    background: `${C.sfHigh}80`, color: C.txMuted,
+    backdropFilter: 'blur(8px)', transition: 'all .15s',
+  };
+
+  const btnPrimary: React.CSSProperties = {
+    ...btnGhost,
+    background: `linear-gradient(135deg, ${C.primary}, ${C.primaryStrong})`,
+    color: C.primaryOn, border: '1px solid transparent',
+    boxShadow: `0 4px 20px ${C.primaryDim}`,
+  };
+
+  const btnDanger: React.CSSProperties = {
+    ...btnGhost,
+    background: `linear-gradient(135deg, ${C.danger}, ${C.red})`,
+    color: '#fff', border: '1px solid transparent',
+    boxShadow: `0 4px 20px ${C.redDim}`,
+  };
+
+  const btnGreen: React.CSSProperties = {
+    ...btnGhost,
+    background: `linear-gradient(135deg, ${C.green}, ${C.greenStrong})`,
+    color: C.primaryOn, border: '1px solid transparent',
+    boxShadow: `0 4px 20px ${C.greenDim}`,
+  };
+
+  const btnPurple: React.CSSProperties = {
+    ...btnGhost,
+    background: `linear-gradient(135deg, ${C.purple}, ${C.purpleStrong})`,
+    color: '#fff', border: '1px solid transparent',
+    boxShadow: `0 4px 20px ${C.purpleDim}`,
+  };
+
+  const infoBox: React.CSSProperties = {
+    fontSize: 12, padding: '10px 14px', borderRadius: T.radius.lg,
+    background: C.sfHigh, border: `1px solid ${C.sfBright}22`,
+  };
+
+  const navArrow: React.CSSProperties = {
+    background: `${C.sfHigh}80`, border: `1px solid ${C.border}50`,
+    borderRadius: 6, width: 28, height: 28, fontSize: 16,
+    cursor: 'pointer', display: 'flex', alignItems: 'center',
+    justifyContent: 'center', color: C.txMuted, fontFamily: 'inherit',
+    backdropFilter: 'blur(8px)', transition: 'all .15s',
+  };
+
   return (
-    <div className="ov" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="mb" style={{maxWidth:420}}>
-        <div className="mh">
-          <div className="mt">{title}</div>
-          <button className="mc" onClick={onClose}>x</button>
+    <div
+      onClick={e => e.target === e.currentTarget && onClose()}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: T.font.body,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 440, padding: 0,
+          background: C.sf, border: `1px solid ${C.sfHigh}`,
+          borderRadius: T.radius.xl, overflow: 'hidden',
+          boxShadow: `0 24px 80px rgba(0,0,0,.5), 0 0 40px ${C.primaryDim}`,
+          animation: 'hdModalIn .25s ease forwards',
+        }}
+      >
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+          .material-symbols-outlined{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;display:inline-block;line-height:1;text-transform:none;letter-spacing:normal;word-wrap:normal;white-space:nowrap;direction:ltr;vertical-align:middle;}
+          @keyframes hdModalIn { from { opacity:0; transform:translateY(16px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+          @keyframes hd-pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+        `}</style>
+
+        {/* ── Header ───────────────────────────────────────────── */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '18px 24px', borderBottom: `1px solid ${C.sfHigh}`,
+          background: C.bg,
+        }}>
+          <div style={{
+            fontSize: 15, fontWeight: 700, color: C.tx,
+            letterSpacing: '-0.01em',
+          }}>
+            {title}
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: `${C.sfHigh}80`, border: `1px solid ${C.border}40`,
+              borderRadius: 6, width: 28, height: 28,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: C.txDim, fontSize: 14,
+              transition: 'all .15s', backdropFilter: 'blur(8px)',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+          </button>
         </div>
-        <div className="mbody">
+
+        {/* ── Body ─────────────────────────────────────────────── */}
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
           {/* Seat info card */}
-          <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:"var(--sf2)",borderRadius:"var(--r)",border:"1px solid var(--bd)"}}>
-            <div style={{fontFamily:"var(--mono)",fontWeight:700,color: isBlocked ? "var(--tx3)" : "var(--ac2)",fontSize:16}}>{seatId}</div>
-            <div style={{fontSize:12}}>
-              {isBlocked && <div style={{color:"var(--tx3)"}}>{t("hotdesk.blockedSeat")}{blockedSeats[seatId] ? ` — ${blockedSeats[seatId]}` : ''}</div>}
-              {isMyFixed && !isBlocked && <div style={{color:"var(--amber)"}}>{t("hotdesk.myFixedSeat")}</div>}
-              {isOtherFixed && !isBlocked && <div style={{color:"var(--red)"}}>{t("hotdesk.fixed")}: {fixedOwner}</div>}
-              {isDelegated && <div style={{color:"var(--purple)"}}>{t("hotdesk.delegated")}{res?.delegatedBy ? ` — ${t("hotdesk.delegatedBy")} ${res.delegatedBy}` : ''}</div>}
-              {isPending && <div style={{color:"var(--amber)",animation:"hd-pulse 1.5s ease-in-out infinite"}}>{t("hotdesk.pendingConfirmation")}</div>}
-              {st === SeatStatus.OCCUPIED && !isMine && !isBlocked && !isDelegated && <div style={{color:"var(--ac2)"}}>{t("hotdesk.occupied")}: {res?.userName}</div>}
-              {st === SeatStatus.FREE && <div style={{color:"var(--green)"}}>{t("hotdesk.free")}</div>}
-              {isMine && res?.status === 'confirmed' && <div style={{color:"var(--green)"}}>{t("hotdesk.confirmed")}</div>}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '12px 16px', background: C.sfHigh,
+            borderRadius: T.radius.lg, position: 'relative', overflow: 'hidden',
+          }}>
+            {/* Top accent line */}
+            <div aria-hidden style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+              background: isBlocked ? C.txDim : isPending ? C.amber : isMine ? C.green : C.primaryStrong,
+            }} />
+            <div style={{
+              fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700,
+              color: isBlocked ? C.txDim : C.primary,
+              fontSize: 18, letterSpacing: '-0.01em',
+            }}>
+              {seatId}
+            </div>
+            <div style={{ fontSize: 12, lineHeight: 1.5 }}>
+              {isBlocked && <div style={{ color: C.txDim }}>{t("hotdesk.blockedSeat")}{blockedSeats[seatId] ? ` — ${blockedSeats[seatId]}` : ''}</div>}
+              {isMyFixed && !isBlocked && <div style={{ color: C.amber }}>{t("hotdesk.myFixedSeat")}</div>}
+              {isOtherFixed && !isBlocked && <div style={{ color: C.red }}>{t("hotdesk.fixed")}: {fixedOwner}</div>}
+              {isDelegated && <div style={{ color: C.purple }}>{t("hotdesk.delegated")}{res?.delegatedBy ? ` — ${t("hotdesk.delegatedBy")} ${res.delegatedBy}` : ''}</div>}
+              {isPending && <div style={{ color: C.amber, animation: 'hd-pulse 1.5s ease-in-out infinite' }}>{t("hotdesk.pendingConfirmation")}</div>}
+              {st === SeatStatus.OCCUPIED && !isMine && !isBlocked && !isDelegated && <div style={{ color: C.primaryStrong }}>{t("hotdesk.occupied")}: {res?.userName}</div>}
+              {st === SeatStatus.FREE && <div style={{ color: C.green }}>{t("hotdesk.free")}</div>}
+              {isMine && res?.status === 'confirmed' && <div style={{ color: C.green }}>{t("hotdesk.confirmed")}</div>}
             </div>
           </div>
 
           {/* Blocked seat message */}
           {isBlocked && (
-            <div style={{fontSize:12,color:"var(--tx3)",padding:"8px 12px",background:"var(--sf2)",borderRadius:"var(--r)",border:"1px solid var(--bd)"}}>
+            <div style={{ ...infoBox, color: C.txDim }}>
               {t("hotdesk.blockedSeat")}
             </div>
           )}
 
           {/* Fixed seat assigned to someone else */}
           {isOtherFixed && !isBlocked && (
-            <div style={{fontSize:12,color:"var(--tx3)",padding:"8px 12px",background:"var(--sf2)",borderRadius:"var(--r)",border:"1px solid var(--bd)"}}>
+            <div style={{ ...infoBox, color: C.txDim }}>
               {t("hotdesk.noReserve")}
             </div>
           )}
 
-          {/* Pending confirmation — Confirm Presence button */}
+          {/* Pending confirmation — CHECK IN button */}
           {isPending && date === MOCK_TODAY && (
-            <div style={{padding:"10px 12px",background:"rgba(245,158,11,.07)",borderRadius:"var(--r)",border:"1px solid rgba(245,158,11,.25)"}}>
-              <div style={{fontSize:12,color:"var(--amber)",marginBottom:8}}>{t("hotdesk.confirmBookingDesc")}</div>
+            <div style={{
+              padding: '16px', borderRadius: T.radius.lg,
+              background: C.greenDim, border: `1px solid ${C.green}30`,
+              textAlign: 'center',
+            }}>
+              <div style={{
+                fontSize: 11, color: C.txMuted, marginBottom: 12,
+                fontFamily: "'IBM Plex Mono', monospace",
+                letterSpacing: '.08em', textTransform: 'uppercase',
+              }}>
+                {t("hotdesk.confirmBookingDesc")}
+              </div>
               <button
                 onClick={handleConfirmPresence}
                 style={{
-                  width:"100%",padding:"8px 0",borderRadius:8,border:"none",cursor:"pointer",
-                  fontWeight:600,fontSize:13,color:"#fff",
-                  background:"linear-gradient(135deg, #4ae176, #00b954)",
-                  boxShadow:"0 2px 12px rgba(74,225,118,.3)",
-                }}>
-                {t("hotdesk.confirmBooking")}
+                  ...btnGreen,
+                  width: '100%', padding: '14px 0', fontSize: 14,
+                  fontWeight: 700, borderRadius: T.radius.lg,
+                  letterSpacing: '.08em', justifyContent: 'center',
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>login</span>
+                {t("hotdesk.checkIn")}
               </button>
               {config?.autoReleaseEnabled && (
-                <div style={{fontSize:10,color:"var(--tx3)",marginTop:6,textAlign:"center"}}>{t("hotdesk.autoReleaseWarning")}</div>
+                <div style={{
+                  fontSize: 10, color: C.txDim, marginTop: 8,
+                  fontFamily: "'IBM Plex Mono', monospace",
+                }}>
+                  {t("hotdesk.autoReleaseWarning")}
+                </div>
               )}
             </div>
           )}
 
           {/* My fixed seat — delegate or release */}
           {isMyFixed && !isMine && !isBlocked && (
-            <div style={{fontSize:12,color:"var(--tx2)",lineHeight:1.6}}>
+            <div style={{ fontSize: 12, color: C.txMuted, lineHeight: 1.6 }}>
               {t("hotdesk.delegateSeatDesc")}
-              <div style={{display:"flex",gap:8,marginTop:10}}>
-                <button className="b-danger" style={{flex:1}} onClick={()=>onRelease(seatId, date)}>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <button style={{ ...btnDanger, flex: 1, justifyContent: 'center' }} onClick={() => onRelease(seatId, date)}>
                   {t("hotdesk.releaseForToday")} ({date})
                 </button>
                 <button
-                  onClick={()=>setShowDelegate(true)}
-                  style={{
-                    flex:1,padding:"8px 0",borderRadius:8,border:"none",cursor:"pointer",
-                    fontWeight:600,fontSize:12,color:"#fff",
-                    background:"linear-gradient(135deg, #ddb7ff, #b76dff)",
-                    boxShadow:"0 2px 12px rgba(183,109,255,.3)",
-                  }}>
+                  onClick={() => setShowDelegate(true)}
+                  style={{ ...btnPurple, flex: 1, justifyContent: 'center' }}
+                >
                   {t("hotdesk.delegateSeat")}
                 </button>
               </div>
@@ -192,48 +332,89 @@ function HDReserveModal({
 
           {/* Delegate mini-modal */}
           {showDelegate && (
-            <div style={{padding:"12px",background:"var(--sf2)",borderRadius:"var(--r)",border:"1px solid var(--bd)",marginTop:8}}>
-              <div style={{fontSize:12,fontWeight:600,color:"var(--tx)",marginBottom:8}}>{t("hotdesk.delegateSeat")}</div>
+            <div style={{
+              padding: 14, background: C.sfHigh, borderRadius: T.radius.lg,
+              border: `1px solid ${C.sfBright}22`,
+            }}>
+              <div style={{
+                fontSize: 12, fontWeight: 700, color: C.tx, marginBottom: 10,
+                letterSpacing: '.02em',
+              }}>
+                {t("hotdesk.delegateSeat")}
+              </div>
+
               {/* User picker */}
-              <div style={{marginBottom:8}}>
-                <label style={{fontSize:11,color:"var(--tx2)",display:"block",marginBottom:4,fontWeight:600,letterSpacing:"0.05em",textTransform:"uppercase"}}>{t("hotdesk.selectUser")}</label>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{
+                  fontSize: 9, color: C.txDim, display: 'block', marginBottom: 4,
+                  fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase',
+                }}>
+                  {t("hotdesk.selectUser")}
+                </label>
                 <select
                   value={delegateUser}
                   onChange={e => setDelegateUser(e.target.value)}
                   style={{
-                    width:"100%",padding:"6px 8px",borderRadius:6,fontSize:12,
-                    background:"var(--bg)",border:"1px solid var(--bd)",color:"var(--tx)",
-                  }}>
+                    width: '100%', padding: '8px 10px', borderRadius: 6, fontSize: 12,
+                    background: C.bg, border: `1px solid ${C.sfHigh}`,
+                    color: C.tx, fontFamily: "'IBM Plex Mono', monospace",
+                    outline: 'none',
+                  }}
+                >
                   <option value="">{t("hotdesk.selectUser")}...</option>
                   {wsUsers.filter(u => u.id !== currentUser.id && u.active !== false).map(u => (
                     <option key={u.id} value={u.id}>{u.name}</option>
                   ))}
                 </select>
               </div>
+
               {/* Date picker */}
-              <div style={{marginBottom:8}}>
-                <label style={{fontSize:11,color:"var(--tx2)",display:"block",marginBottom:4,fontWeight:600,letterSpacing:"0.05em",textTransform:"uppercase"}}>{t("hotdesk.selectDatesLabel")}</label>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-                  <button className="n-arr" onClick={prev}>&#8249;</button>
-                  <span style={{fontSize:12,fontWeight:600,color:"var(--ac2)"}}>{fmtMonthYear(yr,mo,lang)}</span>
-                  <button className="n-arr" onClick={next}>&#8250;</button>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{
+                  fontSize: 9, color: C.txDim, display: 'block', marginBottom: 4,
+                  fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase',
+                }}>
+                  {t("hotdesk.selectDatesLabel")}
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <button style={navArrow} onClick={prev}>&#8249;</button>
+                  <span style={{
+                    fontSize: 12, fontWeight: 600, color: C.primary,
+                    fontFamily: "'IBM Plex Mono', monospace",
+                  }}>
+                    {fmtMonthYear(yr, mo, lang)}
+                  </span>
+                  <button style={navArrow} onClick={next}>&#8250;</button>
                 </div>
-                <MiniCalendar year={yr} month={mo} lang={lang} selectedDates={delegateDates} onToggleDate={toggleDelegateDate} occupiedDates={[]}/>
+                <MiniCalendar year={yr} month={mo} lang={lang} selectedDates={delegateDates} onToggleDate={toggleDelegateDate} occupiedDates={[]} />
               </div>
+
               {delegateDates.length > 0 && (
-                <div style={{fontSize:11,color:"var(--purple)",marginBottom:8}}>{t("hotdesk.selectDates")}: {delegateDates.sort().join(", ")}</div>
+                <div style={{
+                  fontSize: 11, color: C.purple, marginBottom: 10,
+                  fontFamily: "'IBM Plex Mono', monospace",
+                }}>
+                  {t("hotdesk.selectDates")}: {delegateDates.sort().join(", ")}
+                </div>
               )}
-              <div style={{display:"flex",gap:8}}>
-                <button className="b-cancel" style={{flex:1}} onClick={()=>{setShowDelegate(false);setDelegateUser('');setDelegateDates([]);}}>{t("common.cancel")}</button>
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  style={{ ...btnGhost, flex: 1, justifyContent: 'center' }}
+                  onClick={() => { setShowDelegate(false); setDelegateUser(''); setDelegateDates([]); }}
+                >
+                  {t("common.cancel")}
+                </button>
                 <button
                   onClick={handleDelegate}
                   disabled={!delegateUser || delegateDates.length === 0}
                   style={{
-                    flex:1,padding:"8px 0",borderRadius:8,border:"none",cursor: !delegateUser || delegateDates.length === 0 ? "not-allowed" : "pointer",
-                    fontWeight:600,fontSize:12,color:"#fff",
-                    background: !delegateUser || delegateDates.length === 0 ? "var(--tx3)" : "linear-gradient(135deg, #ddb7ff, #b76dff)",
-                    opacity: !delegateUser || delegateDates.length === 0 ? 0.5 : 1,
-                  }}>
+                    ...(!delegateUser || delegateDates.length === 0 ? btnGhost : btnPurple),
+                    flex: 1, justifyContent: 'center',
+                    opacity: !delegateUser || delegateDates.length === 0 ? 0.4 : 1,
+                    cursor: !delegateUser || delegateDates.length === 0 ? 'not-allowed' : 'pointer',
+                  }}
+                >
                   {t("hotdesk.delegateConfirm")} {delegateDates.length > 0 && `(${delegateDates.length})`}
                 </button>
               </div>
@@ -243,24 +424,47 @@ function HDReserveModal({
           {/* My reservation — release it */}
           {isMine && !isMyFixed && !isPending && (
             <div>
-              <div style={{fontSize:12,color:"var(--tx2)",marginBottom:8}}>{t("hotdesk.releaseQuestion")}</div>
-              <button className="b-danger" style={{width:"100%"}} onClick={()=>onRelease(seatId, date)}>{t("hotdesk.releaseBtn")}</button>
+              <div style={{ fontSize: 12, color: C.txMuted, marginBottom: 10 }}>
+                {t("hotdesk.releaseQuestion")}
+              </div>
+              <button
+                style={{ ...btnDanger, width: '100%', justifyContent: 'center' }}
+                onClick={() => onRelease(seatId, date)}
+              >
+                {t("hotdesk.releaseBtn")}
+              </button>
             </div>
           )}
 
           {/* My fixed seat that I have reserved — release */}
           {isMyFixed && isMine && !isPending && (
-            <div style={{fontSize:12,color:"var(--tx2)",marginBottom:8}}>
+            <div style={{ fontSize: 12, color: C.txMuted, marginBottom: 10 }}>
               {t("hotdesk.releaseQuestion")}
-              <button className="b-danger" style={{width:"100%",marginTop:8}} onClick={()=>onRelease(seatId, date)}>{t("hotdesk.releaseBtn")}</button>
+              <button
+                style={{ ...btnDanger, width: '100%', marginTop: 10, justifyContent: 'center' }}
+                onClick={() => onRelease(seatId, date)}
+              >
+                {t("hotdesk.releaseBtn")}
+              </button>
             </div>
           )}
 
-          {/* Just reserved — show "awaiting confirmation" */}
+          {/* Just reserved — awaiting confirmation */}
           {justReserved && confirmationEnabled && (
-            <div style={{padding:"10px 12px",background:"rgba(245,158,11,.07)",borderRadius:"var(--r)",border:"1px solid rgba(245,158,11,.25)",textAlign:"center"}}>
-              <div style={{fontSize:13,fontWeight:600,color:"var(--amber)",marginBottom:4}}>{t("hotdesk.pendingConfirmation")}</div>
-              <div style={{fontSize:11,color:"var(--tx3)"}}>{t("hotdesk.autoReleaseWarning")}</div>
+            <div style={{
+              padding: '14px 16px', borderRadius: T.radius.lg,
+              background: C.amberDim, border: `1px solid ${C.amber}30`,
+              textAlign: 'center',
+            }}>
+              <div style={{
+                fontSize: 13, fontWeight: 700, color: C.amber, marginBottom: 4,
+                fontFamily: "'IBM Plex Mono', monospace",
+              }}>
+                {t("hotdesk.pendingConfirmation")}
+              </div>
+              <div style={{ fontSize: 10, color: C.txDim }}>
+                {t("hotdesk.autoReleaseWarning")}
+              </div>
             </div>
           )}
 
@@ -268,39 +472,66 @@ function HDReserveModal({
           {!isBlocked && !isOtherFixed && !isMine && !isMyFixed && !justReserved && (
             <>
               {myReservedDates.includes(date) ? (
-                <div style={{fontSize:12,color:"var(--amber)",padding:"8px 12px",background:"rgba(245,166,35,.07)",borderRadius:"var(--r)",border:"1px solid rgba(245,166,35,.25)"}}>
+                <div style={{
+                  ...infoBox,
+                  color: C.amber, background: C.amberDim,
+                  border: `1px solid ${C.amber}30`,
+                }}>
                   {t("hotdesk.alreadyReserved")}
                 </div>
               ) : (
                 <>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                    <button className="n-arr" onClick={prev}>&#8249;</button>
-                    <span style={{fontSize:12,fontWeight:600,color:"var(--ac2)"}}>{fmtMonthYear(yr,mo,lang)}</span>
-                    <button className="n-arr" onClick={next}>&#8250;</button>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <button style={navArrow} onClick={prev}>&#8249;</button>
+                    <span style={{
+                      fontSize: 12, fontWeight: 600, color: C.primary,
+                      fontFamily: "'IBM Plex Mono', monospace",
+                    }}>
+                      {fmtMonthYear(yr, mo, lang)}
+                    </span>
+                    <button style={navArrow} onClick={next}>&#8250;</button>
                   </div>
-                  <MiniCalendar year={yr} month={mo} lang={lang} selectedDates={sel} onToggleDate={toggle} occupiedDates={blockedDates}/>
-                  {sel.length>0&&<div style={{fontSize:11,color:"var(--green)",background:"rgba(62,207,142,.07)",border:"1px solid rgba(62,207,142,.2)",borderRadius:"var(--r)",padding:"6px 10px"}}>{t("hotdesk.selectDates")}: {sel.sort().join(", ")}</div>}
+                  <MiniCalendar year={yr} month={mo} lang={lang} selectedDates={sel} onToggleDate={toggle} occupiedDates={blockedDates} />
+                  {sel.length > 0 && (
+                    <div style={{
+                      fontSize: 11, color: C.green, padding: '8px 12px',
+                      background: C.greenDim, borderRadius: T.radius.lg,
+                      border: `1px solid ${C.green}25`,
+                      fontFamily: "'IBM Plex Mono', monospace",
+                    }}>
+                      {t("hotdesk.selectDates")}: {sel.sort().join(", ")}
+                    </div>
+                  )}
                 </>
               )}
             </>
           )}
         </div>
 
-        <div className="mf">
-          <button className="b-cancel" onClick={onClose}>{t("common.cancel")}</button>
+        {/* ── Footer ───────────────────────────────────────────── */}
+        <div style={{
+          display: 'flex', justifyContent: 'flex-end', gap: 8,
+          padding: '16px 24px', borderTop: `1px solid ${C.sfHigh}`,
+          background: C.bg,
+        }}>
+          <button style={btnGhost} onClick={onClose}>
+            {t("common.cancel")}
+          </button>
           {!isBlocked && !isOtherFixed && !isMine && !isMyFixed && !myReservedDates.includes(date) && !justReserved && (
-            <button className="b-sub" onClick={handleReserve} disabled={sel.length===0}>
-              {t("hotdesk.confirm")} {sel.length>0&&`(${sel.length})`}
+            <button
+              style={{
+                ...btnPrimary,
+                opacity: sel.length === 0 ? 0.4 : 1,
+                cursor: sel.length === 0 ? 'not-allowed' : 'pointer',
+              }}
+              onClick={handleReserve}
+              disabled={sel.length === 0}
+            >
+              {t("hotdesk.confirm")} {sel.length > 0 && `(${sel.length})`}
             </button>
           )}
         </div>
       </div>
-      <style>{`
-        @keyframes hd-pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-      `}</style>
     </div>
   );
 }
