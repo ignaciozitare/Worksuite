@@ -424,7 +424,8 @@
     "selectDatesLabel":     "Selecciona fechas para delegar",
     "checkIn":              "Check In",
     "checkInDesc":          "Tienes una reserva pendiente para hoy. Confirma tu presencia.",
-    "moduleSubtitle":       "Gestion de Puestos"
+    "moduleSubtitle":       "Gestion de Puestos",
+    "selectBuildingFloor":  "Selecciona un edificio y planta para ver el mapa"
   },
   "retro": {
     "title":           "RetroBoard",

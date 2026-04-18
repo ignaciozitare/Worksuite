@@ -46,11 +46,12 @@ const HD_CSS = `
 .hd-ch .hd-btn-green:hover{box-shadow:0 4px 24px rgba(0,185,84,.35);}
 `;
 
-function HDMapView({ hd, onSeat, currentUser, onConfirmPresence }: {
+function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children }: {
   hd: any;
   onSeat: (id: string) => void;
   currentUser: any;
   onConfirmPresence?: (seatId: string, date: string) => void;
+  children?: React.ReactNode;
 }) {
   const { t } = useTranslation();
   const [zoom, setZoom] = React.useState(1);
@@ -273,27 +274,37 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence }: {
       </div>
 
       {/* ── Map container ──────────────────────────────────────── */}
-      <div
-        ref={containerRef}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
-        style={{
-          overflow: 'hidden', borderRadius: T.radius.lg,
-          border: `1px solid ${C.sfHigh}`,
-          cursor: panning ? 'grabbing' : 'grab',
-          background: C.sfLow, userSelect: 'none',
-        }}
-      >
+      {children ? (
         <div style={{
-          transform: `translate(${pan.x}px,${pan.y}px) scale(${zoom})`,
-          transformOrigin: 'top left',
-          transition: panning ? 'none' : 'transform .15s ease',
+          flex: 1, minHeight: 0, borderRadius: T.radius.lg,
+          border: `1px solid ${C.sfHigh}`,
+          background: C.sfLow, overflow: 'hidden',
         }}>
-          <OfficeSVG hd={hd} onSeat={onSeat} currentUser={currentUser} />
+          {children}
         </div>
-      </div>
+      ) : (
+        <div
+          ref={containerRef}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUp}
+          onMouseLeave={onMouseUp}
+          style={{
+            overflow: 'hidden', borderRadius: T.radius.lg,
+            border: `1px solid ${C.sfHigh}`,
+            cursor: panning ? 'grabbing' : 'grab',
+            background: C.sfLow, userSelect: 'none',
+          }}
+        >
+          <div style={{
+            transform: `translate(${pan.x}px,${pan.y}px) scale(${zoom})`,
+            transformOrigin: 'top left',
+            transition: panning ? 'none' : 'transform .15s ease',
+          }}>
+            <OfficeSVG hd={hd} onSeat={onSeat} currentUser={currentUser} />
+          </div>
+        </div>
+      )}
 
       {/* ── Footer hint ────────────────────────────────────────── */}
       <div style={{

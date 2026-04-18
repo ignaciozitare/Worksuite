@@ -13,7 +13,7 @@ import './WorkSuiteApp.css';
 // Module UI — eagerly loaded (always visible)
 import { LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView, RecentTasksSidebar } from './modules/jira-tracker/ui';
 import { ExportConfigModal, exportWithColumns } from './modules/jira-tracker/ui/ExportConfigModal';
-import { BlueprintHDMap, HDTableView, HDReserveModal } from './modules/hotdesk/ui';
+import { BlueprintHDMap, HDTableView, HDReserveModal, HDMapView } from './modules/hotdesk/ui';
 import { BuildingFloorSelectors } from './shared/admin';
 import { NotificationsBell } from './shared/ui/NotificationsBell';
 import { UserMenu } from './shared/ui/UserMenu';
@@ -315,11 +315,13 @@ function WorkSuiteApp() {
             {mod === "jt" && view === "day" && <main className="content" style={{display:'flex'}}><div style={{flex:1,minWidth:0,overflow:'auto'}}><DayView date={activeDay} filters={filters} worklogs={worklogs} onDateChange={setActiveDay} onOpenLog={handleOpenLog} onDeleteWorklog={handleDeleteWorklog} /></div><RecentTasksSidebar worklogs={worklogs} onOpenLog={handleOpenLog} /></main>}
             {mod === "jt" && view === "tasks" && <main className="content" style={{display:'flex'}}><div style={{flex:1,minWidth:0,overflow:'auto'}}><TasksView filters={filters} onOpenLog={handleOpenLog} worklogs={worklogs} jiraIssues={jiraIssues} jiraProjects={jiraProjects} /></div><RecentTasksSidebar worklogs={worklogs} onOpenLog={handleOpenLog} /></main>}
             {mod === "hd" && view === "map" && (
-              <main className="content">
-                {selectedBlueprint
-                  ? <BlueprintHDMap hd={hd} onSeat={sid => handleHdSeatClick(sid, TODAY)} currentUser={CURRENT_USER} blueprint={selectedBlueprint} theme={theme} />
-                  : <div style={{ padding: 32, textAlign: 'center', color: 'var(--tx3)', fontSize: 13 }}>Select a building and floor above to see the map</div>
-                }
+              <main className="content" style={{ padding: 0, overflow: 'auto' }}>
+                <HDMapView hd={hd} onSeat={sid => handleHdSeatClick(sid, TODAY)} currentUser={CURRENT_USER} onConfirmPresence={handleHdConfirmPresence}>
+                  {selectedBlueprint
+                    ? <BlueprintHDMap hd={hd} onSeat={sid => handleHdSeatClick(sid, TODAY)} currentUser={CURRENT_USER} blueprint={selectedBlueprint} theme={theme} />
+                    : <div style={{ padding: 32, textAlign: 'center', color: 'var(--tx3)', fontSize: 13 }}>{t('hotdesk.selectBuildingFloor')}</div>
+                  }
+                </HDMapView>
               </main>
             )}
             {mod === "hd" && view === "table" && (

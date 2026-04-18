@@ -424,7 +424,8 @@
     "selectDatesLabel":     "Select dates for delegation",
     "checkIn":              "Check In",
     "checkInDesc":          "You have a pending reservation for today. Confirm your presence.",
-    "moduleSubtitle":       "Desk Management"
+    "moduleSubtitle":       "Desk Management",
+    "selectBuildingFloor":  "Select a building and floor above to see the map"
   },
   "retro": {
     "title":           "RetroBoard",
