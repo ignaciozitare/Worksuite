@@ -6,4 +6,6 @@ export interface ReservationRepository {
   findByDateRange(from: string, to: string): Promise<SeatReservation[]>;
   reserve(reservations: Omit<SeatReservation, "id">[]): Promise<void>;
   cancel(seatId: string, date: string, userId: string): Promise<void>;
+  confirmReservation(seatId: string, date: string, userId: string): Promise<void>;
+  delegateSeat(seatId: string, dates: string[], fromUserId: string, toUserId: string): Promise<void>;
 }

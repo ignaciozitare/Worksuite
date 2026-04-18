@@ -17,6 +17,8 @@ function HDTableView({ hd, onCell, currentUser, blueprint, theme="dark" }: { hd:
   const [tooltip, setTooltip] = useState<{seatId:string;ax:number;ay:number}|null>(null);
   const [hidePast, setHidePast] = useState(false);
 
+  const blockedSeats = hd.blockedSeats || {};
+
   const days = daysInMonth(yr, mo);
   function isoD(d: number) { return `${yr}-${String(mo+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
   const prev = ()=>mo===0?(sMo(11),sYr(y=>y-1)):sMo(m=>m-1);
@@ -52,34 +54,53 @@ function HDTableView({ hd, onCell, currentUser, blueprint, theme="dark" }: { hd:
 
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
+      <style>{`
+        @keyframes hd-cell-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
       {/* Header */}
       <div className="cal-h" style={{marginBottom:10,flexShrink:0,padding:'0 4px'}}>
-        <button className="n-arr" onClick={prev}>‹</button>
+        <button className="n-arr" onClick={prev}>&#8249;</button>
         <div className="cal-t">{fmtMonthYear(yr, mo, lang)}</div>
-        <button className="n-arr" onClick={next}>›</button>
+        <button className="n-arr" onClick={next}>&#8250;</button>
         <button onClick={()=>setHidePast(h=>!h)}
           style={{display:'flex',alignItems:'center',gap:5,padding:'4px 10px',fontSize:11,fontWeight:600,
             border:`1px solid ${hidePast?'var(--ac)':'var(--bd)'}`,borderRadius:'var(--r)',
             background:hidePast?'var(--glow)':'var(--sf2)',color:hidePast?'var(--ac2)':'var(--tx2)',
             cursor:'pointer',transition:'all .15s',whiteSpace:'nowrap'}}>
-          {hidePast?'▼ All days':'▲ Future only'}
+          {hidePast ? t("hotdesk.monthlyView") : t("hotdesk.monthlyView")}
         </button>
         <div className="hd-legend" style={{marginLeft:"auto"}}>
-          {[[t("hotdesk.free"),"var(--seat-free)"],[t("hotdesk.occupied"),"var(--seat-occ)"],[t("hotdesk.fixed"),"var(--seat-fixed)"],["Mine","var(--amber)"]].map(([l,c])=>(
+          {[
+            [t("hotdesk.free"),"var(--seat-free)"],
+            [t("hotdesk.occupied"),"var(--seat-occ)"],
+            [t("hotdesk.fixed"),"var(--seat-fixed)"],
+            [t("hotdesk.mine"),"var(--amber)"],
+            [t("hotdesk.pending"),"var(--amber)"],
+            [t("hotdesk.blocked"),"var(--tx3)"],
+            [t("hotdesk.delegated"),"var(--purple)"],
+          ].map(([l,c])=>(
             <div key={l} className="hd-leg"><div className="hd-leg-dot" style={{background:c}}/>{l}</div>
           ))}
         </div>
       </div>
 
-      {/* Scrollable table — horizontal + vertical */}
+      {/* Scrollable table */}
       <div style={{flex:1,overflow:'auto',borderRadius:'var(--r2)',border:'1px solid var(--bd)',background:'var(--sf)'}}>
         <table className="hd-tbl" style={{minWidth: 120 + seats.length * 52}}>
           <thead>
             <tr>
               <th className="hd-th date-col" style={{minWidth:90,left:0,zIndex:8}}>{lang==="es"?"Fecha":"Date"}</th>
               {seats.map(s => {
-                const st = ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations);
-                const col = st===SeatStatus.FIXED ? "var(--seat-fixed)" : st===SeatStatus.OCCUPIED ? "var(--seat-occ)" : "var(--seat-free)";
+                const st = ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations, blockedSeats);
+                const col = st===SeatStatus.BLOCKED ? "var(--tx3)"
+                          : st===SeatStatus.FIXED ? "var(--seat-fixed)"
+                          : st===SeatStatus.OCCUPIED ? "var(--seat-occ)"
+                          : st===SeatStatus.PENDING ? "var(--amber)"
+                          : st===SeatStatus.DELEGATED ? "var(--purple)"
+                          : "var(--seat-free)";
                 return (
                   <th key={s.id} className="hd-th seat-col"
                     style={{minWidth:48,cursor:'pointer'}}
@@ -92,6 +113,11 @@ function HDTableView({ hd, onCell, currentUser, blueprint, theme="dark" }: { hd:
                     {hd.fixed[s.id] && (
                       <div style={{fontSize:7,color:"var(--red)",marginTop:1,fontWeight:400,lineHeight:1}}>
                         {hd.fixed[s.id].split(" ")[0].slice(0,6)}
+                      </div>
+                    )}
+                    {blockedSeats[s.id] && (
+                      <div style={{fontSize:7,color:"var(--tx3)",marginTop:1,fontWeight:400,lineHeight:1}}>
+                        {t("hotdesk.blocked")}
                       </div>
                     )}
                   </th>
@@ -113,28 +139,55 @@ function HDTableView({ hd, onCell, currentUser, blueprint, theme="dark" }: { hd:
                     color: isWe?"var(--tx3)": isTod?"var(--ac2)":"var(--tx2)",
                     fontWeight:isTod?600:400, minWidth:90, paddingLeft:10
                   }}>
-                    {isTod && <span style={{color:"var(--ac2)",marginRight:3,fontSize:9}}>▶</span>}
+                    {isTod && <span style={{color:"var(--ac2)",marginRight:3,fontSize:9}}>&#9654;</span>}
                     <span style={{fontFamily:"var(--mono)",fontSize:11}}>{DOW[dow]}</span>
                     {" "}<span style={{fontFamily:"var(--mono)",fontSize:11}}>{String(d).padStart(2,"0")}</span>
                   </td>
                   {seats.map(seat => {
-                    const st     = ReservationService.statusOf(seat.id, iso, hd.fixed, hd.reservations);
+                    const st     = ReservationService.statusOf(seat.id, iso, hd.fixed, hd.reservations, blockedSeats);
                     const res    = ReservationService.resOf(seat.id, iso, hd.reservations);
                     const isMine = res?.userId===currentUser.id;
                     const ownerName = st===SeatStatus.FIXED ? hd.fixed[seat.id] : res?.userName;
                     const ownerLabel = ownerName ? ownerName.split(" ")[0].slice(0,7) : "";
-                    const cls    = isMine ? "mine" : st===SeatStatus.FIXED ? "fx" : st===SeatStatus.OCCUPIED ? "occ" : "free";
+                    const isBlocked = st === SeatStatus.BLOCKED;
+                    const isPending = st === SeatStatus.PENDING;
+                    const isDelegated = st === SeatStatus.DELEGATED;
+
+                    const cls = isBlocked ? "blocked"
+                              : isMine && isPending ? "pending-mine"
+                              : isMine ? "mine"
+                              : isDelegated ? "delegated"
+                              : isPending ? "pending"
+                              : st===SeatStatus.FIXED ? "fx"
+                              : st===SeatStatus.OCCUPIED ? "occ"
+                              : "free";
+
                     return (
                       <td key={seat.id} className="hd-td" style={{padding:2,minWidth:48}}>
                         {isWe ? (
                           <div style={{height:28,borderRadius:3,background:"var(--sf2)"}}/>
+                        ) : isBlocked ? (
+                          <div style={{
+                            height:28,borderRadius:3,
+                            background:"var(--sf2)",
+                            display:"flex",alignItems:"center",justifyContent:"center",
+                            color:"var(--tx3)",fontSize:12,cursor:"not-allowed",
+                            opacity:0.5,
+                          }}>X</div>
                         ) : (
                           <div className={`hd-cell ${cls}`}
-                            style={{height:28,fontSize:9}}
+                            style={{
+                              height:28,fontSize:9,
+                              ...(isPending ? {animation:'hd-cell-pulse 1.5s ease-in-out infinite',borderStyle:'dashed'} : {}),
+                            }}
                             onClick={() => onCell(seat.id, iso)}>
-                            <div className={`hd-cell-dot ${cls}`}/>
+                            <div className={`hd-cell-dot ${cls}`}
+                              style={isDelegated ? {background:'var(--purple)'} : isPending ? {background:'var(--amber)'} : undefined}/>
                             {(st!==SeatStatus.FREE && ownerLabel) && (
                               <span className="hd-cell-name" style={{fontSize:9}}>{ownerLabel}</span>
+                            )}
+                            {isDelegated && (
+                              <span style={{fontSize:7,color:'var(--purple)',fontWeight:700,marginLeft:2}}>D</span>
                             )}
                           </div>
                         )}

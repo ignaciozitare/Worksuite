@@ -1,6 +1,6 @@
 // Deploy Planner — root view. Routes between Planning / Timeline / History /
 // Metrics and delegates heavy rendering to small components under ./internal/.
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { extractReposFromTickets } from '@worksuite/jira-service';
 import { RepoGroupService, type LinkedGroup } from '../domain/services/RepoGroupService';
 import { SubtaskService, type ClassifiedSubtask } from '../domain/services/SubtaskService';
@@ -18,6 +18,7 @@ import { Timeline } from './internal/Timeline';
 import { ReleaseCard } from './internal/ReleaseCard';
 import { ReleaseDetail } from './internal/ReleaseDetail';
 import { DeployPlannerIcon } from './internal/atoms';
+import { TaskSidebar } from './internal/TaskSidebar';
 import type { Release, DpTicket, StatusCfg, StatusCfgEntry, DragState, VersionCfg, RepoGroupView } from './internal/types';
 
 /* ─── Sidebar nav config ─────────────────────────────────────── */
@@ -127,6 +128,19 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
   const [drag, setDrag] = useState<DragState | null>(null);
   const [jiraBaseUrl, setJiraBaseUrl] = useState('');
   const [classifiedSubs, setClassifiedSubs] = useState<ClassifiedSubtask[]>([]);
+
+  // Task sidebar collapse state — persisted in localStorage
+  const [taskSidebarCollapsed, setTaskSidebarCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem('dp-task-sidebar-collapsed') === 'true'; }
+    catch { return false; }
+  });
+  const toggleTaskSidebar = useCallback(() => {
+    setTaskSidebarCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem('dp-task-sidebar-collapsed', String(next)); } catch { /* noop */ }
+      return next;
+    });
+  }, []);
 
   // Light mode — read from html element class, watch for changes
   const [isLight, setIsLight] = useState(document.documentElement.classList.contains('light'));
@@ -662,6 +676,17 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
           </>
         )}
       </div>
+
+      {/* ── Task Sidebar (right) ───────────────────────── */}
+      <TaskSidebar
+        tickets={tickets}
+        releases={releases}
+        jiraBaseUrl={jiraBaseUrl}
+        collapsed={taskSidebarCollapsed}
+        onToggle={toggleTaskSidebar}
+        onRefresh={() => void fetchJiraTickets()}
+        refreshing={fetchingJira}
+      />
     </div>
   );
 }

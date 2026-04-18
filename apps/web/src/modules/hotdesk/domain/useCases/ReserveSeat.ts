@@ -19,6 +19,7 @@ export class ReserveSeat {
         date,
         userId:   input.userId,
         userName: input.userName,
+        status:   "pending" as const,
       }))
     );
   }

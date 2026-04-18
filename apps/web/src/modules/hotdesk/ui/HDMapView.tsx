@@ -19,9 +19,15 @@ function HDMapView({ hd, onSeat, currentUser }: { hd: any; onSeat: (id: string) 
   const MIN_ZOOM = 0.4, MAX_ZOOM = 3;
   const clamp = (v: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v));
 
-  const freeCount = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations) === SeatStatus.FREE).length;
-  const occCount  = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations) === SeatStatus.OCCUPIED).length;
-  const fixCount  = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations) === SeatStatus.FIXED).length;
+  const blockedSeats = hd.blockedSeats || {};
+  const freeCount    = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations, blockedSeats) === SeatStatus.FREE).length;
+  const occCount     = SEATS.filter(s => {
+    const st = ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations, blockedSeats);
+    return st === SeatStatus.OCCUPIED || st === SeatStatus.PENDING || st === SeatStatus.DELEGATED;
+  }).length;
+  const fixCount     = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations, blockedSeats) === SeatStatus.FIXED).length;
+  const blockedCount = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations, blockedSeats) === SeatStatus.BLOCKED).length;
+  const pendingCount = SEATS.filter(s => ReservationService.statusOf(s.id, MOCK_TODAY, hd.fixed, hd.reservations, blockedSeats) === SeatStatus.PENDING).length;
 
   // Wheel zoom
   React.useEffect(() => {
@@ -52,15 +58,30 @@ function HDMapView({ hd, onSeat, currentUser }: { hd: any; onSeat: (id: string) 
 
   return (
     <div className="hd-map-wrap">
+      <style>{`
+        @keyframes hd-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
       <div className="hd-map-header">
         <div className="cal-stats" style={{marginLeft:0}}>
           <div className="chip">{t("hotdesk.free")}: <strong style={{color:"var(--green)"}}>{freeCount}</strong></div>
           <div className="chip">{t("hotdesk.occupied")}: <strong style={{color:"var(--ac2)"}}>{occCount}</strong></div>
           <div className="chip">{t("hotdesk.fixed")}: <strong style={{color:"var(--red)"}}>{fixCount}</strong></div>
+          {pendingCount > 0 && <div className="chip">{t("hotdesk.pending")}: <strong style={{color:"var(--amber)"}}>{pendingCount}</strong></div>}
+          {blockedCount > 0 && <div className="chip">{t("hotdesk.blocked")}: <strong style={{color:"var(--tx3)"}}>{blockedCount}</strong></div>}
           <div className="chip">{t("hotdesk.seatsTotal")}: <strong>{SEATS.length}</strong></div>
         </div>
         <div className="hd-legend">
-          {[[t("hotdesk.free"),"var(--seat-free)"],[t("hotdesk.occupied"),"var(--seat-occ)"],[t("hotdesk.fixed"),"var(--seat-fixed)"],[t("hotdesk.mine"),"var(--amber)"]].map(([l,c])=>(
+          {[
+            [t("hotdesk.free"),"var(--seat-free)"],
+            [t("hotdesk.occupied"),"var(--seat-occ)"],
+            [t("hotdesk.fixed"),"var(--seat-fixed)"],
+            [t("hotdesk.mine"),"var(--amber)"],
+            [t("hotdesk.pending"),"var(--amber)"],
+            [t("hotdesk.blocked"),"var(--tx3)"],
+          ].map(([l,c])=>(
             <div key={l} className="hd-leg"><div className="hd-leg-dot" style={{background:c}}/>{l}</div>
           ))}
         </div>
@@ -71,13 +92,13 @@ function HDMapView({ hd, onSeat, currentUser }: { hd: any; onSeat: (id: string) 
         <button onClick={()=>setZoom(z=>clamp(Math.round((z+0.1)*100)/100))}
           style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,width:28,height:28,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--tx2)",fontFamily:"inherit"}}>+</button>
         <button onClick={()=>setZoom(z=>clamp(Math.round((z-0.1)*100)/100))}
-          style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,width:28,height:28,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--tx2)",fontFamily:"inherit"}}>−</button>
-        <button onClick={fitMap} title="Ajustar mapa completo"
+          style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,width:28,height:28,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--tx2)",fontFamily:"inherit"}}>-</button>
+        <button onClick={fitMap} title={t("hotdesk.fitMap")}
           style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,padding:"0 10px",height:28,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:4,color:"var(--tx2)",fontFamily:"inherit",fontWeight:600}}>
-          ⊡ Fit
+          {t("hotdesk.fitMap")}
         </button>
         <span style={{fontSize:11,color:"var(--tx3)",marginLeft:2}}>{Math.round(zoom*100)}%</span>
-        <span style={{fontSize:10,color:"var(--tx3)",marginLeft:"auto"}}>Rueda del ratón para zoom · Arrastra para mover</span>
+        <span style={{fontSize:10,color:"var(--tx3)",marginLeft:"auto"}}>{t("hotdesk.scrollZoomHint")}</span>
       </div>
 
       {/* Map container with zoom + pan */}
@@ -92,7 +113,7 @@ function HDMapView({ hd, onSeat, currentUser }: { hd: any; onSeat: (id: string) 
           <OfficeSVG hd={hd} onSeat={onSeat} currentUser={currentUser}/>
         </div>
       </div>
-      <div className="hd-sub">Click on a seat to reserve · <span style={{color:"var(--amber)"}}>● your reservation</span></div>
+      <div className="hd-sub">{t("hotdesk.reserve")} · <span style={{color:"var(--amber)"}}>● {t("hotdesk.mine")}</span></div>
     </div>
   );
 }

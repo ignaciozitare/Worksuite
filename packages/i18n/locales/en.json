@@ -399,7 +399,29 @@
     "reserveTitle":  "New reservation",
     "releasedOk":    "Reservation released",
     "reservedOk":    "Reserved",
-    "adminManage":   "Manage seat"
+    "adminManage":   "Manage seat",
+    "pending":              "Pending",
+    "pendingConfirmation":  "Awaiting confirmation",
+    "confirmed":            "Confirmed",
+    "confirmBooking":       "Confirm presence",
+    "confirmBookingDesc":   "Confirm you are at your desk today",
+    "confirmedOk":          "Booking confirmed",
+    "delegateSeat":         "Delegate seat",
+    "delegateSeatDesc":     "Let someone else use your fixed seat",
+    "selectUser":           "Select user",
+    "delegatedBy":          "Delegated by",
+    "delegated":            "Delegated",
+    "delegatedOk":          "Seat delegated successfully",
+    "blockedSeat":          "Blocked seat",
+    "blockedReason":        "Reason",
+    "blocked":              "Blocked",
+    "autoReleaseWarning":   "Unconfirmed bookings will be auto-released",
+    "myFixedSeat":          "Your permanent seat",
+    "releaseForToday":      "Release for today",
+    "scrollZoomHint":       "Scroll to zoom, drag to pan",
+    "fitMap":               "Fit",
+    "delegateConfirm":      "Delegate",
+    "selectDatesLabel":     "Select dates for delegation"
   },
   "retro": {
     "title":           "RetroBoard",
@@ -555,7 +577,16 @@
     "bugResolution":  "Bug resolution",
     "testCoverage":   "Test coverage",
     "avgBugsPerRelease":"Bugs per release (avg)",
-    "history":        "History"
+    "history":        "History",
+    "taskSidebar": {
+      "title":             "Tickets",
+      "searchPlaceholder": "Search tickets...",
+      "noResults":         "No tickets found",
+      "assigned":          "Assigned",
+      "refresh":           "Refresh tickets",
+      "collapse":          "Collapse panel",
+      "expand":            "Expand panel"
+    }
   },
   "chrono": {
     "title":              "Time Clock",

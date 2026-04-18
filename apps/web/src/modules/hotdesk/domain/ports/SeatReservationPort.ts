@@ -4,6 +4,9 @@ export interface ReservationRow {
   user_id: string;
   user_name: string;
   date: string;
+  status: 'pending' | 'confirmed' | 'released';
+  confirmed_at?: string;
+  delegated_by?: string;
 }
 
 export interface FixedAssignmentRow {
@@ -18,6 +21,8 @@ export interface SeatRow {
   label: string;
   x: number;
   y: number;
+  is_blocked: boolean;
+  blocked_reason?: string;
 }
 
 export interface SeatReservationPort {

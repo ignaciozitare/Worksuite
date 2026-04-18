@@ -399,7 +399,29 @@
     "reserveTitle":  "Nueva reserva",
     "releasedOk":    "Reserva liberada",
     "reservedOk":    "Reserva confirmada",
-    "adminManage":   "Gestionar puesto"
+    "adminManage":   "Gestionar puesto",
+    "pending":              "Pendiente",
+    "pendingConfirmation":  "Esperando confirmacion",
+    "confirmed":            "Confirmado",
+    "confirmBooking":       "Confirmar presencia",
+    "confirmBookingDesc":   "Confirma que estas en tu puesto hoy",
+    "confirmedOk":          "Reserva confirmada",
+    "delegateSeat":         "Delegar puesto",
+    "delegateSeatDesc":     "Permite que otro use tu puesto fijo",
+    "selectUser":           "Seleccionar usuario",
+    "delegatedBy":          "Delegado por",
+    "delegated":            "Delegado",
+    "delegatedOk":          "Puesto delegado correctamente",
+    "blockedSeat":          "Puesto bloqueado",
+    "blockedReason":        "Motivo",
+    "blocked":              "Bloqueado",
+    "autoReleaseWarning":   "Las reservas sin confirmar se liberaran automaticamente",
+    "myFixedSeat":          "Tu puesto permanente",
+    "releaseForToday":      "Liberar para hoy",
+    "scrollZoomHint":       "Rueda para zoom, arrastra para mover",
+    "fitMap":               "Ajustar",
+    "delegateConfirm":      "Delegar",
+    "selectDatesLabel":     "Selecciona fechas para delegar"
   },
   "retro": {
     "title":           "RetroBoard",
@@ -555,7 +577,16 @@
     "bugResolution":  "Resolución de bugs",
     "testCoverage":   "Cobertura de tests",
     "avgBugsPerRelease":"Bugs por release (media)",
-    "history":        "Historial"
+    "history":        "Historial",
+    "taskSidebar": {
+      "title":             "Tickets",
+      "searchPlaceholder": "Buscar tickets...",
+      "noResults":         "No se encontraron tickets",
+      "assigned":          "Asignado",
+      "refresh":           "Refrescar tickets",
+      "collapse":          "Colapsar panel",
+      "expand":            "Expandir panel"
+    }
   },
   "chrono": {
     "title":              "Control Horario",

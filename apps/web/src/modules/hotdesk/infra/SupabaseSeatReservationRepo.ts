@@ -10,6 +10,9 @@ export class SupabaseSeatReservationRepo implements SeatReservationPort {
     return (data || []).map(r => ({
       id: r.id, seat_id: r.seat_id, user_id: r.user_id,
       user_name: r.user_name, date: r.date?.slice(0, 10),
+      status: r.status ?? 'pending',
+      confirmed_at: r.confirmed_at ?? undefined,
+      delegated_by: r.delegated_by ?? undefined,
     }));
   }
 

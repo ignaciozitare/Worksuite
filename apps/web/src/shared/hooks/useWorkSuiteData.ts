@@ -49,7 +49,7 @@ export function useWorkSuiteData(authUser: any) {
   const [loadingData,  setLoadingData]  = useState(true);
   const [worklogs,     setWorklogs]     = useState<Record<string, any[]>>({});
   const [users,        setUsers]        = useState<any[]>([]);
-  const [hd,           setHd]           = useState<{ fixed: Record<string, string>; reservations: any[] }>({ fixed: {}, reservations: [] });
+  const [hd,           setHd]           = useState<{ fixed: Record<string, string>; reservations: any[]; blockedSeats: Record<string, string> }>({ fixed: {}, reservations: [], blockedSeats: {} });
   const [jiraIssues,   setJiraIssues]   = useState(MOCK_ISSUES_FALLBACK);
   const [jiraProjects, setJiraProjects] = useState(MOCK_PROJECTS_FALLBACK);
 
@@ -86,8 +86,19 @@ export function useWorkSuiteData(authUser: any) {
         const reservations = resRows.map(r => ({
           seatId: r.seat_id, date: r.date,
           userId: r.user_id, userName: r.user_name,
+          status: (r as any).status ?? 'confirmed',
+          delegatedBy: (r as any).delegated_by ?? undefined,
         }));
-        setHd({ fixed, reservations });
+
+        // Build blockedSeats map from seats that have is_blocked flag
+        const blockedSeats: Record<string, string> = {};
+        seatsRows.forEach((s: any) => {
+          if (s.is_blocked) {
+            blockedSeats[s.id] = s.blocked_reason || '';
+          }
+        });
+
+        setHd({ fixed, reservations, blockedSeats });
 
         if (seatsRows.length) {
           seatsRows.forEach(s => {

@@ -148,7 +148,7 @@ function WorkSuiteApp() {
   const [selectedBuilding, setSelectedBuilding] = useState<any>(null);
   const [selectedBlueprint, setSelectedBlueprint] = useState<any>(null);
 
-  const { handleSeatClick, handleConfirm: hdConfirm, handleRelease: hdRelease } = useHotDesk({
+  const { handleSeatClick, handleConfirm: hdConfirm, handleRelease: hdRelease, handleConfirmPresence: hdConfirmPresence, handleDelegate: hdDelegate } = useHotDesk({
     hd, setHd, currentUser: CURRENT_USER, notify, t,
   });
 
@@ -166,6 +166,16 @@ function WorkSuiteApp() {
     await hdRelease(seatId, date);
     setHdModal(null);
   }, [hdRelease]);
+
+  const handleHdConfirmPresence = useCallback(async (seatId: string, date: string) => {
+    await hdConfirmPresence(seatId, date);
+    setHdModal(null);
+  }, [hdConfirmPresence]);
+
+  const handleHdDelegate = useCallback(async (seatId: string, dates: string[], targetUserId: string) => {
+    await hdDelegate(seatId, dates, targetUserId);
+    setHdModal(null);
+  }, [hdDelegate]);
 
   const handleBuildingFloorChange = useCallback((b: any, fl: any) => {
     setSelectedBuilding(b);
@@ -376,7 +386,7 @@ function WorkSuiteApp() {
         />
       )}
       {hdModal && (
-        <HDReserveModal seatId={hdModal.seatId} initDate={hdModal.date} hd={hd} onConfirm={handleHdConfirm} onRelease={handleHdRelease} onClose={() => setHdModal(null)} currentUser={CURRENT_USER} />
+        <HDReserveModal seatId={hdModal.seatId} initDate={hdModal.date} hd={hd} onConfirm={handleHdConfirm} onRelease={handleHdRelease} onClose={() => setHdModal(null)} currentUser={CURRENT_USER} wsUsers={users} onConfirmPresence={handleHdConfirmPresence} onDelegate={handleHdDelegate} />
       )}
       {toast && (
         <div style={{ position: "fixed", bottom: 20, right: 20, zIndex: 9999, padding: "11px 18px", borderRadius: "var(--r2)", fontSize: 13, fontWeight: 500, background: "var(--sf)", border: "1px solid var(--bd2)", color: "var(--tx)", boxShadow: "var(--shadow)", animation: "fadeIn .2s ease" }}>

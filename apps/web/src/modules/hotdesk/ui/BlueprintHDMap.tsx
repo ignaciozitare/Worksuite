@@ -1,15 +1,28 @@
 // @ts-nocheck
 import React, { useRef, useState, useMemo, useEffect } from 'react';
+import { useTranslation } from '@worksuite/i18n';
+import { SeatStatusEnum as SeatStatus } from '../domain/entities/constants';
 import { TODAY } from '@/shared/lib/constants';
 
 function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null, theme="dark" }: { hd: any; onSeat: (id: string) => void; currentUser: any; blueprint: any; highlightSeat?: string | null; theme?: string }) {
-  
+
+  const { t } = useTranslation();
   const canvasRef = useRef(null);
   const cwRef = useRef(null);
   const [hoveredSeat, setHoveredSeat] = useState(null);
-  const [seatHoverInfo, setSeatHoverInfo] = useState(null); // {id, name, x, y}
+  const [seatHoverInfo, setSeatHoverInfo] = useState(null); // {id, name, x, y, status}
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({x:0,y:0});
+  const [pulsePhase, setPulsePhase] = useState(0);
+
+  const blockedSeats = hd.blockedSeats || {};
+
+  // Pulse animation tick for pending seats
+  useEffect(() => {
+    const id = setInterval(() => setPulsePhase(p => (p + 1) % 60), 50);
+    return () => clearInterval(id);
+  }, []);
+  const pulseOpacity = 0.5 + 0.5 * Math.sin((pulsePhase / 60) * Math.PI * 2);
 
   const items = (() => {
     try { return Array.isArray(blueprint?.layout) ? blueprint.layout : []; } catch { return []; }
@@ -23,7 +36,6 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
       if(i.pts&&i.pts.length){
         i.pts.forEach(p=>{ if(p.x<minX)minX=p.x; if(p.y<minY)minY=p.y; if(p.x>maxX)maxX=p.x; if(p.y>maxY)maxY=p.y; });
       } else if(i.type==='door'||i.type==='window'){
-        // Door/window pivot at (x,y), extends sw in rotated space — use loose bounds
         const sw=i.w||48;
         if(i.x-sw<minX)minX=i.x-sw; if(i.y-sw<minY)minY=i.y-sw;
         if(i.x+sw>maxX)maxX=i.x+sw; if(i.y+sw>maxY)maxY=i.y+sw;
@@ -37,6 +49,17 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
 
   const CELL=52,PAD=14,LH=18;
   const dk = theme==='dark';
+
+  // Determine seat status for canvas rendering
+  function seatStatusOf(id) {
+    if (blockedSeats[id]) return SeatStatus.BLOCKED;
+    if (hd.fixed[id]) return SeatStatus.FIXED;
+    const res = hd.reservations.find(r=>r.seatId===id&&r.date===TODAY);
+    if (!res) return SeatStatus.FREE;
+    if (res.delegatedBy) return SeatStatus.DELEGATED;
+    if (res.status === 'pending') return SeatStatus.PENDING;
+    return SeatStatus.OCCUPIED;
+  }
 
   // Get seat positions from a cluster item
   function getSeatsForItem(item) {
@@ -93,7 +116,7 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
     resize();
     const ro = new ResizeObserver(resize); ro.observe(cw);
 
-    // Wheel zoom — centered on cursor position
+    // Wheel zoom
     function onWheel(e) {
       e.preventDefault();
       const rect = cvs.getBoundingClientRect();
@@ -109,7 +132,7 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
     }
     cvs.addEventListener('wheel', onWheel, { passive: false });
 
-    // Pan — mouse drag (left button) or middle button
+    // Pan
     let panActive = false, px0 = 0, py0 = 0, ox0 = 0, oy0 = 0;
     function onMouseDown(e) {
       if(e.button !== 0 && e.button !== 1) return;
@@ -170,7 +193,7 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
       ctx.fillStyle=dk?'#93c5fd':'#1e40af';ctx.font='600 20px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.fillText(i.label||'Room',x+w/2,y+h*0.22);
     });
-    // Walls — polyline (pts[]) OR rect fallback
+    // Walls
     items.filter(i=>i.type==='wall').forEach(i=>{
       ctx.strokeStyle=dk?'#777':'#999';ctx.lineWidth=4;ctx.setLineDash([]);ctx.lineCap='round';ctx.lineJoin='round';
       if(i.pts&&i.pts.length>=2){
@@ -183,56 +206,41 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
       }
       ctx.lineCap='butt';ctx.lineJoin='miter';
     });
-    // Doors — pure world-coordinate math, NO ctx.translate/rotate
-    // Avoids any potential conflict with the outer scale transform.
-    // angle=0: gap→right, leaf→up(into building). arc in upper-right.
-    // angle=90: gap→down, leaf→right, arc in lower-right.
+    // Doors
     items.filter(i=>i.type==='door').forEach(i=>{
       const{x,y}=i;
       const rad=(i.angle||0)*Math.PI/180;
       const sw=i.w||48;
       const cA=Math.cos(rad),sA=Math.sin(rad);
-      // Gap end = (x + sw*cos, y + sw*sin)
       const gx=x+sw*cA, gy=y+sw*sA;
-      // Leaf end = (x + sw*sin, y - sw*cos)  [perpendicular, inward]
       const lx=x+sw*sA, ly=y-sw*cA;
       ctx.strokeStyle='#fb923c';ctx.lineWidth=1.5;ctx.setLineDash([]);ctx.lineCap='round';
-      // Gap line
       ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(gx,gy);ctx.stroke();
-      // Leaf
       ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(lx,ly);ctx.stroke();
-      // Arc: from gap direction (rad) anticlockwise to leaf direction (rad-PI/2)
       ctx.lineWidth=0.8;ctx.setLineDash([4,3]);
       ctx.beginPath();ctx.arc(x,y,sw,rad,rad-Math.PI/2,true);ctx.stroke();
       if(i.double){
         ctx.setLineDash([]);ctx.lineWidth=1.5;
-        // Second leaf from gap-end going same perpendicular dir
         ctx.beginPath();ctx.moveTo(gx,gy);ctx.lineTo(gx+sw*sA,gy-sw*cA);ctx.stroke();
         ctx.lineWidth=0.8;ctx.setLineDash([4,3]);
         ctx.beginPath();ctx.arc(gx,gy,sw,rad+Math.PI,rad-Math.PI/2,false);ctx.stroke();
       }
       ctx.setLineDash([]);ctx.lineCap='butt';
     });
-    // Windows — pure world-coordinate math, NO ctx.translate/rotate
-    // Two parallel lines straddling the wall, with end ticks.
+    // Windows
     items.filter(i=>i.type==='window').forEach(i=>{
       const{x,y}=i;
       const rad=(i.angle||0)*Math.PI/180;
-      const sw=i.w||48,hth=3; // half-thickness = 3 (total 6)
+      const sw=i.w||48,hth=3;
       const cA=Math.cos(rad),sA=Math.sin(rad);
-      // Perpendicular unit vector (rotated 90° from gap direction)
       const px=-sA,py=cA;
-      // Four corners
       const x1=x+px*hth, y1=y+py*hth;
       const x2=x+sw*cA+px*hth, y2=y+sw*sA+py*hth;
       const x3=x+sw*cA-px*hth, y3=y+sw*sA-py*hth;
       const x4=x-px*hth, y4=y-py*hth;
       ctx.strokeStyle='#38bdf8';ctx.lineWidth=1.5;ctx.setLineDash([]);
-      // Line 1 (one side of wall)
       ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
-      // Line 2 (other side of wall)
       ctx.beginPath();ctx.moveTo(x4,y4);ctx.lineTo(x3,y3);ctx.stroke();
-      // End ticks
       ctx.lineWidth=1;
       ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x4,y4);ctx.stroke();
       ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x3,y3);ctx.stroke();
@@ -242,7 +250,7 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
       }
     });
 
-    // Draw clusters (border + zone label)
+    // Draw clusters
     items.filter(i=>i.type==='desk'||i.type==='circle').forEach(i=>{
       const{x,y,w,h}=i;
       ctx.fillStyle=dk?'rgba(3,15,6,.4)':'rgba(240,253,244,.5)';
@@ -251,7 +259,6 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
       if(i.shape==='circle'){const cx=x+w/2,cy=y+h/2,R=Math.min(w,h)/2;ctx.beginPath();ctx.arc(cx,cy,R,0,2*Math.PI);ctx.fill();ctx.stroke();}
       else{rr(x,y,w,h,7);ctx.fill();ctx.stroke();}
       ctx.setLineDash([]);
-      // Zone label — just above first row of seats (not at top of cluster box)
       const seats=getSeatsForItem(i);
       if(seats.length>0){
         const firstY=Math.min(...seats.map(s=>s.y));
@@ -266,28 +273,82 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
     allSeats.forEach(s=>{
       const{x,y,w,h,id}=s;
       const res=hd.reservations.find(r=>r.seatId===id&&r.date===TODAY);
-      const isFixed=!!hd.fixed[id];
+      const st = seatStatusOf(id);
       const isMine=res?.userId===currentUser.id;
-      const isOcc=!!res||isFixed;
       const isHov=hoveredSeat===id;
+      const isBlocked = st === SeatStatus.BLOCKED;
+      const isPending = st === SeatStatus.PENDING;
+      const isDelegated = st === SeatStatus.DELEGATED;
+      const isOcc=!!res||!!hd.fixed[id];
+
       let fc,sc,tc;
-      if(isFixed){fc=dk?'rgba(80,0,0,.55)':'rgba(254,226,226,.8)';sc='#ef4444';tc=dk?'#fca5a5':'#991b1b';}
-      else if(isMine){fc=dk?'rgba(60,40,0,.6)':'rgba(255,251,235,.8)';sc='#f59e0b';tc=dk?'#fcd34d':'#92400e';}
-      else if(isOcc){fc=dk?'rgba(20,30,80,.55)':'rgba(219,234,254,.8)';sc='#3b82f6';tc=dk?'#93c5fd':'#1e40af';}
-      else{fc=dk?'rgba(5,35,12,.65)':'rgba(220,252,231,.85)';sc=isHov?'#4ade80':'#22c55e';tc=dk?'#86efac':'#166534';}
+      if(isBlocked){
+        fc=dk?'rgba(60,60,60,.3)':'rgba(200,200,200,.5)';sc=dk?'#50506a':'#999';tc=dk?'#777':'#888';
+      } else if(hd.fixed[id]){
+        fc=dk?'rgba(80,0,0,.55)':'rgba(254,226,226,.8)';sc='#ef4444';tc=dk?'#fca5a5':'#991b1b';
+      } else if(isMine && isPending){
+        fc=dk?'rgba(60,40,0,.6)':'rgba(255,251,235,.8)';sc='#f59e0b';tc=dk?'#fcd34d':'#92400e';
+      } else if(isMine){
+        fc=dk?'rgba(60,40,0,.6)':'rgba(255,251,235,.8)';sc='#f59e0b';tc=dk?'#fcd34d':'#92400e';
+      } else if(isDelegated){
+        fc=dk?'rgba(50,20,80,.5)':'rgba(245,230,255,.8)';sc='#b76dff';tc=dk?'#ddb7ff':'#7c3aed';
+      } else if(isPending){
+        fc=dk?'rgba(60,40,0,.4)':'rgba(255,251,235,.6)';sc='#f59e0b';tc=dk?'#fcd34d':'#92400e';
+      } else if(isOcc){
+        fc=dk?'rgba(20,30,80,.55)':'rgba(219,234,254,.8)';sc='#3b82f6';tc=dk?'#93c5fd':'#1e40af';
+      } else {
+        fc=dk?'rgba(5,35,12,.65)':'rgba(220,252,231,.85)';sc=isHov?'#4ade80':'#22c55e';tc=dk?'#86efac':'#166534';
+      }
+
+      // For pending seats, apply pulse opacity
+      const seatAlpha = isPending ? pulseOpacity : 1;
+
+      ctx.globalAlpha = seatAlpha;
       ctx.fillStyle=fc;ctx.strokeStyle=sc;ctx.lineWidth=isHov?2:1;
+
+      // Pending: dashed border
+      if (isPending) { ctx.setLineDash([4, 3]); } else { ctx.setLineDash([]); }
+
       rr(x,y,w,h,5);ctx.fill();ctx.stroke();
-      if(!isOcc&&!isHov){ctx.fillStyle='rgba(255,255,255,.02)';ctx.strokeStyle=sc+'33';ctx.lineWidth=.4;rr(x+3,y+3,w-6,h-6,3);ctx.fill();ctx.stroke();}
+      ctx.setLineDash([]);
+
+      if(!isOcc&&!isHov&&!isBlocked){ctx.fillStyle='rgba(255,255,255,.02)';ctx.strokeStyle=sc+'33';ctx.lineWidth=.4;rr(x+3,y+3,w-6,h-6,3);ctx.fill();ctx.stroke();}
+
+      // Blocked X overlay
+      if (isBlocked) {
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = dk ? '#777' : '#999';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.beginPath();ctx.moveTo(x+6,y+6);ctx.lineTo(x+w-6,y+h-6);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(x+w-6,y+6);ctx.lineTo(x+6,y+h-6);ctx.stroke();
+        ctx.lineCap = 'butt';
+      }
+
+      ctx.globalAlpha = 1;
+
       // Highlight ring for admin-selected seat
       if(id===highlightSeat){ctx.strokeStyle='#f59e0b';ctx.lineWidth=2.5;ctx.setLineDash([]);rr(x-3,y-3,w+6,h+6,7);ctx.stroke();}
-      // Only show seat ID — color conveys status
+
+      // Seat ID label
       ctx.fillStyle=tc;ctx.font='bold 9px monospace';
       ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.fillText(id,x+w/2,y+h/2);
+
+      // Delegated badge
+      if (isDelegated) {
+        const bx = x+w-10, by = y-2;
+        ctx.fillStyle = dk ? '#b76dff' : '#9333ea';
+        ctx.beginPath(); rr(bx, by, 14, 9, 3); ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 6px sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('D', bx+7, by+5);
+      }
     });
 
     ctx.restore();
-  }, [items, hd, scale, offset, hoveredSeat, theme]);
+  }, [items, hd, scale, offset, hoveredSeat, theme, pulsePhase]);
 
   // Hit test seat in canvas coords
   function seatAt(px,py){
@@ -295,11 +356,15 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
     return allSeats.find(s=>wx>=s.x&&wx<=s.x+s.w&&wy>=s.y&&wy<=s.y+s.h)||null;
   }
 
-  const freeCount = allSeats.filter(s=>!hd.fixed[s.id]&&!hd.reservations.find(r=>r.seatId===s.id&&r.date===TODAY)).length;
-  const occCount  = allSeats.filter(s=>hd.reservations.find(r=>r.seatId===s.id&&r.date===TODAY)).length;
-  const fixCount  = allSeats.filter(s=>hd.fixed[s.id]).length;
+  const freeCount = allSeats.filter(s => seatStatusOf(s.id) === SeatStatus.FREE).length;
+  const occCount  = allSeats.filter(s => {
+    const st = seatStatusOf(s.id);
+    return st === SeatStatus.OCCUPIED || st === SeatStatus.PENDING || st === SeatStatus.DELEGATED;
+  }).length;
+  const fixCount  = allSeats.filter(s => seatStatusOf(s.id) === SeatStatus.FIXED).length;
+  const blockedCount = allSeats.filter(s => seatStatusOf(s.id) === SeatStatus.BLOCKED).length;
 
-  // Zoom helpers that operate on the canvas scale/offset state
+  // Zoom helpers
   const zoomBy = (delta) => {
     const cvs = canvasRef.current;
     if (!cvs) return;
@@ -324,13 +389,22 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
     <div className="hd-map-wrap">
       <div className="hd-map-header">
         <div className="cal-stats" style={{marginLeft:0}}>
-          <div className="chip">Free: <strong style={{color:'var(--green)'}}>{freeCount}</strong></div>
-          <div className="chip">Occupied: <strong style={{color:'var(--ac2)'}}>{occCount}</strong></div>
-          <div className="chip">Fixed: <strong style={{color:'var(--red)'}}>{fixCount}</strong></div>
-          <div className="chip">Total: <strong>{allSeats.length}</strong></div>
+          <div className="chip">{t("hotdesk.free")}: <strong style={{color:'var(--green)'}}>{freeCount}</strong></div>
+          <div className="chip">{t("hotdesk.occupied")}: <strong style={{color:'var(--ac2)'}}>{occCount}</strong></div>
+          <div className="chip">{t("hotdesk.fixed")}: <strong style={{color:'var(--red)'}}>{fixCount}</strong></div>
+          {blockedCount > 0 && <div className="chip">{t("hotdesk.blocked")}: <strong style={{color:'var(--tx3)'}}>{blockedCount}</strong></div>}
+          <div className="chip">{t("hotdesk.seatsTotal")}: <strong>{allSeats.length}</strong></div>
         </div>
         <div className="hd-legend">
-          {[['Free','var(--seat-free)'],['Occupied','var(--seat-occ)'],['Fixed','var(--seat-fixed)'],['Mine','var(--amber)']].map(([l,col])=>(
+          {[
+            [t("hotdesk.free"),'var(--seat-free)'],
+            [t("hotdesk.occupied"),'var(--seat-occ)'],
+            [t("hotdesk.fixed"),'var(--seat-fixed)'],
+            [t("hotdesk.mine"),'var(--amber)'],
+            [t("hotdesk.pending"),'var(--amber)'],
+            [t("hotdesk.blocked"),'var(--tx3)'],
+            [t("hotdesk.delegated"),'var(--purple)'],
+          ].map(([l,col])=>(
             <div key={l} className="hd-leg"><div className="hd-leg-dot" style={{background:col}}/>{l}</div>
           ))}
         </div>
@@ -341,18 +415,18 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
         <button onClick={()=>zoomBy(0.15)}
           style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:6,width:28,height:28,fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx2)',lineHeight:1}}>+</button>
         <button onClick={()=>zoomBy(-0.15)}
-          style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:6,width:28,height:28,fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx2)',lineHeight:1}}>−</button>
-        <button onClick={fitToView} title="Ajustar mapa completo"
+          style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:6,width:28,height:28,fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx2)',lineHeight:1}}>-</button>
+        <button onClick={fitToView} title={t("hotdesk.fitMap")}
           style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:6,padding:'0 10px',height:28,fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',gap:4,color:'var(--tx2)',fontFamily:'inherit',fontWeight:600}}>
-          ⊡ Fit
+          {t("hotdesk.fitMap")}
         </button>
         <span style={{fontSize:11,color:'var(--tx3)',marginLeft:2}}>{Math.round(scale*100)}%</span>
-        <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>Rueda del ratón · Arrastra para mover</span>
+        <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>{t("hotdesk.scrollZoomHint")}</span>
       </div>
 
       <div className="hd-card" ref={cwRef} style={{position:'relative',height:'calc(100vh - 260px)',minHeight:400,padding:0,overflow:'hidden'}}>
         <canvas ref={canvasRef} style={{display:'block',width:'100%',height:'100%',
-          cursor: hoveredSeat ? 'pointer' : 'default'}}
+          cursor: hoveredSeat ? (seatStatusOf(hoveredSeat) === SeatStatus.BLOCKED ? 'not-allowed' : 'pointer') : 'default'}}
           onMouseMove={e=>{
             const r=canvasRef.current?.getBoundingClientRect();
             if(!r)return;
@@ -362,7 +436,8 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
               const res=hd.reservations.find(rv=>rv.seatId===s.id&&rv.date===TODAY);
               const isFixed=!!hd.fixed[s.id];
               const name=isFixed?hd.fixed[s.id]:res?.userName||null;
-              setSeatHoverInfo({id:s.id,name,x:e.clientX,y:e.clientY});
+              const st = seatStatusOf(s.id);
+              setSeatHoverInfo({id:s.id,name,x:e.clientX,y:e.clientY,status:st});
             }else{setSeatHoverInfo(null);}
           }}
           onMouseLeave={()=>{setHoveredSeat(null);setSeatHoverInfo(null);}}
@@ -370,13 +445,13 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
             const r=canvasRef.current?.getBoundingClientRect();
             if(!r)return;
             const s=seatAt(e.clientX-r.left,e.clientY-r.top);
-            if(s) onSeat(s.id);
+            if(s && seatStatusOf(s.id) !== SeatStatus.BLOCKED) onSeat(s.id);
           }}
         />
         {!allSeats.length && (
           <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:13,flexDirection:'column',gap:8}}>
-            <span style={{fontSize:24}}>🗺</span>
-            <span>No seats in this blueprint. Edit it in Admin → Blueprint.</span>
+            <span style={{fontSize:24}}>MAP</span>
+            <span>{t("hotdesk.noBlueprint")}</span>
           </div>
         )}
       </div>
@@ -385,12 +460,20 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
           background:'var(--sf)',border:'1px solid var(--bd2)',borderRadius:'var(--r)',
           padding:'5px 10px',zIndex:9901,pointerEvents:'none',
           boxShadow:'var(--shadow)',animation:'mbIn .1s ease',whiteSpace:'nowrap'}}>
-          <span style={{fontFamily:'var(--mono)',fontWeight:700,color:hoveredSeat?'var(--ac2)':'var(--tx)',fontSize:12}}>{seatHoverInfo.id}</span>
-          {seatHoverInfo.name&&<span style={{fontSize:11,color:'var(--tx2)',marginLeft:8}}>{seatHoverInfo.name}</span>}
-          {!seatHoverInfo.name&&<span style={{fontSize:11,color:'var(--green)',marginLeft:8}}>Free</span>}
+          <span style={{fontFamily:'var(--mono)',fontWeight:700,
+            color: seatHoverInfo.status === SeatStatus.BLOCKED ? 'var(--tx3)'
+                 : seatHoverInfo.status === SeatStatus.PENDING ? 'var(--amber)'
+                 : seatHoverInfo.status === SeatStatus.DELEGATED ? 'var(--purple)'
+                 : hoveredSeat ? 'var(--ac2)' : 'var(--tx)',
+            fontSize:12}}>{seatHoverInfo.id}</span>
+          {seatHoverInfo.status === SeatStatus.BLOCKED && <span style={{fontSize:11,color:'var(--tx3)',marginLeft:8}}>{t("hotdesk.blocked")}</span>}
+          {seatHoverInfo.status === SeatStatus.PENDING && <span style={{fontSize:11,color:'var(--amber)',marginLeft:8}}>{t("hotdesk.pending")}</span>}
+          {seatHoverInfo.status === SeatStatus.DELEGATED && <span style={{fontSize:11,color:'var(--purple)',marginLeft:8}}>{t("hotdesk.delegated")}</span>}
+          {seatHoverInfo.name && seatHoverInfo.status !== SeatStatus.BLOCKED && <span style={{fontSize:11,color:'var(--tx2)',marginLeft:8}}>{seatHoverInfo.name}</span>}
+          {!seatHoverInfo.name && seatHoverInfo.status === SeatStatus.FREE && <span style={{fontSize:11,color:'var(--green)',marginLeft:8}}>{t("hotdesk.free")}</span>}
         </div>
       )}
-      <div className="hd-sub">Click on a green seat to reserve · <span style={{color:'var(--amber)'}}>● your reservation</span></div>
+      <div className="hd-sub">{t("hotdesk.reserve")} · <span style={{color:'var(--amber)'}}>● {t("hotdesk.mine")}</span></div>
     </div>
   );
 }
