@@ -386,45 +386,8 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
   };
 
   return (
-    <div className="hd-map-wrap">
-      <div className="hd-map-header">
-        <div className="cal-stats" style={{marginLeft:0}}>
-          <div className="chip">{t("hotdesk.free")}: <strong style={{color:'var(--green)'}}>{freeCount}</strong></div>
-          <div className="chip">{t("hotdesk.occupied")}: <strong style={{color:'var(--ac2)'}}>{occCount}</strong></div>
-          <div className="chip">{t("hotdesk.fixed")}: <strong style={{color:'var(--red)'}}>{fixCount}</strong></div>
-          {blockedCount > 0 && <div className="chip">{t("hotdesk.blocked")}: <strong style={{color:'var(--tx3)'}}>{blockedCount}</strong></div>}
-          <div className="chip">{t("hotdesk.seatsTotal")}: <strong>{allSeats.length}</strong></div>
-        </div>
-        <div className="hd-legend">
-          {[
-            [t("hotdesk.free"),'var(--seat-free)'],
-            [t("hotdesk.occupied"),'var(--seat-occ)'],
-            [t("hotdesk.fixed"),'var(--seat-fixed)'],
-            [t("hotdesk.mine"),'var(--amber)'],
-            [t("hotdesk.pending"),'var(--amber)'],
-            [t("hotdesk.blocked"),'var(--tx3)'],
-            [t("hotdesk.delegated"),'var(--purple)'],
-          ].map(([l,col])=>(
-            <div key={l} className="hd-leg"><div className="hd-leg-dot" style={{background:col}}/>{l}</div>
-          ))}
-        </div>
-      </div>
-
-      {/* Zoom controls */}
-      <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
-        <button onClick={()=>zoomBy(0.15)}
-          style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:6,width:28,height:28,fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx2)',lineHeight:1}}>+</button>
-        <button onClick={()=>zoomBy(-0.15)}
-          style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:6,width:28,height:28,fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx2)',lineHeight:1}}>-</button>
-        <button onClick={fitToView} title={t("hotdesk.fitMap")}
-          style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:6,padding:'0 10px',height:28,fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',gap:4,color:'var(--tx2)',fontFamily:'inherit',fontWeight:600}}>
-          {t("hotdesk.fitMap")}
-        </button>
-        <span style={{fontSize:11,color:'var(--tx3)',marginLeft:2}}>{Math.round(scale*100)}%</span>
-        <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>{t("hotdesk.scrollZoomHint")}</span>
-      </div>
-
-      <div className="hd-card" ref={cwRef} style={{position:'relative',height:'calc(100vh - 260px)',minHeight:400,padding:0,overflow:'hidden'}}>
+    <div className="hd-map-wrap" style={{position:'relative',height:'100%',display:'flex',flexDirection:'column'}}>
+      <div ref={cwRef} style={{position:'relative',flex:1,minHeight:0,padding:0,overflow:'hidden'}}>
         <canvas ref={canvasRef} style={{display:'block',width:'100%',height:'100%',
           cursor: hoveredSeat ? (seatStatusOf(hoveredSeat) === SeatStatus.BLOCKED ? 'not-allowed' : 'pointer') : 'default'}}
           onMouseMove={e=>{

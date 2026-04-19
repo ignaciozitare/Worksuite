@@ -441,6 +441,7 @@
     "noBookingToday":       "Sin reserva hoy",
     "clickToReserve":       "Haz clic en un puesto libre del mapa para reservar",
     "campusFilter":         "Filtro de Campus",
+    "buildingFilter":       "Filtro de Edificio",
     "trendMon":             "Lun",
     "trendTue":             "Mar",
     "trendWed":             "Mié",

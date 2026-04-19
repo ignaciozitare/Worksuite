@@ -63,25 +63,29 @@ interface Props {
   buildingFloorSelector?: React.ReactNode;
   building?: { id: string; name: string; city?: string; address?: string } | null;
   onQuickReserve?: () => void;
+  floorSeatIds?: string[];
 }
 
-function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view = 'map', onViewChange, buildingFloorSelector, building, onQuickReserve }: Props) {
+function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view = 'map', onViewChange, buildingFloorSelector, building, onQuickReserve, floorSeatIds }: Props) {
   const { t } = useTranslation();
   const [showTrends, setShowTrends] = useState(false);
   const blockedSeats = hd.blockedSeats || {};
 
+  // Use floor seats if available, fallback to global SEATS
+  const seatIds = floorSeatIds ?? SEATS.map(s => s.id);
+
   const counts = useMemo(() => {
     const r = { free: 0, occupied: 0, fixed: 0, blocked: 0, pending: 0 };
-    SEATS.forEach(s => {
-      const st = ReservationService.statusOf(s.id, TODAY, hd.fixed, hd.reservations, blockedSeats);
+    seatIds.forEach(id => {
+      const st = ReservationService.statusOf(id, TODAY, hd.fixed, hd.reservations, blockedSeats);
       if (st === SS.FREE) r.free++; else if (st === SS.FIXED) r.fixed++;
       else if (st === SS.BLOCKED) r.blocked++; else if (st === SS.PENDING) r.pending++;
       else r.occupied++;
     });
     return r;
-  }, [hd.fixed, hd.reservations, blockedSeats]);
+  }, [seatIds, hd.fixed, hd.reservations, blockedSeats]);
 
-  const totalSeats = SEATS.length;
+  const totalSeats = seatIds.length;
 
   const myPending = hd.reservations.find((r: any) => r.userId === currentUser.id && r.date === TODAY && r.status === 'pending');
   const myToday = hd.reservations.find((r: any) => r.userId === currentUser.id && r.date === TODAY);
@@ -146,7 +150,7 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
             <div aria-hidden style={{ position: 'absolute', top: -30, right: -30, width: 80, height: 80, background: `radial-gradient(circle, ${C.primaryDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
             <h3 style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: C.txDim, marginBottom: 12, position: 'relative' }}>
               <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: 'middle', marginRight: 6, color: C.primary }}>apartment</span>
-              {t('hotdesk.campusFilter')}
+              {t('hotdesk.buildingFilter')}
             </h3>
             <div style={{ position: 'relative' }}>{buildingFloorSelector}</div>
           </div>
@@ -206,8 +210,8 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
       {/* ═══════ Main ═══════ */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-        {/* Header — centered uppercase subtitle */}
-        <div style={{ padding: '16px 28px 12px', flexShrink: 0, textAlign: 'center' }}>
+        {/* Header */}
+        <div style={{ padding: '16px 28px 12px', flexShrink: 0 }}>
           <h2 style={{ fontSize: 16, fontWeight: 600, color: C.tx, letterSpacing: '.04em', textTransform: 'uppercase' }}>
             {t('hotdesk.subtitle')}{hubName ? ` ${hubName}.` : ''}
           </h2>
@@ -220,15 +224,6 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
               {t('hotdesk.selectBuildingFloor')}
             </div>
           )}
-
-          {/* Zoom controls — bottom left, vertical */}
-          <div style={{ position: 'absolute', bottom: 16, left: 16, display: 'flex', flexDirection: 'column', gap: 4, zIndex: 20 }}>
-            <button className="zoom-btn" title="Zoom in">+</button>
-            <button className="zoom-btn" title="Zoom out">−</button>
-            <button className="zoom-btn" title={t('hotdesk.fitMap')} style={{ fontSize: 12 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>fit_screen</span>
-            </button>
-          </div>
 
           {/* Floating cards — bottom right: Available Desks + Active Booking stacked */}
           <div style={{ position: 'absolute', bottom: 16, right: 16, display: 'flex', flexDirection: 'column', gap: 10, zIndex: 20 }}>

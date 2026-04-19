@@ -271,12 +271,12 @@ function BuildingFloorSelectors({ selectedBuilding, selectedBlueprint, onChange 
   );
 
   return (
-    <div style={{display:'flex',alignItems:'center',gap:6}}>
+    <div style={{display:'flex',flexDirection:'column',gap:8}}>
       <select
         value={selectedBuilding?.id||''}
         onChange={e=>selectBuilding(e.target.value)}
         style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:'var(--r)',
-          padding:'4px 8px',fontSize:11,color:'var(--tx)',outline:'none',cursor:'pointer',fontFamily:'inherit'}}>
+          padding:'6px 10px',fontSize:12,color:'var(--tx)',outline:'none',cursor:'pointer',fontFamily:'inherit',width:'100%'}}>
         <option value="">— Building —</option>
         {buildings.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
       </select>
