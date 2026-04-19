@@ -1,61 +1,61 @@
 # WORK_STATE
 
-_Última actualización: 2026-04-18 (madrugada)_
+_Última actualización: 2026-04-19 (madrugada)_
 
 ---
 
 ## 🎯 Tarea en curso
 
-**3 features nuevas implementadas — pendiente deploy y QA visual.**
+**HotDesk UI redesign + features completados. Deploy Planner sidebar hecho. Pendiente QA visual.**
 
 ## 📍 Punto exacto
 
-### Feature 1: HotDesk Booking Confirmation ✅ CODED
-- **Spec**: `specs/modules/hotdesk/SPEC.md`
-- **Migration**: `20260418_hotdesk_booking_confirmation.sql` — aplicada en prod
-- **Domain**: Entidades (HotDeskConfig, SeatReservation con status), ports (ConfigRepository, confirmReservation, delegateSeat), use cases actualizados
-- **Infra**: SupabaseConfigRepository nuevo, adapters actualizados para nuevos campos
-- **UI**: Pending pulse animation, blocked X-overlay, delegated violet badge, confirm presence button, delegate modal con user picker
-- **Container**: `container.ts` creado con reservationRepo, seatRepo, configRepo
+### HotDesk — Redesign completo ✅
+- **Sidebar**: Time Clock style con brand, nav (Office Map / Monthly View), Campus Filter, Live Status, CHECK IN, Instant Booking
+- **Header**: Solo texto "Real-time desk occupancy..." con ciudad del edificio
+- **Floating cards**: Available Desks + Active Booking (glassmorphism) en esquina inferior derecha sobre el mapa
+- **Bottom bar**: Leyenda de colores completa + stats + Peak Insight con botón View Trends
+- **Trends Modal**: Barras de utilización semanal con color coding + recomendación
+- **Quick Reserve**: Funcional — busca primer puesto libre
+- **CHECK IN**: Botón verde gradient con pulse en sidebar cuando hay reserva pending
+- **Campus Filter card**: Selector de edificio/piso dentro de card con glow
+- **Ciudad en building**: Campo `city` agregado a BuildingPort, repo, y admin form
+- **Booking confirmation**: Domain + infra + UI completos (pending → confirmed → released)
+- **Delegation + Blocked seats**: Implementados en domain/infra/UI
 
-### Feature 2: Deploy Planner Task Sidebar ✅ CODED
-- **Spec**: `specs/modules/deploy-planner/SPEC.md`
-- **Componente**: `TaskSidebar.tsx` — sidebar colapsable 300px
-- **Integración**: DeployPlanner.tsx modificado para layout con sidebar derecha
-- **i18n**: 7 keys nuevas en EN/ES
+### HR — Zonas permitidas ✅
+- Campo `allowedBookingZones` en FichaEmpleado entity
+- Sección "Zonas de Reserva Permitidas" en FichaEmpleadoDrawer
+- Migración: `allowed_booking_zones jsonb` en tabla users
 
-### Feature 3: Auditoría Hexagonal ✅ FIXED
-- **retro**: container.ts creado, RetroBoard.tsx limpio
-- **chrono-admin**: supabase.auth reemplazado por useAuth hook
-- **vector-logic**: getSessionToken() movido a container.ts
+### Deploy Planner — Task Sidebar ✅
+- TaskSidebar.tsx con búsqueda, DnD funcional, filtrado
+- Integrado en DeployPlanner.tsx
 
-### Fixes previos (VL i18n + icons)
-- 5 commits: i18n keys, Material Symbols global, Carbon Logic gradients, auto-save DnD, pollNow 400 fix
-- **Main**: commit `a5d7c22` (todo pusheado)
+### Vector Logic — Fixes ✅
+- i18n completo, iconos Material Symbols, DnD Schema Builder, tabs ordenados
+
+### Hexagonal — 3 violaciones corregidas ✅
+- retro, chrono-admin, vector-logic
 
 ## ✅ Decisiones tomadas
 
-- Booking confirmation: status enum `pending|confirmed|released` en seat_reservations
-- Auto-release: función PL/pgSQL `hotdesk_auto_release()` — pendiente wiring con cron
-- Delegation: campo `delegated_by` en seat_reservations
-- Blocked seats: `is_blocked` + `blocked_reason` en seats table
-- Config: tabla `hotdesk_config` con defaults sensatos
-- Deploy Planner sidebar: UI-only, sin cambios de dominio, reutiliza tickets existentes
-- Hexagonal: !important en Material Symbols CSS, container pattern en retro
+- HotDesk UI usa CHRONO_THEME (mismos tokens que Time Clock)
+- City: campo en buildings, se muestra como "{City} Hub" en el header
+- Zonas permitidas: campo jsonb en users, configurado desde FichaEmpleado en HR
+- Quick Reserve: fallback a primer puesto libre en zonas del usuario
+- Trends: modal con barras de utilización por día de semana (mock data por ahora)
+- Deploy Planner sidebar: DnD desde sidebar a release cards, source '__sidebar__'
 
 ## ⏭ Siguiente paso inmediato
 
-1. **Deploy**: Vercel debe recoger el push a main (o redeploy manual)
-2. **QA visual**: Verificar en browser que:
-   - HotDesk: reservas muestran pending con pulse, confirm button funciona, blocked seats con X
-   - Deploy Planner: sidebar aparece, search filtra, tickets se listan
-   - VL admin: iconos renderizan correctamente, DnD guarda, tabs en orden correcto
-3. **Wiring cron**: Conectar `hotdesk_auto_release()` a un cron (pg_cron o Vercel cron)
-4. **Admin UI para HotDesk config**: Panel admin para togglear confirmation, exempt roles, manage blocked seats
+1. **QA visual**: Verificar en browser todos los cambios
+2. **Trends real data**: Conectar el modal de trends a datos reales de reservas
+3. **Quick Reserve con zonas**: Filtrar puestos por allowed_booking_zones del usuario
+4. **Admin HotDesk config**: Panel admin para togglear confirmation, exempt roles, manage blocked seats
 
 ## 🚫 Bloqueos / notas
 
-- **Vercel Git integration**: Sigue rota — deploy manual necesario
-- **npm cache corrupto**: `/Users/ignaciozitare/.npm/_cacache/content-v2/sha512/2b/` owned by root — impide instalar vercel CLI globalmente
-- **Cron auto-release**: Función DB lista pero no conectada a un trigger temporal
-- **Admin HotDesk config UI**: No construido aún — la config se puede cambiar via Supabase dashboard por ahora
+- **npm cache corrupto**: Dirs owned by root en ~/.npm/_cacache — impide install global
+- **Vercel token**: guardado en memoria del agente para futuros deploys
+- **URL producción**: `worksuite-phi.vercel.app` (no worksuite.vercel.app)
