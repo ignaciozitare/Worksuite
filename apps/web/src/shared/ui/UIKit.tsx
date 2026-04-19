@@ -60,6 +60,7 @@ const Code = ({ children }) => (
 );
 
 export function UIKit() {
+  const { t } = useTranslation();
   const [modal, setModal] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [dateStart, setDateStart] = useState('');
@@ -96,7 +97,7 @@ export function UIKit() {
             Component library — {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
           <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-            <Badge color="accent">14 componentes</Badge>
+            <Badge color="accent">17 componentes</Badge>
             <Badge color="purple">packages/ui</Badge>
             <Badge color="green">Dark + Light</Badge>
           </div>
@@ -466,6 +467,102 @@ export function UIKit() {
             <Code>{'onLogout: () => void'}</Code>
           </Row>
           <Row label="Import"><Code>{"import { UserMenu } from '@/shared/ui/UserMenu'"}</Code></Row>
+        </Section>
+
+        {/* ── AppSwitcher ──────────────────────────────────────── */}
+        <Section title={t('uikit.appSwitcher')} description={t('uikit.appSwitcherDesc')}>
+          <Row label={t('uikit.appSwitcherDemo')}>
+            <AppSwitcher
+              currentMod="deploy"
+              userModules={['jt', 'hd', 'retro', 'deploy', 'envtracker', 'vector-logic', 'chrono', 'chrono-admin']}
+              onNavigate={(path) => alert(`Navigate to: ${path}`)}
+            />
+          </Row>
+          <Row label="Props">
+            <Code>{'currentMod: string'}</Code>
+            <Code>{'userModules: string[]'}</Code>
+            <Code>{'onNavigate: (path: string) => void'}</Code>
+          </Row>
+          <Row label="Import"><Code>{"import { AppSwitcher } from '@/shared/ui/AppSwitcher'"}</Code></Row>
+        </Section>
+
+        {/* ── Module Icons ───────────────────────────────────────── */}
+        <Section title={t('uikit.moduleIcons')} description={t('uikit.moduleIconsDesc')}>
+          <Row label="Material Symbols">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 16, width: '100%' }}>
+              {[
+                { icon: 'assignment',     label: 'Jira Tracker' },
+                { icon: 'event_seat',     label: 'HotDesk' },
+                { icon: 'replay',         label: 'RetroBoard' },
+                { icon: 'rocket_launch',  label: 'Deploy Planner' },
+                { icon: 'dns',            label: 'Environments' },
+                { icon: 'hub',            label: 'Vector Logic' },
+                { icon: 'timer',          label: 'Time Clock' },
+                { icon: 'groups',         label: 'HR' },
+                { icon: 'insights',       label: 'Trends' },
+                { icon: 'login',          label: 'Check In' },
+                { icon: 'bolt',           label: 'Quick Reserve' },
+                { icon: 'apartment',      label: 'Building' },
+                { icon: 'map',            label: 'Office Map' },
+                { icon: 'calendar_month', label: 'Monthly View' },
+              ].map(m => (
+                <div key={m.icon} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '12px 4px', borderRadius: 8, background: 'var(--sf2)', transition: 'background .15s' }}>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 24, color: 'var(--tx2)', fontFamily: 'Material Symbols Outlined', fontVariationSettings: "'FILL' 0, 'wght' 300" }}
+                  >
+                    {m.icon}
+                  </span>
+                  <span style={{ fontSize: 9, fontWeight: 600, color: 'var(--tx3)', textAlign: 'center', lineHeight: 1.2 }}>{m.label}</span>
+                  <span style={{ fontSize: 8, fontFamily: 'monospace', color: 'var(--tx3)', opacity: 0.6 }}>{m.icon}</span>
+                </div>
+              ))}
+            </div>
+          </Row>
+        </Section>
+
+        {/* ── Theme Tokens ───────────────────────────────────────── */}
+        <Section title={t('uikit.themeTokens')} description={t('uikit.themeTokensDesc')}>
+          <Row label={`${t('uikit.darkMode')} / ${t('uikit.lightMode')}`}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12, width: '100%' }}>
+              {[
+                { token: '--bg',     dark: '#131313', light: '#f5f5f5' },
+                { token: '--sf',     dark: '#1a1a22', light: '#ffffff' },
+                { token: '--sf2',    dark: '#1e2030', light: '#f0f0f4' },
+                { token: '--sf3',    dark: '#2a2a38', light: '#e4e4ec' },
+                { token: '--ac',     dark: '#4d8eff', light: '#3b7aed' },
+                { token: '--ac2',    dark: '#adc6ff', light: '#1d5bbf' },
+                { token: '--green',  dark: '#4ae176', light: '#16a34a' },
+                { token: '--amber',  dark: '#f59e0b', light: '#d97706' },
+                { token: '--red',    dark: '#ef4444', light: '#dc2626' },
+                { token: '--purple', dark: '#b76dff', light: '#9333ea' },
+                { token: '--tx',     dark: '#e5e2e1', light: '#1a1a2e' },
+                { token: '--tx2',    dark: '#c2c6d6', light: '#4a4a6a' },
+                { token: '--tx3',    dark: '#8c909f', light: '#7a7a9a' },
+              ].map(tok => (
+                <div key={tok.token} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 10, background: 'var(--sf2)', borderRadius: 8 }}>
+                  <code style={{ fontSize: 11, fontWeight: 700, color: 'var(--ac2)', fontFamily: 'monospace' }}>
+                    {tok.token}
+                  </code>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    {/* Dark swatch */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 6, background: tok.dark, border: '1px solid rgba(255,255,255,.1)' }} />
+                      <span style={{ fontSize: 8, color: 'var(--tx3)', fontFamily: 'monospace' }}>{tok.dark}</span>
+                    </div>
+                    {/* Light swatch */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 6, background: tok.light, border: '1px solid rgba(0,0,0,.15)' }} />
+                      <span style={{ fontSize: 8, color: 'var(--tx3)', fontFamily: 'monospace' }}>{tok.light}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Row>
+          <Row label={t('uikit.variable')}>
+            <Code>{'var(--bg), var(--sf), var(--ac), var(--tx), ...'}</Code>
+          </Row>
         </Section>
 
         {/* Footer */}
