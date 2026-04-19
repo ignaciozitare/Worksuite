@@ -96,7 +96,7 @@ export function AppSwitcher({ currentMod, userModules, onNavigate }: AppSwitcher
             WebkitBackdropFilter: 'blur(24px)',
             borderRadius: 12,
             border: '1px solid var(--bd)',
-            boxShadow: '0 8px 32px rgba(0,0,0,.4)',
+            boxShadow: 'var(--shadow)',
             padding: 12,
             zIndex: 9999,
             animation: 'appSwitcherFadeIn .15s ease-out',
@@ -138,14 +138,14 @@ export function AppSwitcher({ currentMod, userModules, onNavigate }: AppSwitcher
                     justifyContent: 'center',
                     gap: 6,
                     padding: '12px 6px',
-                    background: isActive ? 'rgba(77,142,255,.12)' : 'transparent',
+                    background: isActive ? 'var(--ac-dim)' : 'transparent',
                     border: 'none',
                     borderRadius: 8,
                     cursor: 'pointer',
                     transition: 'var(--ease)',
                     position: 'relative',
-                    outline: isActive ? '1px solid rgba(77,142,255,.4)' : 'none',
-                    boxShadow: isActive ? '0 0 12px rgba(77,142,255,.15)' : 'none',
+                    outline: isActive ? '1px solid var(--ac)' : 'none',
+                    boxShadow: isActive ? '0 0 12px var(--ac-dim)' : 'none',
                   }}
                   onMouseEnter={e => {
                     if (!isActive) {

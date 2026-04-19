@@ -155,12 +155,12 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
         minHeight: 'calc(100vh - 52px)', alignSelf: 'stretch',
         background: C.sfLowest, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
         borderRight: `1px solid var(--bd)`,
-        boxShadow: '0 0 60px rgba(77,142,255,.04)',
+        boxShadow: `0 0 60px ${C.primaryDim}`,
         display: 'flex', flexDirection: 'column', padding: 16, gap: 4, zIndex: 30, overflowY: 'auto',
       }}>
         {/* Brand */}
         <div style={{ padding: '24px 12px 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 8, background: 'rgba(74,225,118,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(74,225,118,.25)' }}>
+          <div style={{ width: 40, height: 40, borderRadius: 8, background: C.greenDim, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.green}` }}>
             <span className="material-symbols-outlined" style={{ fontSize: 22, color: C.green }}>event_seat</span>
           </div>
           <div>

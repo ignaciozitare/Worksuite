@@ -18,7 +18,7 @@ const CSS = `
 .vl .vl-sidebar{position:sticky;top:0;width:240px;min-width:240px;height:100%;min-height:calc(100vh - 52px);align-self:stretch;background:var(--sf);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid var(--bd);display:flex;flex-direction:column;padding:16px;gap:4px;z-index:30;overflow-y:auto;}
 .vl .vl-nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:500;letter-spacing:.02em;cursor:pointer;border:none;background:transparent;color:var(--tx);opacity:.6;transition:all .2s;text-align:left;width:100%;font-family:inherit;}
 .vl .vl-nav-item:hover{opacity:1;background:var(--sf2);transform:translateX(2px);}
-.vl .vl-nav-item.active{opacity:1;color:var(--ac);background:rgba(79,110,247,.1);font-weight:600;box-shadow:0 0 20px rgba(79,110,247,.1);}
+.vl .vl-nav-item.active{opacity:1;color:var(--ac);background:var(--ac-dim);font-weight:600;box-shadow:0 0 20px var(--ac-dim);}
 .vl .vl-nav-item.disabled{opacity:.3;cursor:not-allowed;pointer-events:none;}
 .vl .vl-section-label{font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.12em;padding:16px 12px 6px;user-select:none;}
 `;
@@ -64,9 +64,9 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
       <aside className="vl-sidebar">
         {/* Brand */}
         <div style={{padding:'24px 12px 8px',display:'flex',alignItems:'center',gap:12}}>
-          <div style={{width:40,height:40,borderRadius:8,background:'rgba(99,102,241,.2)',
+          <div style={{width:40,height:40,borderRadius:8,background:'var(--ac-dim)',
             display:'flex',alignItems:'center',justifyContent:'center',
-            border:'1px solid rgba(99,102,241,.3)'}}>
+            border:'1px solid var(--bd)'}}>
             <span className="material-symbols-outlined" style={{fontSize:22,color:'var(--ac)'}}>hub</span>
           </div>
           <div>

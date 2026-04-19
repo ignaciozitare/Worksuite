@@ -23,7 +23,7 @@ const buildingRepo = new SupabaseBuildingRepo(supabase);
 const hotdeskAdminRepo = new SupabaseHotDeskAdminRepo(supabase);
 const configRepo = new SupabaseConfigRepository();
 
-type Tab = 'settings' | 'blueprints' | 'blocked' | 'assignments';
+type Tab = 'settings' | 'blueprints' | 'assignments';
 
 // ─── Settings Tab ────────────────────────────────────────────────────────────
 function SettingsTab() {
@@ -251,7 +251,7 @@ function BlockedSeatsTab() {
   );
 }
 
-// ─── Assignments Tab (original AdminHotDesk content) ─────────────────────────
+// ─── Assignments Tab (with block/unblock merged) ────────────────────────────
 function AssignmentsTab({ hd, setHd, users, theme }) {
   const { t, locale } = useTranslation();
   const lang = locale;
@@ -262,11 +262,27 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
   const [selSeat, setSelSeat] = useState(null);
   const [selUser, setSelUser] = useState('');
   const [asFixed, setAsFixed] = useState(false);
+  const [asBlocked, setAsBlocked] = useState(false);
+  const [blockReason, setBlockReason] = useState('');
   const [selDates, setSelDates] = useState([]);
   const [yr, sYr] = useState(new Date().getFullYear());
   const [mo, sMo] = useState(new Date().getMonth());
+  const [blocked, setBlocked] = useState([]);
+  const [msg, setMsg] = useState('');
   const CELL = 52, PAD = 14, LH = 18;
   const hotdeskUsers = users.filter(u => u.deskType === DeskType.HOTDESK || u.deskType === DeskType.FIXED);
+
+  // Load blocked seats
+  const loadBlocked = async () => {
+    try {
+      const data = await hotdeskAdminRepo.getBlockedSeats();
+      setBlocked(data);
+    } catch (e) {
+      console.error('[AssignmentsTab] loadBlocked', e);
+    }
+  };
+
+  useEffect(() => { loadBlocked(); }, []);
 
   useEffect(() => {
     buildingRepo.findAllBuildings()
@@ -304,7 +320,22 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
   }, [selFloor?.id]);
 
   const confirmAssign = async () => {
-    if (!selSeat || !selUser) return;
+    if (!selSeat) return;
+    // Block seat
+    if (asBlocked) {
+      try {
+        await hotdeskAdminRepo.blockSeat(selSeat, blockReason.trim());
+        setMsg(t('admin.hotdeskSeatBlocked'));
+        setTimeout(() => setMsg(''), 3000);
+        loadBlocked();
+      } catch (e) {
+        console.error(e);
+        setMsg(t('admin.hotdeskSaveError'));
+      }
+      setSelSeat(null); setSelUser(''); setSelDates([]); setAsFixed(false); setAsBlocked(false); setBlockReason('');
+      return;
+    }
+    if (!selUser) return;
     const usr = users.find(u => u.id === selUser);
     if (asFixed) {
       setHd(h => ({ ...h, fixed: { ...h.fixed, [selSeat]: usr?.name || selUser }, reservations: h.reservations.filter(r => r.seatId !== selSeat) }));
@@ -315,7 +346,18 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
       const rows = selDates.map(d => ({ id: `res-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, seat_id: selSeat, user_id: selUser, user_name: usr?.name || selUser, date: d }));
       await hotdeskAdminRepo.upsertReservations(rows);
     }
-    setSelSeat(null); setSelUser(''); setSelDates([]); setAsFixed(false);
+    setSelSeat(null); setSelUser(''); setSelDates([]); setAsFixed(false); setAsBlocked(false); setBlockReason('');
+  };
+
+  const handleUnblock = async (seatId) => {
+    try {
+      await hotdeskAdminRepo.unblockSeat(seatId);
+      setMsg(t('admin.hotdeskSeatUnblocked'));
+      setTimeout(() => setMsg(''), 3000);
+      loadBlocked();
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const removeFixed = async (sid) => {
@@ -325,8 +367,12 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
 
   const occupiedForSeat = selSeat ? hd.reservations.filter(r => r.seatId === selSeat).map(r => r.date) : [];
 
+  const isBlocked = (seatId) => blocked.some(b => b.seat_id === seatId);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, height: '100%', overflow: 'hidden' }}>
+      {msg && <div style={{ padding: '8px 14px', borderRadius: 6, background: 'rgba(34,197,94,.08)', border: '1px solid rgba(34,197,94,.2)', color: 'var(--green)', fontSize: 12, fontWeight: 500, flexShrink: 0 }}>{msg}</div>}
+
       {/* Building + Floor selectors */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
         {buildings.length > 0 ? <>
@@ -344,24 +390,24 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
         )}
       </div>
 
-      {/* Main layout: map left, controls right */}
+      {/* Main layout: map 60%, controls 40% */}
       <div style={{ display: 'flex', gap: 16, flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        {/* Floor map */}
-        <div style={{ flex: '0 0 auto', width: 420 }}>
-          <div style={{ flex: 1, minHeight: 350 }}>
+        {/* Floor map — 60% */}
+        <div style={{ flex: '0 0 60%', minWidth: 0 }}>
+          <div style={{ height: '100%', minHeight: 350 }}>
             {selFloor ? <BlueprintHDMap
               hd={hd}
               blueprint={selFloor}
               currentUser={{ id: '' }}
-              onSeat={sid => { setSelSeat(sid); setSelDates([]); setSelUser(''); setAsFixed(false); }}
+              onSeat={sid => { setSelSeat(sid); setSelDates([]); setSelUser(''); setAsFixed(false); setAsBlocked(false); setBlockReason(''); }}
               highlightSeat={selSeat}
               theme={theme}
             /> : <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx3)', fontSize: 12 }}>{t('hotdesk.selectBuildingFloor')}</div>}
           </div>
         </div>
 
-        {/* Right: seat grid + assign panel */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, overflow: 'auto' }}>
+        {/* Right: seat config panel — 40% */}
+        <div style={{ flex: '0 0 40%', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12, overflow: 'auto' }}>
           {/* Seat grid */}
           <div>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 8 }}>{t('admin.selectSeat').toUpperCase()}</div>
@@ -369,17 +415,21 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
               {seats.map(seat => {
                 const st = ReservationService.statusOf(seat.id, TODAY, hd.fixed, hd.reservations);
                 const isSel = selSeat === seat.id;
+                const isBl = isBlocked(seat.id);
                 return (
                   <button key={seat.id}
-                    onClick={() => { setSelSeat(seat.id); setSelDates([]); setSelUser(''); setAsFixed(false); }}
+                    onClick={() => { setSelSeat(seat.id); setSelDates([]); setSelUser(''); setAsFixed(false); setAsBlocked(false); setBlockReason(''); }}
                     style={{
-                      width: 46, height: 36, border: `1px solid ${isSel ? 'var(--ac)' : st === SeatStatus.FIXED ? 'rgba(239,68,68,.4)' : st === SeatStatus.OCCUPIED ? 'rgba(59,130,246,.35)' : 'var(--bd)'}`,
-                      borderRadius: 'var(--r)', background: isSel ? 'var(--glow)' : st === SeatStatus.FIXED ? 'rgba(239,68,68,.06)' : st === SeatStatus.OCCUPIED ? 'rgba(59,130,246,.06)' : 'var(--sf2)',
-                      color: isSel ? 'var(--ac2)' : st === SeatStatus.FIXED ? 'var(--red)' : st === SeatStatus.OCCUPIED ? 'var(--ac2)' : 'var(--tx2)',
+                      width: 46, height: 36,
+                      border: `1px solid ${isSel ? 'var(--ac)' : isBl ? 'rgba(245,158,11,.4)' : st === SeatStatus.FIXED ? 'rgba(239,68,68,.4)' : st === SeatStatus.OCCUPIED ? 'rgba(59,130,246,.35)' : 'var(--bd)'}`,
+                      borderRadius: 'var(--r)',
+                      background: isSel ? 'var(--glow)' : isBl ? 'rgba(245,158,11,.08)' : st === SeatStatus.FIXED ? 'rgba(239,68,68,.06)' : st === SeatStatus.OCCUPIED ? 'rgba(59,130,246,.06)' : 'var(--sf2)',
+                      color: isSel ? 'var(--ac2)' : isBl ? 'var(--amber)' : st === SeatStatus.FIXED ? 'var(--red)' : st === SeatStatus.OCCUPIED ? 'var(--ac2)' : 'var(--tx2)',
                       cursor: 'pointer', fontSize: 9, fontWeight: 600, textAlign: 'center', lineHeight: 1.2, padding: '2px 3px', transition: 'var(--ease)'
                     }}>
                     {seat.id}
-                    {hd.fixed[seat.id] && <div style={{ fontSize: 7, lineHeight: 1, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hd.fixed[seat.id].split(' ')[0].slice(0, 5)}</div>}
+                    {isBl && <div style={{ fontSize: 7, lineHeight: 1, marginTop: 1, color: 'var(--amber)' }}>blocked</div>}
+                    {!isBl && hd.fixed[seat.id] && <div style={{ fontSize: 7, lineHeight: 1, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hd.fixed[seat.id].split(' ')[0].slice(0, 5)}</div>}
                   </button>
                 );
               })}
@@ -402,44 +452,101 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
             </div>
           )}
 
-          {/* Assign panel */}
+          {/* Blocked seats summary */}
+          {blocked.length > 0 && (
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 6 }}>{t('admin.hotdeskBlockedList')}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {blocked.map(seat => (
+                  <div key={seat.seat_id} style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '6px 10px', background: 'rgba(245,158,11,.06)',
+                    border: '1px solid rgba(245,158,11,.15)', borderRadius: 'var(--r)', fontSize: 11,
+                  }}>
+                    <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--amber)', minWidth: 40 }}>{seat.seat_id}</span>
+                    <span style={{ flex: 1, fontSize: 11, color: 'var(--tx2)' }}>
+                      {seat.blocked_reason || <span style={{ color: 'var(--tx3)', fontStyle: 'italic' }}>{t('admin.hotdeskNoReason')}</span>}
+                    </span>
+                    <button onClick={() => handleUnblock(seat.seat_id)}
+                      style={{ background: 'none', border: '1px solid rgba(245,158,11,.2)', borderRadius: 4, color: 'var(--amber)', cursor: 'pointer', fontSize: 10, padding: '2px 8px', fontFamily: 'inherit' }}>
+                      {t('admin.hotdeskUnblock')}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Seat config panel */}
           {selSeat ? (
             <div className="a-card" style={{ marginBottom: 0, flexShrink: 0 }}>
               <div className="a-ct">{t('admin.assignSeat')} — <span style={{ color: 'var(--ac2)', fontFamily: 'var(--mono)' }}>{selSeat}</span>
                 <span style={{ fontSize: 10, fontWeight: 400, color: 'var(--tx3)', marginLeft: 8 }}>
-                  {hd.fixed[selSeat] ? t('hotdesk.fixed') + ': ' + hd.fixed[selSeat] : hd.reservations.find(r => r.seatId === selSeat && r.date === TODAY)?.userName || t('hotdesk.free')}
+                  {isBlocked(selSeat) ? t('admin.hotdeskBlockedTab') : hd.fixed[selSeat] ? t('hotdesk.fixed') + ': ' + hd.fixed[selSeat] : hd.reservations.find(r => r.seatId === selSeat && r.date === TODAY)?.userName || t('hotdesk.free')}
                 </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <select className="a-inp" value={selUser} onChange={e => setSelUser(e.target.value)} style={{ cursor: 'pointer' }}>
-                  <option value="">— {t('hotdesk.selectUser')} —</option>
-                  {hotdeskUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                </select>
-                <div onClick={() => setAsFixed(f => !f)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--sf2)', borderRadius: 'var(--r)', border: `1px solid ${asFixed ? 'rgba(239,68,68,.3)' : 'var(--bd)'}`, cursor: 'pointer' }}>
-                  <div style={{ width: 14, height: 14, borderRadius: 3, background: asFixed ? 'var(--red)' : 'transparent', border: `2px solid ${asFixed ? 'var(--red)' : 'var(--bd2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {asFixed && <span style={{ color: 'var(--sf)', fontSize: 9, fontWeight: 700 }}>ok</span>}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 12, color: asFixed ? 'var(--red)' : 'var(--tx2)', fontWeight: asFixed ? 600 : 400 }}>{t('admin.asFixed')}</div>
-                    <div style={{ fontSize: 10, color: 'var(--tx3)' }}>{t('admin.asFixedHint')}</div>
-                  </div>
+                {/* Mode selector: Assign / Block */}
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button onClick={() => { setAsBlocked(false); }} style={{
+                    flex: 1, padding: '7px 0', borderRadius: 'var(--r)', fontSize: 12, fontWeight: !asBlocked ? 600 : 400,
+                    border: `1px solid ${!asBlocked ? 'var(--ac)' : 'var(--bd)'}`,
+                    background: !asBlocked ? 'var(--glow)' : 'var(--sf2)',
+                    color: !asBlocked ? 'var(--ac2)' : 'var(--tx3)',
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}>
+                    {t('admin.confirmAssign')}
+                  </button>
+                  <button onClick={() => { setAsBlocked(true); setAsFixed(false); setSelUser(''); }} style={{
+                    flex: 1, padding: '7px 0', borderRadius: 'var(--r)', fontSize: 12, fontWeight: asBlocked ? 600 : 400,
+                    border: `1px solid ${asBlocked ? 'var(--amber)' : 'var(--bd)'}`,
+                    background: asBlocked ? 'rgba(245,158,11,.1)' : 'var(--sf2)',
+                    color: asBlocked ? 'var(--amber)' : 'var(--tx3)',
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}>
+                    {t('admin.hotdeskBlockBtn')}
+                  </button>
                 </div>
-                {!asFixed && (
-                  <div>
-                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 6 }}>{t('hotdesk.selectDates')}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <button className="n-arr" onClick={() => mo === 0 ? (sMo(11), sYr(y => y - 1)) : sMo(m => m - 1)}>&#8249;</button>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ac2)' }}>{fmtMonthYear(yr, mo, 'en')}</span>
-                      <button className="n-arr" onClick={() => mo === 11 ? (sMo(0), sYr(y => y + 1)) : sMo(m => m + 1)}>&#8250;</button>
+
+                {asBlocked ? (
+                  <>
+                    <input className="a-inp" placeholder={t('admin.hotdeskBlockReasonPlaceholder')} value={blockReason}
+                      onChange={e => setBlockReason(e.target.value)}
+                      style={{ fontSize: 13, padding: '6px 10px' }} />
+                  </>
+                ) : (
+                  <>
+                    <select className="a-inp" value={selUser} onChange={e => setSelUser(e.target.value)} style={{ cursor: 'pointer' }}>
+                      <option value="">— {t('hotdesk.selectUser')} —</option>
+                      {hotdeskUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                    </select>
+                    <div onClick={() => setAsFixed(f => !f)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--sf2)', borderRadius: 'var(--r)', border: `1px solid ${asFixed ? 'rgba(239,68,68,.3)' : 'var(--bd)'}`, cursor: 'pointer' }}>
+                      <div style={{ width: 14, height: 14, borderRadius: 3, background: asFixed ? 'var(--red)' : 'transparent', border: `2px solid ${asFixed ? 'var(--red)' : 'var(--bd2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        {asFixed && <span style={{ color: 'var(--sf)', fontSize: 9, fontWeight: 700 }}>ok</span>}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12, color: asFixed ? 'var(--red)' : 'var(--tx2)', fontWeight: asFixed ? 600 : 400 }}>{t('admin.asFixed')}</div>
+                        <div style={{ fontSize: 10, color: 'var(--tx3)' }}>{t('admin.asFixedHint')}</div>
+                      </div>
                     </div>
-                    <MiniCalendar year={yr} month={mo} lang={lang} selectedDates={selDates} onToggleDate={d => setSelDates(p => p.includes(d) ? p.filter(x => x !== d) : [...p, d])} occupiedDates={occupiedForSeat} />
-                    {selDates.length > 0 && <div style={{ fontSize: 10, color: 'var(--green)', marginTop: 6 }}>{selDates.length} {t('hotdesk.selectDates')}</div>}
-                  </div>
+                    {!asFixed && (
+                      <div>
+                        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 6 }}>{t('hotdesk.selectDates')}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <button className="n-arr" onClick={() => mo === 0 ? (sMo(11), sYr(y => y - 1)) : sMo(m => m - 1)}>&#8249;</button>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ac2)' }}>{fmtMonthYear(yr, mo, 'en')}</span>
+                          <button className="n-arr" onClick={() => mo === 11 ? (sMo(0), sYr(y => y + 1)) : sMo(m => m + 1)}>&#8250;</button>
+                        </div>
+                        <MiniCalendar year={yr} month={mo} lang={lang} selectedDates={selDates} onToggleDate={d => setSelDates(p => p.includes(d) ? p.filter(x => x !== d) : [...p, d])} occupiedDates={occupiedForSeat} />
+                        {selDates.length > 0 && <div style={{ fontSize: 10, color: 'var(--green)', marginTop: 6 }}>{selDates.length} {t('hotdesk.selectDates')}</div>}
+                      </div>
+                    )}
+                  </>
                 )}
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                  <button className="b-cancel" onClick={() => { setSelSeat(null); setSelUser(''); setSelDates([]); }}>{t('hotdesk.cancel')}</button>
-                  <button className="b-sub" onClick={confirmAssign} disabled={!selUser || (!asFixed && selDates.length === 0)}>
-                    {asFixed ? t('admin.asFixed') : t('admin.confirmAssign') + ' (' + selDates.length + ')'}
+                  <button className="b-cancel" onClick={() => { setSelSeat(null); setSelUser(''); setSelDates([]); setAsBlocked(false); setBlockReason(''); }}>{t('hotdesk.cancel')}</button>
+                  <button className="b-sub" onClick={confirmAssign} disabled={asBlocked ? false : (!selUser || (!asFixed && selDates.length === 0))}>
+                    {asBlocked ? t('admin.hotdeskBlockBtn') : asFixed ? t('admin.asFixed') : t('admin.confirmAssign') + ' (' + selDates.length + ')'}
                   </button>
                 </div>
               </div>
@@ -463,7 +570,6 @@ function AdminHotDesk({ hd, setHd, users, theme = "dark" }) {
   const TABS: Array<{ id: Tab; label: string; icon: string }> = [
     { id: 'settings',    label: t('admin.hotdeskSettingsTab'),    icon: 'settings' },
     { id: 'blueprints',  label: t('admin.hotdeskBlueprintsTab'),  icon: 'map' },
-    { id: 'blocked',     label: t('admin.hotdeskBlockedTab'),     icon: 'block' },
     { id: 'assignments', label: t('admin.hotdeskAssignmentsTab'), icon: 'event_seat' },
   ];
 
@@ -517,7 +623,6 @@ function AdminHotDesk({ hd, setHd, users, theme = "dark" }) {
       <div className="ahd-content">
         {tab === 'settings'    && <SettingsTab />}
         {tab === 'blueprints'  && <AdminBlueprint />}
-        {tab === 'blocked'     && <BlockedSeatsTab />}
         {tab === 'assignments' && <AssignmentsTab hd={hd} setHd={setHd} users={users} theme={theme} />}
       </div>
     </div>

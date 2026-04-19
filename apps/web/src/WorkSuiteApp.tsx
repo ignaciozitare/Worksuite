@@ -220,16 +220,16 @@ function WorkSuiteApp() {
 
           {/* ── Top bar ─────────────────────────────────────────── */}
           <header className="topbar">
-            <div className="logo">
-              <div className="logo-dot" />
-              <span style={{ color: "var(--ac2)", fontWeight: 700 }}>Work</span>
-              <span style={{ color: "var(--tx2)", fontWeight: 300 }}>Suite</span>
-            </div>
             <AppSwitcher
               currentMod={mod}
               userModules={CURRENT_USER.modules || ["jt", "hd", "retro", "deploy"]}
               onNavigate={navigate}
             />
+            <div className="logo">
+              <div className="logo-dot" />
+              <span style={{ color: "var(--ac2)", fontWeight: 700 }}>Work</span>
+              <span style={{ color: "var(--tx2)", fontWeight: 300 }}>Suite</span>
+            </div>
             <div className="top-right">
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -269,7 +269,7 @@ function WorkSuiteApp() {
           </header>
 
           {/* ── Sub-nav ─────────────────────────────────────────── */}
-          {mod !== "retro" && mod !== "deploy" && mod !== "envtracker" && mod !== "chrono" && mod !== "chrono-admin" && mod !== "vector-logic" && mod !== "profile" && mod !== "hd" && (
+          {mod !== "retro" && mod !== "deploy" && mod !== "envtracker" && mod !== "chrono" && mod !== "chrono-admin" && mod !== "vector-logic" && mod !== "profile" && mod !== "hd" && mod !== "admin" && (
             <nav className="nav-bar">
               {currentNavItems.map(item => (
                 <button key={item.id}

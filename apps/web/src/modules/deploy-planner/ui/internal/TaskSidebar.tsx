@@ -133,7 +133,7 @@ export function TaskSidebar({
           marginTop: 28,
           marginRight: 8,
           background: 'var(--dp-sf,#1c1b1b)',
-          border: '1px solid rgba(66,71,84,.15)',
+          border: '1px solid var(--dp-bd,var(--bd))',
           borderRadius: 8,
           color: 'var(--dp-tx2,#c2c6d6)',
           cursor: 'pointer',
@@ -159,10 +159,10 @@ export function TaskSidebar({
         height: '100%',
         minHeight: 'calc(100vh - 52px)',
         alignSelf: 'stretch',
-        background: 'rgba(14,14,14,.6)',
+        background: 'var(--dp-bg,var(--bg))',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        borderLeft: '1px solid rgba(255,255,255,.05)',
+        borderLeft: '1px solid var(--dp-bd,var(--bd))',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -175,7 +175,7 @@ export function TaskSidebar({
           display: 'flex',
           alignItems: 'center',
           gap: 8,
-          borderBottom: '1px solid rgba(255,255,255,.05)',
+          borderBottom: '1px solid var(--dp-bd,var(--bd))',
         }}
       >
         <span
@@ -201,7 +201,7 @@ export function TaskSidebar({
             fontSize: 10,
             padding: '2px 8px',
             borderRadius: 10,
-            background: 'rgba(77,142,255,.1)',
+            background: 'var(--dp-primary-dim, var(--ac-dim))',
             color: 'var(--dp-primary,#adc6ff)',
             fontWeight: 700,
           }}
@@ -215,7 +215,7 @@ export function TaskSidebar({
           title={t('deployPlanner.taskSidebar.refresh')}
           style={{
             background: 'var(--dp-sf3,#2a2a2a)',
-            border: '1px solid rgba(66,71,84,.15)',
+            border: '1px solid var(--dp-bd,var(--bd))',
             borderRadius: 6,
             width: 26,
             height: 26,
@@ -263,7 +263,7 @@ export function TaskSidebar({
             background: 'var(--dp-sf,#1c1b1b)',
             borderRadius: 8,
             padding: '0 10px',
-            border: '1px solid rgba(66,71,84,.15)',
+            border: '1px solid var(--dp-bd,var(--bd))',
           }}
         >
           <span
@@ -424,7 +424,7 @@ export function TaskSidebar({
                           letterSpacing: '.06em',
                           textTransform: 'uppercase',
                           color: 'var(--dp-tertiary,#ddb7ff)',
-                          background: 'rgba(221,183,255,.1)',
+                          background: 'var(--dp-tertiary-dim, var(--purple-dim))',
                           padding: '1px 6px',
                           borderRadius: 4,
                         }}

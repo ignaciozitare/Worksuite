@@ -423,7 +423,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       for(let y=Math.floor(tl.y/GRID)*GRID;y<br.y+GRID;y+=GRID){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WW,y);ctx.stroke();}
     }
     // Items
-    ['zone','wall','door','window','room','desk','circle'].forEach(type=>{S.items.filter(i=>i.type===type).forEach(i=>{ctx.save();drawItem(ctx,i,S.sel===i||(!S.sel&&(S.multiSel||[]).includes(i)));ctx.restore();});});
+    ['zone','wall','door','window','room','elevator','stairs','bathroom','kitchen','table','plant','emergency_exit','electrical_panel','desk','circle'].forEach(type=>{S.items.filter(i=>i.type===type).forEach(i=>{ctx.save();drawItem(ctx,i,S.sel===i||(!S.sel&&(S.multiSel||[]).includes(i)));ctx.restore();});});
     if(S.selBox&&S.selBox.w>2&&S.selBox.h>2){ctx.fillStyle='rgba(59,130,246,.06)';ctx.strokeStyle='rgba(96,165,250,.7)';ctx.lineWidth=1/S.cam.s;ctx.setLineDash([4/S.cam.s,3/S.cam.s]);ctx.fillRect(S.selBox.x,S.selBox.y,S.selBox.w,S.selBox.h);ctx.strokeRect(S.selBox.x,S.selBox.y,S.selBox.w,S.selBox.h);ctx.setLineDash([]);}
     // Preview
     if(S.crt&&S.crtS&&S.crtE){
@@ -577,6 +577,135 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       ctx.beginPath();ctx.moveTo(x,y+thick/2);ctx.lineTo(x+w,y+thick/2);ctx.stroke();
       ctx.fillStyle='#38bdf8';ctx.font='500 8px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.fillText(i.double?'WW':'W',x+w/2,y-6);
+    }else if(i.type==='elevator'){
+      // Elevator shaft: dark grey rectangle with up/down arrows
+      ctx.fillStyle='rgba(40,40,45,.6)';ctx.strokeStyle='#666';ctx.lineWidth=1.5;ctx.setLineDash([]);
+      rr(ctx,x,y,w,h,4);ctx.fill();ctx.stroke();
+      // Cross lines (shaft pattern)
+      ctx.strokeStyle='rgba(100,100,110,.3)';ctx.lineWidth=.6;
+      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w,y+h);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x+w,y);ctx.lineTo(x,y+h);ctx.stroke();
+      // Arrows icon
+      ctx.fillStyle='#999';ctx.font='bold 14px sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('▲▼',x+w/2,y+h/2);
+      // Label
+      ctx.fillStyle='#888';ctx.font='500 8px sans-serif';
+      ctx.textBaseline='bottom';ctx.fillText(i.label||'Elevator',x+w/2,y-3);
+    }else if(i.type==='stairs'){
+      // Staircase: rectangle with diagonal stair lines
+      ctx.fillStyle='rgba(50,50,55,.5)';ctx.strokeStyle='#888';ctx.lineWidth=1.2;ctx.setLineDash([]);
+      rr(ctx,x,y,w,h,3);ctx.fill();ctx.stroke();
+      // Stair steps: horizontal lines with offsets to create step pattern
+      ctx.strokeStyle='rgba(140,140,150,.5)';ctx.lineWidth=.8;
+      const steps=Math.max(3,Math.floor(h/8));
+      for(let s=1;s<steps;s++){
+        const sy=y+s*(h/steps);
+        const sx=x+(s/steps)*w*0.4;
+        ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(x+w,sy);ctx.stroke();
+      }
+      // Diagonal direction line
+      ctx.strokeStyle='rgba(180,180,190,.4)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(x+4,y+h-4);ctx.lineTo(x+w-4,y+4);ctx.stroke();
+      // Arrow tip
+      ctx.beginPath();ctx.moveTo(x+w-4,y+4);ctx.lineTo(x+w-10,y+8);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x+w-4,y+4);ctx.lineTo(x+w-8,y+12);ctx.stroke();
+      // Label
+      ctx.fillStyle='#999';ctx.font='500 8px sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+      ctx.fillText(i.label||'Stairs',x+w/2,y-3);
+    }else if(i.type==='bathroom'){
+      // Bathroom: rectangle with "WC" label
+      ctx.fillStyle='rgba(30,45,55,.5)';ctx.strokeStyle='#6b8fa3';ctx.lineWidth=1.2;ctx.setLineDash([]);
+      rr(ctx,x,y,w,h,4);ctx.fill();ctx.stroke();
+      // WC text
+      ctx.fillStyle='#8ab4c7';ctx.font='bold 16px sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('WC',x+w/2,y+h/2);
+      // Label
+      ctx.fillStyle='#7a9aaa';ctx.font='500 8px sans-serif';
+      ctx.textBaseline='bottom';ctx.fillText(i.label||'',x+w/2,y-3);
+    }else if(i.type==='kitchen'){
+      // Kitchen: rectangle with cup icon
+      ctx.fillStyle='rgba(45,35,25,.5)';ctx.strokeStyle='#a3856b';ctx.lineWidth=1.2;ctx.setLineDash([]);
+      rr(ctx,x,y,w,h,4);ctx.fill();ctx.stroke();
+      // Cup icon (simple outline)
+      const cx2=x+w/2,cy2=y+h/2;
+      ctx.strokeStyle='#c4a882';ctx.lineWidth=1.2;
+      // Cup body
+      ctx.beginPath();ctx.moveTo(cx2-7,cy2-6);ctx.lineTo(cx2-7,cy2+6);ctx.lineTo(cx2+5,cy2+6);ctx.lineTo(cx2+5,cy2-6);ctx.stroke();
+      // Handle
+      ctx.beginPath();ctx.arc(cx2+5,cy2,4,-(Math.PI/2),(Math.PI/2),false);ctx.stroke();
+      // Steam lines
+      ctx.strokeStyle='rgba(196,168,130,.4)';ctx.lineWidth=.7;
+      [-4,0,4].forEach(dx=>{ctx.beginPath();ctx.moveTo(cx2+dx-1,cy2-8);ctx.quadraticCurveTo(cx2+dx+1,cy2-11,cx2+dx-1,cy2-14);ctx.stroke();});
+      // Label
+      ctx.fillStyle='#b89a7a';ctx.font='500 8px sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+      ctx.fillText(i.label||'Kitchen',x+w/2,y-3);
+    }else if(i.type==='table'){
+      // Conference table: medium grey rectangle, no seats
+      ctx.fillStyle='rgba(45,45,50,.55)';ctx.strokeStyle='#7a7a8a';ctx.lineWidth=1.2;ctx.setLineDash([]);
+      rr(ctx,x,y,w,h,5);ctx.fill();ctx.stroke();
+      // Inner edge detail
+      ctx.strokeStyle='rgba(130,130,140,.2)';ctx.lineWidth=.5;
+      rr(ctx,x+4,y+4,w-8,h-8,3);ctx.stroke();
+      // Label
+      ctx.fillStyle='#9a9aaa';ctx.font='600 10px sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(i.label||'Table',x+w/2,y+h/2);
+    }else if(i.type==='plant'){
+      // Decorative plant: small green circle with leaf
+      ctx.fillStyle='rgba(10,50,20,.5)';ctx.strokeStyle='#4ade80';ctx.lineWidth=1;ctx.setLineDash([]);
+      const cx2=x+w/2,cy2=y+h/2,R=Math.min(w,h)/2;
+      ctx.beginPath();ctx.arc(cx2,cy2,R,0,2*Math.PI);ctx.fill();ctx.stroke();
+      // Leaf shapes
+      ctx.fillStyle='rgba(74,222,128,.35)';
+      // Left leaf
+      ctx.beginPath();ctx.ellipse(cx2-3,cy2-2,R*0.5,R*0.25,-(Math.PI/4),0,2*Math.PI);ctx.fill();
+      // Right leaf
+      ctx.beginPath();ctx.ellipse(cx2+3,cy2-2,R*0.5,R*0.25,(Math.PI/4),0,2*Math.PI);ctx.fill();
+      // Center dot
+      ctx.fillStyle='#22c55e';ctx.beginPath();ctx.arc(cx2,cy2+1,2,0,2*Math.PI);ctx.fill();
+    }else if(i.type==='emergency_exit'){
+      // Emergency exit: green bordered rectangle with EXIT + running figure
+      ctx.fillStyle='rgba(5,40,15,.5)';ctx.strokeStyle='#22c55e';ctx.lineWidth=2;ctx.setLineDash([]);
+      rr(ctx,x,y,w,h,4);ctx.fill();ctx.stroke();
+      // EXIT text
+      ctx.fillStyle='#4ade80';ctx.font='bold 11px sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('EXIT',x+w/2,y+h*0.35);
+      // Running person (simple stick figure)
+      const px2=x+w/2,py2=y+h*0.65;
+      ctx.strokeStyle='#4ade80';ctx.lineWidth=1.2;ctx.lineCap='round';
+      // Head
+      ctx.beginPath();ctx.arc(px2-3,py2-6,2.5,0,2*Math.PI);ctx.stroke();
+      // Body
+      ctx.beginPath();ctx.moveTo(px2-3,py2-3.5);ctx.lineTo(px2-1,py2+1);ctx.stroke();
+      // Legs
+      ctx.beginPath();ctx.moveTo(px2-1,py2+1);ctx.lineTo(px2-5,py2+6);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(px2-1,py2+1);ctx.lineTo(px2+4,py2+5);ctx.stroke();
+      // Arms
+      ctx.beginPath();ctx.moveTo(px2-6,py2-1);ctx.lineTo(px2-2,py2-2);ctx.lineTo(px2+3,py2-4);ctx.stroke();
+      // Arrow
+      ctx.beginPath();ctx.moveTo(px2+5,py2-2);ctx.lineTo(px2+10,py2-2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(px2+10,py2-2);ctx.lineTo(px2+7,py2-5);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(px2+10,py2-2);ctx.lineTo(px2+7,py2+1);ctx.stroke();
+      ctx.lineCap='butt';
+      // Label
+      ctx.fillStyle='#4ade80';ctx.font='500 7px sans-serif';ctx.textBaseline='bottom';
+      ctx.fillText(i.label||'',x+w/2,y-3);
+    }else if(i.type==='electrical_panel'){
+      // Electrical panel: small square with lightning bolt and yellow border
+      ctx.fillStyle='rgba(50,45,15,.5)';ctx.strokeStyle='#eab308';ctx.lineWidth=1.5;ctx.setLineDash([]);
+      rr(ctx,x,y,w,h,3);ctx.fill();ctx.stroke();
+      // Lightning bolt
+      const cx2=x+w/2,cy2=y+h/2;
+      ctx.fillStyle='#facc15';ctx.beginPath();
+      ctx.moveTo(cx2-1,cy2-8);ctx.lineTo(cx2-5,cy2+1);ctx.lineTo(cx2-1,cy2);
+      ctx.lineTo(cx2+1,cy2+8);ctx.lineTo(cx2+5,cy2-1);ctx.lineTo(cx2+1,cy2);
+      ctx.closePath();ctx.fill();
+      // Label
+      ctx.fillStyle='#ca9a08';ctx.font='500 7px sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+      ctx.fillText(i.label||'Panel',x+w/2,y-3);
     }
     if(isSel){
       const hs=HS/S.cam.s;
@@ -689,6 +818,14 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       else if(S.tool==='door'){ni={type:'door',x,y,w:Math.max(snap(rw),GRID*2),h:GRID,label:'',double:w>=GRID*3,id:Math.random().toString(36).slice(2)};}
       else if(S.tool==='window'){ni={type:'window',x,y,w:Math.max(snap(rw),GRID*2),h:GRID,label:'',double:w>=GRID*3,id:Math.random().toString(36).slice(2)};}
       else if(S.tool==='wall'){const pts=S._wallPts||[{x,y},{x:x+w,y:y}];S._wallPts=null;ni={type:'wall',x:pts[0].x,y:pts[0].y,w:Math.max(w,GRID),h:GRID,pts,label:'',id:Math.random().toString(36).slice(2)};}
+      else if(S.tool==='elevator'){ni={type:'elevator',x,y,w:Math.max(w,GRID*3),h:Math.max(h,GRID*3),label:'Elevator',id:Math.random().toString(36).slice(2)};}
+      else if(S.tool==='stairs'){ni={type:'stairs',x,y,w:Math.max(w,GRID*3),h:Math.max(h,GRID*4),label:'Stairs',id:Math.random().toString(36).slice(2)};}
+      else if(S.tool==='bathroom'){ni={type:'bathroom',x,y,w:Math.max(w,GRID*3),h:Math.max(h,GRID*3),label:'WC',id:Math.random().toString(36).slice(2)};}
+      else if(S.tool==='kitchen'){ni={type:'kitchen',x,y,w:Math.max(w,GRID*3),h:Math.max(h,GRID*3),label:'Kitchen',id:Math.random().toString(36).slice(2)};}
+      else if(S.tool==='table'){ni={type:'table',x,y,w,h,label:'Table',id:Math.random().toString(36).slice(2)};}
+      else if(S.tool==='plant'){ni={type:'plant',x,y,w:Math.max(w,GRID*2),h:Math.max(h,GRID*2),label:'',id:Math.random().toString(36).slice(2)};}
+      else if(S.tool==='emergency_exit'){ni={type:'emergency_exit',x,y,w:Math.max(w,GRID*3),h:Math.max(h,GRID*3),label:'',id:Math.random().toString(36).slice(2)};}
+      else if(S.tool==='electrical_panel'){ni={type:'electrical_panel',x,y,w:Math.max(w,GRID*2),h:Math.max(h,GRID*2),label:'Panel',id:Math.random().toString(36).slice(2)};}
       if(ni){S.items.push(ni);S.sel=ni;}
       S.crtS=null;S.crtE=null;onChange([...S.items]);draw();re();
     }
@@ -716,6 +853,14 @@ function BlueprintCanvas({ items: initItems, onChange }) {
     {id:'wall',   lbl:'Wall',     tip:'Draw walls (click+drag along grid)',  dot:'#888', circle:false},
     {id:'door',    lbl:'Door',     tip:'Door (single/double)',      dot:'#fb923c', circle:false},
     {id:'window',  lbl:'Window',   tip:'Window (single/double)',    dot:'#38bdf8', circle:false},
+    {id:'elevator',lbl:'Elevator', tip:'Elevator shaft',            dot:'#666',   circle:false},
+    {id:'stairs',  lbl:'Stairs',   tip:'Staircase',                 dot:'#888',   circle:false},
+    {id:'bathroom',lbl:'WC',       tip:'Bathroom / restroom',       dot:'#6b8fa3',circle:false},
+    {id:'kitchen', lbl:'Kitchen',  tip:'Kitchen / break room',      dot:'#a3856b',circle:false},
+    {id:'table',   lbl:'Table',    tip:'Conference / meeting table', dot:'#7a7a8a',circle:false},
+    {id:'plant',   lbl:'Plant',    tip:'Decorative plant',          dot:'#4ade80',circle:true},
+    {id:'emergency_exit',lbl:'Exit',tip:'Emergency exit',           dot:'#22c55e',circle:false},
+    {id:'electrical_panel',lbl:'⚡ Panel',tip:'Electrical panel',   dot:'#eab308',circle:false},
     {id:'eraser', lbl:'✕',        tip:'Erase element',              dot:null, danger:true},
   ];
 

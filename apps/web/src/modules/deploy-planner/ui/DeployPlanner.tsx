@@ -39,7 +39,7 @@ const CSS = `
 .dp input[type=date]::-webkit-calendar-picker-indicator{filter:var(--dp-date-filter,invert(.4) sepia(1) hue-rotate(180deg));}
 .dp ::-webkit-scrollbar{width:4px;height:4px;}
 .dp ::-webkit-scrollbar-track{background:var(--dp-bg,#131313);}
-.dp ::-webkit-scrollbar-thumb{background:#424754;border-radius:2px;}
+.dp ::-webkit-scrollbar-thumb{background:var(--dp-bd,var(--bd2));border-radius:2px;}
 .dp select option{background:var(--dp-sf,#1c1b1b);}
 .dp .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:300;font-style:normal;display:inline-block;line-height:1;text-transform:none;letter-spacing:normal;word-wrap:normal;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased;font-size:inherit;}
 /* Dark (default) — Stitch / Carbon Logic */
@@ -47,7 +47,7 @@ const CSS = `
   --dp-bg:#131313; --dp-sf:#1c1b1b; --dp-sf2:#201f1f; --dp-sf3:#2a2a2a;
   --dp-tx:#e5e2e1; --dp-tx2:#c2c6d6; --dp-tx3:#8c909f;
   --dp-bd:#424754; --dp-date-filter:invert(.4) sepia(1) hue-rotate(180deg);
-  --dp-primary:#adc6ff; --dp-primary-strong:#4d8eff;
+  --dp-primary:#adc6ff; --dp-primary-strong:#4d8eff; --dp-primary-dim:rgba(77,142,255,.1);
   --dp-secondary:#4ae176; --dp-secondary-strong:#00b954;
   --dp-tertiary:#ddb7ff; --dp-tertiary-strong:#b76dff;
   --dp-danger:#ffb4ab; --dp-danger-strong:#ef4444;
@@ -58,21 +58,21 @@ const CSS = `
   --dp-bg:#f1f5f9; --dp-sf:#ffffff; --dp-sf2:#f8fafc; --dp-sf3:#e2e8f0;
   --dp-tx:#0f172a; --dp-tx2:#475569; --dp-tx3:#64748b;
   --dp-bd:#e2e8f0; --dp-date-filter:none;
-  --dp-primary:#4d8eff; --dp-primary-strong:#2563eb;
+  --dp-primary:#4d8eff; --dp-primary-strong:#2563eb; --dp-primary-dim:rgba(37,99,235,.08);
 }
-[data-theme="light"] .dp ::-webkit-scrollbar-thumb, .light .dp ::-webkit-scrollbar-thumb, .dp.light ::-webkit-scrollbar-thumb{background:#cbd5e1;}
-[data-theme="light"] .dp select option, .light .dp select option, .dp.light select option{background:#ffffff;}
+[data-theme="light"] .dp ::-webkit-scrollbar-thumb, .light .dp ::-webkit-scrollbar-thumb, .dp.light ::-webkit-scrollbar-thumb{background:var(--dp-bd);}
+[data-theme="light"] .dp select option, .light .dp select option, .dp.light select option{background:var(--dp-sf);}
 /* Glass card utility */
-.dp .glass-card{background:rgba(42,42,42,.6);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(66,71,84,.15);border-radius:8px;}
-.dp .glass-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(173,198,255,.2),transparent);border-radius:8px 8px 0 0;}
+.dp .glass-card{background:var(--dp-sf,var(--sf));backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--dp-bd,var(--bd));border-radius:8px;}
+.dp .glass-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--dp-primary,var(--ac2)),transparent);opacity:.2;border-radius:8px 8px 0 0;}
 .dp .ghost-border-top{position:relative;}
-.dp .ghost-border-top::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(173,198,255,.2),transparent);border-radius:8px 8px 0 0;}
+.dp .ghost-border-top::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--dp-primary,var(--ac2)),transparent);opacity:.2;border-radius:8px 8px 0 0;}
 /* Sidebar */
 /* Sidebar — sits inside the module container, not fixed to viewport */
-.dp .dp-sidebar{position:sticky;top:0;width:240px;min-width:240px;height:100%;min-height:calc(100vh - 52px);align-self:stretch;background:rgba(14,14,14,.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid rgba(255,255,255,.05);box-shadow:0 0 60px rgba(77,142,255,.04);display:flex;flex-direction:column;padding:16px;gap:4px;z-index:30;overflow-y:auto;}
+.dp .dp-sidebar{position:sticky;top:0;width:240px;min-width:240px;height:100%;min-height:calc(100vh - 52px);align-self:stretch;background:var(--dp-bg,var(--bg));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid var(--dp-bd,var(--bd));display:flex;flex-direction:column;padding:16px;gap:4px;z-index:30;overflow-y:auto;}
 .dp .dp-sidebar-nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:500;letter-spacing:.02em;cursor:pointer;border:none;background:transparent;color:var(--dp-tx,#e5e2e1);opacity:.6;transition:all .2s;text-align:left;width:100%;font-family:inherit;}
 .dp .dp-sidebar-nav-item:hover{opacity:1;background:var(--dp-sf,#1c1b1b);transform:translateX(2px);}
-.dp .dp-sidebar-nav-item.active{opacity:1;color:#4d8eff;background:rgba(77,142,255,.1);font-weight:600;box-shadow:0 0 20px rgba(77,142,255,.1);}
+.dp .dp-sidebar-nav-item.active{opacity:1;color:var(--dp-primary-strong,var(--ac));background:var(--dp-primary-dim,var(--ac-dim));font-weight:600;box-shadow:0 0 20px var(--dp-primary-dim,var(--ac-dim));}
 .dp .dp-main{flex:1;min-width:0;height:100%;overflow:auto;}
 @keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -420,14 +420,14 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
           <button
             onClick={() => void addRelease()}
             style={{
-              width: '100%', background: 'linear-gradient(135deg,#adc6ff,#4d8eff)', color: '#00285d',
+              width: '100%', background: 'linear-gradient(135deg,var(--dp-primary,var(--ac2)),var(--dp-primary-strong,var(--ac)))', color: 'var(--ac-on)',
               fontWeight: 600, padding: '10px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               fontFamily: 'inherit', fontSize: 13, letterSpacing: '.02em',
-              boxShadow: '0 4px 20px rgba(77,142,255,.12)',
+              boxShadow: '0 4px 20px var(--dp-primary-dim,var(--ac-dim))',
               transition: 'all .2s',
             }}
-            onMouseEnter={e => (e.currentTarget.style.filter = 'drop-shadow(0 0 12px rgba(77,142,255,.3))')}
+            onMouseEnter={e => (e.currentTarget.style.filter = 'drop-shadow(0 0 12px var(--dp-primary-dim,var(--ac-dim)))')}
             onMouseLeave={e => (e.currentTarget.style.filter = 'none')}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add_circle</span>
@@ -450,8 +450,8 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
                 {t.badge !== undefined && t.badge > 0 && (
                   <span style={{
                     marginLeft: 'auto', fontSize: 9, padding: '1px 7px', borderRadius: 10,
-                    background: active ? 'rgba(77,142,255,.2)' : 'rgba(255,255,255,.06)',
-                    color: active ? '#4d8eff' : 'var(--dp-tx3,#8c909f)', fontWeight: 700,
+                    background: active ? 'var(--dp-primary-dim,var(--ac-dim))' : 'var(--dp-sf3,var(--sf3))',
+                    color: active ? 'var(--dp-primary-strong,var(--ac))' : 'var(--dp-tx3,var(--tx3))', fontWeight: 700,
                   }}>{t.badge}</span>
                 )}
               </button>
@@ -460,7 +460,7 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
         </nav>
 
         {/* Jira sync status (footer) */}
-        <div style={{ padding: '12px 8px', borderTop: '1px solid rgba(255,255,255,.05)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ padding: '12px 8px', borderTop: '1px solid var(--dp-bd,var(--bd))', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 10, color: 'var(--dp-tx3,#8c909f)', flex: 1 }}>
             {fetchingJira
               ? <><span className="spin" style={{ marginRight: 4 }}>
@@ -472,7 +472,7 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
             onClick={() => void fetchJiraTickets()}
             disabled={fetchingJira}
             title="Recargar tickets de Jira"
-            style={{ background: 'var(--dp-sf3,#2a2a2a)', border: '1px solid rgba(66,71,84,.15)', borderRadius: 6, width: 28, height: 28, color: 'var(--dp-tx2,#c2c6d6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ background: 'var(--dp-sf3,var(--sf3))', border: '1px solid var(--dp-bd,var(--bd))', borderRadius: 6, width: 28, height: 28, color: 'var(--dp-tx2,var(--tx2))', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>refresh</span>
           </button>
@@ -514,7 +514,7 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
               <div style={{ position: 'relative' }}>
                 {/* Loading overlay */}
                 {fetchingJira && tickets.length === 0 && (
-                  <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(19,19,19,.92)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, borderRadius: 8, minHeight: 200 }}>
+                  <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'var(--dp-bg,var(--bg))', opacity: 0.95, backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, borderRadius: 8, minHeight: 200 }}>
                     <div className="spin" style={{ fontSize: 24, color: 'var(--dp-primary,#adc6ff)' }}>
                       <span className="material-symbols-outlined" style={{ fontSize: 28 }}>sync</span>
                     </div>
@@ -595,16 +595,16 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
                           key={`group-${lg.group.id}`}
                           style={{
                             display: 'flex', gap: 14, flexWrap: 'wrap', padding: 10,
-                            border: `2px solid ${allDone ? '#22c55e' : '#f59e0b'}`,
+                            border: `2px solid ${allDone ? 'var(--dp-secondary,var(--green))' : 'var(--dp-warning,var(--amber))'}`,
                             borderRadius: 10,
-                            background: allDone ? 'rgba(34,197,94,.04)' : 'rgba(245,158,11,.04)',
+                            background: allDone ? 'var(--green-dim)' : 'var(--amber-dim)',
                             position: 'relative',
                           }}
                         >
                           <span
                             style={{
                               position: 'absolute', top: -9, left: 14, fontSize: 8, fontWeight: 700,
-                              color: allDone ? '#22c55e' : '#f59e0b',
+                              color: allDone ? 'var(--dp-secondary,var(--green))' : 'var(--dp-warning,var(--amber))',
                               background: 'var(--dp-bg,#131313)',
                               padding: '0 6px', letterSpacing: '.05em', textTransform: 'uppercase',
                             }}
@@ -663,9 +663,9 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
                   })()}
                   <div
                     onClick={() => void addRelease()}
-                    style={{ width: 320, minHeight: 140, background: 'transparent', border: '2px dashed rgba(66,71,84,.3)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', color: 'var(--dp-tx3,#8c909f)', fontSize: 12, transition: 'all .2s' }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--dp-primary,#adc6ff)'; e.currentTarget.style.background = 'rgba(77,142,255,.04)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(66,71,84,.3)'; e.currentTarget.style.background = 'transparent'; }}
+                    style={{ width: 320, minHeight: 140, background: 'transparent', border: '2px dashed var(--dp-bd,var(--bd))', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', color: 'var(--dp-tx3,var(--tx3))', fontSize: 12, transition: 'all .2s' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--dp-primary,var(--ac2))'; e.currentTarget.style.background = 'var(--dp-primary-dim,var(--ac-dim))'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--dp-bd,var(--bd))'; e.currentTarget.style.background = 'transparent'; }}
                   >
                     <span className="material-symbols-outlined" style={{ fontSize: 28, color: 'var(--dp-primary,#adc6ff)' }}>add_circle</span>
                     <span style={{ fontSize: 11, letterSpacing: '0.01em' }}>Nueva release</span>

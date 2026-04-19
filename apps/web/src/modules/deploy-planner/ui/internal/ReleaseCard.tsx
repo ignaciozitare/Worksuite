@@ -41,10 +41,10 @@ interface Conflict {
 }
 
 const PRIORITY_COLOR: Record<string, string> = {
-  Highest: '#ef4444',
-  High:    '#f97316',
-  Medium:  '#3b82f6',
-  Low:     '#6b7280',
+  Highest: 'var(--dp-danger-strong,var(--danger-strong))',
+  High:    'var(--dp-warning,var(--amber))',
+  Medium:  'var(--dp-primary-strong,var(--ac))',
+  Low:     'var(--dp-tx3,var(--tx3))',
 };
 
 // Shape that RepoGroupService.canTransitionToDone expects — we map from
@@ -109,21 +109,21 @@ export function ReleaseCard({
       style={{
         width: 320,
         position: 'relative',
-        background: 'rgba(42,42,42,.6)',
+        background: 'var(--dp-sf,var(--sf))',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        border: '1px solid rgba(66,71,84,.15)',
+        border: '1px solid var(--dp-bd,var(--bd))',
         borderLeft: `3px solid ${cfg.color}`,
         borderRadius: 8,
         padding: '16px 18px',
         flexShrink: 0,
-        boxShadow: `0 4px 20px rgba(0,0,0,.35), 0 0 0 1px ${cfg.color}18`,
+        boxShadow: `0 4px 20px var(--shadow-base, rgba(0,0,0,.35)), 0 0 0 1px ${cfg.color}18`,
         transition: 'box-shadow .2s, transform .15s',
         cursor: 'pointer',
         overflow: 'hidden',
       }}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 30px rgba(0,0,0,.4), 0 0 15px ${cfg.color}25`; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 4px 20px rgba(0,0,0,.35), 0 0 0 1px ${cfg.color}18`; }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 30px var(--shadow-base, rgba(0,0,0,.4)), 0 0 15px ${cfg.color}25`; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 4px 20px var(--shadow-base, rgba(0,0,0,.35)), 0 0 0 1px ${cfg.color}18`; }}
     >
       {/* Release number: click title opens detail, edit via input */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
@@ -148,12 +148,12 @@ export function ReleaseCard({
             value={rel.release_number || ''}
             onChange={e => onUpd(rel.id, { release_number: e.target.value })}
             placeholder="v1.0.0"
-            style={{ flex: 1, background: 'var(--dp-sf2,#201f1f)', border: '1px solid rgba(66,71,84,.15)', borderRadius: '4px 0 0 4px', padding: '5px 10px', fontSize: 11, color: 'var(--dp-tx,#e5e2e1)', fontFamily: "'Inter', monospace", outline: 'none' }}
+            style={{ flex: 1, background: 'var(--dp-sf2,#201f1f)', border: '1px solid var(--dp-bd,var(--bd))', borderRadius: '4px 0 0 4px', padding: '5px 10px', fontSize: 11, color: 'var(--dp-tx,#e5e2e1)', fontFamily: "'Inter', monospace", outline: 'none' }}
           />
           <button
             onClick={e => { e.stopPropagation(); setShowVersionPicker(v => !v); }}
             title="Generar número de versión"
-            style={{ background: 'var(--dp-sf2,#201f1f)', border: '1px solid rgba(66,71,84,.15)', borderLeft: 'none', borderRadius: '0 4px 4px 0', padding: '0 10px', fontSize: 14, color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', lineHeight: 1 }}
+            style={{ background: 'var(--dp-sf2,#201f1f)', border: '1px solid var(--dp-bd,var(--bd))', borderLeft: 'none', borderRadius: '0 4px 4px 0', padding: '0 10px', fontSize: 14, color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', lineHeight: 1 }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>settings</span>
           </button>
@@ -175,7 +175,7 @@ export function ReleaseCard({
         onClick={e => e.stopPropagation()}
         placeholder="Descripción de la release…"
         rows={rel.description && rel.description.length > 40 ? 3 : 2}
-        style={{ width: '100%', background: 'none', border: 'none', borderBottom: '1px solid rgba(66,71,84,.1)', fontSize: 11, color: 'var(--dp-tx2,#c2c6d6)', fontFamily: 'inherit', outline: 'none', marginBottom: 12, paddingBottom: 6, resize: 'none', lineHeight: 1.5, letterSpacing: '0.01em' }}
+        style={{ width: '100%', background: 'none', border: 'none', borderBottom: '1px solid var(--dp-bd,var(--bd))', fontSize: 11, color: 'var(--dp-tx2,var(--tx2))', fontFamily: 'inherit', outline: 'none', marginBottom: 12, paddingBottom: 6, resize: 'none', lineHeight: 1.5, letterSpacing: '0.01em' }}
       />
 
       {/* Status selector with is_final blocking */}
@@ -228,12 +228,12 @@ export function ReleaseCard({
 
       {/* Conflicts */}
       {conflicts.length > 0 && (
-        <div style={{ background: 'rgba(248,113,113,.06)', border: '1px solid #7f1d1d', borderRadius: 4, padding: '6px 9px', fontSize: 10, color: '#f87171', marginBottom: 8 }}>
-          <div style={{ fontWeight: 700, marginBottom: 3 }}>⚠ Repos en conflicto:</div>
+        <div style={{ background: 'var(--red-dim)', border: '1px solid var(--dp-danger-strong,var(--danger-strong))', borderRadius: 4, padding: '6px 9px', fontSize: 10, color: 'var(--dp-danger,var(--danger))', marginBottom: 8 }}>
+          <div style={{ fontWeight: 700, marginBottom: 3 }}>Repos en conflicto:</div>
           {conflicts.map(c => (
-            <div key={c.repo} style={{ marginTop: 2, color: '#fca5a5' }}>
+            <div key={c.repo} style={{ marginTop: 2, color: 'var(--dp-danger,var(--danger))' }}>
               · <strong>{c.repo}</strong>
-              <span style={{ color: '#7f1d1d' }}> — también en {c.otherRelease} ({c.groupName})</span>
+              <span style={{ color: 'var(--dp-tx3,var(--tx3))' }}> — también en {c.otherRelease} ({c.groupName})</span>
             </div>
           ))}
         </div>
@@ -255,7 +255,7 @@ export function ReleaseCard({
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px',
                 background: 'var(--dp-sf2,#201f1f)',
-                border: noRepo ? '1px solid rgba(239,68,68,.5)' : '1px solid rgba(66,71,84,.1)',
+                border: noRepo ? '1px solid rgba(239,68,68,.5)' : '1px solid var(--dp-bd,var(--bd))',
                 borderLeft: `2px solid ${noRepo ? '#ef4444' : pColor}`,
                 borderRadius: 6, cursor: 'grab', fontSize: 10,
               }}
@@ -294,7 +294,7 @@ export function ReleaseCard({
 
       {/* Warning: tickets sin repo */}
       {relTickets.some(t => !t.repos || t.repos.length === 0) && (
-        <div style={{ fontSize: 9, color: '#ef4444', marginBottom: 6, padding: '3px 6px', background: 'rgba(239,68,68,.06)', borderRadius: 3, border: '1px solid rgba(239,68,68,.2)' }}>
+        <div style={{ fontSize: 9, color: 'var(--dp-danger-strong,var(--danger-strong))', marginBottom: 6, padding: '3px 6px', background: 'var(--red-dim)', borderRadius: 3, border: '1px solid var(--dp-danger-strong,var(--danger-strong))' }}>
           ⚠ {relTickets.filter(t => !t.repos || t.repos.length === 0).length} ticket{relTickets.filter(t => !t.repos || t.repos.length === 0).length > 1 ? 's' : ''} sin repositorio — asigna Components en Jira
         </div>
       )}
@@ -326,9 +326,9 @@ export function ReleaseCard({
       ) : (
         <button
           onClick={e => { e.stopPropagation(); setAddingTicket(true); }}
-          style={{ width: '100%', background: 'transparent', border: '1px dashed rgba(66,71,84,.2)', borderRadius: 6, padding: '6px', fontSize: 10, color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', marginBottom: 10, transition: 'all .15s' }}
+          style={{ width: '100%', background: 'transparent', border: '1px dashed var(--dp-bd,var(--bd))', borderRadius: 6, padding: '6px', fontSize: 10, color: 'var(--dp-tx3,var(--tx3))', cursor: 'pointer', marginBottom: 10, transition: 'all .15s' }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = cfg.color; e.currentTarget.style.color = cfg.color; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(66,71,84,.2)'; e.currentTarget.style.color = 'var(--dp-tx3,#8c909f)'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--dp-bd,var(--bd))'; e.currentTarget.style.color = 'var(--dp-tx3,var(--tx3))'; }}
         >
           + ticket
         </button>
@@ -340,14 +340,14 @@ export function ReleaseCard({
         const counts = SubtaskService.count(relSubs);
         if (counts.bugs.total === 0 && counts.tests.total === 0) return null;
         return (
-          <div style={{ display: 'flex', gap: 8, fontSize: 10, paddingTop: 6, borderTop: '1px solid rgba(66,71,84,.1)', marginBottom: 4 }}>
+          <div style={{ display: 'flex', gap: 8, fontSize: 10, paddingTop: 6, borderTop: '1px solid var(--dp-bd,var(--bd))', marginBottom: 4 }}>
             {counts.bugs.total > 0 && (
-              <span style={{ color: counts.bugs.open > 0 ? '#ef4444' : '#22c55e', fontWeight: 600 }}>
+              <span style={{ color: counts.bugs.open > 0 ? 'var(--dp-danger-strong,var(--danger-strong))' : 'var(--dp-secondary,var(--green))', fontWeight: 600 }}>
                 <BugIcon size={12} color="currentColor" />{counts.bugs.closed}/{counts.bugs.total}
               </span>
             )}
             {counts.tests.total > 0 && (
-              <span style={{ color: counts.tests.open > 0 ? '#3b82f6' : '#22c55e', fontWeight: 600 }}>
+              <span style={{ color: counts.tests.open > 0 ? 'var(--dp-primary-strong,var(--ac))' : 'var(--dp-secondary,var(--green))', fontWeight: 600 }}>
                 🧪 {counts.tests.closed}/{counts.tests.total}
               </span>
             )}

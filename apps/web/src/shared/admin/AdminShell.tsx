@@ -39,24 +39,36 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser, theme="dark" }: A
   }
 
   const NAV = [
-    { id:"settings",   icon:"⚙",  label:t("admin.settings") },
-    { id:"users",      icon:"👥", label:t("admin.users"),  badge:"Admin" },
-    { id:"roles",      icon:"🛡", label:"Roles & Perms" },
-    { id:"hotdesk",    icon:"🪑", label:t("admin.hotdesk"),hd:true },
-    { id:"retroteams", icon:"🔁", label:"Retro Teams" },
-    { id:"deploy",     icon:"🚀", label:"Deploy Planner" },
-    { id:"envtracker", icon:"🖥️", label:"Environments" },
-    { id:"chrono",     icon:"⏱️", label:"Chrono" },
-    { id:"vectorlogic",icon:"🧭", label:"Vector Logic" },
+    { id:"settings",   icon:"settings",                label:t("admin.settings") },
+    { id:"users",      icon:"person",                  label:t("admin.users"),  badge:"Admin" },
+    { id:"roles",      icon:"admin_panel_settings",    label:"Roles & Perms" },
+    { id:"hotdesk",    icon:"event_seat",              label:t("admin.hotdesk"),hd:true },
+    { id:"jiraconfig", icon:"integration_instructions",label:"Jira Config" },
+    { id:"sso",        icon:"lock",                    label:"SSO" },
+    { id:"retroteams", icon:"groups",                  label:"Retro Teams" },
+    { id:"deploy",     icon:"rocket_launch",           label:"Deploy Config" },
+    { id:"envtracker", icon:"dns",                     label:"Environments" },
+    { id:"chrono",     icon:"timer",                   label:"Chrono" },
+    { id:"vectorlogic",icon:"hub",                     label:"Vector Logic" },
   ];
   const openUIKit = () => window.open('/ui-kit', '_blank');
   return (
     <div className="admin-wrap">
-      <nav className="admin-nav">
+      <nav className="admin-nav" style={{ background: 'var(--sf-low)', borderRight: '1px solid var(--bd)' }}>
         <div className="admin-nav-t">{t("admin.sidebar")}</div>
-        {NAV.map(item=>(<button key={item.id} className={`an-btn ${mod===item.id ? (item.hd?"active-hd":"active") : ""}`} onClick={()=>setMod(item.id)}><span className="an-icon">{item.icon}</span><span>{item.label}</span>{item.badge&&<span className="an-badge">{item.badge}</span>}</button>))}
+        {NAV.map(item=>(
+          <button key={item.id} className={`an-btn ${mod===item.id ? (item.hd?"active-hd":"active") : ""}`} onClick={()=>setMod(item.id)}>
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{item.icon}</span>
+            <span>{item.label}</span>
+            {item.badge&&<span className="an-badge">{item.badge}</span>}
+          </button>
+        ))}
         <div style={{borderTop:'1px solid var(--bd)',marginTop:12,paddingTop:12}}>
-          <button className="an-btn" onClick={openUIKit} style={{opacity:.7}}><span className="an-icon">🎨</span><span>UI Kit</span><span style={{fontSize:9,color:'var(--tx3)',marginLeft:'auto'}}>↗</span></button>
+          <button className="an-btn" onClick={openUIKit} style={{opacity:.7}}>
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>palette</span>
+            <span>UI Kit</span>
+            <span style={{fontSize:9,color:'var(--tx3)',marginLeft:'auto'}}>↗</span>
+          </button>
         </div>
       </nav>
       <div className="admin-content">
