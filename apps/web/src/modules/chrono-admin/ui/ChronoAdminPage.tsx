@@ -122,9 +122,9 @@ function ChronoAdminPage({ currentUser }: Props) {
       <aside style={{
         position: 'sticky', top: 0, width: 240, minWidth: 240, height: '100%',
         minHeight: 'calc(100vh - 52px)', alignSelf: 'stretch',
-        background: 'rgba(14,14,14,.6)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-        borderRight: '1px solid rgba(255,255,255,.05)',
-        boxShadow: '0 0 60px rgba(77,142,255,.04)',
+        background: T.color.surfaceLowest, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        borderRight: `1px solid ${T.color.surfaceHigh}`,
+        boxShadow: `0 0 60px ${T.color.primaryDim}`,
         display: 'flex', flexDirection: 'column', padding: 16, gap: 4,
         zIndex: 30, overflowY: 'auto', fontFamily: T.font.body,
       }}>
