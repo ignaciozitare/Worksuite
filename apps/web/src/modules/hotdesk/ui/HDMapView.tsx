@@ -249,7 +249,7 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
           )}
 
           {/* Floating cards — bottom right */}
-          <div style={{ position: 'absolute', bottom: 16, right: 16, display: 'flex', flexDirection: 'column', gap: 10, zIndex: 20 }}>
+          <div style={{ position: 'absolute', bottom: 16, right: 16, display: 'flex', flexDirection: 'column', gap: 10, zIndex: 20, width: 180 }}>
             {/* Check-in card */}
             {myPending && onConfirmPresence && (
               <div className="float-card fade-in" style={{ '--accent': C.greenStrong, textAlign: 'center' } as React.CSSProperties}>
