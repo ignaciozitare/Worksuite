@@ -34,13 +34,21 @@
     "noResults":  "No results"
   },
   "auth": {
-    "login":         "Log in",
+    "login":         "Sign In",
     "logout":        "Log out",
-    "email":         "Email address",
+    "email":         "Email",
     "password":      "Password",
     "forgotPassword":"Forgot your password?",
     "loginError":    "Wrong email or password",
-    "sessionExpired":"Your session has expired. Please log in again."
+    "sessionExpired":"Your session has expired. Please log in again.",
+    "tagline":       "Work smarter,\nnot harder.",
+    "taglineDesc":   "Your all-in-one platform for time tracking, desk management, deployments, and team collaboration.",
+    "welcomeBack":   "Welcome back",
+    "signInSubtitle":"Sign in to your account",
+    "signingIn":     "Signing in…",
+    "orContinueWith":"or continue with",
+    "noAccount":     "Don't have an account?",
+    "employeeAdmin": "Employee admin"
   },
   "nav": {
     "jiraTracker":   "Jira Tracker",
