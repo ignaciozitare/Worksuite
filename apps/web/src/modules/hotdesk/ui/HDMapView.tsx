@@ -191,19 +191,6 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
             </div>
           )}
 
-          {myPending && onConfirmPresence && (
-            <div className="hd-card fade-in" style={{ '--accent': C.greenStrong, textAlign: 'center', marginTop: 8 } as React.CSSProperties}>
-              <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at center, ${C.greenDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
-              <span className="material-symbols-outlined" style={{ fontSize: 32, color: C.green, marginBottom: 8, display: 'block', position: 'relative' }}>login</span>
-              <div style={{ fontSize: 11, color: C.txMuted, marginBottom: 12, lineHeight: 1.5, position: 'relative' }}>{t('hotdesk.checkInDesc')}</div>
-              <button className="hd-btn hd-btn-green pulse-green" onClick={handleCheckIn} style={{ width: '100%', padding: '14px 0', fontSize: 14, position: 'relative' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>check_circle</span>
-                {t('hotdesk.checkIn')}
-              </button>
-              <div className="mono" style={{ fontSize: 11, color: C.green, marginTop: 8, fontWeight: 600, position: 'relative' }}>{myPending.seatId}</div>
-            </div>
-          )}
-
           <div className="hd-card" style={{ '--accent': C.green, marginTop: 8 } as React.CSSProperties}>
             <div aria-hidden style={{ position: 'absolute', top: -30, right: -30, width: 80, height: 80, background: `radial-gradient(circle, ${C.greenDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
             <h3 style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: C.txDim, marginBottom: 14, position: 'relative' }}>{t('hotdesk.liveStatus')}</h3>
@@ -261,8 +248,22 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
             </div>
           )}
 
-          {/* Floating cards — bottom right: Available Desks + Active Booking stacked */}
+          {/* Floating cards — bottom right */}
           <div style={{ position: 'absolute', bottom: 16, right: 16, display: 'flex', flexDirection: 'column', gap: 10, zIndex: 20 }}>
+            {/* Check-in card */}
+            {myPending && onConfirmPresence && (
+              <div className="float-card fade-in" style={{ '--accent': C.greenStrong, textAlign: 'center' } as React.CSSProperties}>
+                <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at center, ${C.greenDim} 0%, transparent 70%)`, pointerEvents: 'none', borderRadius: 'inherit' }} />
+                <span className="material-symbols-outlined" style={{ fontSize: 28, color: C.green, marginBottom: 6, display: 'block', position: 'relative' }}>login</span>
+                <div style={{ fontSize: 10, color: C.txMuted, marginBottom: 10, lineHeight: 1.4, position: 'relative' }}>{t('hotdesk.checkInDesc')}</div>
+                <button className="hd-btn hd-btn-green pulse-green" onClick={handleCheckIn} style={{ width: '100%', padding: '12px 0', fontSize: 13, position: 'relative' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>check_circle</span>
+                  {t('hotdesk.checkIn')}
+                </button>
+                <div className="mono" style={{ fontSize: 10, color: C.green, marginTop: 6, fontWeight: 600, position: 'relative' }}>{myPending.seatId}</div>
+              </div>
+            )}
+
             {/* Available Desks */}
             <div className="float-card" style={{ '--accent': C.green } as React.CSSProperties}>
               <div aria-hidden style={{ position: 'absolute', top: -20, right: -20, width: 60, height: 60, background: `radial-gradient(circle, ${C.greenDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
