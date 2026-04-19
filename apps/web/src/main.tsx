@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/shared/hooks/useAuth';
 import { I18nProvider, getStoredLocale, storeLocale, type Locale } from '@worksuite/i18n';
+import { DialogProvider } from '@worksuite/ui';
 import { AppRouter } from './AppRouter';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30_000 } } });
@@ -21,7 +22,9 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <I18nProvider locale={locale} setLocale={setLocale}>
           <AuthProvider>
-            <AppRouter />
+            <DialogProvider>
+              <AppRouter />
+            </DialogProvider>
           </AuthProvider>
         </I18nProvider>
       </QueryClientProvider>

@@ -2,6 +2,7 @@ import type { SupabaseClient }    from '@supabase/supabase-js';
 import type { IReservationRepo }  from '../../domain/ports/IReservationRepo';
 import type { Reservation, Repository, EnvPolicy } from '../../domain/entities/Reservation';
 import type { ReservationStatusCategory } from '../../domain/entities/ReservationStatus';
+import { ConflictError } from '../../../../shared/domain/errors/ConflictError';
 
 // Shape of a row joined with syn_reservation_statuses.
 type RowWithStatus = {
@@ -95,7 +96,22 @@ export class SupabaseReservationRepo implements IReservationRepo {
 
   async upsert(res: Reservation): Promise<void> {
     const { error } = await this.db.from('syn_reservations').upsert(fromRes(res));
-    if (error) throw error;
+    if (error) {
+      if (error.code === '23505') {
+        throw new ConflictError('environment', error.message);
+      }
+      throw error;
+    }
+  }
+
+  async insert(res: Reservation): Promise<void> {
+    const { error } = await this.db.from('syn_reservations').insert(fromRes(res));
+    if (error) {
+      if (error.code === '23505') {
+        throw new ConflictError('environment', error.message);
+      }
+      throw error;
+    }
   }
 
   async patch(id: string, patch: Partial<Reservation>): Promise<void> {

@@ -12,6 +12,9 @@ export type { }                         from './components/Atoms';
 // ── Overlay ────────────────────────────────────────────────────────────────────
 export { Modal, ConfirmModal }           from './components/Modal';
 
+// ── Dialog Provider ───────────────────────────────────────────────────────────
+export { DialogProvider, useDialog }     from './components/DialogProvider';
+
 // ── Gantt Timeline ────────────────────────────────────────────────────────────
 export { GanttTimeline }                 from './components/GanttTimeline';
 export type { GanttBar, GanttGroup, GanttZoom, GanttTimelineProps } from './components/GanttTimeline';

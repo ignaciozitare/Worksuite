@@ -1,12 +1,14 @@
 // @ts-nocheck
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { useDialog } from '@worksuite/ui';
 import { supabase } from '../lib/api';
 import { SupabaseBuildingRepo } from '../infra/SupabaseBuildingRepo';
 
 const buildingRepo = new SupabaseBuildingRepo(supabase);
 
 function AdminBlueprint() {
+  const dialog = useDialog();
   const [buildings, setBuildings]   = useState([]);
   const [selBldg,   setSelBldg]     = useState(null);
   const [floors,    setFloors]      = useState([]);
@@ -44,7 +46,7 @@ function AdminBlueprint() {
 
   const addFloor = async () => {
     if(!selBldg) return;
-    const name=prompt('Floor name:','Floor '+(floors.length+1));
+    const name=await dialog.prompt('Floor name:',{defaultValue:'Floor '+(floors.length+1)});
     if(!name) return;
     try{
       const data=await buildingRepo.createBlueprint(selBldg.id,name,floors.length);
@@ -53,7 +55,7 @@ function AdminBlueprint() {
   };
 
   const deleteFloor = async (id) => {
-    if(!confirm('Delete this floor and its layout?')) return;
+    if(!(await dialog.confirm('Delete this floor and its layout?',{danger:true}))) return;
     await buildingRepo.deleteBlueprint(id);
     const next=floors.filter(f=>f.id!==id);
     setFloors(next);
@@ -62,7 +64,7 @@ function AdminBlueprint() {
 
   const renameFloor = async (id) => {
     const fl=floors.find(f=>f.id===id);
-    const nv=prompt('Rename:',fl?.floor_name||'');
+    const nv=await dialog.prompt('Rename:',{defaultValue:fl?.floor_name||''});
     if(!nv||!nv.trim()) return;
     await buildingRepo.renameBlueprint(id,nv.trim());
     setFloors(f=>f.map(fl=>fl.id===id?{...fl,floor_name:nv.trim()}:fl));
@@ -92,14 +94,14 @@ function AdminBlueprint() {
   };
 
   const deleteBuilding = async (id) => {
-    if(!confirm('Delete building and ALL its floors?')) return;
+    if(!(await dialog.confirm('Delete building and ALL its floors?',{danger:true}))) return;
     await buildingRepo.deleteBuilding(id);
     setBuildings(b=>b.filter(x=>x.id!==id));
     if(selBldg?.id===id){setSelBldg(null);setFloors([]);setSelFloor(null);}
   };
 
   const renameBuilding = async (b) => {
-    const nv=prompt('Building name:',b.name);
+    const nv=await dialog.prompt('Building name:',{defaultValue:b.name});
     if(!nv||!nv.trim()) return;
     await buildingRepo.renameBuilding(b.id,nv.trim());
     setBuildings(bs=>bs.map(x=>x.id===b.id?{...x,name:nv.trim()}:x));

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { SeatStatusEnum as SeatStatus } from '../../modules/hotdesk/domain/entities/constants';
 import { ReservationService } from '../../modules/hotdesk/domain/services/ReservationService';
+import { ConflictError } from '../domain/errors/ConflictError';
 import { TODAY } from '../lib/constants';
 import { seatRepo } from './useWorkSuiteData';
 import { configRepo, reservationRepo } from '../../modules/hotdesk/container';
@@ -43,9 +44,24 @@ export function useHotDesk({ hd, setHd, currentUser, notify, t }: UseHotDeskPara
     return { seatId, date };
   }, [hd, currentUser.id, currentUser.name, notify, t]);
 
+  const refreshReservations = useCallback(async () => {
+    try {
+      const reservations = await seatRepo.findAllReservations();
+      setHd((h: any) => ({
+        ...h,
+        reservations: reservations.map((r: any) => ({
+          seatId: r.seat_id, date: r.date, userId: r.user_id,
+          userName: r.user_name, status: r.status,
+          confirmedAt: r.confirmed_at, delegatedBy: r.delegated_by,
+        })),
+      }));
+    } catch (err) { console.error('Refresh failed:', err); }
+  }, [setHd]);
+
   const handleConfirm = useCallback(async (seatId: string, dates: string[]) => {
     if (!dates.length) return;
     const initialStatus: 'pending' | 'confirmed' = confirmationEnabled ? 'pending' : 'confirmed';
+    // Optimistic update
     setHd((h: any) => ({
       ...h,
       reservations: [
@@ -61,9 +77,17 @@ export function useHotDesk({ hd, setHd, currentUser, notify, t }: UseHotDeskPara
         seat_id: seatId, user_id: currentUser.id, user_name: currentUser.name, date: d,
         status: initialStatus,
       }));
-      await seatRepo.upsertReservations(rows);
-    } catch (err) { console.error('Reserve failed:', err); }
-  }, [currentUser.id, currentUser.name, setHd, notify, t, confirmationEnabled]);
+      await seatRepo.insertReservations(rows);
+    } catch (err) {
+      if (err instanceof ConflictError) {
+        // Rollback optimistic update and refresh from DB
+        notify(t('hotdesk.seatConflict'));
+        await refreshReservations();
+        return;
+      }
+      console.error('Reserve failed:', err);
+    }
+  }, [currentUser.id, currentUser.name, setHd, notify, t, confirmationEnabled, refreshReservations]);
 
   const handleRelease = useCallback(async (seatId: string, date: string) => {
     setHd((h: any) => ({ ...h, reservations: h.reservations.filter((r: any) => !(r.seatId === seatId && r.date === date)) }));

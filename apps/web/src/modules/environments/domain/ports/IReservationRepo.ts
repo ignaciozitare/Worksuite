@@ -5,6 +5,7 @@ export interface IReservationRepo {
   getRepositories():                                    Promise<Repository[]>;
   getPolicy():                                          Promise<EnvPolicy>;
   upsert(res: Reservation):                             Promise<void>;
+  insert(res: Reservation):                             Promise<void>;
   patch(id: string, patch: Partial<Reservation>):      Promise<void>;
   savePolicy(policy: EnvPolicy):                        Promise<void>;
   createRepository(repo: Omit<Repository,'id'>):        Promise<Repository>;

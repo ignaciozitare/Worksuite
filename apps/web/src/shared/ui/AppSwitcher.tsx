@@ -6,17 +6,18 @@ interface ModuleEntry {
   icon: string;
   labelKey: string;
   route: string;
+  color: string;
 }
 
 const ALL_MODULES: ModuleEntry[] = [
-  { key: 'jt',           icon: 'assignment',    labelKey: 'nav.jiraTracker',   route: '/jira-tracker/calendar' },
-  { key: 'hd',           icon: 'event_seat',    labelKey: 'nav.hotdesk',       route: '/hotdesk/map' },
-  { key: 'retro',        icon: 'replay',        labelKey: 'nav.retro',         route: '/retro' },
-  { key: 'deploy',       icon: 'rocket_launch', labelKey: 'nav.deployPlanner', route: '/deploy' },
-  { key: 'envtracker',   icon: 'dns',           labelKey: 'nav.environments',  route: '/envtracker' },
-  { key: 'vector-logic', icon: 'hub',           labelKey: 'nav.vectorLogic',   route: '/vector-logic' },
-  { key: 'chrono',       icon: 'timer',         labelKey: 'nav.timeClock',     route: '/chrono' },
-  { key: 'chrono-admin', icon: 'groups',        labelKey: 'nav.hr',            route: '/chrono-admin' },
+  { key: 'jt',           icon: 'assignment',    labelKey: 'nav.jiraTracker',   route: '/jira-tracker/calendar', color: '#4d8eff' },
+  { key: 'hd',           icon: 'event_seat',    labelKey: 'nav.hotdesk',       route: '/hotdesk/map',           color: '#4ae176' },
+  { key: 'retro',        icon: 'replay',        labelKey: 'nav.retro',         route: '/retro',                 color: '#f59e0b' },
+  { key: 'deploy',       icon: 'rocket_launch', labelKey: 'nav.deployPlanner', route: '/deploy',                color: '#ef4444' },
+  { key: 'envtracker',   icon: 'dns',           labelKey: 'nav.environments',  route: '/envtracker',            color: '#22d3ee' },
+  { key: 'vector-logic', icon: 'hub',           labelKey: 'nav.vectorLogic',   route: '/vector-logic',          color: '#b76dff' },
+  { key: 'chrono',       icon: 'timer',         labelKey: 'nav.timeClock',     route: '/chrono',                color: '#fb923c' },
+  { key: 'chrono-admin', icon: 'groups',        labelKey: 'nav.hr',            route: '/chrono-admin',          color: '#ddb7ff' },
 ];
 
 interface AppSwitcherProps {
@@ -162,7 +163,7 @@ export function AppSwitcher({ currentMod, userModules, onNavigate }: AppSwitcher
                     className="material-symbols-outlined"
                     style={{
                       fontSize: 22,
-                      color: isActive ? 'var(--ac2)' : 'var(--tx2)',
+                      color: isActive ? 'var(--ac2)' : m.color,
                       fontVariationSettings: isActive ? "'wght' 400, 'FILL' 1" : "'wght' 300",
                       transition: 'var(--ease)',
                     }}

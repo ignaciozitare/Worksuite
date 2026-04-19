@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { useDialog } from '@worksuite/ui';
 import { supabase } from '../lib/api';
 import { SupabaseDeployConfigRepo } from '../../modules/deploy-planner/infra/supabase/SupabaseDeployConfigRepo';
 import { JiraSyncAdapter } from '../../modules/jira-tracker/infra/JiraSyncAdapter';
@@ -114,6 +115,7 @@ function JiraFieldMapping({verCfg,setVerCfg}){
 
 function AdminDeployConfig() {
   const {t}=useTranslation();
+  const dialog=useDialog();
   const [statuses, setStatuses]   = React.useState([]);
   const [editing, setEditing]     = React.useState(null); // {id, name, color, is_final}
   const [jiraList, setJiraList]   = React.useState([]); // [{name, id?}]
@@ -211,8 +213,8 @@ function AdminDeployConfig() {
       const existing = new Set(jiraList.map(j=>j.name));
       const toAdd = names.filter(n=>!existing.has(n)).map((n,i)=>({id:Date.now()+i,name:n}));
       if(toAdd.length > 0) setJiraList(l=>[...l,...toAdd]);
-      else alert("No se encontraron estados nuevos. Revisa que tienes proyectos Jira configurados.");
-    } catch(e) { alert(`Error al obtener estados de Jira: ${e.message}`); }
+      else dialog.alert("No se encontraron estados nuevos. Revisa que tienes proyectos Jira configurados.", { icon: 'info' });
+    } catch(e) { dialog.alert(`Error al obtener estados de Jira: ${e.message}`, { icon: 'error' }); }
     setFetchingJ(false);
   };
 

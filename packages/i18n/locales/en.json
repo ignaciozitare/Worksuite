@@ -140,6 +140,7 @@
     "envSelectEnv":      "Select an environment.",
     "envAddJiraKey":     "Add at least one Jira key.",
     "envStartEndRequired":"Start and end are required.",
+    "envReservationConflict":"This environment already has a reservation for the selected time range. The view has been refreshed.",
     "envEditReservation":"Edit reservation",
     "envNewReservation": "New reservation",
     "envEnvironment":    "Environment",
@@ -495,7 +496,8 @@
     "trendRecommendationDesc": "Book early on Tuesdays and Thursdays to ensure a seat. Fridays have the most availability — consider flexible work arrangements.",
     "allowedZones":         "Allowed Booking Zones",
     "allowedZonesDesc":     "Select which buildings, floors and zones this employee can book. Leave empty for all zones.",
-    "allZonesAllowed":      "All zones (default)"
+    "allZonesAllowed":      "All zones (default)",
+    "seatConflict":         "This seat was just booked by someone else. The view has been refreshed."
   },
   "retro": {
     "title":           "RetroBoard",
@@ -660,7 +662,8 @@
       "refresh":           "Refresh tickets",
       "collapse":          "Collapse panel",
       "expand":            "Expand panel"
-    }
+    },
+    "deployConflict":      "Another deployment is already planned for this environment on this date"
   },
   "chrono": {
     "title":              "Time Clock",

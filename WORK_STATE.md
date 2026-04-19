@@ -1,39 +1,43 @@
 # WORK_STATE
 
-_Última actualización: 2026-04-19_
+_Ultima actualizacion: 2026-04-19_
 
 ---
 
-## 🎯 Tarea completada
+## Tarea completada
 
-**8 features implementadas + auditoría hexagonal + Card component compartido.**
+**Concurrency Control — race-condition prevention para HotDesk, Deploy Planner y Environments.**
 
-## 📍 Punto exacto
+## Punto exacto
 
 ### Completado hoy:
-1. **Light mode** — CHRONO_THEME usa CSS vars, 15 vars nuevas con dark/light, ProfilePage/HDMapView/DeployPlanner/VectorLogic actualizados
-2. **Language en Profile** — Selector EN/ES en perfil, sincronizado con topbar
-3. **App Switcher** — Dropdown Jira-style con grid de módulos + Material Symbol icons
-4. **HotDesk admin** — Panel con tabs (Settings/Blueprints/Assignments), blocked seats merged into assignments, 60/40 layout
-5. **Max booking days** — Campo en hotdesk_config (default 14), migración aplicada
-6. **HR teams zones** — allowedBookingZones en Equipo, UI en EquiposView
-7. **UIKit** — AppSwitcher demo, Module Icons grid, Theme Tokens, Card component
-8. **Blueprint elements** — 8 nuevos: elevator, stairs, bathroom, kitchen, table, plant, emergency_exit, electrical_panel
-9. **Admin sidebar** — Material Symbol icons, modern styling
-10. **Auth hexagonal** — container.ts + IAuthRepository + SupabaseAuthRepository
-11. **Shared Card** — packages/ui Card component con variants (default/stat/glass)
+1. **Spec** — `specs/core/concurrency/SPEC.md` con estrategia completa para los 3 modulos
+2. **Migracion SQL** — `supabase/migrations/20260419_concurrency_constraints.sql`:
+   - RPC `reserve_seat()` y `reserve_seats_batch()` para HotDesk (atomic INSERT con manejo de unique_violation)
+   - UNIQUE INDEX parcial en `deployments(environment, planned_at)` para Deploy Planner (solo estados activos)
+   - Trigger `check_reservation_overlap()` en `syn_reservations` para Environments (detecta solapamientos y lanza 23505)
+3. **ConflictError compartido** — `apps/web/src/shared/domain/errors/ConflictError.ts`
+4. **HotDesk** — Port + Infra: nuevo metodo `insertReservations()` que usa RPC batch con fallback a INSERT directo. Hook `useHotDesk`: captura ConflictError, muestra toast traducido, rollback optimistic update, re-fetch desde DB
+5. **Deploy Planner** — Infra: captura 23505 en `save()` y lanza ConflictError
+6. **Environments** — Port + Infra: nuevo metodo `insert()` separado de `upsert()`. Use case `UpsertReservation`: acepta `isNew` flag para usar INSERT en nuevas. View: captura ConflictError con alert + re-fetch
+7. **i18n** — Keys nuevas en EN y ES: `hotdesk.seatConflict`, `deployPlanner.deployConflict`, `admin.envReservationConflict`
+8. **Documentacion** — ARCHITECTURE.md (seccion Concurrency Control), README.md (parrafo resumen), specs/SPEC.md (indice actualizado con core/concurrency + modulos hotdesk y deploy-planner)
 
 ### Pendiente:
+- **Aplicar migracion SQL** en Supabase (requiere ejecutar contra la DB real)
 - **Login screen redesign** — esperando referencia visual de Pencil del usuario
-- **Migrar módulos existentes** a usar el nuevo Card component compartido (opcional, gradual)
 
-## ✅ Decisiones tomadas
-- CHRONO_THEME como CSS vars → todos los módulos soportan light/dark automáticamente
-- Card con 3 variantes en packages/ui para estandarizar
-- Auth module con hexagonal completo (port + adapter + container)
-- Blueprint: 8 elementos arquitectónicos con estilo plano
+## Decisiones tomadas
+- INSERT en vez de UPSERT para reservas — first-come-first-served obligatorio
+- DB constraint como ultima linea de defensa, aplicacion como feedback rapido
+- RPC batch para HotDesk (reserva multi-fecha atomica con resultado por fecha)
+- Trigger en vez de EXCLUSION constraint para Environments (porque status_id requiere JOIN)
+- ConflictError compartido en shared/domain para consistencia cross-modulo
 
-## 🚫 Bloqueos / notas
+## Proximo paso inmediato
+- Ejecutar la migracion `20260419_concurrency_constraints.sql` en Supabase
+
+## Bloqueos / notas
 - **npm cache corrupto**: dirs owned by root en ~/.npm/_cacache
-- **URL producción**: worksuite-phi.vercel.app
-- **Git index locks**: frecuentes timeouts en git add/commit por repo grande
+- **URL produccion**: worksuite-phi.vercel.app
+- **Migracion pendiente**: la migracion SQL debe aplicarse en Supabase antes de que los RPC functions funcionen. Mientras tanto, el fallback a INSERT directo cubre el caso

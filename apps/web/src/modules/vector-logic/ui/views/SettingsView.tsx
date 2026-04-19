@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { useDialog } from '@worksuite/ui';
 import type { AISettings, AIProvider, AIMode } from '../../domain/entities/AI';
 import { DEFAULT_SYSTEM_PROMPT } from '../../domain/entities/AI';
 import type { LLMModel } from '../../domain/ports/ILLMService';
@@ -15,6 +16,7 @@ interface Props {
 
 export function SettingsView({ currentUser }: Props) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -92,7 +94,7 @@ export function SettingsView({ currentUser }: Props) {
   };
 
   const disconnectGmail = async () => {
-    if (!confirm(t('vectorLogic.disconnectGmailConfirm'))) return;
+    if (!(await dialog.confirm(t('vectorLogic.disconnectGmailConfirm'), { danger: true }))) return;
     await gmailConnectionRepo.disconnect();
     setGmail(prev => prev ? { ...prev, connection: null } : prev);
   };
@@ -135,7 +137,7 @@ export function SettingsView({ currentUser }: Props) {
   };
 
   const removePriority = async (id: string) => {
-    if (!confirm(t('common.delete') + '?')) return;
+    if (!(await dialog.confirm(t('common.delete') + '?', { danger: true }))) return;
     await priorityRepo.remove(id);
     setPriorities(prev => prev.filter(p => p.id !== id));
   };

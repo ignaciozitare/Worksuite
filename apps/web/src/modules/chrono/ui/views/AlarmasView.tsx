@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { useDialog } from '@worksuite/ui';
 import { CHRONO_COLORS as C } from '../ChronoPage';
 import type { IAlarmaRepository } from '../../domain/ports/IAlarmaRepository';
 import type { Alarma, TipoAlarma } from '../../domain/entities/Alarma';
@@ -51,6 +52,7 @@ const EMPTY_FORM = {
 
 export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [alarmas, setAlarmas] = useState<Alarma[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -148,7 +150,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t('chrono.confirmarEliminar'))) return;
+    if (!(await dialog.confirm(t('chrono.confirmarEliminar'), { danger: true }))) return;
     try {
       await alarmaRepo.eliminar(id);
       setMessage({ type: 'ok', text: t('chrono.alarmaEliminada') });

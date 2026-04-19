@@ -52,6 +52,10 @@ worksuite/
 | **Chrono Admin (RRHH)** | Administración de empleados, equipos, aprobaciones, comparativa Jira vs fichaje, ficha encriptada (AES-256-GCM), informes CSV. UI Stitch con `ChronoStatCard` y tabs gradient |
 | **Profile** | Página de perfil del usuario actual accesible desde el menú del avatar |
 
+## Concurrency Control
+
+All reservation modules (HotDesk, Deploy Planner, Environments) implement database-level race-condition prevention. The pattern: DB constraints prevent invalid state → application uses INSERT (not UPSERT) → catches conflict errors (Postgres 23505) → shows translated message and refreshes the UI. See `specs/core/concurrency/SPEC.md` and `ARCHITECTURE.md` for details.
+
 ## Getting started
 
 ```bash

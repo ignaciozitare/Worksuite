@@ -140,6 +140,7 @@
     "envSelectEnv":      "Selecciona un entorno.",
     "envAddJiraKey":     "Añade al menos una clave Jira.",
     "envStartEndRequired":"Inicio y fin son obligatorios.",
+    "envReservationConflict":"Este entorno ya tiene una reserva para el rango horario seleccionado. La vista se ha actualizado.",
     "envEditReservation":"Editar reserva",
     "envNewReservation": "Nueva reserva",
     "envEnvironment":    "Entorno",
@@ -495,7 +496,8 @@
     "trendRecommendationDesc": "Reserva temprano los martes y jueves para asegurar tu puesto. Los viernes tienen más disponibilidad — considera horarios flexibles.",
     "allowedZones":         "Zonas de Reserva Permitidas",
     "allowedZonesDesc":     "Selecciona en qué edificios, plantas y zonas puede reservar este empleado. Deja vacío para todas.",
-    "allZonesAllowed":      "Todas las zonas (por defecto)"
+    "allZonesAllowed":      "Todas las zonas (por defecto)",
+    "seatConflict":         "Este puesto acaba de ser reservado por otra persona. La vista se ha actualizado."
   },
   "retro": {
     "title":           "RetroBoard",
@@ -660,7 +662,8 @@
       "refresh":           "Refrescar tickets",
       "collapse":          "Colapsar panel",
       "expand":            "Expandir panel"
-    }
+    },
+    "deployConflict":      "Ya hay otro despliegue planificado para este entorno en esta fecha"
   },
   "chrono": {
     "title":              "Control Horario",

@@ -1,6 +1,7 @@
 // Deploy Planner — root view. Routes between Planning / Timeline / History /
 // Metrics and delegates heavy rendering to small components under ./internal/.
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useDialog } from '@worksuite/ui';
 import { extractReposFromTickets } from '@worksuite/jira-service';
 import { RepoGroupService, type LinkedGroup } from '../domain/services/RepoGroupService';
 import { SubtaskService, type ClassifiedSubtask } from '../domain/services/SubtaskService';
@@ -116,6 +117,7 @@ interface TabDef {
 
 /* ─── ROOT ───────────────────────────────────────────────────── */
 export function DeployPlanner({ currentUser }: DeployPlannerProps) {
+  const dialog = useDialog();
   const [tab, setTab] = useState<TabId>('planning');
   const [detail, setDetail] = useState<string | null>(null);
   const [releases, setReleases] = useState<Release[]>([]);
@@ -326,7 +328,7 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
   };
 
   const delRelease = async (id: string): Promise<void> => {
-    if (!confirm('¿Eliminar esta release?')) return;
+    if (!(await dialog.confirm('¿Eliminar esta release?', { danger: true }))) return;
     setReleases(rs => rs.filter(r => r.id !== id));
     await releaseRawRepo.deleteRaw(id);
   };

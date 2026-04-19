@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { useDialog } from '@worksuite/ui';
 import type { EmailRule, EmailRuleFilter, EmailRuleFilterType } from '../../domain/entities/EmailRule';
 import type { TaskType } from '../../domain/entities/TaskType';
 import type { Priority } from '../../domain/entities/Priority';
@@ -14,6 +15,7 @@ const FILTER_TYPES: EmailRuleFilterType[] = ['all', 'label', 'category', 'sender
 
 export function EmailRulesView({ currentUser }: Props) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [rules, setRules] = useState<EmailRule[]>([]);
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
   const [priorities, setPriorities] = useState<Priority[]>([]);
@@ -46,7 +48,7 @@ export function EmailRulesView({ currentUser }: Props) {
   };
 
   const remove = async (r: EmailRule) => {
-    if (!confirm(`${t('common.delete')} "${r.name}"?`)) return;
+    if (!(await dialog.confirm(`${t('common.delete')} "${r.name}"?`, { danger: true }))) return;
     await emailRuleRepo.remove(r.id);
     setRules(prev => prev.filter(x => x.id !== r.id));
   };

@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from '@worksuite/i18n';
+import { useDialog } from '@worksuite/ui';
 import { sessionRepo, actionableRepo, teamRepo } from '../container';
 
 // ════════════════════════════════════════════════════════════════
@@ -944,6 +945,7 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
 // ════════════════════════════════════════════════════════════════
 
 export function AdminRetroTeams({wsUsers,teams,setTeams}){
+  const dialog=useDialog();
   const [sel,setSel]=useState(null);
   const [form,setForm]=useState({name:"",color:"#6366f1"});
   const [saving,setSaving]=useState(false);
@@ -962,7 +964,7 @@ export function AdminRetroTeams({wsUsers,teams,setTeams}){
   };
 
   const deleteTeam=async(id)=>{
-    if(!confirm("¿Eliminar este equipo?"))return;
+    if(!(await dialog.confirm("¿Eliminar este equipo?",{danger:true})))return;
     await teamRepo.deleteTeam(id);
     setTeams(prev=>prev.filter(x=>x.id!==id));
     if(sel===id)setSel(null);

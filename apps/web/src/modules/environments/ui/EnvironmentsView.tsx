@@ -3,9 +3,11 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { DeployTimeline }          from '../../deploy-planner/ui/DeployTimeline';
 import { GanttTimeline, JiraTicketPicker, DateRangePicker } from '@worksuite/ui';
 import { useTranslation }                 from '@worksuite/i18n';
+import { useDialog }                      from '@worksuite/ui';
 import { extractReposFromTickets }        from '@worksuite/jira-service';
 import type { Environment }        from '../domain/entities/Environment';
 import type { Reservation, Repository, EnvPolicy } from '../domain/entities/Reservation';
+import { ConflictError } from '../../../shared/domain/errors/ConflictError';
 import {
   getEnvs, getRes, upsertUC, statusUC,
   jiraApi, historyRepo, jiraConfigRepo, statusRepo,
@@ -627,6 +629,7 @@ function HistoryView({ onSelect }) {
 // ── Main view ──────────────────────────────────────────────────────────────────
 export function EnvironmentsView({ currentUser, wsUsers }) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [envs,   setEnvs]   = useState([]);
   const [res,    setRes]    = useState([]);
   const [repos,  setRepos]  = useState([]);
@@ -757,10 +760,23 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
   };
 
   const handleSave = async draft => {
-    await upsertUC.execute(draft);
-    setRes(prev=>{ const i=prev.findIndex(r=>r.id===draft.id);
-      return i>=0?prev.map(r=>r.id===draft.id?draft:r):[...prev,draft]; });
-    setForm(null);
+    const isNew = !res.some(r => r.id === draft.id);
+    try {
+      await upsertUC.execute(draft, isNew);
+      setRes(prev=>{ const i=prev.findIndex(r=>r.id===draft.id);
+        return i>=0?prev.map(r=>r.id===draft.id?draft:r):[...prev,draft]; });
+      setForm(null);
+    } catch (err) {
+      if (err instanceof ConflictError) {
+        await dialog.alert(t('admin.envReservationConflict'), { icon: 'warning' });
+        // Refresh from DB to show current state
+        const fresh = await getRes.execute(null);
+        setRes(fresh);
+        setForm(null);
+        return;
+      }
+      throw err;
+    }
   };
 
   const handleCheckIn = async r => {

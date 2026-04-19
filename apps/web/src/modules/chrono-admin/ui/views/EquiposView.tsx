@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { useDialog } from '@worksuite/ui';
 import type { IEquipoRepository } from '../../domain/ports/IEquipoRepository';
 import type { Equipo } from '../../domain/entities/Equipo';
 
@@ -13,6 +14,7 @@ interface Props {
 
 export function EquiposView({ equipoRepo, users }: Props) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -235,7 +237,7 @@ export function EquiposView({ equipoRepo, users }: Props) {
 
                   {/* Edit + Delete */}
                   <button className="ch-btn ch-btn-ghost" onClick={e => { e.stopPropagation(); setEditingTeam(editingTeam === equipo.id ? null : equipo.id); setEditTeamDraft({ nombre: equipo.nombre, descripcion: equipo.descripcion || '', managerId: equipo.managerId || '' }); }} style={{ fontSize: 11, padding: '4px 10px' }}>✏️</button>
-                  <button className="ch-btn ch-btn-ghost" onClick={e => { e.stopPropagation(); if (confirm(t('chronoAdmin.confirmarEliminar'))) handleDelete(equipo.id); }} style={{ fontSize: 11, padding: '4px 10px', color: C.red, borderColor: `${C.red}44` }}>🗑</button>
+                  <button className="ch-btn ch-btn-ghost" onClick={async e => { e.stopPropagation(); if (await dialog.confirm(t('chronoAdmin.confirmarEliminar'), { danger: true })) handleDelete(equipo.id); }} style={{ fontSize: 11, padding: '4px 10px', color: C.red, borderColor: `${C.red}44` }}>🗑</button>
 
                   {/* Chevron */}
                   <div style={{ fontSize: 14, color: C.txMuted, transition: 'transform .2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)' }}>▼</div>

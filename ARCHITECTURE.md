@@ -447,6 +447,42 @@ de routing/auth de la app web). Se documentan en el UI Kit (`/ui-kit`).
 
 ---
 
+## Concurrency Control (Reservations)
+
+All modules that manage reservations of shared resources implement database-level
+concurrency protection following the same pattern:
+
+```
+DB constraint (last line of defense) → INSERT (not UPSERT) → catch 23505 → user feedback + refresh
+```
+
+### Per-module strategy
+
+| Module | Resource | DB Protection | Application Handling |
+|--------|----------|---------------|---------------------|
+| **HotDesk** | Seats per date | `UNIQUE(seat_id, date)` + RPC `reserve_seats_batch()` | `ConflictError` → toast + rollback optimistic update + re-fetch |
+| **Deploy Planner** | Env per planned date | `UNIQUE INDEX (environment, planned_at) WHERE status NOT IN (...)` | `ConflictError` propagated to UI |
+| **Environments** | Env time ranges | Trigger `check_reservation_overlap()` (raises 23505) | `ConflictError` → alert + re-fetch |
+
+### Why INSERT instead of UPSERT
+
+`UPSERT` with `onConflict` converts a constraint violation into an UPDATE, silently
+overwriting the first user's data. This is **wrong for reservations** where
+first-come-first-served must apply. Using `INSERT` lets the constraint fail explicitly,
+which the application catches and surfaces to the user.
+
+### Shared error class
+
+`apps/web/src/shared/domain/errors/ConflictError.ts` — thrown by all infra adapters
+when Postgres returns error code `23505` (unique_violation). UI layers catch this to
+show translated messages and refresh stale state.
+
+### Spec
+
+Full specification: `specs/core/concurrency/SPEC.md`
+
+---
+
 ## API Endpoints (Fastify)
 
 | Ruta | Método | Descripción |

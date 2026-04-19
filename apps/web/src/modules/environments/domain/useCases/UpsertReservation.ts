@@ -39,7 +39,11 @@ export class UpsertReservation {
     return null;
   }
 
-  async execute(res: Reservation): Promise<void> {
-    await this.repo.upsert(res);
+  async execute(res: Reservation, isNew = true): Promise<void> {
+    if (isNew) {
+      await this.repo.insert(res);
+    } else {
+      await this.repo.upsert(res);
+    }
   }
 }

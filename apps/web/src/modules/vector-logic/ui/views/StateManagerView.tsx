@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { useDialog } from '@worksuite/ui';
 import type { State, StateCategory, WorkflowState } from '../../domain/entities/State';
 import type { Workflow } from '../../domain/entities/Workflow';
 import { workflowRepo, stateRepo } from '../../container';
@@ -21,6 +22,7 @@ interface Props {
 
 export function StateManagerView({ currentUser }: Props) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [states, setStates] = useState<State[]>([]);
   const [selected, setSelected] = useState<Workflow | null>(null);
@@ -173,10 +175,10 @@ export function StateManagerView({ currentUser }: Props) {
   const deleteLibraryState = async (s: State) => {
     const isUsedInWorkflow = wfStates.some(ws => ws.stateId === s.id);
     if (isUsedInWorkflow) {
-      alert(t('vectorLogic.stateInUseError'));
+      await dialog.alert(t('vectorLogic.stateInUseError'), { icon: 'warning' });
       return;
     }
-    if (!confirm(t('vectorLogic.deleteStateConfirm', { name: s.name }))) return;
+    if (!(await dialog.confirm(t('vectorLogic.deleteStateConfirm', { name: s.name }), { danger: true }))) return;
     try {
       await stateRepo.remove(s.id);
       setStates(prev => prev.filter(x => x.id !== s.id));
@@ -184,9 +186,9 @@ export function StateManagerView({ currentUser }: Props) {
       console.error('[DeleteState]', err);
       const msg = String(err);
       if (msg.includes('foreign key') || msg.includes('violates')) {
-        alert(t('vectorLogic.stateInUseError'));
+        await dialog.alert(t('vectorLogic.stateInUseError'), { icon: 'warning' });
       } else {
-        alert(msg);
+        await dialog.alert(msg, { icon: 'error' });
       }
     }
   };

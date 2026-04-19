@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { useDialog } from '@worksuite/ui';
 import type { Task, TaskPriority } from '../../domain/entities/Task';
 import type { TaskType } from '../../domain/entities/TaskType';
 import type { WorkflowState, StateCategory } from '../../domain/entities/State';
@@ -694,6 +695,7 @@ function TaskDetailModal({ task, taskType, wfStates, wsUsers, priorities, curren
   onClose: () => void; onUpdate: (patch: Partial<Task>) => void; onDelete: () => void;
 }) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [data, setData] = useState(task.data);
@@ -762,7 +764,7 @@ function TaskDetailModal({ task, taskType, wfStates, wsUsers, priorities, curren
         )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 12, borderTop: '1px solid var(--bd)' }}>
-          <button style={btnStyle('danger')} onClick={() => { if (confirm(t('vectorLogic.deleteTaskConfirm'))) onDelete(); }}>
+          <button style={btnStyle('danger')} onClick={async () => { if (await dialog.confirm(t('vectorLogic.deleteTaskConfirm'), { danger: true })) onDelete(); }}>
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
             {t('common.delete')}
           </button>

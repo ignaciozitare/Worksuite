@@ -11,6 +11,8 @@ This index is updated automatically by the Spec Agent when a new spec is created
 | Module | Spec | Status |
 |---|---|---|
 | Vector Logic | [specs/modules/vector-logic/SPEC.md](modules/vector-logic/SPEC.md) | Phases 1–3 shipped · Phase 4 (Email Intelligence) spec confirmed, pending DBA |
+| HotDesk | [specs/modules/hotdesk/SPEC.md](modules/hotdesk/SPEC.md) | Booking confirmation + delegation shipped |
+| Deploy Planner | [specs/modules/deploy-planner/SPEC.md](modules/deploy-planner/SPEC.md) | Task sidebar DRAFT |
 
 ---
 
@@ -18,7 +20,7 @@ This index is updated automatically by the Spec Agent when a new spec is created
 
 | Area | Spec | Status |
 |---|---|---|
-| *(none yet — specs will appear here as they are created)* | | |
+| Concurrency Control | [specs/core/concurrency/SPEC.md](core/concurrency/SPEC.md) | Confirmed — implemented for HotDesk, Deploy Planner, Environments |
 
 ---
 

@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { useDialog } from '@worksuite/ui';
 import { CHRONO_COLORS as C } from '../ChronoPage';
 import { DateRangePicker } from '@worksuite/ui';
 import type { IVacacionRepository } from '../../domain/ports/IVacacionRepository';
@@ -31,6 +32,7 @@ const ESTADO_BADGE: Record<string, string> = {
 
 export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProps) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const currentYear = new Date().getFullYear();
 
   const [vacaciones, setVacaciones] = useState<Vacacion[]>([]);
@@ -121,7 +123,7 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
   }, [vacacionRepo, currentUser.id, tipo, fechaInicio, fechaFin, diasHabiles, motivo, saldo, resetForm, loadData, t]);
 
   const handleCancel = useCallback(async (vacacionId: string) => {
-    if (!confirm(t('chrono.confirmarCancelar'))) return;
+    if (!(await dialog.confirm(t('chrono.confirmarCancelar'), { danger: true }))) return;
     try {
       await vacacionRepo.cancelar(vacacionId);
       await loadData();

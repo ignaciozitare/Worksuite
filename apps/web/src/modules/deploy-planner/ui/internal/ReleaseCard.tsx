@@ -7,7 +7,7 @@
  * and bug/test counters from classified subtasks.
  */
 import { useState } from 'react';
-import { DateRangePicker, BugIcon } from '@worksuite/ui';
+import { DateRangePicker, BugIcon, useDialog } from '@worksuite/ui';
 import { RepoGroupService, type LinkedGroup, type ReleaseForGrouping } from '../../domain/services/RepoGroupService';
 import { SubtaskService, type ClassifiedSubtask } from '../../domain/services/SubtaskService';
 import { datesOverlap } from './helpers';
@@ -63,6 +63,7 @@ export function ReleaseCard({
   allReleases, repoGroups, versionCfg, allReleaseNumbers,
   jiraBaseUrl = '', linkedGroups = [], classifiedSubs = [],
 }: ReleaseCardProps) {
+  const dialog = useDialog();
   const [addingTicket, setAddingTicket] = useState(false);
   const [search, setSearch] = useState('');
   const [showVersionPicker, setShowVersionPicker] = useState(false);
@@ -191,7 +192,7 @@ export function ReleaseCard({
                 toReleasesForGrouping(allReleases, statusCfg),
               );
               if (!check.allowed) {
-                alert(`🔒 No puedes pasar a "${newStatus}" porque hay releases vinculadas pendientes:\n${check.blockers.map(b => `• ${b.groupName}: release en "${b.status}"`).join('\n')}`);
+                dialog.alert(`No puedes pasar a "${newStatus}" porque hay releases vinculadas pendientes:\n${check.blockers.map(b => `- ${b.groupName}: release en "${b.status}"`).join('\n')}`, { icon: 'lock', title: 'Bloqueado' });
                 return;
               }
             }

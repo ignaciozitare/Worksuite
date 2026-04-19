@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { useDialog } from '@worksuite/ui';
 import type { EmailDetection } from '../../domain/entities/EmailDetection';
 import { gmailThreadUrl } from '../../domain/entities/EmailDetection';
 import type { TaskType } from '../../domain/entities/TaskType';
@@ -197,6 +198,7 @@ function DetectionDetail({ detection, taskTypes, priorities, canAct, onApprove, 
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [title, setTitle] = useState(detection.proposedTitle ?? detection.subject ?? '');
   const [description, setDescription] = useState(detection.proposedDescription ?? '');
   const [taskTypeId, setTaskTypeId] = useState(detection.proposedTaskTypeId ?? '');
@@ -205,7 +207,7 @@ function DetectionDetail({ detection, taskTypes, priorities, canAct, onApprove, 
   const [busy, setBusy] = useState(false);
 
   const doApprove = async () => {
-    if (!taskTypeId) { alert(t('vectorLogic.missingTaskType')); return; }
+    if (!taskTypeId) { await dialog.alert(t('vectorLogic.missingTaskType'), { icon: 'warning' }); return; }
     setBusy(true);
     try {
       await onApprove(detection, {
@@ -219,7 +221,7 @@ function DetectionDetail({ detection, taskTypes, priorities, canAct, onApprove, 
   };
 
   const doReject = async () => {
-    if (!confirm(t('vectorLogic.rejectDetectionConfirm'))) return;
+    if (!(await dialog.confirm(t('vectorLogic.rejectDetectionConfirm'), { danger: true }))) return;
     setBusy(true);
     try { await onReject(detection); } finally { setBusy(false); }
   };

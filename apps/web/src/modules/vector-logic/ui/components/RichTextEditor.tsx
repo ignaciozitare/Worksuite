@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useRef, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { useDialog } from '@worksuite/ui';
 
 interface Props {
   value: string;
@@ -21,6 +22,7 @@ interface Props {
  */
 export function RichTextEditor({ value, onChange, placeholder, minHeight = 120 }: Props) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const ref = useRef<HTMLDivElement | null>(null);
 
   // Initial paint and external value sync: only update when value changes
@@ -63,8 +65,8 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 120 }
         <ToolButton title={t('richText.bulletedList')} onClick={() => exec('insertUnorderedList')} icon="format_list_bulleted" />
         <ToolButton title={t('richText.numberedList')} onClick={() => exec('insertOrderedList')} icon="format_list_numbered" />
         <Sep />
-        <ToolButton title={t('richText.link')} onClick={() => {
-          const url = prompt(t('richText.urlPrompt'));
+        <ToolButton title={t('richText.link')} onClick={async () => {
+          const url = await dialog.prompt(t('richText.urlPrompt'));
           if (url) exec('createLink', url);
         }} icon="link" />
         <ToolButton title={t('richText.clearFormatting')} onClick={() => exec('removeFormat')} icon="format_clear" />

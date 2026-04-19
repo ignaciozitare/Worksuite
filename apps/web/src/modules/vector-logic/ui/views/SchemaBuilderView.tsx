@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { useDialog } from '@worksuite/ui';
 import type { TaskType } from '../../domain/entities/TaskType';
 import type { SchemaField, FieldTypeId } from '../../domain/entities/FieldType';
 import { FIELD_TYPES, defaultFieldsForNewTaskType } from '../../domain/entities/FieldType';
@@ -16,6 +17,7 @@ interface Props {
 
 export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
   const [selected, setSelected] = useState<TaskType | null>(null);
   const [fields, setFields] = useState<SchemaField[]>([]);
@@ -70,7 +72,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
 
   const deleteSelectedType = async () => {
     if (!selected) return;
-    if (!confirm(t('vectorLogic.deleteTaskTypeConfirm', { name: selected.name }))) return;
+    if (!(await dialog.confirm(t('vectorLogic.deleteTaskTypeConfirm', { name: selected.name }), { danger: true }))) return;
     await taskTypeRepo.remove(selected.id);
     setTaskTypes(prev => prev.filter(t => t.id !== selected.id));
     setSelected(null);

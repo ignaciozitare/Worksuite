@@ -1,5 +1,6 @@
 import type { DeploymentRepository } from "../domain/ports/DeploymentRepository";
 import type { Deployment, DeployPlan, DeployStep } from "../domain/entities/Deployment";
+import { ConflictError } from "../../../shared/domain/errors/ConflictError";
 import { supabase } from "../../../shared/lib/supabaseClient";
 
 // ─── Row mappers ──────────────────────────────────────────────────────────────
@@ -70,7 +71,12 @@ export class SupabaseDeploymentRepository implements DeploymentRepository {
       })
       .select()
       .single();
-    if (error) throw error;
+    if (error) {
+      if (error.code === '23505') {
+        throw new ConflictError('deployment', error.message);
+      }
+      throw error;
+    }
     return rowToDeployment(data);
   }
 

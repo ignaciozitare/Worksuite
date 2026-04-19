@@ -29,6 +29,8 @@ export interface SeatReservationPort {
   findAllReservations(): Promise<ReservationRow[]>;
   findAllFixed(): Promise<FixedAssignmentRow[]>;
   findAllSeats(): Promise<SeatRow[]>;
+  /** @deprecated Use insertReservations — upsert silently overwrites on conflict */
   upsertReservations(rows: Omit<ReservationRow, 'created_at'>[]): Promise<void>;
+  insertReservations(rows: Omit<ReservationRow, 'created_at'>[]): Promise<{ date: string; success: boolean }[]>;
   removeReservation(seatId: string, date: string, userId: string): Promise<void>;
 }

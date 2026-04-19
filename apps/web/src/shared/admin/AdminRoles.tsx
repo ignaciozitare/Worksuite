@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
+import { useDialog } from '@worksuite/ui';
 import { supabase } from '../lib/api';
 import { SupabaseRoleRepo } from '../infra/SupabaseRoleRepo';
 
@@ -28,6 +29,7 @@ const ALL_ADMIN_PERMS = [
 ];
 
 function AdminRoles() {
+  const dialog = useDialog();
   const [roles, setRoles] = useState([]);
   const [selRole, setSelRole] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -54,7 +56,7 @@ function AdminRoles() {
   };
 
   const deleteRole = async (id) => {
-    if(!confirm('Delete this role?')) return;
+    if(!(await dialog.confirm('Delete this role?',{danger:true}))) return;
     await roleRepo.remove(id);
     setRoles(r=>r.filter(x=>x.id!==id));
     if(selRole?.id===id) setSelRole(null);
