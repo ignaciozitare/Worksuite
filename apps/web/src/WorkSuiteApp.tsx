@@ -147,6 +147,7 @@ function WorkSuiteApp() {
   const [hdModal, setHdModal] = useState<any>(null);
   const [selectedBuilding, setSelectedBuilding] = useState<any>(null);
   const [selectedBlueprint, setSelectedBlueprint] = useState<any>(null);
+  const [hdFloorSeatIds, setHdFloorSeatIds] = useState<string[]>([]);
 
   const { handleSeatClick, handleConfirm: hdConfirm, handleRelease: hdRelease, handleConfirmPresence: hdConfirmPresence, handleDelegate: hdDelegate } = useHotDesk({
     hd, setHd, currentUser: CURRENT_USER, notify, t,
@@ -325,10 +326,11 @@ function WorkSuiteApp() {
                   onViewChange={v => navigate(`/hotdesk/${v}`)}
                   buildingFloorSelector={<BuildingFloorSelectors selectedBuilding={selectedBuilding} selectedBlueprint={selectedBlueprint} onChange={handleBuildingFloorChange} />}
                   building={selectedBuilding}
+                  floorSeatIds={hdFloorSeatIds}
                 >
                   {view === 'map' ? (
                     selectedBlueprint
-                      ? <BlueprintHDMap hd={hd} onSeat={sid => handleHdSeatClick(sid, TODAY)} currentUser={CURRENT_USER} blueprint={selectedBlueprint} theme={theme} />
+                      ? <BlueprintHDMap hd={hd} onSeat={sid => handleHdSeatClick(sid, TODAY)} currentUser={CURRENT_USER} blueprint={selectedBlueprint} theme={theme} onFloorSeats={setHdFloorSeatIds} />
                       : null
                   ) : (
                     <HDTableView hd={hd} onCell={(sid, date) => handleHdSeatClick(sid, date)} currentUser={CURRENT_USER} blueprint={selectedBlueprint} theme={theme} />

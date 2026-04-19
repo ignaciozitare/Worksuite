@@ -4,7 +4,7 @@ import { useTranslation } from '@worksuite/i18n';
 import { SeatStatusEnum as SeatStatus } from '../domain/entities/constants';
 import { TODAY } from '@/shared/lib/constants';
 
-function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null, theme="dark" }: { hd: any; onSeat: (id: string) => void; currentUser: any; blueprint: any; highlightSeat?: string | null; theme?: string }) {
+function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null, theme="dark", onFloorSeats }: { hd: any; onSeat: (id: string) => void; currentUser: any; blueprint: any; highlightSeat?: string | null; theme?: string; onFloorSeats?: (ids: string[]) => void }) {
 
   const { t } = useTranslation();
   const canvasRef = useRef(null);
@@ -91,6 +91,11 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
     });
     return seats;
   }, [blueprint?.id]);
+
+  // Report seat IDs to parent for accurate counts
+  useEffect(() => {
+    if (onFloorSeats) onFloorSeats(allSeats.map(s => s.id));
+  }, [allSeats, onFloorSeats]);
 
   // Use refs to access current scale/offset inside event handlers (avoids stale closure)
   const scaleRef  = useRef(scale);
@@ -388,6 +393,14 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
   return (
     <div className="hd-map-wrap" style={{position:'relative',height:'100%',display:'flex',flexDirection:'column'}}>
       <div ref={cwRef} style={{position:'relative',flex:1,minHeight:0,padding:0,overflow:'hidden'}}>
+        {/* Zoom controls — bottom left, vertical */}
+        <div style={{position:'absolute',bottom:12,left:12,display:'flex',flexDirection:'column',gap:4,zIndex:20}}>
+          <button onClick={()=>zoomBy(0.15)} style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(32,31,31,.85)',backdropFilter:'blur(12px)',border:'1px solid var(--sf2,#2a2a2a)',borderRadius:6,color:'var(--tx2,#c2c6d6)',cursor:'pointer',fontSize:16,fontWeight:600,fontFamily:'inherit',transition:'all .15s'}}>+</button>
+          <button onClick={()=>zoomBy(-0.15)} style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(32,31,31,.85)',backdropFilter:'blur(12px)',border:'1px solid var(--sf2,#2a2a2a)',borderRadius:6,color:'var(--tx2,#c2c6d6)',cursor:'pointer',fontSize:16,fontWeight:600,fontFamily:'inherit',transition:'all .15s'}}>−</button>
+          <button onClick={fitToView} title={t("hotdesk.fitMap")} style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(32,31,31,.85)',backdropFilter:'blur(12px)',border:'1px solid var(--sf2,#2a2a2a)',borderRadius:6,color:'var(--tx2,#c2c6d6)',cursor:'pointer',fontSize:11,fontFamily:'inherit',transition:'all .15s'}}>
+            <span className="material-symbols-outlined" style={{fontSize:16}}>fit_screen</span>
+          </button>
+        </div>
         <canvas ref={canvasRef} style={{display:'block',width:'100%',height:'100%',
           cursor: hoveredSeat ? (seatStatusOf(hoveredSeat) === SeatStatus.BLOCKED ? 'not-allowed' : 'pointer') : 'default'}}
           onMouseMove={e=>{

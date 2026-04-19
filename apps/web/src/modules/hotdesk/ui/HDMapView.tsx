@@ -46,8 +46,6 @@ const CSS = `
 .hd .float-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,${C.primaryStrong});}
 .hd .modal-backdrop{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);}
 .hd .modal-body{background:${C.sf};border:1px solid ${C.sfHigh};border-radius:12px;max-width:560px;width:100%;max-height:80vh;overflow:auto;box-shadow:0 24px 80px rgba(0,0,0,.6);}
-.hd .zoom-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(32,31,31,.85);backdrop-filter:blur(12px);border:1px solid ${C.sfHigh};border-radius:${T.radius.md};color:${C.txMuted};cursor:pointer;font-size:16px;font-family:${T.font.mono};font-weight:600;transition:all .15s;}
-.hd .zoom-btn:hover{border-color:${C.primary};color:${C.primary};background:${C.primaryDim};}
 `;
 
 type View = 'map' | 'table';
@@ -104,13 +102,48 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
 
   const hubName = building?.city ? ` ${building.city} Hub` : '';
 
-  const trendData = [
-    { day: t('hotdesk.trendMon'), pct: 78 },
-    { day: t('hotdesk.trendTue'), pct: 92 },
-    { day: t('hotdesk.trendWed'), pct: 85 },
-    { day: t('hotdesk.trendThu'), pct: 88 },
-    { day: t('hotdesk.trendFri'), pct: 62 },
-  ];
+  // Calculate real trend data from reservations for this floor's seats
+  const trendData = useMemo(() => {
+    const days = [
+      { day: t('hotdesk.trendMon'), dow: 1 },
+      { day: t('hotdesk.trendTue'), dow: 2 },
+      { day: t('hotdesk.trendWed'), dow: 3 },
+      { day: t('hotdesk.trendThu'), dow: 4 },
+      { day: t('hotdesk.trendFri'), dow: 5 },
+    ];
+    if (totalSeats === 0) return days.map(d => ({ ...d, pct: 0 }));
+    // Count reservations per day-of-week for seats on this floor
+    const dowCounts: Record<number, number[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+    const floorSet = new Set(seatIds);
+    hd.reservations.forEach((r: any) => {
+      if (!floorSet.has(r.seatId)) return;
+      const d = new Date(r.date);
+      const dow = d.getDay();
+      if (dow >= 1 && dow <= 5) {
+        const key = r.date;
+        if (!dowCounts[dow].includes(key)) dowCounts[dow].push(key);
+      }
+    });
+    // Calculate average occupancy per DOW
+    return days.map(d => {
+      const dates = dowCounts[d.dow] || [];
+      if (dates.length === 0) return { ...d, pct: 0 };
+      // Count unique dates and average reservations per date
+      const dateSet = new Set<string>();
+      let totalRes = 0;
+      hd.reservations.forEach((r: any) => {
+        if (!floorSet.has(r.seatId)) return;
+        const rd = new Date(r.date);
+        if (rd.getDay() === d.dow) {
+          dateSet.add(r.date);
+          totalRes++;
+        }
+      });
+      const avgPerDay = dateSet.size > 0 ? totalRes / dateSet.size : 0;
+      const pct = Math.round((avgPerDay / totalSeats) * 100);
+      return { ...d, pct: Math.min(pct, 100) };
+    });
+  }, [hd.reservations, seatIds, totalSeats]);
 
   return (
     <div className="hd">
@@ -234,17 +267,21 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
               <div className="mono" style={{ fontSize: 22, fontWeight: 700, color: C.green, marginTop: 4, position: 'relative' }}>{counts.free} / {totalSeats}</div>
             </div>
 
-            {/* Active Booking */}
-            {myToday && (
-              <div className="float-card" style={{ '--accent': C.primary } as React.CSSProperties}>
-                <div aria-hidden style={{ position: 'absolute', top: -20, right: -20, width: 60, height: 60, background: `radial-gradient(circle, ${C.primaryDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txDim, position: 'relative' }}>{t('hotdesk.activeBooking')}</div>
-                <div className="mono" style={{ fontSize: 18, fontWeight: 700, color: C.primary, marginTop: 4, position: 'relative' }}>{t('hotdesk.desk')} {myToday.seatId}</div>
-                <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 4, background: myToday.status === 'confirmed' ? C.greenDim : C.amberDim, color: myToday.status === 'confirmed' ? C.green : C.amber, fontWeight: 600, marginTop: 4, display: 'inline-block', position: 'relative' }}>
-                  {myToday.status === 'confirmed' ? t('hotdesk.confirmed') : t('hotdesk.pending')}
-                </span>
-              </div>
-            )}
+            {/* Active Booking — always visible */}
+            <div className="float-card" style={{ '--accent': myToday ? C.primary : C.txDim } as React.CSSProperties}>
+              <div aria-hidden style={{ position: 'absolute', top: -20, right: -20, width: 60, height: 60, background: `radial-gradient(circle, ${myToday ? C.primaryDim : `${C.txDim}15`} 0%, transparent 70%)`, pointerEvents: 'none' }} />
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txDim, position: 'relative' }}>{t('hotdesk.activeBooking')}</div>
+              {myToday ? (
+                <>
+                  <div className="mono" style={{ fontSize: 18, fontWeight: 700, color: C.primary, marginTop: 4, position: 'relative' }}>{t('hotdesk.desk')} {myToday.seatId}</div>
+                  <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 4, background: myToday.status === 'confirmed' ? C.greenDim : C.amberDim, color: myToday.status === 'confirmed' ? C.green : C.amber, fontWeight: 600, marginTop: 4, display: 'inline-block', position: 'relative' }}>
+                    {myToday.status === 'confirmed' ? t('hotdesk.confirmed') : t('hotdesk.pending')}
+                  </span>
+                </>
+              ) : (
+                <div style={{ fontSize: 12, color: C.txDim, marginTop: 4, position: 'relative' }}>{t('hotdesk.noBookingToday')}</div>
+              )}
+            </div>
 
             {/* Peak Insight card (below Active Booking) */}
             <div className="float-card" style={{ '--accent': C.purple, cursor: 'pointer' } as React.CSSProperties} onClick={() => setShowTrends(true)}>
