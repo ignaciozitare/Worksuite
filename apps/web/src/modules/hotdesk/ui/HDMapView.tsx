@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { SeatStatusEnum as SS } from '../domain/entities/constants';
 import { ReservationService } from '../domain/services/ReservationService';
@@ -44,6 +44,8 @@ const CSS = `
 .hd select:focus{border-color:${C.primaryStrong};}
 .hd .float-card{background:rgba(32,31,31,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid ${C.sfHigh};border-radius:${T.radius.lg};padding:12px 16px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.4);}
 .hd .float-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,${C.primaryStrong});}
+.hd .modal-backdrop{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);}
+.hd .modal-body{background:${C.sf};border:1px solid ${C.sfHigh};border-radius:12px;max-width:560px;width:100%;max-height:80vh;overflow:auto;box-shadow:0 24px 80px rgba(0,0,0,.6);}
 `;
 
 type View = 'map' | 'table';
@@ -58,10 +60,12 @@ interface Props {
   onViewChange?: (v: View) => void;
   buildingFloorSelector?: React.ReactNode;
   building?: { id: string; name: string; city?: string; address?: string } | null;
+  onQuickReserve?: () => void;
 }
 
-function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view = 'map', onViewChange, buildingFloorSelector, building }: Props) {
+function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view = 'map', onViewChange, buildingFloorSelector, building, onQuickReserve }: Props) {
   const { t } = useTranslation();
+  const [showTrends, setShowTrends] = useState(false);
   const blockedSeats = hd.blockedSeats || {};
 
   const counts = useMemo(() => {
@@ -85,12 +89,28 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
 
   const handleCheckIn = () => { if (myPending && onConfirmPresence) onConfirmPresence(myPending.seatId, TODAY); };
 
+  const handleQuickReserve = () => {
+    if (onQuickReserve) { onQuickReserve(); return; }
+    // Fallback: find first free seat and click it
+    const freeSeat = SEATS.find(s => ReservationService.statusOf(s.id, TODAY, hd.fixed, hd.reservations, blockedSeats) === SS.FREE);
+    if (freeSeat) onSeat(freeSeat.id);
+  };
+
   const NAV = [
     { id: 'map' as View,   label: t('hotdesk.officeMap'),   icon: 'map' },
     { id: 'table' as View, label: t('hotdesk.monthlyView'), icon: 'calendar_month' },
   ];
 
   const hubName = building?.city ? `${building.city} Hub` : '';
+
+  // Trend data (mock for now — will be replaced with real analytics)
+  const trendData = [
+    { day: t('hotdesk.trendMon'), pct: 78 },
+    { day: t('hotdesk.trendTue'), pct: 92 },
+    { day: t('hotdesk.trendWed'), pct: 85 },
+    { day: t('hotdesk.trendThu'), pct: 88 },
+    { day: t('hotdesk.trendFri'), pct: 62 },
+  ];
 
   return (
     <div className="hd">
@@ -136,7 +156,7 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
           ))}
         </nav>
 
-        {/* Campus Filter card */}
+        {/* Campus Filter */}
         {buildingFloorSelector && (
           <div className="hd-card" style={{ '--accent': C.primaryStrong, padding: 16 } as React.CSSProperties}>
             <div aria-hidden style={{ position: 'absolute', top: -30, right: -30, width: 80, height: 80, background: `radial-gradient(circle, ${C.primaryDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
@@ -148,7 +168,7 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
           </div>
         )}
 
-        {/* Live Status card */}
+        {/* Live Status */}
         <div className="hd-card" style={{ '--accent': C.green, marginTop: 8 } as React.CSSProperties}>
           <div aria-hidden style={{ position: 'absolute', top: -30, right: -30, width: 80, height: 80, background: `radial-gradient(circle, ${C.greenDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
           <h3 style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: C.txDim, marginBottom: 14, position: 'relative' }}>
@@ -177,16 +197,12 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
           <div className="hd-card fade-in" style={{ '--accent': C.greenStrong, textAlign: 'center', marginTop: 8 } as React.CSSProperties}>
             <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at center, ${C.greenDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
             <span className="material-symbols-outlined" style={{ fontSize: 32, color: C.green, marginBottom: 8, display: 'block', position: 'relative' }}>login</span>
-            <div style={{ fontSize: 11, color: C.txMuted, marginBottom: 12, lineHeight: 1.5, position: 'relative' }}>
-              {t('hotdesk.checkInDesc')}
-            </div>
+            <div style={{ fontSize: 11, color: C.txMuted, marginBottom: 12, lineHeight: 1.5, position: 'relative' }}>{t('hotdesk.checkInDesc')}</div>
             <button className="hd-btn hd-btn-green pulse-green" onClick={handleCheckIn} style={{ width: '100%', padding: '14px 0', fontSize: 14, position: 'relative' }}>
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>check_circle</span>
               {t('hotdesk.checkIn')}
             </button>
-            <div className="mono" style={{ fontSize: 11, color: C.green, marginTop: 8, fontWeight: 600, position: 'relative' }}>
-              {myPending.seatId}
-            </div>
+            <div className="mono" style={{ fontSize: 11, color: C.green, marginTop: 8, fontWeight: 600, position: 'relative' }}>{myPending.seatId}</div>
           </div>
         )}
 
@@ -194,13 +210,9 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
         {!myToday && (
           <div className="hd-card" style={{ '--accent': C.primaryStrong, marginTop: 8 } as React.CSSProperties}>
             <div aria-hidden style={{ position: 'absolute', top: -30, right: -30, width: 80, height: 80, background: `radial-gradient(circle, ${C.primaryDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
-            <h3 style={{ fontSize: 13, fontWeight: 600, color: C.tx, marginBottom: 4, position: 'relative' }}>
-              {t('hotdesk.instantBooking')}
-            </h3>
-            <p style={{ fontSize: 11, color: C.txDim, lineHeight: 1.5, marginBottom: 14, position: 'relative' }}>
-              {t('hotdesk.instantBookingDesc')}
-            </p>
-            <button className="hd-btn hd-btn-primary" style={{ width: '100%', position: 'relative' }}>
+            <h3 style={{ fontSize: 13, fontWeight: 600, color: C.tx, marginBottom: 4, position: 'relative' }}>{t('hotdesk.instantBooking')}</h3>
+            <p style={{ fontSize: 11, color: C.txDim, lineHeight: 1.5, marginBottom: 14, position: 'relative' }}>{t('hotdesk.instantBookingDesc')}</p>
+            <button className="hd-btn hd-btn-primary" onClick={handleQuickReserve} style={{ width: '100%', position: 'relative' }}>
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>bolt</span>
               {t('hotdesk.quickReserve')}
             </button>
@@ -214,17 +226,12 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
 
       {/* ═══════════ Main ═══════════ */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Header */}
-        <div style={{ padding: '20px 28px 16px', flexShrink: 0 }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: C.primaryStrong, marginBottom: 4 }}>
-            {t('hotdesk.moduleSubtitle')}
-          </div>
-          <h2 style={{ fontSize: 24, fontWeight: 700, color: C.tx, letterSpacing: '-0.01em' }}>
-            Hot Desk
-          </h2>
-          <p style={{ fontSize: 12, color: C.txDim, marginTop: 4 }}>
+
+        {/* Header — just the subtitle text at large size */}
+        <div style={{ padding: '20px 28px 12px', flexShrink: 0 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 600, color: C.tx, letterSpacing: '-0.01em' }}>
             {t('hotdesk.subtitle')}{hubName ? ` ${hubName}.` : ''}
-          </p>
+          </h2>
         </div>
 
         {/* Map area (relative for floating cards) */}
@@ -235,10 +242,8 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
             </div>
           )}
 
-          {/* Floating cards — bottom right over the map */}
-          <div style={{
-            position: 'absolute', bottom: 16, right: 16, display: 'flex', gap: 12, zIndex: 20,
-          }}>
+          {/* Floating cards — bottom right */}
+          <div style={{ position: 'absolute', bottom: 16, right: 16, display: 'flex', gap: 12, zIndex: 20 }}>
             <div className="float-card" style={{ '--accent': C.green } as React.CSSProperties}>
               <div aria-hidden style={{ position: 'absolute', top: -20, right: -20, width: 60, height: 60, background: `radial-gradient(circle, ${C.greenDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txDim, position: 'relative' }}>{t('hotdesk.availableDesks')}</div>
@@ -249,17 +254,38 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
                 <div aria-hidden style={{ position: 'absolute', top: -20, right: -20, width: 60, height: 60, background: `radial-gradient(circle, ${C.primaryDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txDim, position: 'relative' }}>{t('hotdesk.activeBooking')}</div>
                 <div className="mono" style={{ fontSize: 16, fontWeight: 700, color: C.primary, marginTop: 4, position: 'relative' }}>{t('hotdesk.desk')} {myToday.seatId}</div>
+                <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 4, background: myToday.status === 'confirmed' ? C.greenDim : C.amberDim, color: myToday.status === 'confirmed' ? C.green : C.amber, fontWeight: 600, marginTop: 4, display: 'inline-block', position: 'relative' }}>
+                  {myToday.status === 'confirmed' ? t('hotdesk.confirmed') : t('hotdesk.pending')}
+                </span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Bottom bar: stats + Peak Insight */}
+        {/* Bottom bar: legend + stats + peak insight */}
         <div style={{
           padding: '10px 28px 14px', flexShrink: 0, borderTop: `1px solid ${C.sfHigh}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
         }}>
-          {/* Stats row */}
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+            {[
+              { label: t('hotdesk.free'), color: C.green },
+              { label: t('hotdesk.occupied'), color: C.primaryStrong },
+              { label: t('hotdesk.fixed'), color: C.red },
+              { label: t('hotdesk.mine'), color: C.amber },
+              { label: t('hotdesk.pending'), color: C.amber },
+              { label: t('hotdesk.blocked'), color: C.txDim },
+              { label: t('hotdesk.delegated'), color: C.purple },
+            ].map(leg => (
+              <div key={leg.label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: C.txMuted }}>
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: leg.color }} />
+                {leg.label}
+              </div>
+            ))}
+          </div>
+
+          {/* Stats + Peak Insight */}
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             {[
               { label: t('hotdesk.free'), val: counts.free, color: C.green },
@@ -267,24 +293,66 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
               { label: t('hotdesk.fixed'), val: counts.fixed, color: C.red },
               { label: t('hotdesk.seatsTotal'), val: totalSeats, color: C.txDim },
             ].map(s => (
-              <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: s.color }} />
+              <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ fontSize: 11, color: C.txMuted }}>{s.label}:</span>
                 <span className="mono" style={{ fontSize: 12, fontWeight: 600, color: s.color }}>{s.val}</span>
               </div>
             ))}
-          </div>
-
-          {/* Peak Insight */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 18, color: C.purple }}>insights</span>
-            <span style={{ fontSize: 11, color: C.txMuted }}>{t('hotdesk.peakInsightTitle')}</span>
-            <button className="hd-btn hd-btn-ghost" style={{ padding: '4px 10px', fontSize: 10 }}>
+            <div style={{ width: 1, height: 16, background: C.sfHigh }} />
+            <span className="material-symbols-outlined" style={{ fontSize: 16, color: C.purple }}>insights</span>
+            <button className="hd-btn hd-btn-ghost" onClick={() => setShowTrends(true)} style={{ padding: '4px 10px', fontSize: 10 }}>
               {t('hotdesk.viewTrends')}
             </button>
           </div>
         </div>
       </div>
+
+      {/* ═══════════ Trends Modal ═══════════ */}
+      {showTrends && (
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setShowTrends(false)}>
+          <div className="modal-body">
+            <div style={{ padding: '20px 24px', borderBottom: `1px solid ${C.sfHigh}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 22, color: C.purple }}>insights</span>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: C.tx }}>{t('hotdesk.peakInsightTitle')}</h3>
+              </div>
+              <button onClick={() => setShowTrends(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.txDim, display: 'flex' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
+              </button>
+            </div>
+            <div style={{ padding: 24 }}>
+              <p style={{ fontSize: 13, color: C.txMuted, marginBottom: 20, lineHeight: 1.6 }}>
+                {t('hotdesk.peakInsightDesc')}
+              </p>
+              {/* Weekly utilization bars */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {trendData.map(d => (
+                  <div key={d.day} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span className="mono" style={{ fontSize: 12, fontWeight: 600, color: C.txMuted, width: 36 }}>{d.day}</span>
+                    <div style={{ flex: 1, height: 24, background: C.sfHigh, borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
+                      <div style={{
+                        width: `${d.pct}%`, height: '100%', borderRadius: 4,
+                        background: d.pct > 85 ? `linear-gradient(90deg, ${C.amber}, ${C.red})` : `linear-gradient(90deg, ${C.green}, ${C.greenStrong})`,
+                        transition: 'width .6s ease',
+                      }} />
+                    </div>
+                    <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: d.pct > 85 ? C.amber : C.green, width: 36, textAlign: 'right' }}>{d.pct}%</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 20, padding: 16, background: C.sfLow, borderRadius: T.radius.lg, border: `1px solid ${C.sfHigh}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 16, color: C.amber }}>tips_and_updates</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: C.tx }}>{t('hotdesk.trendRecommendation')}</span>
+                </div>
+                <p style={{ fontSize: 11, color: C.txDim, lineHeight: 1.5 }}>
+                  {t('hotdesk.trendRecommendationDesc')}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

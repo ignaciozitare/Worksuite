@@ -11,4 +11,5 @@ export interface FichaEmpleado {
   fechaBaja: string | null;          // ISO date
   razonBaja: string | null;
   nss: string | null;                // número de seguridad social
+  allowedBookingZones: string | null; // JSON string of allowed zone configs, null = all
 }

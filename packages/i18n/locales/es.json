@@ -440,7 +440,17 @@
     "desk":                 "Puesto",
     "noBookingToday":       "Sin reserva hoy",
     "clickToReserve":       "Haz clic en un puesto libre del mapa para reservar",
-    "campusFilter":         "Filtro de Campus"
+    "campusFilter":         "Filtro de Campus",
+    "trendMon":             "Lun",
+    "trendTue":             "Mar",
+    "trendWed":             "Mié",
+    "trendThu":             "Jue",
+    "trendFri":             "Vie",
+    "trendRecommendation":  "Recomendación",
+    "trendRecommendationDesc": "Reserva temprano los martes y jueves para asegurar tu puesto. Los viernes tienen más disponibilidad — considera horarios flexibles.",
+    "allowedZones":         "Zonas de Reserva Permitidas",
+    "allowedZonesDesc":     "Selecciona en qué edificios, plantas y zonas puede reservar este empleado. Deja vacío para todas.",
+    "allZonesAllowed":      "Todas las zonas (por defecto)"
   },
   "retro": {
     "title":           "RetroBoard",

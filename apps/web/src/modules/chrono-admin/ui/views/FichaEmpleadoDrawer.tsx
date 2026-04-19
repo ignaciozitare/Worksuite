@@ -33,6 +33,7 @@ type Draft = Omit<FichaEmpleado, 'id' | 'userId'>;
 const emptyDraft: Draft = {
   clienteAsignado: '', valorHora: '', contactoTelefono: '', contactoEmailPersonal: '',
   seniority: '', notas: '', fechaIncorporacion: '', fechaBaja: '', razonBaja: '', nss: '',
+  allowedBookingZones: '',
 };
 
 export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, onClose }: Props) {
@@ -54,6 +55,7 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
           contactoEmailPersonal: ficha.contactoEmailPersonal ?? '',
           seniority: ficha.seniority ?? '',
           notas: ficha.notas ?? '',
+          allowedBookingZones: ficha.allowedBookingZones ?? '',
           fechaIncorporacion: ficha.fechaIncorporacion ?? '',
           fechaBaja: ficha.fechaBaja ?? '',
           razonBaja: ficha.razonBaja ?? '',
@@ -246,6 +248,24 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
                   <label style={labelStyle}>{t('chronoAdmin.fichaRazonBaja')}</label>
                   <input type="text" value={draft.razonBaja} onChange={e => set('razonBaja', e.target.value)} style={inputStyle} />
                 </div>
+              </div>
+
+              {/* Zonas de reserva permitidas */}
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.color.tertiary, textTransform: 'uppercase', letterSpacing: '.12em', marginTop: 6, marginBottom: -6 }}>
+                {t('hotdesk.allowedZones')}
+              </div>
+              <div>
+                <label style={labelStyle}>{t('hotdesk.allowedZonesDesc')}</label>
+                <textarea
+                  value={draft.allowedBookingZones}
+                  onChange={e => set('allowedBookingZones', e.target.value)}
+                  rows={3}
+                  placeholder={t('hotdesk.allZonesAllowed')}
+                  style={{ ...inputStyle, resize: 'vertical', fontFamily: T.font.mono, fontSize: 11 }}
+                />
+                <p style={{ fontSize: 10, color: C.txDim, marginTop: 4, lineHeight: 1.4 }}>
+                  {t('hotdesk.allowedZonesDesc')}
+                </p>
               </div>
 
               {/* Notas */}

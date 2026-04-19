@@ -440,7 +440,17 @@
     "desk":                 "Desk",
     "noBookingToday":       "No booking today",
     "clickToReserve":       "Click a free seat on the map to reserve",
-    "campusFilter":         "Campus Filter"
+    "campusFilter":         "Campus Filter",
+    "trendMon":             "Mon",
+    "trendTue":             "Tue",
+    "trendWed":             "Wed",
+    "trendThu":             "Thu",
+    "trendFri":             "Fri",
+    "trendRecommendation":  "Recommendation",
+    "trendRecommendationDesc": "Book early on Tuesdays and Thursdays to ensure a seat. Fridays have the most availability — consider flexible work arrangements.",
+    "allowedZones":         "Allowed Booking Zones",
+    "allowedZonesDesc":     "Select which buildings, floors and zones this employee can book. Leave empty for all zones.",
+    "allZonesAllowed":      "All zones (default)"
   },
   "retro": {
     "title":           "RetroBoard",
