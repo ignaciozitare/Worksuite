@@ -3,13 +3,13 @@ import { useTranslation } from '@worksuite/i18n';
 import { useAuth } from '@/shared/hooks/useAuth';
 
 const C = {
-  bg: '#0d0d0d', sf: '#161616', sfHover: '#1e1e1e', bd: '#2a2a2a',
-  amber: '#f59e0b', amberDim: '#92400e', amberGlow: 'rgba(245,158,11,0.12)',
-  tx: '#e8e8e8', txDim: '#888', txMuted: '#555',
+  bg: 'var(--bg)', sf: 'var(--sf)', sfHover: 'var(--sf2)', bd: 'var(--bd)',
+  amber: 'var(--amber)', amberDim: 'var(--sf-low, #1c1b1b)', amberGlow: 'var(--amber-dim)',
+  tx: 'var(--tx)', txDim: 'var(--tx2)', txMuted: 'var(--tx3)',
 };
 
 export function ProfilePage() {
-  const { t } = useTranslation();
+  const { t, locale, setLocale } = useTranslation();
   const { user } = useAuth();
 
   if (!user) return null;
@@ -47,7 +47,7 @@ export function ProfilePage() {
       }}>
         <div style={{
           width: 96, height: 96, borderRadius: '50%',
-          background: `linear-gradient(135deg,${C.amberDim},#78350f)`,
+          background: `linear-gradient(135deg,${C.amberDim},${C.bd})`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 36, fontWeight: 700, color: C.amber,
           fontFamily: "'IBM Plex Mono',monospace",
@@ -102,6 +102,49 @@ export function ProfilePage() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Language selector */}
+      <div style={{
+        marginTop: 24, background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 24,
+      }}>
+        <div style={{
+          fontSize: 11, fontWeight: 700, color: C.amber, textTransform: 'uppercase',
+          letterSpacing: '.1em', marginBottom: 8, fontFamily: "'IBM Plex Mono',monospace",
+        }}>
+          {t('profile.languageSection')}
+        </div>
+        <div style={{ fontSize: 12, color: C.txDim, marginBottom: 16 }}>
+          {t('profile.languageHelp')}
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={() => setLocale('en')}
+            style={{
+              padding: '8px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              border: 'none', cursor: 'pointer', transition: 'all .15s',
+              background: locale === 'en' ? `linear-gradient(135deg, var(--ac2), var(--ac-strong))` : C.sfHover,
+              color: locale === 'en' ? 'var(--ac-on)' : C.tx,
+              boxShadow: locale === 'en' ? `0 0 12px var(--ac-dim)` : 'none',
+              fontFamily: "'IBM Plex Mono',monospace",
+            }}
+          >
+            EN
+          </button>
+          <button
+            onClick={() => setLocale('es')}
+            style={{
+              padding: '8px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              border: 'none', cursor: 'pointer', transition: 'all .15s',
+              background: locale === 'es' ? `linear-gradient(135deg, var(--ac2), var(--ac-strong))` : C.sfHover,
+              color: locale === 'es' ? 'var(--ac-on)' : C.tx,
+              boxShadow: locale === 'es' ? `0 0 12px var(--ac-dim)` : 'none',
+              fontFamily: "'IBM Plex Mono',monospace",
+            }}
+          >
+            ES
+          </button>
         </div>
       </div>
 

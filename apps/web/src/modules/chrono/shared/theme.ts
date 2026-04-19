@@ -31,55 +31,55 @@ export const CHRONO_THEME = {
     full: '9999px',
   },
 
-  /** Color palette — direct from the Stitch tailwind config. */
+  /** Color palette — uses CSS custom properties for light/dark mode support. */
   color: {
     /** Page background (surface-dim). */
-    bg:                 '#131313',
+    bg:                 'var(--bg)',
     /** Primary surface for cards / raised containers. */
-    surface:            '#201f1f',
+    surface:            'var(--sf)',
     /** A step up in elevation (hover, nested cards). */
-    surfaceHigh:        '#2a2a2a',
+    surfaceHigh:        'var(--sf3)',
     /** Brighter step, used for inputs and highlights. */
-    surfaceBright:      '#3a3939',
+    surfaceBright:      'var(--sf-bright, #3a3939)',
     /** Lowest-elevation surface (sidebar background, subtle wells). */
-    surfaceLow:         '#1c1b1b',
+    surfaceLow:         'var(--sf-low, #1c1b1b)',
     /** Even lower (sidebar root, footer). */
-    surfaceLowest:      '#0e0e0e',
+    surfaceLowest:      'var(--sf-lowest, #0e0e0e)',
 
     /** Borders and dividers. */
-    border:             '#424754',
+    border:             'var(--bd2)',
     /** Subtle outline color for separators. */
-    outline:            '#8c909f',
+    outline:            'var(--tx3)',
 
     /** Main foreground text. */
-    text:               '#e5e2e1',
+    text:               'var(--tx)',
     /** Secondary text — captions, labels. */
-    textMuted:          '#c2c6d6',
+    textMuted:          'var(--tx2)',
     /** Tertiary text — hints, disabled. */
-    textDim:            '#8c909f',
+    textDim:            'var(--tx3)',
 
     /** Brand primary (buttons, active tabs, accents). */
-    primary:            '#adc6ff',
-    primaryStrong:      '#4d8eff',
-    primaryOn:          '#00285d',
-    primaryDim:         'rgba(77, 142, 255, 0.12)',
+    primary:            'var(--ac2)',
+    primaryStrong:      'var(--ac-strong, #4d8eff)',
+    primaryOn:          'var(--ac-on, #00285d)',
+    primaryDim:         'var(--ac-dim)',
 
     /** Brand secondary (success, on-track, clocked-in indicator). */
-    secondary:          '#4ae176',
-    secondaryStrong:    '#00b954',
-    secondaryDim:       'rgba(74, 225, 118, 0.12)',
+    secondary:          'var(--green)',
+    secondaryStrong:    'var(--green-strong, #00b954)',
+    secondaryDim:       'var(--green-dim)',
 
     /** Brand tertiary (violet — hours bank, highlights). */
-    tertiary:           '#ddb7ff',
-    tertiaryStrong:     '#b76dff',
-    tertiaryDim:        'rgba(221, 183, 255, 0.12)',
+    tertiary:           'var(--tertiary, #ddb7ff)',
+    tertiaryStrong:     'var(--purple-strong, #b76dff)',
+    tertiaryDim:        'var(--purple-dim)',
 
     /** Semantic. */
-    warning:            '#f59e0b',
-    warningDim:         'rgba(245, 158, 11, 0.12)',
-    danger:             '#ffb4ab',
-    dangerStrong:       '#ef4444',
-    dangerDim:          'rgba(255, 180, 171, 0.12)',
+    warning:            'var(--amber)',
+    warningDim:         'var(--amber-dim)',
+    danger:             'var(--danger, #ffb4ab)',
+    dangerStrong:       'var(--danger-strong, #ef4444)',
+    dangerDim:          'var(--red-dim)',
   },
 
   /** Shadows. Stitch uses a subtle glow on active elements. */

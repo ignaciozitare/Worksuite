@@ -3,7 +3,6 @@ import { useTranslation } from '@worksuite/i18n';
 import { AdminSettings, PersonalJiraToken } from './AdminSettings';
 import { AdminUsers } from './AdminUsers';
 import { AdminHotDesk } from './AdminHotDesk';
-import { AdminBlueprint } from './AdminBlueprint';
 import { AdminRoles } from './AdminRoles';
 import { AdminRetroTeamsShell } from './AdminRetroTeamsShell';
 import { AdminDeployConfig } from './AdminDeployConfig';
@@ -44,7 +43,6 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser, theme="dark" }: A
     { id:"users",      icon:"👥", label:t("admin.users"),  badge:"Admin" },
     { id:"roles",      icon:"🛡", label:"Roles & Perms" },
     { id:"hotdesk",    icon:"🪑", label:t("admin.hotdesk"),hd:true },
-    { id:"blueprint",  icon:"🗺", label:"Blueprint" },
     { id:"retroteams", icon:"🔁", label:"Retro Teams" },
     { id:"deploy",     icon:"🚀", label:"Deploy Planner" },
     { id:"envtracker", icon:"🖥️", label:"Environments" },
@@ -66,7 +64,6 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser, theme="dark" }: A
         {mod==="users"     && <AdminUsers users={users} setUsers={setUsers} currentUser={currentUser}/>}
         {mod==="hotdesk"   && <AdminHotDesk hd={hd} setHd={setHd} users={users} theme={theme}/>}
         {mod==="roles"     && <AdminRoles/>}
-        {mod==="blueprint" && <AdminBlueprint/>}
         {mod==="retroteams" && <AdminRetroTeamsShell users={users}/>}
         {mod==="deploy"     && <AdminDeployConfig/>}
         {mod==="envtracker" && <AdminEnvTrackerSection/>}

@@ -42,10 +42,10 @@ const CSS = `
 .hd .hd-btn-ghost:hover{border-color:${C.primary};color:${C.primary};background:${C.primaryDim};}
 .hd select{width:100%;padding:8px 12px;background:${C.bg};border:1px solid ${C.sfHigh};border-radius:5px;color:${C.tx};font-size:13px;font-family:${T.font.mono};outline:none;appearance:none;cursor:pointer;transition:border-color .15s;}
 .hd select:focus{border-color:${C.primaryStrong};}
-.hd .float-card{background:rgba(32,31,31,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid ${C.sfHigh};border-radius:${T.radius.lg};padding:12px 16px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.hd .float-card{background:${C.sf};backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid ${C.sfHigh};border-radius:${T.radius.lg};padding:12px 16px;position:relative;overflow:hidden;box-shadow:var(--shadow);}
 .hd .float-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,${C.primaryStrong});}
-.hd .modal-backdrop{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);}
-.hd .modal-body{background:${C.sf};border:1px solid ${C.sfHigh};border-radius:12px;max-width:560px;width:100%;max-height:80vh;overflow:auto;box-shadow:0 24px 80px rgba(0,0,0,.6);}
+.hd .modal-backdrop{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);}
+.hd .modal-body{background:${C.sf};border:1px solid ${C.sfHigh};border-radius:12px;max-width:560px;width:100%;max-height:80vh;overflow:auto;box-shadow:var(--shadow);}
 `;
 
 type View = 'map' | 'table';
@@ -153,8 +153,8 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
       <aside style={{
         position: 'sticky', top: 0, width: 240, minWidth: 240, height: '100%',
         minHeight: 'calc(100vh - 52px)', alignSelf: 'stretch',
-        background: 'rgba(14,14,14,.6)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-        borderRight: '1px solid rgba(255,255,255,.05)',
+        background: C.sfLowest, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        borderRight: `1px solid var(--bd)`,
         boxShadow: '0 0 60px rgba(77,142,255,.04)',
         display: 'flex', flexDirection: 'column', padding: 16, gap: 4, zIndex: 30, overflowY: 'auto',
       }}>

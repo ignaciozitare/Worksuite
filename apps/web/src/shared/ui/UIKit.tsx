@@ -9,8 +9,10 @@ import {
   DateRangePicker,
   BugIcon,
 } from '@worksuite/ui';
+import { useTranslation } from '@worksuite/i18n';
 import { NotificationsBell } from './NotificationsBell';
 import { UserMenu } from './UserMenu';
+import { AppSwitcher } from './AppSwitcher';
 import type { NotificationPort, Notification } from '../domain/ports/NotificationPort';
 import '../../WorkSuiteApp.css';
 

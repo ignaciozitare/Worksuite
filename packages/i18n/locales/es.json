@@ -53,7 +53,13 @@
     "dayView":       "Vista día",
     "tasks":         "Tareas",
     "officeMap":     "Mapa oficina",
-    "monthlyView":   "Vista mensual"
+    "monthlyView":   "Vista mensual",
+    "environments":  "Entornos",
+    "vectorLogic":   "Vector Logic",
+    "timeClock":     "Fichajes",
+    "hr":            "RRHH",
+    "appSwitcher":   "Selector de apps",
+    "modules":       "Modulos"
   },
   "admin": {
     "title":        "Administración",
@@ -280,7 +286,37 @@
     "releaseBtn":    "Liberar",
     "fixedSeats":    "Puestos fijos",
     "noFixed":       "Sin asignaciones fijas",
-    "unlockSeat":    "Desbloquear"
+    "unlockSeat":    "Desbloquear",
+    "hotdeskSettingsTab":       "Ajustes",
+    "hotdeskBlueprintsTab":     "Planos",
+    "hotdeskBlockedTab":        "Puestos Bloqueados",
+    "hotdeskAssignmentsTab":    "Asignaciones",
+    "hotdeskConfirmationToggle":"Confirmacion de Reserva",
+    "hotdeskRequireConfirmation":"Requerir confirmacion de reserva",
+    "hotdeskDeadlineLabel":     "Plazo de Confirmacion",
+    "hotdeskMinutes":           "minutos",
+    "hotdeskBusinessStart":     "Inicio de Jornada",
+    "hotdeskAutoRelease":       "Auto-Liberacion",
+    "hotdeskAutoReleaseDesc":   "Liberar automaticamente reservas sin confirmar tras el plazo",
+    "hotdeskMaxBookingDays":    "Dias Maximos de Reserva Anticipada",
+    "hotdeskMaxBookingDaysDesc":"Cuantos dias de antelacion pueden reservar los usuarios",
+    "hotdeskDays":              "dias",
+    "hotdeskExemptRoles":       "Roles Exentos",
+    "hotdeskExemptRolesDesc":   "Roles exentos del requisito de confirmacion",
+    "hotdeskSaved":             "Ajustes guardados",
+    "hotdeskSaveError":         "Error al guardar ajustes",
+    "hotdeskLoading":           "Cargando...",
+    "hotdeskBlockSeat":         "Bloquear un Puesto",
+    "hotdeskSeatIdPlaceholder": "ID del puesto (ej. A1)",
+    "hotdeskBlockReasonPlaceholder":"Motivo (opcional)",
+    "hotdeskBlockBtn":          "Bloquear Puesto",
+    "hotdeskBlockedList":       "Puestos Bloqueados Actualmente",
+    "hotdeskNoBlockedSeats":    "No hay puestos bloqueados",
+    "hotdeskSeatBlocked":       "Puesto bloqueado correctamente",
+    "hotdeskSeatUnblocked":     "Puesto desbloqueado",
+    "hotdeskUnblock":           "Desbloquear",
+    "hotdeskNoReason":          "Sin motivo especificado",
+    "hotdeskNoBuildings":       "Sin edificios — crea uno primero en Admin"
   },
   "jiraTracker": {
     "title":        "Jira Tracker",
@@ -828,7 +864,9 @@
     "email":          "Email",
     "role":           "Rol",
     "deskType":       "Tipo de puesto",
-    "comingSoon":     "Pronto: estadísticas de horas, vacaciones y más"
+    "comingSoon":     "Pronto: estadísticas de horas, vacaciones y más",
+    "languageSection": "Idioma",
+    "languageHelp":    "Selecciona tu idioma preferido"
   },
   "chronoAdmin": {
     "equipoHoy":          "Equipo hoy",
@@ -931,6 +969,11 @@
     "miembros":          "Miembros",
     "agregarMiembro":    "Agregar miembro",
     "eliminarEquipo":    "Eliminar equipo",
+    "bookingZonesTitle":       "Restricciones de zona de reserva HotDesk",
+    "bookingZonesHelp":        "Define en que edificios, plantas o zonas puede reservar este equipo. Deja vacio para permitir todas las zonas. Usa formato JSON, ej: [{\"building\":\"HQ\",\"floor\":\"3\"}]",
+    "bookingZonesPlaceholder": "[{\"building\":\"HQ\",\"floor\":\"3\",\"zone\":\"A\"}]",
+    "guardarZonas":            "Guardar zonas",
+    "guardando":               "Guardando...",
     "horasJiraLabel":    "Horas Jira",
     "horasFichajeLabel": "Horas fichaje",
     "diferenciaLabel":   "Diferencia",
@@ -1299,5 +1342,18 @@
     "link":            "Enlace",
     "clearFormatting": "Quitar formato",
     "urlPrompt":       "URL:"
+  },
+  "uikit": {
+    "appSwitcher":       "AppSwitcher",
+    "appSwitcherDesc":   "Grilla de cambio de modulo con estado activo resaltado e icono relleno. Se abre al hacer clic, se cierra al hacer clic afuera o con Escape.",
+    "appSwitcherDemo":   "Demo estatica (todos los modulos visibles)",
+    "moduleIcons":       "Iconos de Modulos",
+    "moduleIconsDesc":   "Iconos Material Symbols Outlined usados en los modulos de WorkSuite. Peso 300, relleno en interaccion.",
+    "themeTokens":       "Tokens de Tema",
+    "themeTokensDesc":   "Variables CSS personalizadas de Carbon Logic (Stitch). Se usan globalmente con var(--token). Las muestras indican valores en modo oscuro y claro.",
+    "darkMode":          "Oscuro",
+    "lightMode":         "Claro",
+    "tokenName":         "Token",
+    "variable":          "Variable"
   }
 }

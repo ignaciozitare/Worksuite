@@ -18,6 +18,7 @@ export class SupabaseConfigRepository implements ConfigRepository {
       businessDayStart:            data.business_day_start,
       autoReleaseEnabled:          data.auto_release_enabled,
       exemptRoles:                 data.exempt_roles ?? [],
+      maxBookingDays:              data.max_booking_days ?? 14,
     };
   }
 
@@ -29,6 +30,7 @@ export class SupabaseConfigRepository implements ConfigRepository {
     if (patch.businessDayStart !== undefined)             row.business_day_start            = patch.businessDayStart;
     if (patch.autoReleaseEnabled !== undefined)           row.auto_release_enabled          = patch.autoReleaseEnabled;
     if (patch.exemptRoles !== undefined)                  row.exempt_roles                  = patch.exemptRoles;
+    if (patch.maxBookingDays !== undefined)               row.max_booking_days              = patch.maxBookingDays;
 
     // Get existing config row id
     const { data: existing, error: fetchError } = await supabase

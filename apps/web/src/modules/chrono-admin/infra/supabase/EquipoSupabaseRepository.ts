@@ -52,6 +52,7 @@ export class EquipoSupabaseRepository implements IEquipoRepository {
       nombre: row.nombre,
       descripcion: row.descripcion ?? null,
       managerId: row.manager_id ?? null,
+      allowedBookingZones: row.allowed_booking_zones ?? null,
       miembros: miembrosByEquipo.get(row.id) ?? [],
     }));
   }
@@ -73,15 +74,17 @@ export class EquipoSupabaseRepository implements IEquipoRepository {
       nombre: data.nombre,
       descripcion: data.descripcion ?? null,
       managerId: data.manager_id ?? null,
+      allowedBookingZones: data.allowed_booking_zones ?? null,
       miembros: [],
     };
   }
 
-  async update(id: string, data: Partial<Pick<Equipo, 'nombre' | 'descripcion' | 'managerId'>>): Promise<void> {
+  async update(id: string, data: Partial<Pick<Equipo, 'nombre' | 'descripcion' | 'managerId' | 'allowedBookingZones'>>): Promise<void> {
     const payload: Record<string, any> = {};
     if (data.nombre !== undefined) payload.nombre = data.nombre;
     if (data.descripcion !== undefined) payload.descripcion = data.descripcion;
     if (data.managerId !== undefined) payload.manager_id = data.managerId;
+    if (data.allowedBookingZones !== undefined) payload.allowed_booking_zones = data.allowedBookingZones;
 
     const { error } = await this.db
       .from('ch_equipos')

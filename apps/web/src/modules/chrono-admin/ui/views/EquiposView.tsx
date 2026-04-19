@@ -23,6 +23,8 @@ export function EquiposView({ equipoRepo, users }: Props) {
   const [editTeamDraft, setEditTeamDraft] = useState({ nombre: '', descripcion: '', managerId: '' });
   const [addMemberSearch, setAddMemberSearch] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [bookingZonesDraft, setBookingZonesDraft] = useState<Record<string, string>>({});
+  const [savingZones, setSavingZones] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -335,6 +337,58 @@ export function EquiposView({ equipoRepo, users }: Props) {
                           )}
                         </div>
                       )}
+                    </div>
+
+                    {/* Booking zone restrictions */}
+                    <div style={{ borderTop: `1px solid ${C.bd}`, paddingTop: 14, marginBottom: 16 }}>
+                      <div style={{ fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6, fontWeight: 600 }}>
+                        {t('chronoAdmin.bookingZonesTitle')}
+                      </div>
+                      <div style={{ fontSize: 12, color: C.txDim, marginBottom: 10 }}>
+                        {t('chronoAdmin.bookingZonesHelp')}
+                      </div>
+                      <textarea
+                        value={bookingZonesDraft[equipo.id] ?? equipo.allowedBookingZones ?? ''}
+                        onChange={e => setBookingZonesDraft(prev => ({ ...prev, [equipo.id]: e.target.value }))}
+                        placeholder={t('chronoAdmin.bookingZonesPlaceholder')}
+                        rows={3}
+                        style={{
+                          background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6,
+                          padding: '8px 10px', color: C.tx, fontSize: 12, width: '100%',
+                          outline: 'none', resize: 'vertical', fontFamily: "'IBM Plex Mono',monospace",
+                        }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                        {bookingZonesDraft[equipo.id] !== undefined && bookingZonesDraft[equipo.id] !== (equipo.allowedBookingZones ?? '') && (
+                          <button
+                            className="ch-btn ch-btn-ghost"
+                            onClick={() => setBookingZonesDraft(prev => { const next = { ...prev }; delete next[equipo.id]; return next; })}
+                            style={{ fontSize: 11, padding: '4px 12px' }}
+                          >
+                            {t('chronoAdmin.cancelar')}
+                          </button>
+                        )}
+                        <button
+                          className="ch-btn ch-btn-amber"
+                          disabled={savingZones === equipo.id || bookingZonesDraft[equipo.id] === undefined || bookingZonesDraft[equipo.id] === (equipo.allowedBookingZones ?? '')}
+                          onClick={async () => {
+                            setSavingZones(equipo.id);
+                            try {
+                              const val = (bookingZonesDraft[equipo.id] ?? '').trim();
+                              await equipoRepo.update(equipo.id, { allowedBookingZones: val || null });
+                              setBookingZonesDraft(prev => { const next = { ...prev }; delete next[equipo.id]; return next; });
+                              await load();
+                            } catch (err) {
+                              console.error('Error saving booking zones:', err);
+                            } finally {
+                              setSavingZones(null);
+                            }
+                          }}
+                          style={{ fontSize: 11, padding: '4px 12px' }}
+                        >
+                          {savingZones === equipo.id ? t('chronoAdmin.guardando') : t('chronoAdmin.guardarZonas')}
+                        </button>
+                      </div>
                     </div>
 
                     {/* Delete team */}

@@ -17,6 +17,7 @@ import { BlueprintHDMap, HDTableView, HDReserveModal, HDMapView } from './module
 import { BuildingFloorSelectors } from './shared/admin';
 import { NotificationsBell } from './shared/ui/NotificationsBell';
 import { UserMenu } from './shared/ui/UserMenu';
+import { AppSwitcher } from './shared/ui/AppSwitcher';
 import { SupabaseNotificationRepo } from './shared/infra/SupabaseNotificationRepo';
 import { SupabaseAdminUserRepo } from './shared/infra/SupabaseAdminUserRepo';
 import { supabase as supabaseClient } from './shared/lib/supabaseClient';
@@ -224,32 +225,11 @@ function WorkSuiteApp() {
               <span style={{ color: "var(--ac2)", fontWeight: 700 }}>Work</span>
               <span style={{ color: "var(--tx2)", fontWeight: 300 }}>Suite</span>
             </div>
-            <div className="sw-group mod-group">
-              {(CURRENT_USER.modules || ["jt", "hd", "retro"]).includes("jt") && (
-                <button className={`sw-btn ${mod === "jt" ? "active" : ""}`} onClick={() => navigate('/jira-tracker/calendar')}>📋 {t("nav.jiraTracker")}</button>
-              )}
-              {(CURRENT_USER.modules || ["jt", "hd", "retro"]).includes("hd") && (
-                <button className={`sw-btn ${mod === "hd" ? "active-green" : ""}`} onClick={() => navigate('/hotdesk/map')}>🪑 {t("nav.hotdesk")}</button>
-              )}
-              {(CURRENT_USER.modules || ["jt", "hd", "retro", "deploy"]).includes("retro") && (
-                <button className={`sw-btn ${mod === "retro" ? "active-retro" : ""}`} onClick={() => navigate('/retro')}>🔁 RetroBoard</button>
-              )}
-              {(CURRENT_USER.modules || ["jt", "hd", "retro", "deploy"]).includes("deploy") && (
-                <button className={`sw-btn ${mod === "deploy" ? "active-deploy" : ""}`} onClick={() => navigate('/deploy')}>🚀 Deploy Planner</button>
-              )}
-              {(CURRENT_USER.modules || []).includes("envtracker") && (
-                <button className={`sw-btn ${mod === "envtracker" ? "active" : ""}`} onClick={() => navigate('/envtracker')}>🖥️ Environments</button>
-              )}
-              {(CURRENT_USER.modules || []).includes("vector-logic") && (
-                <button className={`sw-btn ${mod === "vector-logic" ? "active" : ""}`} onClick={() => navigate('/vector-logic')}>⚡ Vector Logic</button>
-              )}
-              {(CURRENT_USER.modules || []).includes("chrono") && (
-                <button className={`sw-btn ${mod === "chrono" ? "active" : ""}`} onClick={() => navigate('/chrono')}>⏱️ {t("chrono.title")}</button>
-              )}
-              {(CURRENT_USER.modules || []).includes("chrono-admin") && (
-                <button className={`sw-btn ${mod === "chrono-admin" ? "active" : ""}`} onClick={() => navigate('/chrono-admin')}>👥 {t("chrono.admin")}</button>
-              )}
-            </div>
+            <AppSwitcher
+              currentMod={mod}
+              userModules={CURRENT_USER.modules || ["jt", "hd", "retro", "deploy"]}
+              onNavigate={navigate}
+            />
             <div className="top-right">
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}

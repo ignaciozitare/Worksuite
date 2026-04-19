@@ -53,7 +53,13 @@
     "dayView":       "Day View",
     "tasks":         "Tasks",
     "officeMap":     "Office Map",
-    "monthlyView":   "Monthly View"
+    "monthlyView":   "Monthly View",
+    "environments":  "Environments",
+    "vectorLogic":   "Vector Logic",
+    "timeClock":     "Time Clock",
+    "hr":            "HR",
+    "appSwitcher":   "App Switcher",
+    "modules":       "Modules"
   },
   "admin": {
     "title":        "Administration",
@@ -280,7 +286,37 @@
     "releaseBtn":    "Release",
     "fixedSeats":    "Fixed seats",
     "noFixed":       "No fixed assignments",
-    "unlockSeat":    "Unlock"
+    "unlockSeat":    "Unlock",
+    "hotdeskSettingsTab":       "Settings",
+    "hotdeskBlueprintsTab":     "Blueprints",
+    "hotdeskBlockedTab":        "Blocked Seats",
+    "hotdeskAssignmentsTab":    "Assignments",
+    "hotdeskConfirmationToggle":"Booking Confirmation",
+    "hotdeskRequireConfirmation":"Require booking confirmation",
+    "hotdeskDeadlineLabel":     "Confirmation Deadline",
+    "hotdeskMinutes":           "minutes",
+    "hotdeskBusinessStart":     "Business Day Start",
+    "hotdeskAutoRelease":       "Auto-Release",
+    "hotdeskAutoReleaseDesc":   "Auto-release unconfirmed bookings after deadline",
+    "hotdeskMaxBookingDays":    "Max Booking Days Ahead",
+    "hotdeskMaxBookingDaysDesc":"How many days in advance users can book a seat",
+    "hotdeskDays":              "days",
+    "hotdeskExemptRoles":       "Exempt Roles",
+    "hotdeskExemptRolesDesc":   "Roles exempt from confirmation requirement",
+    "hotdeskSaved":             "Settings saved",
+    "hotdeskSaveError":         "Error saving settings",
+    "hotdeskLoading":           "Loading...",
+    "hotdeskBlockSeat":         "Block a Seat",
+    "hotdeskSeatIdPlaceholder": "Seat ID (e.g. A1)",
+    "hotdeskBlockReasonPlaceholder":"Reason (optional)",
+    "hotdeskBlockBtn":          "Block Seat",
+    "hotdeskBlockedList":       "Currently Blocked Seats",
+    "hotdeskNoBlockedSeats":    "No seats are currently blocked",
+    "hotdeskSeatBlocked":       "Seat blocked successfully",
+    "hotdeskSeatUnblocked":     "Seat unblocked",
+    "hotdeskUnblock":           "Unblock",
+    "hotdeskNoReason":          "No reason specified",
+    "hotdeskNoBuildings":       "No buildings — create in Admin first"
   },
   "jiraTracker": {
     "title":        "Jira Tracker",
@@ -828,7 +864,9 @@
     "email":          "Email",
     "role":           "Role",
     "deskType":       "Desk type",
-    "comingSoon":     "Coming soon: hour stats, vacation balance and more"
+    "comingSoon":     "Coming soon: hour stats, vacation balance and more",
+    "languageSection": "Language",
+    "languageHelp":    "Select your preferred language"
   },
   "chronoAdmin": {
     "equipoHoy":          "Team today",
@@ -931,6 +969,11 @@
     "miembros":          "Members",
     "agregarMiembro":    "Add member",
     "eliminarEquipo":    "Delete team",
+    "bookingZonesTitle":       "HotDesk booking zone restrictions",
+    "bookingZonesHelp":        "Define which buildings, floors, or zones this team can book. Leave empty to allow all zones. Use JSON format, e.g.: [{\"building\":\"HQ\",\"floor\":\"3\"}]",
+    "bookingZonesPlaceholder": "[{\"building\":\"HQ\",\"floor\":\"3\",\"zone\":\"A\"}]",
+    "guardarZonas":            "Save zones",
+    "guardando":               "Saving...",
     "horasJiraLabel":    "Jira hours",
     "horasFichajeLabel": "Clock hours",
     "diferenciaLabel":   "Difference",
@@ -1299,5 +1342,18 @@
     "link":            "Link",
     "clearFormatting": "Clear formatting",
     "urlPrompt":       "URL:"
+  },
+  "uikit": {
+    "appSwitcher":       "AppSwitcher",
+    "appSwitcherDesc":   "App-level module switcher grid with active state highlight and icon fill. Opens on click, closes on outside click or Escape.",
+    "appSwitcherDemo":   "Static demo (all modules visible)",
+    "moduleIcons":       "Module Icons",
+    "moduleIconsDesc":   "Material Symbols Outlined icons used across WorkSuite modules. Weight 300, filled on interaction.",
+    "themeTokens":       "Theme Tokens",
+    "themeTokensDesc":   "CSS custom properties from Carbon Logic (Stitch). Used globally via var(--token). Swatches show dark and light mode values.",
+    "darkMode":          "Dark",
+    "lightMode":         "Light",
+    "tokenName":         "Token",
+    "variable":          "Variable"
   }
 }
