@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../shared/lib/api';
+import { authRepository } from './container';
 
 const REDIRECT_URL = `${window.location.origin}/`;
 
@@ -16,13 +16,10 @@ export function LoginPage() {
   const [microsoftOn, setMicrosoftOn] = useState(false);
 
   useEffect(() => {
-    supabase
-      .from('sso_config')
-      .select('allow_google, allow_microsoft')
-      .eq('id', 1)
-      .single()
-      .then(({ data }) => {
-        if (data) { setGoogleOn(!!data.allow_google); setMicrosoftOn(!!data.allow_microsoft); }
+    authRepository
+      .getSsoConfig()
+      .then((config) => {
+        if (config) { setGoogleOn(config.allowGoogle); setMicrosoftOn(config.allowMicrosoft); }
       })
       .finally(() => setSsoReady(true));
   }, []);
@@ -33,10 +30,10 @@ export function LoginPage() {
     try {
       if (remember) { localStorage.setItem('ws_email', email); localStorage.setItem('ws_remember', '1'); }
       else { localStorage.removeItem('ws_email'); localStorage.removeItem('ws_remember'); }
-      const { data, error: err } = await supabase.auth.signInWithPassword({ email, password: pwd });
-      if (err) {
-        setError(err.message === 'Invalid login credentials' ? 'Invalid email or password' : err.message);
-      } else if (data?.session) {
+      const result = await authRepository.signInWithPassword(email, pwd);
+      if (result.error) {
+        setError(result.error);
+      } else if (result.user) {
         // Small delay to let browser save credentials before navigating
         setTimeout(() => { window.location.href = '/'; }, 100);
       }
@@ -46,18 +43,15 @@ export function LoginPage() {
   const handleGoogle = async () => {
     if (!googleOn) return;
     setSsoLoading('google'); setError('');
-    const { error: err } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: REDIRECT_URL } });
-    if (err) { setError(err.message); setSsoLoading(null); }
+    const { error: err } = await authRepository.signInWithOAuth('google', REDIRECT_URL);
+    if (err) { setError(err); setSsoLoading(null); }
   };
 
   const handleMicrosoft = async () => {
     if (!microsoftOn) return;
     setSsoLoading('microsoft'); setError('');
-    const { error: err } = await supabase.auth.signInWithOAuth({
-      provider: 'azure',
-      options: { redirectTo: REDIRECT_URL, scopes: 'openid profile email offline_access' },
-    });
-    if (err) { setError(err.message); setSsoLoading(null); }
+    const { error: err } = await authRepository.signInWithOAuth('azure', REDIRECT_URL);
+    if (err) { setError(err); setSsoLoading(null); }
   };
 
   return (

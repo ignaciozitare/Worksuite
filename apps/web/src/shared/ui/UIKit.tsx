@@ -8,6 +8,7 @@ import {
   DualPanelPicker,
   DateRangePicker,
   BugIcon,
+  Card,
 } from '@worksuite/ui';
 import { useTranslation } from '@worksuite/i18n';
 import { NotificationsBell } from './NotificationsBell';
@@ -97,7 +98,7 @@ export function UIKit() {
             Component library — {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
           <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-            <Badge color="accent">17 componentes</Badge>
+            <Badge color="accent">18 componentes</Badge>
             <Badge color="purple">packages/ui</Badge>
             <Badge color="green">Dark + Light</Badge>
           </div>
@@ -271,6 +272,53 @@ export function UIKit() {
             <StatBox label="Bugs abiertos" value="3" />
           </Row>
           <Row label="Import"><Code>{'import { StatBox } from "@worksuite/ui"'}</Code></Row>
+        </Section>
+
+        {/* ── Card ────────────────────────────────────────────────── */}
+        <Section title="Card" description="Surface container with variant support: default (tonal + accent line), stat (radial glow), glass (backdrop blur). Follows Carbon Logic tonal layering.">
+          <Row label="Default">
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', width: '100%' }}>
+              <Card style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>Default Card</div>
+                <div style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 8 }}>Top accent line, tonal background, 8px radius.</div>
+              </Card>
+              <Card accent="var(--green)" style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>Green Accent</div>
+                <div style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 8 }}>Custom accent color on the top edge.</div>
+              </Card>
+            </div>
+          </Row>
+          <Row label="Stat (radial glow)">
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', width: '100%' }}>
+              <Card variant="stat" style={{ flex: 1, minWidth: 160 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tx3)' }}>Total hours</div>
+                <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--tx)', marginTop: 4 }}>142.5h</div>
+              </Card>
+              <Card variant="stat" accent="var(--green)" style={{ flex: 1, minWidth: 160 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tx3)' }}>Releases</div>
+                <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--green)', marginTop: 4 }}>8</div>
+              </Card>
+              <Card variant="stat" accent="var(--red)" style={{ flex: 1, minWidth: 160 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tx3)' }}>Open bugs</div>
+                <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--red)', marginTop: 4 }}>3</div>
+              </Card>
+            </div>
+          </Row>
+          <Row label="Glass (backdrop blur)">
+            <div style={{ position: 'relative', padding: 24, borderRadius: 12, background: 'linear-gradient(135deg, var(--ac), var(--purple))', overflow: 'hidden' }}>
+              <Card variant="glass" style={{ maxWidth: 280 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>Glass Card</div>
+                <div style={{ fontSize: 12, color: 'var(--tx2)', marginTop: 8 }}>Semi-transparent with backdrop blur. Ideal for floating overlays.</div>
+              </Card>
+            </div>
+          </Row>
+          <Row label="Clickable">
+            <Card onClick={() => alert('Card clicked!')} style={{ maxWidth: 260, cursor: 'pointer' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>Clickable Card</div>
+              <div style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 8 }}>Click me — supports keyboard activation.</div>
+            </Card>
+          </Row>
+          <Row label="Import"><Code>{'import { Card } from "@worksuite/ui"'}</Code></Row>
         </Section>
 
         {/* ── Divider ─────────────────────────────────────────────── */}

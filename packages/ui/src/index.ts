@@ -39,5 +39,9 @@ export type { DualPanelItem, DualPanelPickerProps } from './components/DualPanel
 export { DateRangePicker }               from './components/DateRangePicker';
 export type { DateRangePickerProps }     from './components/DateRangePicker';
 
+// ── Card ──────────────────────────────────────────────────────────────────────
+export { Card }                          from './components/Card';
+export type { CardVariant, CardProps }   from './components/Card';
+
 // ── Icons ─────────────────────────────────────────────────────────────────────
 export { BugIcon }                       from './components/BugIcon';
