@@ -72,10 +72,16 @@ export function LoginPage() {
       {/* ═══ Left panel — branding ═══ */}
       <div style={S.leftPanel}>
         {/* Ambient glow */}
+        {/* Deep blue ambient glow */}
         <div style={{
-          position: 'absolute', top: '30%', left: '40%', width: 400, height: 400,
-          background: 'radial-gradient(circle, var(--ac-dim) 0%, transparent 70%)',
-          filter: 'blur(80px)', pointerEvents: 'none', animation: 'glowPulse 6s ease infinite',
+          position: 'absolute', top: '20%', left: '30%', width: 500, height: 500,
+          background: 'radial-gradient(circle, rgba(30,60,140,.35) 0%, rgba(15,30,80,.15) 40%, transparent 70%)',
+          filter: 'blur(60px)', pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '10%', right: '20%', width: 300, height: 300,
+          background: 'radial-gradient(circle, rgba(77,142,255,.12) 0%, transparent 60%)',
+          filter: 'blur(80px)', pointerEvents: 'none',
         }} />
 
         <div style={{ position: 'relative', zIndex: 1, animation: 'fadeUp .6s ease forwards' }}>
@@ -248,12 +254,12 @@ const S: Record<string, React.CSSProperties> = {
   leftPanel: {
     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: '60px 40px', position: 'relative', overflow: 'hidden',
-    background: 'var(--bg)',
+    background: 'linear-gradient(135deg, #0a0a14 0%, #0d1528 40%, #111d3a 70%, #0a1225 100%)',
   },
   rightPanel: {
     width: 480, minWidth: 480, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: '60px 50px', background: 'var(--sf)',
-    borderLeft: '1px solid var(--bd)',
+    padding: '60px 50px', background: '#10111a',
+    borderLeft: '1px solid rgba(255,255,255,.06)',
   },
   field: { display: 'flex', flexDirection: 'column', gap: 6 },
   lbl: {
