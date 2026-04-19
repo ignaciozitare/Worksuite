@@ -190,15 +190,11 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
         )}
 
         {myPending && onConfirmPresence && (
-          <div className="hd-card fade-in" style={{ '--accent': C.greenStrong, textAlign: 'center', marginTop: 8 } as React.CSSProperties}>
-            <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at center, ${C.greenDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
-            <span className="material-symbols-outlined" style={{ fontSize: 32, color: C.green, marginBottom: 8, display: 'block', position: 'relative' }}>login</span>
-            <div style={{ fontSize: 11, color: C.txMuted, marginBottom: 12, lineHeight: 1.5, position: 'relative' }}>{t('hotdesk.checkInDesc')}</div>
-            <button className="hd-btn hd-btn-green pulse-green" onClick={handleCheckIn} style={{ width: '100%', padding: '14px 0', fontSize: 14, position: 'relative' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>check_circle</span>
-              {t('hotdesk.checkIn')}
+          <div className="fade-in" style={{ marginTop: 8, position: 'relative' }}>
+            <button className="hd-btn hd-btn-green pulse-green" onClick={handleCheckIn} style={{ width: '100%', padding: '12px 0', fontSize: 13, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>check_circle</span>
+              {t('hotdesk.checkIn')} — <span className="mono" style={{ fontWeight: 600 }}>{myPending.seatId}</span>
             </button>
-            <div className="mono" style={{ fontSize: 11, color: C.green, marginTop: 8, fontWeight: 600, position: 'relative' }}>{myPending.seatId}</div>
           </div>
         )}
 
