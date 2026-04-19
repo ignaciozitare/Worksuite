@@ -152,87 +152,94 @@ function HDMapView({ hd, onSeat, currentUser, onConfirmPresence, children, view 
       {/* ═══════ Sidebar ═══════ */}
       <aside style={{
         position: 'sticky', top: 0, width: 240, minWidth: 240,
-        height: 'calc(100vh - 52px)', maxHeight: 'calc(100vh - 52px)',
+        height: 'calc(100vh - 52px)',
         background: C.sfLowest, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
         borderRight: `1px solid var(--bd)`,
         boxShadow: `0 0 60px ${C.primaryDim}`,
-        display: 'flex', flexDirection: 'column', padding: 16, gap: 4, zIndex: 30, overflowY: 'auto',
+        display: 'flex', flexDirection: 'column', zIndex: 30,
       }}>
-        {/* Brand */}
-        <div style={{ padding: '24px 12px 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 8, background: C.greenDim, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.green}` }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 22, color: C.green }}>event_seat</span>
-          </div>
-          <div>
-            <h1 style={{ fontSize: 16, fontWeight: 700, color: C.tx, letterSpacing: '-0.01em', lineHeight: 1 }}>Hot Desk</h1>
-            <p style={{ fontSize: 10, color: C.tx, opacity: .4, fontWeight: 700, letterSpacing: '.1em', marginTop: 4, textTransform: 'uppercase' }}>{t('hotdesk.moduleSubtitle')}</p>
-          </div>
-        </div>
-
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '16px 0' }}>
-          {NAV.map(item => (
-            <button key={item.id} className={`nav-item${view === item.id ? ' active' : ''}`} onClick={() => onViewChange?.(item.id)}>
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{item.icon}</span>
-              <span style={{ flex: 1 }}>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        {buildingFloorSelector && (
-          <div className="hd-card" style={{ '--accent': C.primaryStrong, padding: 16 } as React.CSSProperties}>
-            <div aria-hidden style={{ position: 'absolute', top: -30, right: -30, width: 80, height: 80, background: `radial-gradient(circle, ${C.primaryDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
-            <h3 style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: C.txDim, marginBottom: 12, position: 'relative' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: 'middle', marginRight: 6, color: C.primary }}>apartment</span>
-              {t('hotdesk.buildingFilter')}
-            </h3>
-            <div style={{ position: 'relative' }}>{buildingFloorSelector}</div>
-          </div>
-        )}
-
-        {myPending && onConfirmPresence && (
-          <div className="fade-in" style={{ marginTop: 8, position: 'relative' }}>
-            <button className="hd-btn hd-btn-green pulse-green" onClick={handleCheckIn} style={{ width: '100%', padding: '12px 0', fontSize: 13, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>check_circle</span>
-              {t('hotdesk.checkIn')} — <span className="mono" style={{ fontWeight: 600 }}>{myPending.seatId}</span>
-            </button>
-          </div>
-        )}
-
-        <div className="hd-card" style={{ '--accent': C.green, marginTop: 8 } as React.CSSProperties}>
-          <div aria-hidden style={{ position: 'absolute', top: -30, right: -30, width: 80, height: 80, background: `radial-gradient(circle, ${C.greenDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
-          <h3 style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: C.txDim, marginBottom: 14, position: 'relative' }}>{t('hotdesk.liveStatus')}</h3>
-          {[
-            { label: t('hotdesk.free'), pct: totalSeats > 0 ? Math.round((counts.free / totalSeats) * 100) : 0, color: C.green },
-            { label: t('hotdesk.occupied'), pct: totalSeats > 0 ? Math.round((counts.occupied / totalSeats) * 100) : 0, color: C.primaryStrong },
-            { label: t('hotdesk.fixed'), pct: totalSeats > 0 ? Math.round((counts.fixed / totalSeats) * 100) : 0, color: C.red },
-            { label: t('hotdesk.mine'), pct: null, color: C.amber, val: myToday ? 1 : 0 },
-          ].map(row => (
-            <div key={row.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: row.color }} />
-                <span style={{ fontSize: 12, color: C.tx }}>{row.label}</span>
-              </div>
-              <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: C.txMuted }}>
-                {row.pct !== null ? `${row.pct}%` : (row as any).val}
-              </span>
+        {/* Scrollable content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {/* Brand */}
+          <div style={{ padding: '24px 12px 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 8, background: C.greenDim, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.green}` }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 22, color: C.green }}>event_seat</span>
             </div>
-          ))}
-        </div>
-
-        {!myToday && (
-          <div className="hd-card" style={{ '--accent': C.primaryStrong, marginTop: 8 } as React.CSSProperties}>
-            <div aria-hidden style={{ position: 'absolute', top: -30, right: -30, width: 80, height: 80, background: `radial-gradient(circle, ${C.primaryDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
-            <h3 style={{ fontSize: 13, fontWeight: 600, color: C.tx, marginBottom: 4, position: 'relative' }}>{t('hotdesk.instantBooking')}</h3>
-            <p style={{ fontSize: 11, color: C.txDim, lineHeight: 1.5, marginBottom: 14, position: 'relative' }}>{t('hotdesk.instantBookingDesc')}</p>
-            <button className="hd-btn hd-btn-primary" onClick={handleQuickReserve} style={{ width: '100%', position: 'relative' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>bolt</span>
-              {t('hotdesk.quickReserve')}
-            </button>
+            <div>
+              <h1 style={{ fontSize: 16, fontWeight: 700, color: C.tx, letterSpacing: '-0.01em', lineHeight: 1 }}>Hot Desk</h1>
+              <p style={{ fontSize: 10, color: C.tx, opacity: .4, fontWeight: 700, letterSpacing: '.1em', marginTop: 4, textTransform: 'uppercase' }}>{t('hotdesk.moduleSubtitle')}</p>
+            </div>
           </div>
-        )}
 
-        <div style={{ marginTop: 'auto', padding: '14px 12px', fontSize: 10, color: C.txDim, letterSpacing: '.08em', fontFamily: T.font.mono }}>
-          &copy; {new Date().getFullYear()} WorkSuite
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '16px 0' }}>
+            {NAV.map(item => (
+              <button key={item.id} className={`nav-item${view === item.id ? ' active' : ''}`} onClick={() => onViewChange?.(item.id)}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{item.icon}</span>
+                <span style={{ flex: 1 }}>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          {buildingFloorSelector && (
+            <div className="hd-card" style={{ '--accent': C.primaryStrong, padding: 16 } as React.CSSProperties}>
+              <div aria-hidden style={{ position: 'absolute', top: -30, right: -30, width: 80, height: 80, background: `radial-gradient(circle, ${C.primaryDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
+              <h3 style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: C.txDim, marginBottom: 12, position: 'relative' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: 'middle', marginRight: 6, color: C.primary }}>apartment</span>
+                {t('hotdesk.buildingFilter')}
+              </h3>
+              <div style={{ position: 'relative' }}>{buildingFloorSelector}</div>
+            </div>
+          )}
+
+          {myPending && onConfirmPresence && (
+            <div className="hd-card fade-in" style={{ '--accent': C.greenStrong, textAlign: 'center', marginTop: 8 } as React.CSSProperties}>
+              <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at center, ${C.greenDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
+              <span className="material-symbols-outlined" style={{ fontSize: 32, color: C.green, marginBottom: 8, display: 'block', position: 'relative' }}>login</span>
+              <div style={{ fontSize: 11, color: C.txMuted, marginBottom: 12, lineHeight: 1.5, position: 'relative' }}>{t('hotdesk.checkInDesc')}</div>
+              <button className="hd-btn hd-btn-green pulse-green" onClick={handleCheckIn} style={{ width: '100%', padding: '14px 0', fontSize: 14, position: 'relative' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>check_circle</span>
+                {t('hotdesk.checkIn')}
+              </button>
+              <div className="mono" style={{ fontSize: 11, color: C.green, marginTop: 8, fontWeight: 600, position: 'relative' }}>{myPending.seatId}</div>
+            </div>
+          )}
+
+          <div className="hd-card" style={{ '--accent': C.green, marginTop: 8 } as React.CSSProperties}>
+            <div aria-hidden style={{ position: 'absolute', top: -30, right: -30, width: 80, height: 80, background: `radial-gradient(circle, ${C.greenDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
+            <h3 style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: C.txDim, marginBottom: 14, position: 'relative' }}>{t('hotdesk.liveStatus')}</h3>
+            {[
+              { label: t('hotdesk.free'), pct: totalSeats > 0 ? Math.round((counts.free / totalSeats) * 100) : 0, color: C.green },
+              { label: t('hotdesk.occupied'), pct: totalSeats > 0 ? Math.round((counts.occupied / totalSeats) * 100) : 0, color: C.primaryStrong },
+              { label: t('hotdesk.fixed'), pct: totalSeats > 0 ? Math.round((counts.fixed / totalSeats) * 100) : 0, color: C.red },
+              { label: t('hotdesk.mine'), pct: null, color: C.amber, val: myToday ? 1 : 0 },
+            ].map(row => (
+              <div key={row.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', position: 'relative' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: row.color }} />
+                  <span style={{ fontSize: 12, color: C.tx }}>{row.label}</span>
+                </div>
+                <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: C.txMuted }}>
+                  {row.pct !== null ? `${row.pct}%` : (row as any).val}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {!myToday && (
+            <div className="hd-card" style={{ '--accent': C.primaryStrong, marginTop: 8 } as React.CSSProperties}>
+              <div aria-hidden style={{ position: 'absolute', top: -30, right: -30, width: 80, height: 80, background: `radial-gradient(circle, ${C.primaryDim} 0%, transparent 70%)`, pointerEvents: 'none' }} />
+              <h3 style={{ fontSize: 13, fontWeight: 600, color: C.tx, marginBottom: 4, position: 'relative' }}>{t('hotdesk.instantBooking')}</h3>
+              <p style={{ fontSize: 11, color: C.txDim, lineHeight: 1.5, marginBottom: 14, position: 'relative' }}>{t('hotdesk.instantBookingDesc')}</p>
+              <button className="hd-btn hd-btn-primary" onClick={handleQuickReserve} style={{ width: '100%', position: 'relative' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>bolt</span>
+                {t('hotdesk.quickReserve')}
+              </button>
+            </div>
+          )}
+
+          <div style={{ marginTop: 'auto', padding: '14px 12px', fontSize: 10, color: C.txDim, letterSpacing: '.08em', fontFamily: T.font.mono }}>
+            &copy; {new Date().getFullYear()} WorkSuite
+          </div>
         </div>
       </aside>
 
