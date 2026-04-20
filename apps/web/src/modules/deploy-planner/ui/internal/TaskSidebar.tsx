@@ -92,21 +92,19 @@ export function TaskSidebar({
     return set;
   }, [releases]);
 
-  // Filter & sort tickets: newest first (reverse order = bottom of array first)
+  // Filter & sort tickets: only unassigned, newest first
   const filtered = useMemo(() => {
     const q = debouncedSearch.toLowerCase();
-    const base = q
-      ? tickets.filter(
-          t =>
-            t.key.toLowerCase().includes(q) ||
-            t.summary.toLowerCase().includes(q) ||
-            t.status.toLowerCase().includes(q) ||
-            t.type.toLowerCase().includes(q),
-        )
-      : tickets;
-    // Reverse for "newest first" (tickets come from Jira in creation order)
+    const base = tickets.filter(t => {
+      if (assignedKeys.has(t.key)) return false;
+      if (!q) return true;
+      return t.key.toLowerCase().includes(q) ||
+        t.summary.toLowerCase().includes(q) ||
+        t.status.toLowerCase().includes(q) ||
+        t.type.toLowerCase().includes(q);
+    });
     return [...base].reverse();
-  }, [tickets, debouncedSearch]);
+  }, [tickets, debouncedSearch, assignedKeys]);
 
   const handleClick = useCallback(
     (key: string) => {
@@ -334,16 +332,14 @@ export function TaskSidebar({
           </div>
         ) : (
           filtered.map(ticket => {
-            const assigned = assignedKeys.has(ticket.key);
             const chip = statusChipStyle(ticket.status);
             const isDragging = drag?.key === ticket.key;
 
             return (
               <div
                 key={ticket.key}
-                draggable={!assigned}
+                draggable
                 onDragStart={e => {
-                  if (assigned) { e.preventDefault(); return; }
                   setDrag({ key: ticket.key, fromId: SIDEBAR_SOURCE });
                   e.dataTransfer.effectAllowed = 'copy';
                   e.dataTransfer.setData('text/plain', ticket.key);
@@ -354,18 +350,16 @@ export function TaskSidebar({
                   background: 'var(--sf3)',
                   borderRadius: 10,
                   padding: '10px 12px',
-                  cursor: assigned ? 'default' : (isDragging ? 'grabbing' : 'grab'),
+                  cursor: isDragging ? 'grabbing' : 'grab',
                   borderLeft: `3px solid ${chip.color}`,
-                  opacity: assigned ? 0.5 : (isDragging ? 0.4 : 1),
+                  opacity: isDragging ? 0.4 : 1,
                   boxShadow: '0 1px 2px rgba(0,0,0,.2)',
                   marginBottom: 6,
                 }}
                 onMouseEnter={e => {
-                  if (!assigned) {
-                    e.currentTarget.style.background = 'rgba(79,110,247,.08)';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                    e.currentTarget.style.boxShadow = '0 4px 14px rgba(79,110,247,.18)';
-                  }
+                  e.currentTarget.style.background = 'rgba(79,110,247,.08)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(79,110,247,.18)';
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.background = 'var(--sf3)';
@@ -382,11 +376,6 @@ export function TaskSidebar({
                   <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: 'var(--ac-dim)', color: 'var(--ac2)', fontWeight: 700, letterSpacing: '.05em' }}>{ticket.key}</span>
                   <span className="material-symbols-outlined" style={{ fontSize: 13, color: 'var(--tx3)' }}>{typeIcon(ticket.type)}</span>
                   <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 8px', borderRadius: 3, color: chip.color, background: chip.bg }}>{ticket.status}</span>
-                  {assigned && (
-                    <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--dp-tertiary,#ddb7ff)', background: 'var(--dp-tertiary-dim, var(--purple-dim))', padding: '1px 6px', borderRadius: 4 }}>
-                      {t('deployPlanner.taskSidebar.assigned')}
-                    </span>
-                  )}
                   <div style={{ flex: 1 }} />
                   {ticket.assignee && (
                     <div title={ticket.assignee} style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, var(--ac), var(--ac2))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, border: '1px solid rgba(255,255,255,.12)' }}>
