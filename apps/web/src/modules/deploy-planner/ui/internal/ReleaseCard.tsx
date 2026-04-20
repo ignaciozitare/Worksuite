@@ -104,8 +104,8 @@ export function ReleaseCard({
   return (
     <div
       className="anim-in glass-card ghost-border-top"
-      onDragOver={e => e.preventDefault()}
-      onDrop={e => { e.preventDefault(); onDrop(rel.id); }}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+      onDrop={e => { e.preventDefault(); e.stopPropagation(); onDrop(rel.id); }}
       onClick={() => onOpen(rel.id)}
       style={{
         width: 320,
