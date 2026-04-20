@@ -336,6 +336,7 @@ export function TaskSidebar({
           filtered.map(ticket => {
             const assigned = assignedKeys.has(ticket.key);
             const chip = statusChipStyle(ticket.status);
+            const isDragging = drag?.key === ticket.key;
 
             return (
               <div
@@ -350,113 +351,48 @@ export function TaskSidebar({
                 onDragEnd={() => setDrag(null)}
                 onClick={() => handleClick(ticket.key)}
                 style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 8,
-                  padding: '10px 8px',
-                  borderRadius: 8,
-                  cursor: assigned ? 'default' : 'grab',
-                  transition: 'background .15s, opacity .15s',
-                  opacity: assigned ? 0.5 : (drag?.key === ticket.key ? 0.4 : 1),
-                  marginBottom: 2,
+                  background: 'var(--sf3)',
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  cursor: assigned ? 'default' : (isDragging ? 'grabbing' : 'grab'),
+                  borderLeft: `3px solid ${chip.color}`,
+                  opacity: assigned ? 0.5 : (isDragging ? 0.4 : 1),
+                  boxShadow: '0 1px 2px rgba(0,0,0,.2)',
+                  marginBottom: 6,
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.background = 'var(--dp-sf,#1c1b1b)';
+                  if (!assigned) {
+                    e.currentTarget.style.background = 'rgba(79,110,247,.08)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 4px 14px rgba(79,110,247,.18)';
+                  }
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.background = 'var(--sf3)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,.2)';
                 }}
               >
-                {/* Drag handle */}
-                <span
-                  className="material-symbols-outlined"
-                  style={{
-                    fontSize: 14,
-                    color: 'var(--dp-tx3,#8c909f)',
-                    cursor: 'grab',
-                    marginTop: 2,
-                    opacity: 0.4,
-                    flexShrink: 0,
-                  }}
-                >
-                  drag_indicator
-                </span>
-
-                {/* Type icon */}
-                <span
-                  className="material-symbols-outlined"
-                  style={{
-                    fontSize: 16,
-                    color: 'var(--dp-primary,#adc6ff)',
-                    marginTop: 1,
-                    flexShrink: 0,
-                  }}
-                >
-                  {typeIcon(ticket.type)}
-                </span>
-
-                {/* Content */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      marginBottom: 3,
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: 'var(--dp-primary,#adc6ff)',
-                        letterSpacing: '0.01em',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {ticket.key}
+                {/* Title */}
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.35 }}>
+                  {truncate(ticket.summary, 50)}
+                </div>
+                {/* Meta row */}
+                <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: 'var(--ac-dim)', color: 'var(--ac2)', fontWeight: 700, letterSpacing: '.05em' }}>{ticket.key}</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 13, color: 'var(--tx3)' }}>{typeIcon(ticket.type)}</span>
+                  <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 8px', borderRadius: 3, color: chip.color, background: chip.bg }}>{ticket.status}</span>
+                  {assigned && (
+                    <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--dp-tertiary,#ddb7ff)', background: 'var(--dp-tertiary-dim, var(--purple-dim))', padding: '1px 6px', borderRadius: 4 }}>
+                      {t('deployPlanner.taskSidebar.assigned')}
                     </span>
-                    {assigned && (
-                      <span
-                        style={{
-                          fontSize: 8,
-                          fontWeight: 700,
-                          letterSpacing: '.06em',
-                          textTransform: 'uppercase',
-                          color: 'var(--dp-tertiary,#ddb7ff)',
-                          background: 'var(--dp-tertiary-dim, var(--purple-dim))',
-                          padding: '1px 6px',
-                          borderRadius: 4,
-                        }}
-                      >
-                        {t('deployPlanner.taskSidebar.assigned')}
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: 'var(--dp-tx2,#c2c6d6)',
-                      lineHeight: 1.4,
-                      marginBottom: 4,
-                    }}
-                  >
-                    {truncate(ticket.summary, 60)}
-                  </div>
-                  {/* Status chip */}
-                  <span
-                    style={{
-                      fontSize: 9,
-                      fontWeight: 600,
-                      padding: '2px 8px',
-                      borderRadius: 4,
-                      color: chip.color,
-                      background: chip.bg,
-                      display: 'inline-block',
-                    }}
-                  >
-                    {ticket.status}
-                  </span>
+                  )}
+                  <div style={{ flex: 1 }} />
+                  {ticket.assignee && (
+                    <div title={ticket.assignee} style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, var(--ac), var(--ac2))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, border: '1px solid rgba(255,255,255,.12)' }}>
+                      {ticket.assignee.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                  )}
                 </div>
               </div>
             );
