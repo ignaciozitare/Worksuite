@@ -59,7 +59,7 @@ function toReleasesForGrouping(releases: Release[], statusCfg: StatusCfg): Relea
 }
 
 export function ReleaseCard({
-  rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag,
+  rel, statusCfg, tickets, onOpen, onUpd, onDelete, onDrop, setDrag, drag,
   allReleases, repoGroups, versionCfg, allReleaseNumbers,
   jiraBaseUrl = '', linkedGroups = [], classifiedSubs = [],
 }: ReleaseCardProps) {
