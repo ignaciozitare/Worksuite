@@ -41,6 +41,7 @@ const CSS = `
 .dp ::-webkit-scrollbar-track{background:var(--dp-bg,#131313);}
 .dp ::-webkit-scrollbar-thumb{background:var(--dp-bd,var(--bd2));border-radius:2px;}
 .dp select option{background:var(--dp-sf,#1c1b1b);}
+.dp .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:300;font-style:normal;display:inline-block;line-height:1;text-transform:none;letter-spacing:normal;word-wrap:normal;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased;font-size:inherit;}
 /* Dark (default) — Stitch / Carbon Logic */
 .dp{
   --dp-bg:#131313; --dp-sf:#1c1b1b; --dp-sf2:#201f1f; --dp-sf3:#2a2a2a;

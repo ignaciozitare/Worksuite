@@ -23,6 +23,7 @@ export { CHRONO_ADMIN_COLORS };
 /* ─── CSS ─────────────────────────────────────────────────────────────────── */
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap');
+.ch .material-symbols-outlined{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;display:inline-block;line-height:1;text-transform:none;letter-spacing:normal;word-wrap:normal;white-space:nowrap;direction:ltr;vertical-align:middle;}
 .ch{font-family:'Inter','IBM Plex Sans',sans-serif;background:${C.bg};color:${C.tx};min-height:100%;}
 .ch *{box-sizing:border-box;margin:0;padding:0;}
 .ch ::-webkit-scrollbar{width:4px;height:4px;}

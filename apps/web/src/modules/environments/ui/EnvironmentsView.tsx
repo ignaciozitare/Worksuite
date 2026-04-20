@@ -863,6 +863,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 .ev *{box-sizing:border-box;}
 .ev button,.ev select,.ev input,.ev textarea{font-family:'Inter',system-ui,-apple-system,sans-serif;}
+.ev .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:300;font-style:normal;display:inline-block;line-height:1;text-transform:none;letter-spacing:normal;word-wrap:normal;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased;font-size:inherit;}
 .ev ::-webkit-scrollbar{width:4px;height:4px;}
 .ev ::-webkit-scrollbar-track{background:var(--bg);}
 .ev ::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px;}
