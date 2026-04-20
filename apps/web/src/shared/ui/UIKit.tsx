@@ -91,6 +91,9 @@ const TOC_ITEMS = [
   { id: 'tokens',     label: 'CSS Tokens' },
   { id: 'icons',      label: 'Icons' },
   { id: 'btn',        label: 'Btn' },
+  { id: 'gradient-btns', label: 'Gradient Buttons' },
+  { id: 'glass-btns', label: 'Glass Buttons' },
+  { id: 'glow-btns',  label: 'Glow & Pulse' },
   { id: 'css-btns',   label: 'CSS Buttons' },
   { id: 'badge',      label: 'Badge' },
   { id: 'chip',       label: 'Chip' },
@@ -319,8 +322,107 @@ export function UIKit() {
           <Row label="Import"><Code>{"import { Btn } from '@worksuite/ui'"}</Code></Row>
         </Section>
 
+        {/* ── Gradient Buttons ── */}
+        <Section id="gradient-btns" title="Gradient Buttons" description="Primary CTAs across modules. linear-gradient(135deg) + glow shadow. This is the Carbon Logic standard for primary actions."
+          usedIn={['hotdesk (.hd-btn-green, .hd-btn-primary)', 'chrono (.ch-btn-amber, .ch-btn-green, .ch-btn-red)', 'deploy-planner (Add Release, VersionPicker)']}>
+          <Row label="Primary (blue gradient + glow)">
+            <button style={{ background: 'linear-gradient(135deg, var(--ac2), var(--ac))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--ac-dim)', fontFamily: 'inherit' }}>Primary Action</button>
+            <button style={{ background: 'linear-gradient(135deg, var(--ac2), var(--ac))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--ac-dim)', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span> Add Release
+            </button>
+          </Row>
+          <Row label="Success (green gradient + glow)">
+            <button style={{ background: 'linear-gradient(135deg, var(--green), var(--green-strong))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--green-dim)', fontFamily: 'inherit' }}>Approve</button>
+            <button style={{ background: 'linear-gradient(135deg, var(--green), var(--green-strong))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--green-dim)', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>login</span> Check In
+            </button>
+          </Row>
+          <Row label="Danger (red gradient + glow)">
+            <button style={{ background: 'linear-gradient(135deg, var(--danger), var(--danger-strong))', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--red-dim)', fontFamily: 'inherit' }}>Reject</button>
+            <button style={{ background: 'linear-gradient(135deg, var(--danger), var(--danger-strong))', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--red-dim)', fontFamily: 'inherit' }}>Cancel Reservation</button>
+          </Row>
+          <Row label="Purple (tertiary gradient + glow)">
+            <button style={{ background: 'linear-gradient(135deg, var(--tertiary), var(--purple-strong))', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--purple-dim)', fontFamily: 'inherit' }}>Delegate</button>
+          </Row>
+          <Row label="Pattern">
+            <Code>{"background: 'linear-gradient(135deg, var(--ac2), var(--ac))'"}</Code>
+            <Code>{"boxShadow: '0 4px 20px var(--ac-dim)'"}</Code>
+          </Row>
+          <Row label="Files">
+            <div style={{ fontSize: 11, color: 'var(--tx2)', lineHeight: 1.8 }}>
+              <div><Code>modules/hotdesk/ui/HDReserveModal.tsx</Code> — btnPrimary, btnGreen, btnDanger, btnPurple</div>
+              <div><Code>modules/hotdesk/ui/HDMapView.tsx</Code> — .hd-btn-green, .hd-btn-primary</div>
+              <div><Code>modules/chrono/ui/ChronoPage.tsx</Code> — .ch-btn-amber, .ch-btn-green, .ch-btn-red</div>
+              <div><Code>modules/deploy-planner/ui/DeployPlanner.tsx</Code> — Add Release CTA</div>
+              <div><Code>modules/deploy-planner/ui/internal/VersionPicker.tsx</Code> — Generate version</div>
+            </div>
+          </Row>
+        </Section>
+
+        {/* ── Glass Buttons ── */}
+        <Section id="glass-btns" title="Glass Buttons (Glassmorphism)" description="Secondary/ghost buttons with backdrop-filter blur. Semi-transparent surface + frosted glass effect."
+          usedIn={['hotdesk (.hd-btn-ghost)', 'chrono (.ch-btn-ghost)', 'chrono-admin (.ch-btn-ghost)']}>
+          <Row label="Glass ghost button">
+            <div style={{ padding: 20, background: 'linear-gradient(135deg, var(--ac), var(--purple))', borderRadius: 8 }}>
+              <button style={{ background: 'rgba(58,57,57,0.5)', color: 'var(--tx2)', border: '1px solid rgba(42,42,56,0.3)', borderRadius: 6, padding: '9px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontFamily: 'inherit', letterSpacing: '.05em', textTransform: 'uppercase' as const }}>Cancel</button>
+              <span style={{ width: 8 }} />
+              <button style={{ background: 'rgba(58,57,57,0.5)', color: 'var(--tx2)', border: '1px solid rgba(42,42,56,0.3)', borderRadius: 6, padding: '9px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontFamily: 'inherit', marginLeft: 8 }}>Secondary</button>
+            </div>
+          </Row>
+          <Row label="Glass navigation arrows">
+            <div style={{ display: 'flex', gap: 6, padding: 16, background: 'var(--sf)', borderRadius: 8 }}>
+              {['chevron_left', 'chevron_right'].map(icon => (
+                <button key={icon} style={{ background: 'rgba(58,57,57,0.5)', border: '1px solid rgba(42,42,56,0.3)', borderRadius: 6, width: 28, height: 28, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx2)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{icon}</span>
+                </button>
+              ))}
+            </div>
+          </Row>
+          <Row label="Glass floating card (container)">
+            <div style={{ position: 'relative', padding: 24, background: 'var(--bg)', borderRadius: 8 }}>
+              <div style={{ background: 'var(--sf)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid var(--sf-bright)', borderRadius: 10, padding: '12px 16px', maxWidth: 220 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--tx)', marginBottom: 6 }}>Floating Card</div>
+                <div style={{ fontSize: 10, color: 'var(--tx3)' }}>backdrop-filter: blur(16px)</div>
+              </div>
+            </div>
+          </Row>
+          <Row label="Pattern">
+            <Code>{"background: 'rgba(58,57,57,0.5)'"}</Code>
+            <Code>{"backdropFilter: 'blur(8px)'"}</Code>
+          </Row>
+        </Section>
+
+        {/* ── Glow / Pulse Buttons ── */}
+        <Section id="glow-btns" title="Glow & Pulse Buttons" description="Buttons with animated glow effects. The green check-in button pulses continuously."
+          usedIn={['hotdesk (check-in pulse-green)', 'chrono (pulse-green)', 'deploy-planner (hover glow)']}>
+          <Row label="Green pulsing glow (check-in)">
+            <div style={{ padding: 20, background: 'var(--sf)', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 16 }}>
+              <style>{`
+                @keyframes uikit-pulse{0%{box-shadow:0 4px 24px var(--green-dim),0 0 0 0 rgba(74,225,118,.5)}70%{box-shadow:0 4px 24px var(--green-dim),0 0 0 16px rgba(74,225,118,0)}100%{box-shadow:0 4px 24px var(--green-dim),0 0 0 0 rgba(74,225,118,0)}}
+              `}</style>
+              <button style={{ background: 'linear-gradient(135deg, var(--green), var(--green-strong))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6, animation: 'uikit-pulse 2s cubic-bezier(.215,.61,.355,1) infinite' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>login</span> Check In
+              </button>
+              <span style={{ fontSize: 10, color: 'var(--tx3)' }}>animation: hdPulse 2s infinite</span>
+            </div>
+          </Row>
+          <Row label="Hover drop-shadow glow (Deploy Planner)">
+            <button
+              style={{ background: 'linear-gradient(135deg, var(--ac2), var(--ac))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px var(--ac-dim)', transition: 'all .2s' }}
+              onMouseEnter={e => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px var(--ac-dim))'; }}
+              onMouseLeave={e => { e.currentTarget.style.filter = 'none'; }}
+            >
+              Hover me for glow
+            </button>
+          </Row>
+          <Row label="Pattern">
+            <Code>{"@keyframes hdPulse{0%{box-shadow:0 0 0 0 rgba(74,225,118,.5)}...}"}</Code>
+            <Code>{".pulse-green{animation:hdPulse 2s cubic-bezier(.215,.61,.355,1) infinite}"}</Code>
+          </Row>
+        </Section>
+
         {/* ── CSS Buttons ── */}
-        <Section id="css-btns" title="CSS Buttons (WorkSuiteApp.css)" description="Button classes used across modules. Candidates for migration to Btn component."
+        <Section id="css-btns" title="CSS Buttons (WorkSuiteApp.css)" description="Flat button classes used across modules. Candidates for migration to gradient Btn variants."
           usedIn={['jira-tracker', 'chrono', 'hotdesk', 'admin', 'deploy-planner']}>
           <Row label=".btn-p — Primary">
             <button className="btn-p" style={{ width: 'auto', padding: '8px 16px' }}>Primary</button>
