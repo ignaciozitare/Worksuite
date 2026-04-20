@@ -197,7 +197,6 @@ export function UIKit() {
           <div style={{ padding: 32, background: '#0e0e0e', borderRadius: 8 }}>
             <h3 style={{ fontSize: 18, fontWeight: 500, color: '#e5e2e1', marginBottom: 4 }}>Iconography</h3>
             <p style={{ fontSize: 12, color: '#8c909f', marginBottom: 20 }}>Material Symbols Outlined — weight 300, filled on interaction.</p>
-            <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 20 }}>
               {['dashboard','monitoring','terminal','layers','database','hub','rocket_launch','developer_board','schedule','group','warning','settings'].map(icon => (
                 <div key={icon} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>

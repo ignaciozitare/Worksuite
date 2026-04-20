@@ -33,7 +33,6 @@ const TAB_ICONS: Record<string, string> = {
 /* ─── CSS ────────────────────────────────────────────────────── */
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 .dp *{box-sizing:border-box;margin:0;padding:0;}
 .dp{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--dp-bg,#131313);color:var(--dp-tx,#e5e2e1);height:100%;overflow:auto;}
 .dp button,.dp select,.dp input,.dp textarea{font-family:'Inter',system-ui,-apple-system,sans-serif;}
@@ -42,7 +41,6 @@ const CSS = `
 .dp ::-webkit-scrollbar-track{background:var(--dp-bg,#131313);}
 .dp ::-webkit-scrollbar-thumb{background:var(--dp-bd,var(--bd2));border-radius:2px;}
 .dp select option{background:var(--dp-sf,#1c1b1b);}
-.dp .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:300;font-style:normal;display:inline-block;line-height:1;text-transform:none;letter-spacing:normal;word-wrap:normal;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased;font-size:inherit;}
 /* Dark (default) — Stitch / Carbon Logic */
 .dp{
   --dp-bg:#131313; --dp-sf:#1c1b1b; --dp-sf2:#201f1f; --dp-sf3:#2a2a2a;
