@@ -24,21 +24,21 @@ export function Modal({ title, onClose, children, width = 520, noPadding = false
     alignItems:      'center',
     justifyContent:  'center',
     padding:         20,
-    backdropFilter:  'blur(2px)',
+    backdropFilter:  'blur(4px)',
   };
 
   const panelStyle: CSSProperties = {
-    background:    'var(--ws-surface)',
-    border:        '1px solid var(--ws-border)',
-    borderRadius:  'var(--ws-radius-xl)',
+    background:    'var(--sf)',
+    border:        '1px solid var(--bd2)',
+    borderRadius:  'var(--r2)',
     width:         '100%',
     maxWidth:      width,
     maxHeight:     '90vh',
     overflow:      'hidden',
     display:       'flex',
     flexDirection: 'column',
-    boxShadow:     'var(--ws-shadow-xl)',
-    animation:     'ws-fade-in 0.15s ease',
+    boxShadow:     'var(--shadow)',
+    animation:     'mbIn 0.18s ease',
   };
 
   return (
@@ -46,18 +46,19 @@ export function Modal({ title, onClose, children, width = 520, noPadding = false
       <div style={panelStyle}>
         {title && (
           <div style={{
-            padding:       '16px 20px',
-            borderBottom:  '1px solid var(--ws-border)',
+            padding:       '16px 18px 12px',
+            borderBottom:  '1px solid var(--bd)',
             display:       'flex',
             alignItems:    'center',
             gap:           10,
             flexShrink:    0,
+            background:    'var(--sf)',
           }}>
             <h3 style={{
-              fontFamily: 'var(--ws-font-heading)',
-              fontSize:   15,
+              fontSize:   14,
               fontWeight: 700,
-              color:      'var(--ws-text)',
+              letterSpacing: '-0.1px',
+              color:      'var(--tx)',
               margin:     0,
               flex:       1,
             }}>
@@ -65,17 +66,18 @@ export function Modal({ title, onClose, children, width = 520, noPadding = false
             </h3>
             <button
               onClick={onClose}
-              aria-label="Cerrar"
+              aria-label="Close"
               style={{
                 background:    'transparent',
                 border:        'none',
-                color:         'var(--ws-text-3)',
+                color:         'var(--tx3)',
                 cursor:        'pointer',
-                fontSize:      20,
+                fontSize:      18,
                 lineHeight:    1,
                 padding:       '2px 6px',
-                borderRadius:  'var(--ws-radius-sm)',
+                borderRadius:  '3px',
                 fontFamily:    'inherit',
+                transition:    'var(--ease)',
               }}
             >
               ✕
@@ -85,7 +87,8 @@ export function Modal({ title, onClose, children, width = 520, noPadding = false
         <div style={{
           overflowY: 'auto',
           flex:      1,
-          padding:   noPadding ? 0 : '18px 20px',
+          padding:   noPadding ? 0 : '18px',
+          background: 'var(--sf)',
         }}>
           {children}
         </div>
@@ -115,21 +118,23 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   return (
     <Modal title="Confirmar" onClose={onCancel} width={380}>
-      <p style={{ fontSize: 14, color: 'var(--ws-text)', marginBottom: 20, lineHeight: 1.6 }}>
+      <p style={{ fontSize: 14, color: 'var(--tx)', marginBottom: 20, lineHeight: 1.6 }}>
         {message}
       </p>
-      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
         <button
           onClick={onCancel}
           style={{
-            background:   'var(--ws-surface-2)',
-            border:       '1px solid var(--ws-border)',
-            borderRadius: 'var(--ws-radius)',
-            padding:      '7px 16px',
-            color:        'var(--ws-text-2)',
+            background:   'var(--sf2)',
+            border:       '1px solid var(--bd)',
+            borderRadius: 'var(--r)',
+            padding:      '8px 14px',
+            color:        'var(--tx2)',
             cursor:       'pointer',
-            fontSize:     13,
+            fontSize:     12,
+            fontWeight:   500,
             fontFamily:   'inherit',
+            transition:   'var(--ease)',
           }}
         >
           {cancelLabel}
@@ -137,15 +142,16 @@ export function ConfirmModal({
         <button
           onClick={onConfirm}
           style={{
-            background:   danger ? 'var(--ws-red)' : 'var(--ws-accent)',
+            background:   danger ? 'var(--red)' : 'var(--ac)',
             border:       'none',
-            borderRadius: 'var(--ws-radius)',
-            padding:      '7px 16px',
+            borderRadius: 'var(--r)',
+            padding:      '8px 18px',
             color:        '#fff',
             cursor:       'pointer',
-            fontSize:     13,
+            fontSize:     12,
             fontWeight:   600,
             fontFamily:   'inherit',
+            transition:   'var(--ease)',
           }}
         >
           {confirmLabel}

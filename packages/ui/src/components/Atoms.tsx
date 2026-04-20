@@ -6,10 +6,10 @@ interface AvatarProps {
   initials: string;
   color?:   string;
   size?:    number;
-  name?:    string;   // tooltip
+  name?:    string;
 }
 
-export function Avatar({ initials, color = 'var(--ws-accent)', size = 30, name }: AvatarProps) {
+export function Avatar({ initials, color = 'var(--ac)', size = 30, name }: AvatarProps) {
   const style: CSSProperties = {
     width:          size,
     height:         size,
@@ -37,13 +37,13 @@ interface BadgeProps {
 }
 
 const BADGE_VARS: Record<BadgeColor, [string, string]> = {
-  accent: ['var(--ws-accent-bg)',  'var(--ws-accent)'],
-  green:  ['var(--ws-green-bg)',   'var(--ws-green)'],
-  red:    ['var(--ws-red-bg)',     'var(--ws-red)'],
-  amber:  ['var(--ws-amber-bg)',   'var(--ws-amber)'],
-  purple: ['var(--ws-purple-bg)',  'var(--ws-purple)'],
-  blue:   ['var(--ws-blue-bg)',    'var(--ws-blue)'],
-  gray:   ['rgba(100,116,139,.12)','var(--ws-text-3)'],
+  accent: ['var(--ac-dim)',              'var(--ac2)'],
+  green:  ['var(--green-dim)',           'var(--green)'],
+  red:    ['var(--red-dim)',             'var(--red)'],
+  amber:  ['var(--amber-dim)',           'var(--amber)'],
+  purple: ['var(--purple-dim)',          'var(--purple)'],
+  blue:   ['rgba(79,110,247,.12)',       'var(--ac)'],
+  gray:   ['rgba(100,116,139,.12)',      'var(--tx3)'],
 };
 
 export function Badge({ children, color = 'gray' }: BadgeProps) {
@@ -52,8 +52,8 @@ export function Badge({ children, color = 'gray' }: BadgeProps) {
     display:      'inline-flex',
     alignItems:   'center',
     padding:      '2px 9px',
-    borderRadius: 'var(--ws-radius-full)',
-    fontSize:     'var(--ws-text-xs)',
+    borderRadius: 20,
+    fontSize:     10,
     fontWeight:   600,
     background:   bg,
     color:        fg,
@@ -71,20 +71,20 @@ interface StatBoxProps {
   icon?:  ReactNode;
 }
 
-export function StatBox({ label, value, color = 'var(--ws-accent)', icon }: StatBoxProps) {
+export function StatBox({ label, value, color = 'var(--ac)', icon }: StatBoxProps) {
   return (
     <div style={{
-      background:   'var(--ws-surface)',
-      border:       '1px solid var(--ws-border)',
-      borderRadius: 'var(--ws-radius-lg)',
+      background:   'var(--sf)',
+      border:       '1px solid var(--bd)',
+      borderRadius: 'var(--r2)',
       padding:      14,
       textAlign:    'center',
     }}>
       {icon && <div style={{ fontSize: 18, marginBottom: 6 }}>{icon}</div>}
-      <div style={{ fontSize: 26, fontWeight: 700, fontFamily: 'var(--ws-font-heading)', color }}>
+      <div style={{ fontSize: 26, fontWeight: 700, color }}>
         {value}
       </div>
-      <div style={{ fontSize: 'var(--ws-text-xs)', color: 'var(--ws-text-3)', marginTop: 3 }}>
+      <div style={{ fontSize: 10, color: 'var(--tx3)', marginTop: 3 }}>
         {label}
       </div>
     </div>
@@ -96,8 +96,8 @@ export function StatBox({ label, value, color = 'var(--ws-accent)', icon }: Stat
 export function Divider({ vertical = false }: { vertical?: boolean }) {
   return (
     <div style={vertical
-      ? { width: 1, alignSelf: 'stretch', background: 'var(--ws-border)' }
-      : { height: 1, background: 'var(--ws-border)', margin: '8px 0' }
+      ? { width: 1, alignSelf: 'stretch', background: 'var(--bd)' }
+      : { height: 1, background: 'var(--bd)', margin: '8px 0' }
     }/>
   );
 }
@@ -117,14 +117,14 @@ export function Chip({ children, active = false, onClick }: {
         alignItems:   'center',
         gap:          4,
         padding:      '3px 10px',
-        borderRadius: 'var(--ws-radius-full)',
-        fontSize:     'var(--ws-text-xs)',
+        borderRadius: 20,
+        fontSize:     10,
         fontWeight:   600,
-        background:   active ? 'var(--ws-accent-bg)' : 'var(--ws-surface-2)',
-        color:        active ? 'var(--ws-accent)'    : 'var(--ws-text-3)',
-        border:       `1px solid ${active ? 'rgba(99,102,241,.35)' : 'var(--ws-border)'}`,
+        background:   active ? 'var(--glow)' : 'var(--sf2)',
+        color:        active ? 'var(--ac2)' : 'var(--tx3)',
+        border:       `1px solid ${active ? 'rgba(79,110,247,.35)' : 'var(--bd)'}`,
         cursor:       onClick ? 'pointer' : 'default',
-        transition:   'var(--ws-ease)',
+        transition:   'var(--ease)',
         userSelect:   'none',
       }}
     >

@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react';
 
 export type BtnVariant = 'primary' | 'ghost' | 'success' | 'warn' | 'danger' | 'outline';
 export type BtnSize    = 'sm' | 'md' | 'lg';
@@ -8,46 +8,47 @@ interface BtnProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'style'
   size?:     BtnSize;
   full?:     boolean;
   loading?:  boolean;
+  style?:    CSSProperties;
   children:  ReactNode;
 }
 
-const VARIANT_STYLES: Record<BtnVariant, string> = {
-  primary: [
-    'background:var(--ws-accent)',
-    'color:#fff',
-    'border:none',
-  ].join(';'),
-  ghost: [
-    'background:var(--ws-surface-2)',
-    'color:var(--ws-text-2)',
-    'border:1px solid var(--ws-border)',
-  ].join(';'),
-  success: [
-    'background:var(--ws-green-bg)',
-    'color:var(--ws-green)',
-    'border:1px solid rgba(74,222,128,.3)',
-  ].join(';'),
-  warn: [
-    'background:var(--ws-amber-bg)',
-    'color:var(--ws-amber)',
-    'border:1px solid rgba(251,191,36,.3)',
-  ].join(';'),
-  danger: [
-    'background:var(--ws-red-bg)',
-    'color:var(--ws-red)',
-    'border:1px solid rgba(248,113,113,.3)',
-  ].join(';'),
-  outline: [
-    'background:transparent',
-    'color:var(--ws-accent)',
-    'border:1px solid var(--ws-accent)',
-  ].join(';'),
+const VARIANT_STYLES: Record<BtnVariant, CSSProperties> = {
+  primary: {
+    background: 'var(--ac)',
+    color: '#fff',
+    border: 'none',
+  },
+  ghost: {
+    background: 'var(--sf2)',
+    color: 'var(--tx2)',
+    border: '1px solid var(--bd)',
+  },
+  success: {
+    background: 'var(--green-dim)',
+    color: 'var(--green)',
+    border: '1px solid rgba(62,207,142,.3)',
+  },
+  warn: {
+    background: 'var(--amber-dim)',
+    color: 'var(--amber)',
+    border: '1px solid rgba(245,166,35,.3)',
+  },
+  danger: {
+    background: 'var(--red-dim)',
+    color: 'var(--red)',
+    border: '1px solid rgba(224,82,82,.3)',
+  },
+  outline: {
+    background: 'transparent',
+    color: 'var(--ac)',
+    border: '1px solid var(--ac)',
+  },
 };
 
-const SIZE_STYLES: Record<BtnSize, string> = {
-  sm: 'font-size:11px;padding:4px 11px;',
-  md: 'font-size:13px;padding:8px 16px;',
-  lg: 'font-size:14px;padding:10px 20px;',
+const SIZE_STYLES: Record<BtnSize, CSSProperties> = {
+  sm: { fontSize: 11, padding: '4px 11px' },
+  md: { fontSize: 13, padding: '8px 16px' },
+  lg: { fontSize: 14, padding: '10px 20px' },
 };
 
 export function Btn({
@@ -57,39 +58,43 @@ export function Btn({
   loading  = false,
   disabled,
   children,
+  style: styleProp,
   ...rest
 }: BtnProps) {
   const isDisabled = disabled || loading;
 
-  const inlineStyle = [
-    'display:inline-flex',
-    'align-items:center',
-    'justify-content:center',
-    'gap:5px',
-    'border-radius:var(--ws-radius)',
-    'font-weight:600',
-    'font-family:inherit',
-    'cursor:pointer',
-    'transition:var(--ws-ease)',
-    'white-space:nowrap',
-    VARIANT_STYLES[variant],
-    SIZE_STYLES[size],
-    full   ? 'width:100%' : '',
-    isDisabled ? 'opacity:0.4;cursor:not-allowed;pointer-events:none' : '',
-  ].filter(Boolean).join(';');
+  const style: CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    borderRadius: 'var(--r2)',
+    fontWeight: 600,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+    transition: 'var(--ease)',
+    whiteSpace: 'nowrap',
+    ...VARIANT_STYLES[variant],
+    ...SIZE_STYLES[size],
+    ...(full ? { width: '100%' } : {}),
+    ...(isDisabled ? { opacity: 0.4, cursor: 'not-allowed', pointerEvents: 'none' as const } : {}),
+    ...styleProp,
+  };
 
   return (
-    <button
-      // @ts-expect-error style as string for zero-dependency inline CSS
-      style={inlineStyle}
-      disabled={isDisabled}
-      {...rest}
-    >
+    <button style={style} disabled={isDisabled} {...rest}>
       {loading && (
         <span
           aria-hidden
-          // @ts-expect-error
-          style="width:12px;height:12px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:ws-spin .6s linear infinite;display:inline-block"
+          style={{
+            width: 12,
+            height: 12,
+            border: '2px solid currentColor',
+            borderTopColor: 'transparent',
+            borderRadius: '50%',
+            animation: 'ws-spin .6s linear infinite',
+            display: 'inline-block',
+          }}
         />
       )}
       {children}
