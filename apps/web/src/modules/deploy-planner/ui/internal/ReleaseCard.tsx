@@ -245,8 +245,6 @@ export function ReleaseCard({
         {relTickets.map(t => {
           const pColor = PRIORITY_COLOR[t.priority] ?? '#8c909f';
           const noRepo = !t.repos || t.repos.length === 0;
-          const isDragging = drag?.key === t.key;
-          const initials = t.assignee?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '';
           return (
             <div
               key={t.key}
@@ -258,58 +256,42 @@ export function ReleaseCard({
               }}
               onDragEnd={() => setDrag(null)}
               onClick={e => e.stopPropagation()}
+              title={noRepo ? '⚠ Sin repositorio — asigna Components en Jira' : t.summary}
               style={{
-                background: 'var(--sf3)', borderRadius: 10, padding: '10px 12px',
-                cursor: isDragging ? 'grabbing' : 'grab',
-                transition: 'all .15s',
-                borderLeft: `3px solid ${noRepo ? '#ef4444' : pColor}`,
-                opacity: isDragging ? .4 : 1,
-                boxShadow: '0 1px 2px rgba(0,0,0,.2)',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(79,110,247,.08)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 4px 14px rgba(79,110,247,.18)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'var(--sf3)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,.2)';
+                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px',
+                background: 'var(--dp-sf2,#201f1f)',
+                border: noRepo ? '1px solid rgba(239,68,68,.5)' : '1px solid var(--dp-bd,var(--bd))',
+                borderLeft: `2px solid ${noRepo ? '#ef4444' : pColor}`,
+                borderRadius: 6, cursor: 'grab', fontSize: 10,
               }}
             >
-              {/* Title row */}
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.35, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {noRepo && <span style={{ color: '#ef4444', marginRight: 4 }}>⚠</span>}
-                {t.summary}
-              </div>
-              {/* Meta row */}
-              <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: `${pColor}22`, color: pColor, fontWeight: 700, letterSpacing: '.05em' }}>{t.key}</span>
-                {t.priority && (
-                  <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: `${pColor}22`, color: pColor, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase' }}>{t.priority}</span>
-                )}
-                <div style={{ flex: 1 }} />
-                {jiraBaseUrl && (
-                  <a href={`${jiraBaseUrl}/browse/${t.key}`} target="_blank" rel="noopener noreferrer"
-                    onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}
-                    style={{ color: 'var(--tx3)', textDecoration: 'none', display: 'flex', fontSize: 14 }}
-                    title={`Open ${t.key} in Jira`}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>open_in_new</span>
-                  </a>
-                )}
-                <button onClick={e => { e.stopPropagation(); void onUpd(rel.id, { ticket_ids: (rel.ticket_ids ?? []).filter(x => x !== t.key) }); }}
-                  style={{ background: 'none', border: 'none', color: 'var(--tx3)', cursor: 'pointer', display: 'flex', padding: 0 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
-                </button>
-                {initials && (
-                  <div title={t.assignee || ''} style={{
-                    width: 22, height: 22, borderRadius: '50%',
-                    background: 'linear-gradient(135deg, var(--ac), var(--ac2))',
-                    color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 9, fontWeight: 700, border: '1px solid rgba(255,255,255,.12)',
-                  }}>{initials}</div>
-                )}
-              </div>
+              {noRepo && <span style={{ color: '#ef4444', fontSize: 10, flexShrink: 0 }}>⚠</span>}
+              <span style={{ color: 'var(--dp-primary,#adc6ff)', fontWeight: 700, flexShrink: 0 }}>{t.key}</span>
+              <span style={{ color: noRepo ? '#ef4444' : 'var(--dp-tx2,#c2c6d6)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {t.summary.slice(0, 28)}{t.summary.length > 28 ? '…' : ''}
+              </span>
+              <span style={{ color: 'var(--dp-tx3,#8c909f)', flexShrink: 0, fontSize: 9 }}>
+                {t.assignee?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '—'}
+              </span>
+              {jiraBaseUrl && (
+                <a
+                  href={`${jiraBaseUrl}/browse/${t.key}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onMouseDown={e => e.stopPropagation()}
+                  onClick={e => e.stopPropagation()}
+                  style={{ color: 'var(--dp-tx3,#8c909f)', fontSize: 10, flexShrink: 0, textDecoration: 'none', lineHeight: 1, padding: '0 2px' }}
+                  title={`Open ${t.key} in Jira`}
+                >
+                  ↗
+                </a>
+              )}
+              <button
+                onClick={e => { e.stopPropagation(); void onUpd(rel.id, { ticket_ids: (rel.ticket_ids ?? []).filter(x => x !== t.key) }); }}
+                style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', fontSize: 12, lineHeight: 1, flexShrink: 0 }}
+              >
+                ×
+              </button>
             </div>
           );
         })}
