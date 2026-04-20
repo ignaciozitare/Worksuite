@@ -245,28 +245,55 @@ export function ReleaseCard({
         {relTickets.map(t => {
           const pColor = PRIORITY_COLOR[t.priority] ?? '#8c909f';
           const noRepo = !t.repos || t.repos.length === 0;
+          const isDragging = drag?.key === t.key;
           return (
             <div
               key={t.key}
               draggable
-              onDragStart={() => setDrag({ key: t.key, fromId: rel.id })}
+              onDragStart={e => {
+                setDrag({ key: t.key, fromId: rel.id });
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', t.key);
+              }}
               onDragEnd={() => setDrag(null)}
               onClick={e => e.stopPropagation()}
               title={noRepo ? '⚠ Sin repositorio — asigna Components en Jira' : t.summary}
               style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px',
-                background: 'var(--dp-sf2,#201f1f)',
-                border: noRepo ? '1px solid rgba(239,68,68,.5)' : '1px solid var(--dp-bd,var(--bd))',
-                borderLeft: `2px solid ${noRepo ? '#ef4444' : pColor}`,
-                borderRadius: 6, cursor: 'grab', fontSize: 10,
+                display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+                background: 'var(--sf3)',
+                borderLeft: `3px solid ${noRepo ? '#ef4444' : pColor}`,
+                borderRadius: 8,
+                cursor: isDragging ? 'grabbing' : 'grab',
+                fontSize: 11,
+                opacity: isDragging ? 0.4 : 1,
+                boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+                transition: 'transform .1s ease, box-shadow .1s ease, opacity .1s ease',
+              }}
+              onMouseEnter={e => {
+                if (!isDragging) {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = `0 4px 12px rgba(0,0,0,.3), 0 0 0 1px ${pColor}22`;
+                }
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.2)';
               }}
             >
-              {noRepo && <span style={{ color: '#ef4444', fontSize: 10, flexShrink: 0 }}>⚠</span>}
-              <span style={{ color: 'var(--dp-primary,#adc6ff)', fontWeight: 700, flexShrink: 0 }}>{t.key}</span>
-              <span style={{ color: noRepo ? '#ef4444' : 'var(--dp-tx2,#c2c6d6)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {t.summary.slice(0, 28)}{t.summary.length > 28 ? '…' : ''}
-              </span>
-              <span style={{ color: 'var(--dp-tx3,#8c909f)', flexShrink: 0, fontSize: 9 }}>
+              {noRepo && <span className="material-symbols-outlined" style={{ color: '#ef4444', fontSize: 14, flexShrink: 0 }}>warning</span>}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: 'var(--ac2)', fontWeight: 700, flexShrink: 0, fontSize: 10 }}>{t.key}</span>
+                  <span style={{ color: noRepo ? '#ef4444' : 'var(--tx2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {t.summary.slice(0, 40)}{t.summary.length > 40 ? '…' : ''}
+                  </span>
+                </div>
+              </div>
+              <span style={{
+                width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                background: `${pColor}18`, color: 'var(--tx3)', fontSize: 9, fontWeight: 600,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
                 {t.assignee?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '—'}
               </span>
               {jiraBaseUrl && (
@@ -276,17 +303,17 @@ export function ReleaseCard({
                   rel="noopener noreferrer"
                   onMouseDown={e => e.stopPropagation()}
                   onClick={e => e.stopPropagation()}
-                  style={{ color: 'var(--dp-tx3,#8c909f)', fontSize: 10, flexShrink: 0, textDecoration: 'none', lineHeight: 1, padding: '0 2px' }}
+                  style={{ color: 'var(--tx3)', fontSize: 14, flexShrink: 0, textDecoration: 'none', lineHeight: 1, display: 'flex' }}
                   title={`Open ${t.key} in Jira`}
                 >
-                  ↗
+                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>open_in_new</span>
                 </a>
               )}
               <button
                 onClick={e => { e.stopPropagation(); void onUpd(rel.id, { ticket_ids: (rel.ticket_ids ?? []).filter(x => x !== t.key) }); }}
-                style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', fontSize: 12, lineHeight: 1, flexShrink: 0 }}
+                style={{ background: 'none', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 14, lineHeight: 1, flexShrink: 0, display: 'flex' }}
               >
-                ×
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
               </button>
             </div>
           );
