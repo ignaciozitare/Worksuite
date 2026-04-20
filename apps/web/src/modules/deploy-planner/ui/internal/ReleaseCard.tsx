@@ -64,6 +64,7 @@ export function ReleaseCard({
   jiraBaseUrl = '', linkedGroups = [], classifiedSubs = [],
 }: ReleaseCardProps) {
   const dialog = useDialog();
+  const [dragOver, setDragOver] = useState(false);
   const [addingTicket, setAddingTicket] = useState(false);
   const [search, setSearch] = useState('');
   const [showVersionPicker, setShowVersionPicker] = useState(false);
@@ -104,18 +105,21 @@ export function ReleaseCard({
   return (
     <div
       className="anim-in glass-card ghost-border-top"
-      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
-      onDrop={e => { e.preventDefault(); e.stopPropagation(); onDrop(rel.id); }}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={e => { e.preventDefault(); e.stopPropagation(); setDragOver(false); onDrop(rel.id); }}
       onClick={() => onOpen(rel.id)}
       style={{
         width: 320,
         position: 'relative',
-        background: 'var(--dp-sf,var(--sf))',
+        background: dragOver ? 'rgba(79,110,247,.08)' : 'var(--dp-sf,var(--sf))',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        border: '1px solid var(--dp-bd,var(--bd))',
-        borderLeft: `3px solid ${cfg.color}`,
+        border: dragOver ? '1px dashed var(--ac)' : '1px solid var(--dp-bd,var(--bd))',
+        borderLeft: `3px solid ${dragOver ? 'var(--ac)' : cfg.color}`,
         borderRadius: 8,
+        transform: dragOver ? 'scale(1.015)' : 'scale(1)',
+        transition: 'background .15s, border .15s, transform .15s',
         padding: '16px 18px',
         flexShrink: 0,
         boxShadow: `0 4px 20px var(--shadow-base, rgba(0,0,0,.35)), 0 0 0 1px ${cfg.color}18`,
