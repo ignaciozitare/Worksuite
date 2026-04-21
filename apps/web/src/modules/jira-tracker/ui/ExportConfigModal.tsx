@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { Modal } from '@worksuite/ui';
 import type { AdminUserPort } from '@/shared/domain/ports/AdminUserPort';
 
 // ── All available export fields ───────────────────────────────────────────────
@@ -144,23 +145,7 @@ export function ExportConfigModal({ onClose, onExport, currentUserId, initialPre
   });
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center',
-      justifyContent: 'center', padding: 20, background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(2px)' }}
-      onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: 'var(--sf,#141418)', border: '1px solid var(--bd,#2a2a38)',
-        borderRadius: 16, width: '100%', maxWidth: 720, maxHeight: '90vh', overflow: 'hidden',
-        display: 'flex', flexDirection: 'column', boxShadow: '0 24px 80px rgba(0,0,0,.6)' }}>
-
-        {/* Header */}
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--bd,#2a2a38)',
-          display: 'flex', alignItems: 'center', gap: 10 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx,#e4e4ef)', margin: 0, flex: 1 }}>
-            Configurar exportación
-          </h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer',
-            color: 'var(--tx3,#50506a)', fontSize: 20, lineHeight: 1, fontFamily: 'inherit' }}>✕</button>
-        </div>
-
+    <Modal title="Configurar exportación" onClose={onClose} width={720} noPadding>
         <div style={{ overflowY: 'auto', flex: 1, padding: '16px 20px' }}>
           {/* Presets bar */}
           <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -315,22 +300,21 @@ export function ExportConfigModal({ onClose, onExport, currentUserId, initialPre
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '14px 20px', borderTop: '1px solid var(--bd,#2a2a38)',
+        <div style={{ padding: '14px 20px', borderTop: '1px solid var(--bd)',
           display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <button onClick={onClose} style={{
-            background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)',
+            background: 'var(--sf2)', border: '1px solid var(--bd)',
             borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 600,
-            color: 'var(--tx3,#50506a)', cursor: 'pointer', fontFamily: 'inherit',
+            color: 'var(--tx3)', cursor: 'pointer', fontFamily: 'inherit',
           }}>Cancelar</button>
           <button onClick={() => onExport(columns, `${filename.trim() || 'worklogs'}_${dateFrom}_${dateTo}`)} disabled={columns.length === 0} style={{
-            background: 'var(--ac,#4f6ef7)', color: '#fff', border: 'none',
+            background: 'var(--ac)', color: '#fff', border: 'none',
             borderRadius: 8, padding: '8px 20px', fontSize: 12, fontWeight: 700,
             cursor: columns.length ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
             opacity: columns.length ? 1 : 0.5,
           }}>↓ Exportar CSV</button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

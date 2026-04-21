@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from '@worksuite/i18n';
-import { useDialog } from '@worksuite/ui';
+import { useDialog, Btn, Badge } from '@worksuite/ui';
 import { sessionRepo, actionableRepo, teamRepo } from '../container';
 
 // ════════════════════════════════════════════════════════════════
@@ -56,28 +56,13 @@ const genId = ()=>Math.random().toString(36).slice(2);
 // UI HELPERS
 // ════════════════════════════════════════════════════════════════
 
-function RBtn({children,onClick,v="primary",sm,full,disabled,style={}}){
-  const styles={
-    primary:{background:"#6366f1",color:"#fff",border:"none"},
-    ghost:{background:"var(--sf2)",color:"var(--tx2)",border:"1px solid var(--bd)"},
-    success:{background:"rgba(74,222,128,.12)",color:"#4ade80",border:"1px solid rgba(74,222,128,.3)"},
-    warn:{background:"rgba(251,191,36,.12)",color:"#fbbf24",border:"1px solid rgba(251,191,36,.3)"},
-    danger:{background:"rgba(248,113,113,.12)",color:"#f87171",border:"1px solid rgba(248,113,113,.3)"},
-  };
-  return(
-    <button onClick={disabled?undefined:onClick} style={{display:"inline-flex",alignItems:"center",gap:5,padding:sm?"4px 11px":"8px 16px",borderRadius:8,cursor:disabled?"not-allowed":"pointer",fontWeight:600,fontSize:sm?11:13,opacity:disabled?.4:1,transition:"all .15s",width:full?"100%":undefined,justifyContent:full?"center":undefined,fontFamily:"inherit",...styles[v],...style}}>
-      {children}
-    </button>
-  );
-}
-
 function RPriBadge({priority}){
   const p=PMAP[priority]||PMAP.medium;
-  return<span style={{fontSize:10,padding:"1px 7px",borderRadius:20,fontWeight:700,background:p.bg,color:p.color,whiteSpace:"nowrap"}}>{p.label}</span>;
+  return<Badge style={{background:p.bg,color:p.color,fontWeight:700,padding:"1px 7px"}}>{p.label}</Badge>;
 }
 
 function RRoleBadge({role}){
-  return<span style={{background:`${ROLE_COLORS[role]||"#94a3b8"}20`,color:ROLE_COLORS[role]||"#94a3b8",borderRadius:20,padding:"2px 9px",fontSize:11,fontWeight:600,whiteSpace:"nowrap"}}>{ROLE_LABELS[role]||role}</span>;
+  return<Badge style={{background:`${ROLE_COLORS[role]||"#94a3b8"}20`,color:ROLE_COLORS[role]||"#94a3b8",fontSize:11}}>{ROLE_LABELS[role]||role}</Badge>;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -114,8 +99,8 @@ function TimerBar({timer,setTimer,running,setRunning,isMod,phaseMins,setPhaseMin
         </div>
         {isMod&&(
           <div style={{display:"flex",gap:6,flexShrink:0}}>
-            <RBtn sm v={running?"warn":"success"} onClick={()=>setRunning(r=>!r)}>{running?"⏸ Pausar":"▶ Iniciar"}</RBtn>
-            {onNext&&<RBtn sm v="ghost" onClick={onNext}>{nextLabel||t("retro.next")}</RBtn>}
+            <Btn size="sm" variant={running?"warn":"success"} onClick={()=>setRunning(r=>!r)}>{running?"⏸ Pausar":"▶ Iniciar"}</Btn>
+            {onNext&&<Btn size="sm" variant="ghost" onClick={onNext}>{nextLabel||t("retro.next")}</Btn>}
           </div>
         )}
       </div>
@@ -200,9 +185,9 @@ function RetroLobby({user,wsUsers,teams,retroName,setRetroName,selectedTeamId,se
           <button onClick={()=>setVotesPerUser(v=>Math.min(20,v+1))} style={{width:28,height:28,borderRadius:7,border:"1px solid var(--bd)",background:"transparent",color:"var(--tx2)",cursor:"pointer",fontSize:15,fontFamily:"inherit"}}>+</button>
         </div>
       </div>
-      <RBtn full onClick={()=>selectedTeamId&&retroName.trim()&&onStart()} disabled={!selectedTeamId||!retroName.trim()} style={{padding:"13px",fontSize:15}}>
+      <Btn full onClick={()=>selectedTeamId&&retroName.trim()&&onStart()} disabled={!selectedTeamId||!retroName.trim()} style={{padding:"13px",fontSize:15}}>
         🚀 Comenzar Retrospectiva
-      </RBtn>
+      </Btn>
       {(!selectedTeamId||!retroName.trim())&&<p style={{textAlign:"center",fontSize:11,color:"var(--tx3)",marginTop:6}}>Selecciona un equipo y escribe un nombre para continuar</p>}
     </div>
   );
@@ -239,7 +224,7 @@ function RetroCreating({isMod,myCards,setMyCards,timer,setTimer,running,setRunni
               <textarea value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();add();}}}
                 placeholder="Escribe tu observación… (Enter para añadir)" rows={3}
                 style={{width:"100%",background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:8,padding:"9px 11px",color:"var(--tx)",fontSize:13,resize:"none",fontFamily:"inherit",outline:"none"}}/>
-              <RBtn full onClick={add} style={{marginTop:8}}>+ Añadir tarjeta</RBtn>
+              <Btn full onClick={add} style={{marginTop:8}}>+ Añadir tarjeta</Btn>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:7}}>
               {RC.map(c=>{const n=myCards.filter(x=>x.category===c.id).length;return(
@@ -476,9 +461,9 @@ function RetroDiscussion({isMod,sortedCards,setSortedCards,discussIdx,setDiscuss
               {card.actionable&&<div style={{marginTop:10,padding:"5px 10px",background:"rgba(74,222,128,.1)",border:"1px solid rgba(74,222,128,.2)",borderRadius:7,fontSize:11,color:"var(--green)"}}>✓ Accionable registrado</div>}
             </div>
             <div style={{display:"flex",gap:8,marginTop:12}}>
-              <RBtn v="ghost" onClick={()=>setDiscussIdx(i=>Math.max(0,i-1))} disabled={discussIdx===0}>← Anterior</RBtn>
+              <Btn variant="ghost" onClick={()=>setDiscussIdx(i=>Math.max(0,i-1))} disabled={discussIdx===0}>← Anterior</Btn>
               <div style={{flex:1}}/>
-              {discussIdx<sortedCards.length-1?<RBtn onClick={()=>setDiscussIdx(i=>i+1)}>Siguiente →</RBtn>:<RBtn v="success" onClick={onFinish}>🏁 Ver resumen</RBtn>}
+              {discussIdx<sortedCards.length-1?<Btn onClick={()=>setDiscussIdx(i=>i+1)}>Siguiente →</Btn>:<Btn variant="success" onClick={onFinish}>🏁 Ver resumen</Btn>}
             </div>
           </div>
           <div>
@@ -537,7 +522,7 @@ function RetroSummary({sortedCards,retroName,onExit,onAddToKanban}){
         ))}
       </div>
       <div style={{display:"flex",gap:8,marginBottom:16}}>
-        <RBtn v={copied?"success":"ghost"} full onClick={doCopy}>{copied?"✓ Copiado":t("retro.copyActionables")}</RBtn>
+        <Btn variant={copied?"success":"ghost"} full onClick={doCopy}>{copied?"✓ Copiado":t("retro.copyActionables")}</Btn>
       </div>
       {withAct.length>0&&(
         <div style={{background:"var(--sf)",border:"1px solid rgba(129,140,248,.25)",borderRadius:10,padding:"12px 14px",marginBottom:16}}>
@@ -554,9 +539,9 @@ function RetroSummary({sortedCards,retroName,onExit,onAddToKanban}){
             ))}
           </div>
           {Object.values(selected).some(Boolean)&&(
-            <RBtn full style={{marginTop:10}} onClick={()=>onAddToKanban(withAct.filter((_,i)=>selected[i]))}>
+            <Btn full style={{marginTop:10}} onClick={()=>onAddToKanban(withAct.filter((_,i)=>selected[i]))}>
               ✓ Mover seleccionados al tablero
-            </RBtn>
+            </Btn>
           )}
         </div>
       )}
@@ -581,7 +566,7 @@ function RetroSummary({sortedCards,retroName,onExit,onAddToKanban}){
           </div>
         );})}
       </div>
-      <div style={{textAlign:"center"}}><RBtn v="ghost" onClick={onExit}>← Volver al dashboard</RBtn></div>
+      <div style={{textAlign:"center"}}><Btn variant="ghost" onClick={onExit}>← Volver al dashboard</Btn></div>
     </div>
   );
 }
@@ -855,7 +840,7 @@ function RetroAccionables({currentUser,items,setItems,history,teams}){
             <option value="">Todas las prioridades</option>
             {RPRI.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}
           </select>
-          {(filterTeam||filterPri)&&<RBtn sm v="ghost" onClick={()=>{setFilterTeam("");setFilterPri("");}}>✕ Limpiar</RBtn>}
+          {(filterTeam||filterPri)&&<Btn size="sm" variant="ghost" onClick={()=>{setFilterTeam("");setFilterPri("");}}>✕ Limpiar</Btn>}
         </div>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:14,alignItems:"start",marginTop:16}}>
@@ -1166,7 +1151,7 @@ export function RetroBoard({currentUser,wsUsers,lang}){
           </button>
         ))}
         <div style={{marginLeft:"auto"}}>
-          <RBtn onClick={()=>setRetroActive(true)}>🚀 Nueva Retro</RBtn>
+          <Btn onClick={()=>setRetroActive(true)}>🚀 Nueva Retro</Btn>
         </div>
       </div>
 
@@ -1185,7 +1170,7 @@ export function RetroBoard({currentUser,wsUsers,lang}){
                 </div>
               ))}
             </div>
-            <RBtn onClick={()=>setRetroActive(true)} style={{padding:"12px 28px",fontSize:14}}>🚀 Iniciar nueva retrospectiva</RBtn>
+            <Btn onClick={()=>setRetroActive(true)} style={{padding:"12px 28px",fontSize:14}}>🚀 Iniciar nueva retrospectiva</Btn>
           </div>
         )}
         {view==="historial"&&<RetroHistorial currentUser={currentUser} history={history} teams={teams}/>}

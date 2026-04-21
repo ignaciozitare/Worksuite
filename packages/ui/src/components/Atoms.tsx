@@ -34,6 +34,7 @@ type BadgeColor = 'accent' | 'green' | 'red' | 'amber' | 'purple' | 'blue' | 'gr
 interface BadgeProps {
   children: ReactNode;
   color?:   BadgeColor;
+  style?:   CSSProperties;
 }
 
 const BADGE_VARS: Record<BadgeColor, [string, string]> = {
@@ -46,7 +47,7 @@ const BADGE_VARS: Record<BadgeColor, [string, string]> = {
   gray:   ['rgba(100,116,139,.12)',      'var(--tx3)'],
 };
 
-export function Badge({ children, color = 'gray' }: BadgeProps) {
+export function Badge({ children, color = 'gray', style: styleProp }: BadgeProps) {
   const [bg, fg] = BADGE_VARS[color];
   const style: CSSProperties = {
     display:      'inline-flex',
@@ -58,6 +59,7 @@ export function Badge({ children, color = 'gray' }: BadgeProps) {
     background:   bg,
     color:        fg,
     whiteSpace:   'nowrap',
+    ...styleProp,
   };
   return <span style={style}>{children}</span>;
 }

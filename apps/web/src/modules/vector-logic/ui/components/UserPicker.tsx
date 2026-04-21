@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { Avatar } from '@worksuite/ui';
 
 interface User {
   id: string;
@@ -48,7 +49,7 @@ export function UserPicker({ users, value, onChange, placeholder }: Props) {
         onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--bd)'}>
         {selected ? (
           <>
-            <Avatar user={selected} size={18} />
+            <Avatar initials={(selected.name ?? selected.email).slice(0,2)} color="linear-gradient(135deg, var(--ac), var(--ac2))" size={18} name={selected.name} />
             <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {selected.name ?? selected.email}
             </span>
@@ -106,7 +107,7 @@ export function UserPicker({ users, value, onChange, placeholder }: Props) {
                     }}
                     onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--sf2)'; }}
                     onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}>
-                    <Avatar user={u} size={20} />
+                    <Avatar initials={(u.name ?? u.email).slice(0,2)} color="linear-gradient(135deg, var(--ac), var(--ac2))" size={20} name={u.name} />
                     <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                       <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {u.name ?? u.email}
@@ -134,19 +135,6 @@ export function UserPicker({ users, value, onChange, placeholder }: Props) {
   );
 }
 
-function Avatar({ user, size = 24 }: { user: User; size?: number }) {
-  const initials = (user.name ?? user.email).slice(0, 2).toUpperCase();
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%',
-      background: 'linear-gradient(135deg, var(--ac), var(--ac2))',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.4, fontWeight: 700, color: '#fff', flexShrink: 0,
-    }}>
-      {initials}
-    </div>
-  );
-}
 
 const rowStyle = {
   display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',

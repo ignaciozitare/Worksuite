@@ -21,6 +21,7 @@ This index is updated automatically by the Spec Agent when a new spec is created
 | Area | Spec | Status |
 |---|---|---|
 | Concurrency Control | [specs/core/concurrency/SPEC.md](core/concurrency/SPEC.md) | Confirmed — implemented for HotDesk, Deploy Planner, Environments |
+| Component Migration | [specs/core/component-migration/SPEC.md](core/component-migration/SPEC.md) | Confirmed — migrating modules to @worksuite/ui |
 
 ---
 

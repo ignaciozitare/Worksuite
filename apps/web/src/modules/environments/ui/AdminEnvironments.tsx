@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect, useRef } from 'react';
-import { StatusManager, DualPanelPicker } from '@worksuite/ui';
+import { StatusManager, DualPanelPicker, Modal } from '@worksuite/ui';
 import { useTranslation }      from '@worksuite/i18n';
 import type { Environment }    from '../domain/entities/Environment';
 import type { Repository, EnvPolicy } from '../domain/entities/Reservation';
@@ -228,23 +228,6 @@ const CAT = {
   STAGING: { color:'#22d3ee', bg:'rgba(14,116,144,.15)' },
 };
 
-function Modal({ title, onClose, children }) {
-  return (
-    <div style={{position:'fixed',inset:0,zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',
-      background:'rgba(0,0,0,.65)',padding:16}} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{background:'var(--sf)',border:'1px solid var(--bd2)',borderRadius:16,
-        maxWidth:480,width:'100%',overflow:'hidden',boxShadow:'0 24px 80px rgba(0,0,0,.6)'}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
-          padding:'16px 20px',borderBottom:'1px solid var(--bd)'}}>
-          <span style={{fontWeight:700,fontSize:15,color:'var(--tx)'}}>{title}</span>
-          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',
-            color:'var(--tx3)',fontSize:20,lineHeight:1,fontFamily:'inherit'}}>×</button>
-        </div>
-        <div style={{padding:20}}>{children}</div>
-      </div>
-    </div>
-  );
-}
 
 // ── Admin: Entornos ───────────────────────────────────────────────────────────
 export function AdminEnvEnvironments() {

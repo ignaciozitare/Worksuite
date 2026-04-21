@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { DeployTimeline }          from '../../deploy-planner/ui/DeployTimeline';
-import { GanttTimeline, JiraTicketPicker, DateRangePicker } from '@worksuite/ui';
+import { GanttTimeline, JiraTicketPicker, DateRangePicker, Modal, ConfirmModal } from '@worksuite/ui';
 import { useTranslation }                 from '@worksuite/i18n';
 import { useDialog }                      from '@worksuite/ui';
 import { extractReposFromTickets }        from '@worksuite/jira-service';
@@ -75,33 +75,6 @@ const CAT    = {
   STAGING: {color:'#22d3ee', bg:'rgba(14,116,144,.15)'},
 };
 
-// ── Modal ─────────────────────────────────────────────────────────────────────
-function Modal({ title, onClose, children, width=520 }) {
-  useEffect(()=>{
-    const h = e => { if(e.key==='Escape') onClose(); };
-    document.addEventListener('keydown',h);
-    return () => document.removeEventListener('keydown',h);
-  },[onClose]);
-  return (
-    <div style={{position:'fixed',inset:0,zIndex:200,display:'flex',alignItems:'center',
-      justifyContent:'center',padding:20,background:'rgba(0,0,0,.6)',backdropFilter:'blur(2px)'}}
-      onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{background:'var(--sf)',border:'1px solid var(--bd)',
-        borderRadius:16,width:'100%',maxWidth:width,maxHeight:'90vh',overflow:'hidden',
-        display:'flex',flexDirection:'column',boxShadow:'0 24px 80px rgba(0,0,0,.6)'}}>
-        {title&&(
-          <div style={{padding:'16px 20px',borderBottom:'1px solid var(--bd)',
-            display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
-            <h3 style={{fontSize:15,fontWeight:700,color:'var(--tx)',margin:0,flex:1}}>{title}</h3>
-            <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',
-              color:'var(--tx3)',fontSize:20,lineHeight:1,fontFamily:'inherit'}}>✕</button>
-          </div>
-        )}
-        <div style={{overflowY:'auto',flex:1,padding:'18px 20px'}}>{children}</div>
-      </div>
-    </div>
-  );
-}
 
 // NOTE: JiraTicketSearch + extractReposFromTickets now live in
 // @worksuite/ui and @worksuite/jira-service (see imports at the top).
@@ -320,30 +293,6 @@ function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEd
   );
 }
 
-// ── Confirm ───────────────────────────────────────────────────────────────────
-function ConfirmDialog({ message, onConfirm, onCancel }) {
-  const { t } = useTranslation();
-  return (
-    <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'center',
-      justifyContent:'center',background:'rgba(0,0,0,.7)',padding:16}} onClick={onCancel}>
-      <div onClick={e=>e.stopPropagation()}
-        style={{background:'var(--sf)',border:'1px solid var(--bd)',
-          borderRadius:14,maxWidth:400,width:'100%',overflow:'hidden',
-          boxShadow:'0 24px 60px rgba(0,0,0,.6)'}}>
-        <div style={{padding:'18px 20px 16px',borderBottom:'1px solid var(--bd)'}}>
-          <span style={{fontWeight:700,fontSize:15,color:'var(--tx)'}}>{t('admin.envConfirmTitle')}</span>
-        </div>
-        <div style={{padding:'16px 20px'}}>
-          <p style={{color:'var(--tx3)',fontSize:13,lineHeight:1.6,marginBottom:20}}>{message}</p>
-          <div style={{display:'flex',justifyContent:'flex-end',gap:8}}>
-            <button style={btnStyle('ghost')} onClick={onCancel}>{t('common.cancel')}</button>
-            <button style={btnStyle('danger')} onClick={()=>{onConfirm();onCancel();}}>{t('common.confirm')}</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── Gantt view ────────────────────────────────────────────────────────────────
 const GANTT_CAT_COLORS = {
@@ -1185,8 +1134,8 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
         onCancel={()=>handleCancel(detail)} onAddBranch={b=>handleAddBranch(detail,b)}
         jiraBaseUrl={jiraBaseUrl}/>}
 
-      {confirm&&<ConfirmDialog message={confirm.message}
-        onConfirm={confirm.onConfirm} onCancel={()=>setConfirm(null)}/>}
+      {confirm&&<ConfirmModal message={confirm.message} danger
+        onConfirm={()=>{confirm.onConfirm();setConfirm(null);}} onCancel={()=>setConfirm(null)}/>}
     </div>
   );
 }

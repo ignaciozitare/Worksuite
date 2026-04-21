@@ -11,6 +11,7 @@ import type { IConfigEmpresaRepository } from '../../domain/ports/IConfigEmpresa
 import type { IGeoLocationService } from '../../domain/ports/IGeoLocationService';
 import type { Fichaje } from '../../domain/entities/Fichaje';
 import type { CategoriaIncidencia } from '../../domain/entities/Incidencia';
+import { Modal } from '@worksuite/ui';
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 
@@ -76,29 +77,6 @@ function StatusDot({ status }: { status: 'working' | 'lunch' | 'off' }) {
   );
 }
 
-/* ── Modal backdrop ───────────────────────────────────────────────────────── */
-
-function Modal({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
-  if (!open) return null;
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}
-    >
-      <div
-        className="ch-card fade-in"
-        onClick={e => e.stopPropagation()}
-        style={{ minWidth: 380, maxWidth: 480, padding: 28 }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
 
 /* ── Component ────────────────────────────────────────────────────────────── */
 
@@ -859,63 +837,60 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
       </div>
 
       {/* ── Exit confirmation modal ───────────────────────────────────────── */}
-      <Modal open={showExitModal} onClose={() => setShowExitModal(false)}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: C.tx, marginBottom: 12 }}>
-          {t('chrono.confirmarSalida')}
-        </div>
-        <div style={{ fontSize: 13, color: C.txDim, marginBottom: 24 }}>
-          {t('chrono.confirmarSalidaMsg', { hours: fmtHM(minutesNow) })}
-        </div>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button className="ch-btn ch-btn-ghost" onClick={() => setShowExitModal(false)}>
-            {t('chrono.cancelarBtn')}
-          </button>
-          <button className="ch-btn ch-btn-red" onClick={clockOut} disabled={acting}>
-            {t('chrono.confirmar')}
-          </button>
-        </div>
-      </Modal>
+      {showExitModal && (
+        <Modal title={t('chrono.confirmarSalida')} onClose={() => setShowExitModal(false)} width={480}>
+          <div style={{ fontSize: 13, color: C.txDim, marginBottom: 24 }}>
+            {t('chrono.confirmarSalidaMsg', { hours: fmtHM(minutesNow) })}
+          </div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button className="ch-btn ch-btn-ghost" onClick={() => setShowExitModal(false)}>
+              {t('chrono.cancelarBtn')}
+            </button>
+            <button className="ch-btn ch-btn-red" onClick={clockOut} disabled={acting}>
+              {t('chrono.confirmar')}
+            </button>
+          </div>
+        </Modal>
+      )}
 
       {/* ── Incident creation modal ───────────────────────────────────────── */}
-      <Modal open={showIncModal} onClose={() => setShowIncModal(false)}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: C.tx, marginBottom: 18 }}>
-          {t('chrono.nuevaIncidencia')}
-        </div>
+      {showIncModal && (
+        <Modal title={t('chrono.nuevaIncidencia')} onClose={() => setShowIncModal(false)} width={480}>
+          {/* Category */}
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: C.txMuted, marginBottom: 6 }}>
+              {t('chrono.categoriaInc')}
+            </label>
+            <select value={incCategoria} onChange={e => setIncCategoria(e.target.value as CategoriaIncidencia)}>
+              {(['medico', 'comida', 'gestion', 'formacion', 'teletrabajo', 'viaje'] as CategoriaIncidencia[]).map(cat => (
+                <option key={cat} value={cat}>{t(`chrono.${cat}`)}</option>
+              ))}
+            </select>
+          </div>
 
-        {/* Category */}
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: C.txMuted, marginBottom: 6 }}>
-            {t('chrono.categoriaInc')}
-          </label>
-          <select value={incCategoria} onChange={e => setIncCategoria(e.target.value as CategoriaIncidencia)}>
-            {(['medico', 'comida', 'gestion', 'formacion', 'teletrabajo', 'viaje'] as CategoriaIncidencia[]).map(cat => (
-              <option key={cat} value={cat}>{t(`chrono.${cat}`)}</option>
-            ))}
-          </select>
-        </div>
+          {/* Description */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: C.txMuted, marginBottom: 6 }}>
+              {t('chrono.descripcionInc')}
+            </label>
+            <textarea
+              value={incDescripcion}
+              onChange={e => setIncDescripcion(e.target.value)}
+              rows={3}
+              style={{ width: '100%', resize: 'vertical' }}
+            />
+          </div>
 
-        {/* Description */}
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: C.txMuted, marginBottom: 6 }}>
-            {t('chrono.descripcionInc')}
-          </label>
-          <textarea
-            value={incDescripcion}
-            onChange={e => setIncDescripcion(e.target.value)}
-            rows={3}
-            style={{ width: '100%', resize: 'vertical' }}
-          />
-        </div>
-
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button className="ch-btn ch-btn-ghost" onClick={() => setShowIncModal(false)}>
-            {t('chrono.cancelarBtn')}
-          </button>
-          <button className="ch-btn ch-btn-amber" onClick={handleCreateIncidencia} disabled={acting}>
-            {t('chrono.crearIncidencia')}
-          </button>
-        </div>
-      </Modal>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button className="ch-btn ch-btn-ghost" onClick={() => setShowIncModal(false)}>
+              {t('chrono.cancelarBtn')}
+            </button>
+            <button className="ch-btn ch-btn-amber" onClick={handleCreateIncidencia} disabled={acting}>
+              {t('chrono.crearIncidencia')}
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
