@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
-import { useDialog } from '@worksuite/ui';
+import { useDialog, Badge } from '@worksuite/ui';
 import type { EmailDetection } from '../../domain/entities/EmailDetection';
 import { gmailThreadUrl } from '../../domain/entities/EmailDetection';
 import type { TaskType } from '../../domain/entities/TaskType';
@@ -179,13 +179,8 @@ export function AIDetectionsView({ currentUser }: Props) {
 
 function ConfidenceBadge({ value }: { value: number }) {
   const pct = Math.round(value * 100);
-  const color = pct >= 85 ? 'var(--green)' : pct >= 65 ? 'var(--amber)' : 'var(--red)';
-  return (
-    <span style={{
-      padding: '1px 6px', borderRadius: 4, fontSize: 9, fontWeight: 700,
-      background: `${color}1a`, color, letterSpacing: '.03em',
-    }}>{pct}%</span>
-  );
+  const badgeColor = pct >= 85 ? 'green' as const : pct >= 65 ? 'amber' as const : 'red' as const;
+  return <Badge color={badgeColor} variant="compact" style={{ fontWeight: 700, letterSpacing: '.03em' }}>{pct}%</Badge>;
 }
 
 function DetectionDetail({ detection, taskTypes, priorities, canAct, onApprove, onReject, onClose }: {

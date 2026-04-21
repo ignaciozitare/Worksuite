@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { Modal, Btn } from '@worksuite/ui';
 import { TimeParser } from '../domain/services/TimeParser';
 import { TODAY } from '@/shared/lib/constants';
 import { MOCK_ISSUES_FALLBACK } from '@/shared/lib/fallbackData';
@@ -82,9 +83,7 @@ export function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave,
 
   const si = issues.find(i => i.key===ik);
   return (
-    <div className="ov" onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="mb" style={{maxWidth:480}}>
-        <div className="mh"><div className="mt">⏱ {t("jiraTracker.logWorklog")}</div><button className="mc" onClick={onClose}>×</button></div>
+    <Modal title={`⏱ ${t("jiraTracker.logWorklog")}`} onClose={onClose} width={480} noPadding>
         {ok ? <div className="mbody"><div className="ok-fl">✓ {t("jiraTracker.savedFlash")} — {tp} · {ik} · {dt}</div></div> : showWarn ? (
           <div className="mbody">
             <div style={{textAlign:"center",padding:"20px 0"}}>
@@ -96,10 +95,10 @@ export function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave,
                 {TimeParser.format(ps)} · {ik}
               </div>
               <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-                <button className="b-cancel" onClick={()=>setShowWarn(false)}>{t("common.cancel")}</button>
-                <button className="b-sub" style={{background:"var(--amber)"}} onClick={()=>{setWarnConfirmed(true);setShowWarn(false);setTimeout(()=>submit(),50);}}>
+                <Btn variant="ghost" onClick={()=>setShowWarn(false)}>{t("common.cancel")}</Btn>
+                <Btn variant="warn" onClick={()=>{setWarnConfirmed(true);setShowWarn(false);setTimeout(()=>submit(),50);}}>
                   {t("common.confirm")} {TimeParser.format(ps)}
-                </button>
+                </Btn>
               </div>
             </div>
           </div>
@@ -160,12 +159,11 @@ export function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave,
               </div>
             </div>
             <div className="mf">
-              <button className="b-cancel" onClick={onClose}>{t("common.cancel")}</button>
-              <button className="b-sub" onClick={submit} disabled={!ik||ps<=0}>{t("jiraTracker.saveWorklog")}</button>
+              <Btn variant="ghost" onClick={onClose}>{t("common.cancel")}</Btn>
+              <Btn onClick={submit} disabled={!ik||ps<=0}>{t("jiraTracker.saveWorklog")}</Btn>
             </div>
           </>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 }

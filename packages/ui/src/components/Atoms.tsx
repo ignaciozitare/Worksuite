@@ -30,10 +30,12 @@ export function Avatar({ initials, color = 'var(--ac)', size = 30, name }: Avata
 // ─── Badge ────────────────────────────────────────────────────────────────────
 
 type BadgeColor = 'accent' | 'green' | 'red' | 'amber' | 'purple' | 'blue' | 'gray';
+type BadgeVariant = 'pill' | 'compact';
 
 interface BadgeProps {
   children: ReactNode;
   color?:   BadgeColor;
+  variant?: BadgeVariant;
   style?:   CSSProperties;
 }
 
@@ -47,18 +49,21 @@ const BADGE_VARS: Record<BadgeColor, [string, string]> = {
   gray:   ['rgba(100,116,139,.12)',      'var(--tx3)'],
 };
 
-export function Badge({ children, color = 'gray', style: styleProp }: BadgeProps) {
+const BADGE_VARIANT: Record<BadgeVariant, CSSProperties> = {
+  pill:    { padding: '2px 9px', borderRadius: 20, fontSize: 10 },
+  compact: { padding: '1px 6px', borderRadius: 4,  fontSize: 9  },
+};
+
+export function Badge({ children, color = 'gray', variant = 'pill', style: styleProp }: BadgeProps) {
   const [bg, fg] = BADGE_VARS[color];
   const style: CSSProperties = {
     display:      'inline-flex',
     alignItems:   'center',
-    padding:      '2px 9px',
-    borderRadius: 20,
-    fontSize:     10,
     fontWeight:   600,
     background:   bg,
     color:        fg,
     whiteSpace:   'nowrap',
+    ...BADGE_VARIANT[variant],
     ...styleProp,
   };
   return <span style={style}>{children}</span>;
@@ -71,17 +76,21 @@ interface StatBoxProps {
   value:  number | string;
   color?: string;
   icon?:  ReactNode;
+  style?:     CSSProperties;
+  className?: string;
 }
 
-export function StatBox({ label, value, color = 'var(--ac)', icon }: StatBoxProps) {
+export function StatBox({ label, value, color = 'var(--ac)', icon, style: styleProp, className }: StatBoxProps) {
   return (
-    <div style={{
+    <div className={className} style={{
       background:   'var(--sf)',
       border:       '1px solid var(--bd)',
       borderRadius: 'var(--r2)',
       padding:      14,
       textAlign:    'center',
-    }}>
+      '--accent':   color,
+      ...styleProp,
+    } as CSSProperties}>
       {icon && <div style={{ fontSize: 18, marginBottom: 6 }}>{icon}</div>}
       <div style={{ fontSize: 26, fontWeight: 700, color }}>
         {value}
@@ -106,10 +115,11 @@ export function Divider({ vertical = false }: { vertical?: boolean }) {
 
 // ─── Chip ─────────────────────────────────────────────────────────────────────
 
-export function Chip({ children, active = false, onClick }: {
+export function Chip({ children, active = false, onClick, style: styleProp }: {
   children: ReactNode;
   active?:  boolean;
   onClick?: () => void;
+  style?:   CSSProperties;
 }) {
   return (
     <span
@@ -128,6 +138,7 @@ export function Chip({ children, active = false, onClick }: {
         cursor:       onClick ? 'pointer' : 'default',
         transition:   'var(--ease)',
         userSelect:   'none',
+        ...styleProp,
       }}
     >
       {children}

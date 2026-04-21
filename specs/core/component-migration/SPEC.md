@@ -5,31 +5,45 @@ _Confirmada: 2026-04-21_
 ## Tipo
 Core change — refactor de UI
 
-## Objetivo
-Eliminar componentes duplicados en los módulos, reemplazándolos por los compartidos de `@worksuite/ui` (Btn, Badge, Chip, Modal, Avatar, StatBox).
+## Fase 1 (completada 2026-04-21)
 
-## Orden de migración
+| Módulo | Componentes migrados | Archivos |
+|--------|---------------------|----------|
+| retro | RBtn → Btn, RPriBadge/RRoleBadge → Badge | RetroBoard.tsx |
+| vector-logic | Avatar local → Avatar | UserPicker.tsx |
+| chrono | Modal local → Modal | DashboardView.tsx |
+| jira-tracker | Modal inline → Modal | ExportConfigModal.tsx |
+| environments | Modal → Modal, ConfirmDialog → ConfirmModal | EnvironmentsView.tsx, AdminEnvironments.tsx |
 
-| Fase | Módulo | Componentes a reemplazar | Archivos |
-|------|--------|--------------------------|----------|
-| 1 | retro | RBtn → Btn, RPriBadge/RRoleBadge → Badge | RetroBoard.tsx |
-| 2 | deploy-planner | RepoChip → Chip | atoms.tsx |
-| 3 | vector-logic | Avatar → Avatar, ConfidenceBadge → Badge | UserPicker.tsx, AIDetectionsView.tsx |
-| 4 | chrono-admin | Stat → StatBox | InformesEmpresaView.tsx |
-| 5 | chrono | Modal local → Modal | DashboardView.tsx |
-| 6 | hotdesk | Modal overlay → Modal wrapper | HDReserveModal.tsx |
-| 7 | jira-tracker | Modal patterns inline | ExportConfigModal.tsx, LogWorklogModal.tsx |
-| 8 | environments | Modal inline divs | AdminEnvironments.tsx, EnvironmentsView.tsx |
+## Fase 2
+
+### Extensiones a packages/ui
+
+| Componente | Cambio |
+|-----------|--------|
+| StatBox | Agregar props `style` y `className` |
+| Badge | Agregar prop `variant` ('pill' / 'compact') |
+| Chip | Agregar prop `style` para overrides |
+
+### Migraciones
+
+| Paso | Módulo | Componente local → compartido | Archivo |
+|------|--------|-------------------------------|---------|
+| 1 | chrono-admin | Stat → StatBox | InformesEmpresaView.tsx |
+| 2 | vector-logic | ConfidenceBadge → Badge compact | AIDetectionsView.tsx |
+| 3 | deploy-planner | RepoChip → Chip con style | atoms.tsx |
+| 4 | jira-tracker | LogWorklogModal → Modal + Btn | LogWorklogModal.tsx |
 
 ## Fuera de scope
+- HDReserveModal (hotdesk) — brecha demasiado grande
 - ChronoStatCard, ReleaseCard, ToolButton, StatusDot, TaskDetailModal
-- Módulos auth y profile (mínimos)
+- Módulos auth y profile
 
 ## Reglas
-- Cada fase se verifica visualmente antes de pasar a la siguiente
-- Si un componente compartido necesita un prop extra, se agrega a packages/ui
 - No se cambia funcionalidad, solo implementación visual
 - Se mantiene el look & feel actual exacto
+- Se trabaja en rama separada
+- Se verifica visualmente antes de mergear
 
 ## Modelo de datos
 > No aplica — no hay cambios de base de datos.
