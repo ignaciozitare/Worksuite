@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { DateRangePicker } from '@worksuite/ui';
 import { MOCK_PROJECTS_FALLBACK } from '@/shared/lib/fallbackData';
 import { CalendarView } from './CalendarView';
 import { DayView } from './DayView';
@@ -150,23 +151,7 @@ select.jt-input{
 /* ── Main content ───────────────────────────────────────────────────── */
 .jt-main{flex:1;min-width:0;overflow:auto;display:flex;flex-direction:column}
 
-/* ── Date range picker ──────────────────────────────────────────────── */
-.jt-date-range{
-  display:flex;align-items:center;gap:0;
-  border-radius:8px;background:var(--sf-lowest);
-  border:1px solid var(--bd);overflow:hidden;
-}
-.jt-date-range input[type="date"]{
-  flex:1;padding:8px 8px;border:none;background:none;
-  color:var(--tx);font:500 11px/1.4 'Inter',sans-serif;
-  outline:none;min-width:0;
-}
-.jt-date-range input[type="date"]::-webkit-calendar-picker-indicator{
-  filter:invert(.5);cursor:pointer;
-}
-[data-theme="light"] .jt-date-range input[type="date"]::-webkit-calendar-picker-indicator{
-  filter:none;
-}
+
 `;
 
 /* ─── Material icon helper ─────────────────────────────────────────────── */
@@ -336,18 +321,14 @@ function LeftSidebar({
 
       {/* ── DATE RANGE ─────────────────────────────────────────── */}
       <SectionLabel>{t('jiraTracker.dateRange')}</SectionLabel>
-      <div className="jt-date-range" style={{ marginBottom: 8 }}>
-        <Icon name="calendar_month" size={16} style={{ color: 'var(--ac2)', padding: '0 0 0 10px', flexShrink: 0 }} />
-        <input
-          type="date"
-          value={local.from}
-          onChange={e => setLocal({ ...local, from: e.target.value })}
-        />
-        <Icon name="arrow_forward" size={12} style={{ color: 'var(--tx3)', flexShrink: 0 }} />
-        <input
-          type="date"
-          value={local.to}
-          onChange={e => setLocal({ ...local, to: e.target.value })}
+      <div style={{ marginBottom: 8 }}>
+        <DateRangePicker
+          startValue={local.from}
+          endValue={local.to}
+          onChange={(start, end) => setLocal({ ...local, from: start.slice(0, 10), to: end.slice(0, 10) })}
+          showTime={false}
+          minDate="2020-01-01"
+          labels={{ start: t('jiraTracker.from', 'Inicio'), end: t('jiraTracker.to', 'Fin') }}
         />
       </div>
 
