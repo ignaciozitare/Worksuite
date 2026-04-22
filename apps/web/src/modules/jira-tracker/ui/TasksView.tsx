@@ -279,14 +279,19 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues }: TasksVie
                     <td style={{ ...tdStyle, color: 'var(--green)', fontWeight: 500 }}>
                       {TimeParser.format(hoursByIssue[i.key] || 0)}
                     </td>
-                    <td style={{ ...tdStyle, display: 'flex', gap: 4, alignItems: 'center' }}>
+                    <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>
                       <button onClick={() => onOpenLog({ issueKey: i.key })} style={{
                         padding: '3px 10px', borderRadius: 5, border: 'none',
                         background: 'var(--ac)', color: 'var(--ac-on)',
                         fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                        marginRight: 6,
                       }}>
                         {t('jiraTracker.btnHours')}
                       </button>
+                      <button onClick={() => onOpenLog({ issueKey: i.key, editWorklog: { id: '', issue: i.key, seconds: hoursByIssue[i.key] || 0, started: '09:00', description: '' } })} style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        fontSize: 14, color: 'var(--tx)', padding: '2px 4px',
+                      }} title={t('common.edit', 'Edit')}>✎</button>
                     </td>
                   </tr>
                 );
