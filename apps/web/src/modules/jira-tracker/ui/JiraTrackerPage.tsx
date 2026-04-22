@@ -32,11 +32,11 @@ interface JiraTrackerPageProps {
 
 const JT_CSS = `
 /* ── Layout ─────────────────────────────────────────────────────────── */
-.jt-page{display:flex;height:100%;overflow:hidden;background:var(--bg)}
+.jt-page{display:flex;flex:1;height:100%;overflow:hidden;background:var(--bg)}
 
 /* ── Left sidebar — glass ───────────────────────────────────────────── */
 .jt-sidebar{
-  width:240px;min-width:240px;height:100%;
+  width:240px;min-width:240px;align-self:stretch;
   background:rgba(14,14,14,.6);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-right:1px solid rgba(255,255,255,.05);
@@ -91,7 +91,7 @@ const JT_CSS = `
 /* ── Right sidebar ──────────────────────────────────────────────────── */
 .jt-right{
   width:260px;min-width:260px;height:100%;
-  background:var(--sf-lowest,var(--bg));
+  background:var(--sf-lowest);
   border-left:1px solid var(--bd);
   display:flex;flex-direction:column;overflow:hidden;
   transition:width .2s ease,min-width .2s ease;
@@ -122,7 +122,7 @@ const JT_CSS = `
 /* ── Filter inputs ──────────────────────────────────────────────────── */
 .jt-input{
   width:100%;padding:8px 10px;border-radius:8px;
-  background:var(--sf-lowest,var(--bg));border:1px solid var(--bd);
+  background:var(--sf-lowest);border:1px solid var(--bd);
   color:var(--tx);font:500 11px/1.4 'Inter',sans-serif;
   outline:none;transition:border-color .15s ease;
 }
@@ -170,9 +170,8 @@ export function JiraTrackerPage({
 }: JiraTrackerPageProps) {
 
   return (
-    <>
-      <style>{JT_CSS}</style>
       <div className="jt-page">
+        <style>{JT_CSS}</style>
         <LeftSidebar
           view={view}
           filters={filters}
@@ -217,7 +216,6 @@ export function JiraTrackerPage({
         </div>
         <RightSidebar worklogs={worklogs} onOpenLog={onOpenLog} />
       </div>
-    </>
   );
 }
 
