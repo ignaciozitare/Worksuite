@@ -274,10 +274,13 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues }: TasksVie
                     <td style={tdStyle}>
                       <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--tx3)' }}>{i.project}</span>
                     </td>
+                    <td style={tdStyle}>
+                      <span style={{ fontSize: 10, color: 'var(--purple)', fontWeight: 500 }}>{i.epicName || i.epic || '—'}</span>
+                    </td>
                     <td style={{ ...tdStyle, color: 'var(--green)', fontWeight: 500 }}>
                       {TimeParser.format(hoursByIssue[i.key] || 0)}
                     </td>
-                    <td style={tdStyle}>
+                    <td style={{ ...tdStyle, display: 'flex', gap: 4, alignItems: 'center' }}>
                       <button onClick={() => onOpenLog({ issueKey: i.key })} style={{
                         padding: '3px 10px', borderRadius: 5, border: 'none',
                         background: 'var(--ac)', color: 'var(--ac-on)',
@@ -328,8 +331,9 @@ const columns = [
   { key: 'status', width: 80, sortable: true, label: (t: any) => t('jiraTracker.colStatus') },
   { key: 'priority', width: 70, sortable: true, label: (t: any) => t('jiraTracker.colPriority') },
   { key: 'project', width: 60, sortable: false, label: (t: any) => t('jiraTracker.colProject') },
+  { key: 'epic', width: 90, sortable: true, label: (t: any) => t('jiraTracker.colEpic') },
   { key: 'hours', width: 50, sortable: true, label: (t: any) => t('jiraTracker.colTime') },
-  { key: 'action', width: 40, sortable: false, label: () => '' },
+  { key: 'action', width: 60, sortable: false, label: () => '' },
 ];
 
 /* ─── Shared styles ────────────────────────────────────────────────────── */
