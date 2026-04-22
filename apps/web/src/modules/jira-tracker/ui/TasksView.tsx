@@ -215,7 +215,7 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues }: TasksVie
       {/* ── Table ──────────────────────────────────────────────────── */}
       {filteredIssues.length > 0 && (
         <div style={{ flex: 1, overflowX: 'auto', overflowY: 'auto', minHeight: 0 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, tableLayout: 'auto' }}>
             <thead>
               <tr>
                 {columns.map(col => (
@@ -224,7 +224,6 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues }: TasksVie
                     onClick={col.sortable ? () => toggleSort(col.key) : undefined}
                     style={{
                       ...thStyle,
-                      width: col.width,
                       cursor: col.sortable ? 'pointer' : 'default',
                       position: 'sticky', top: 0, zIndex: 1,
                     }}
@@ -325,15 +324,15 @@ function StatCard({ label, value, color, icon }: { label: string; value: string 
 /* ─── Column definitions ───────────────────────────────────────────────── */
 
 const columns = [
-  { key: 'key', width: 80, sortable: true, label: (t: any) => t('jiraTracker.colKey') },
-  { key: 'summary', width: undefined, sortable: true, label: (t: any) => t('jiraTracker.colSummary') },
-  { key: 'type', width: 60, sortable: false, label: (t: any) => t('jiraTracker.colType') },
-  { key: 'status', width: 80, sortable: true, label: (t: any) => t('jiraTracker.colStatus') },
-  { key: 'priority', width: 70, sortable: true, label: (t: any) => t('jiraTracker.colPriority') },
-  { key: 'project', width: 60, sortable: false, label: (t: any) => t('jiraTracker.colProject') },
-  { key: 'epic', width: 90, sortable: true, label: (t: any) => t('jiraTracker.colEpic') },
-  { key: 'hours', width: 50, sortable: true, label: (t: any) => t('jiraTracker.colTime') },
-  { key: 'action', width: 60, sortable: false, label: () => '' },
+  { key: 'key', sortable: true, label: (t: any) => t('jiraTracker.colKey') },
+  { key: 'summary', sortable: true, label: (t: any) => t('jiraTracker.colSummary') },
+  { key: 'type', sortable: false, label: (t: any) => t('jiraTracker.colType') },
+  { key: 'status', sortable: true, label: (t: any) => t('jiraTracker.colStatus') },
+  { key: 'priority', sortable: true, label: (t: any) => t('jiraTracker.colPriority') },
+  { key: 'project', sortable: false, label: (t: any) => t('jiraTracker.colProject') },
+  { key: 'epic', sortable: true, label: (t: any) => t('jiraTracker.colEpic') },
+  { key: 'hours', sortable: true, label: (t: any) => t('jiraTracker.colTime') },
+  { key: 'action', sortable: false, label: () => '' },
 ];
 
 /* ─── Shared styles ────────────────────────────────────────────────────── */
