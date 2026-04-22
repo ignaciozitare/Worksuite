@@ -8,22 +8,25 @@ import { MOCK_ISSUES_FALLBACK } from '@/shared/lib/fallbackData';
 interface LogWorklogModalProps {
   initialDate?: string;
   initialIssueKey?: string;
+  /** Pre-filled worklog data for edit mode */
+  editWorklog?: { id: string; issue: string; seconds: number; started: string; description?: string; date?: string };
   onClose: () => void;
   onSave: (date: string, wl: any) => void;
   currentUser: any;
   jiraIssues?: any[];
 }
 
-export function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave, currentUser, jiraIssues }: LogWorklogModalProps) {
+export function LogWorklogModal({ initialDate, initialIssueKey, editWorklog, onClose, onSave, currentUser, jiraIssues }: LogWorklogModalProps) {
   const { t } = useTranslation();
   const issues = jiraIssues || MOCK_ISSUES_FALLBACK;
-  const [ik,     setIk]    = useState(initialIssueKey||"");
-  const [query,  setQuery] = useState(initialIssueKey||"");
+  const isEdit = !!editWorklog;
+  const [ik,     setIk]    = useState(editWorklog?.issue || initialIssueKey||"");
+  const [query,  setQuery] = useState(editWorklog?.issue || initialIssueKey||"");
   const [open,   setOpen]  = useState(false);
-  const [dt,     setDt]    = useState(initialDate||TODAY);
-  const [tr,     setTr]    = useState("");
-  const [st,     setSt]    = useState("09:00");
-  const [dc,     setDc]    = useState("");
+  const [dt,     setDt]    = useState(editWorklog?.date || initialDate||TODAY);
+  const [tr,     setTr]    = useState(editWorklog ? TimeParser.format(editWorklog.seconds) : "");
+  const [st,     setSt]    = useState(editWorklog?.started || "09:00");
+  const [dc,     setDc]    = useState(editWorklog?.description || "");
   const [er,     setEr]    = useState<any>({});
   const [ok,     setOk]    = useState(false);
   const cbRef = useRef<HTMLDivElement>(null);
@@ -73,17 +76,17 @@ export function LogWorklogModal({ initialDate, initialIssueKey, onClose, onSave,
     const iss = issues.find(i => i.key===ik);
     setOk(true);
     setTimeout(() => {
-      onSave(dt, { id:`wl-${Date.now()}`, issue:ik, summary:iss?.summary||ik, type:iss?.type||"Task",
+      onSave(dt, { id: isEdit ? editWorklog!.id : `wl-${Date.now()}`, issue:ik, summary:iss?.summary||ik, type:iss?.type||"Task",
         epic:iss?.epic||"—", epicName:iss?.epicName||"—", author:currentUser.name,
         authorId:currentUser.id, time:tp, seconds:ps, started:st,
-        project:iss?.project||"—", description:dc, isNew:true });
+        project:iss?.project||"—", description:dc, isNew: !isEdit, isEdit });
       onClose();
     }, 750);
   };
 
   const si = issues.find(i => i.key===ik);
   return (
-    <Modal title={`⏱ ${t("jiraTracker.logWorklog")}`} onClose={onClose} width={480} noPadding>
+    <Modal title={isEdit ? t("jiraTracker.editWorklog", "Edit Worklog") : t("jiraTracker.logWorklog")} onClose={onClose} width={480} noPadding>
         {ok ? <div className="mbody"><div className="ok-fl">✓ {t("jiraTracker.savedFlash")} — {tp} · {ik} · {dt}</div></div> : showWarn ? (
           <div className="mbody">
             <div style={{textAlign:"center",padding:"20px 0"}}>

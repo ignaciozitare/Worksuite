@@ -371,6 +371,7 @@
     "searchTickets": "Search tickets...",
     "from":          "Start",
     "to":            "End",
+    "editWorklog":   "Edit Worklog",
     "all":           "All",
     "more":          "more",
     "logHours":      "+ Log hours",

@@ -60,6 +60,26 @@ export function useWorklogs({ worklogs, setWorklogs, activeDay, currentUser, not
     } catch (err) { console.error('Delete worklog failed:', err); }
   }, [setWorklogs]);
 
+  const handleEditWorklog = useCallback(async (originalDate: string, originalId: string, newDate: string, wl: any) => {
+    // Remove old entry
+    setWorklogs(p => {
+      const u = (p[originalDate] || []).filter((w: any) => w.id !== originalId);
+      const cleaned = !u.length ? (({ [originalDate]: _, ...r }) => r)(p) : { ...p, [originalDate]: u };
+      // Add updated entry
+      return { ...cleaned, [newDate]: [...(cleaned[newDate] || []), { ...wl, isNew: false }] };
+    });
+    try {
+      await worklogRepo.remove(originalId);
+      await worklogRepo.insert({
+        id: wl.id, issue_key: wl.issue, issue_summary: wl.summary,
+        issue_type: wl.type, epic_key: wl.epic, epic_name: wl.epicName,
+        project_key: wl.project, author_id: currentUser.id, author_name: currentUser.name,
+        date: newDate, started_at: wl.started, seconds: wl.seconds, description: wl.description || '',
+      });
+      notify('✓ Worklog actualizado');
+    } catch (err) { console.error('Edit worklog failed:', err); }
+  }, [currentUser.id, currentUser.name, setWorklogs, notify]);
+
   const loadJiraIssues = useCallback(async (projectKey: string, setJiraIssues: (issues: any[]) => void) => {
     try {
       const issues = await jiraSync.loadIssues(projectKey);
@@ -74,5 +94,5 @@ export function useWorklogs({ worklogs, setWorklogs, activeDay, currentUser, not
     } catch (e) { console.error('loadJiraIssues failed:', e); }
   }, []);
 
-  return { openLogModal, handleSaveWorklog, handleDeleteWorklog, loadJiraIssues };
+  return { openLogModal, handleSaveWorklog, handleDeleteWorklog, handleEditWorklog, loadJiraIssues };
 }

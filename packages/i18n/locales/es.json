@@ -371,6 +371,7 @@
     "searchTickets": "Buscar tickets...",
     "from":          "Inicio",
     "to":            "Fin",
+    "editWorklog":   "Editar Worklog",
     "all":           "Todos",
     "more":          "más",
     "logHours":      "+ Imputar horas",

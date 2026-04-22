@@ -105,13 +105,21 @@ function WorkSuiteApp() {
   const [jiraUserFilter, setJiraUserFilter] = useState("");
   const jiraUsers = [...new Set(jiraIssues.flatMap((i: any) => [i.assignee, i.reporter].filter(Boolean)))].sort() as string[];
 
-  const { openLogModal, handleSaveWorklog, handleDeleteWorklog, loadJiraIssues } = useWorklogs({
+  const { openLogModal, handleSaveWorklog, handleDeleteWorklog, handleEditWorklog, loadJiraIssues } = useWorklogs({
     worklogs, setWorklogs, activeDay, currentUser: CURRENT_USER, notify,
   });
 
-  const handleOpenLog = useCallback((opts = {}) => {
-    setLogModal(openLogModal(opts));
+  const handleOpenLog = useCallback((opts: any = {}) => {
+    setLogModal({ ...openLogModal(opts), editWorklog: opts.editWorklog || null, originalDate: opts.originalDate || null });
   }, [openLogModal]);
+
+  const handleSaveOrEdit = useCallback(async (date: string, wl: any) => {
+    if (wl.isEdit && logModal?.originalDate && logModal?.editWorklog?.id) {
+      await handleEditWorklog(logModal.originalDate, logModal.editWorklog.id, date, wl);
+    } else {
+      await handleSaveWorklog(date, wl);
+    }
+  }, [handleSaveWorklog, handleEditWorklog, logModal]);
 
   const [exportModal, setExportModal] = useState<any>(null);
   const [exportPresets, setExportPresets] = useState<any[]>(CURRENT_USER?.export_presets ?? []);
@@ -369,7 +377,7 @@ function WorkSuiteApp() {
 
       {/* ── Modals & Toast ────────────────────────────────────── */}
       {logModal && (
-        <LogWorklogModal initialDate={logModal.date} initialIssueKey={logModal.issueKey} onClose={() => setLogModal(null)} onSave={handleSaveWorklog} currentUser={CURRENT_USER} jiraIssues={jiraIssues} />
+        <LogWorklogModal initialDate={logModal.date} initialIssueKey={logModal.issueKey} editWorklog={logModal.editWorklog} onClose={() => setLogModal(null)} onSave={handleSaveOrEdit} currentUser={CURRENT_USER} jiraIssues={jiraIssues} />
       )}
       {exportModal && (
         <ExportConfigModal
