@@ -11,7 +11,8 @@ import { useHotDesk } from './shared/hooks/useHotDesk';
 import './WorkSuiteApp.css';
 
 // Module UI — eagerly loaded (always visible)
-import { LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView, RecentTasksSidebar } from './modules/jira-tracker/ui';
+import { LogWorklogModal } from './modules/jira-tracker/ui';
+import { JiraTrackerPage } from './modules/jira-tracker/ui/JiraTrackerPage';
 import { ExportConfigModal, exportWithColumns } from './modules/jira-tracker/ui/ExportConfigModal';
 import { BlueprintHDMap, HDTableView, HDReserveModal, HDMapView } from './modules/hotdesk/ui';
 import { BuildingFloorSelectors } from './shared/admin';
@@ -104,13 +105,21 @@ function WorkSuiteApp() {
   const [jiraUserFilter, setJiraUserFilter] = useState("");
   const jiraUsers = [...new Set(jiraIssues.flatMap((i: any) => [i.assignee, i.reporter].filter(Boolean)))].sort() as string[];
 
-  const { openLogModal, handleSaveWorklog, handleDeleteWorklog, loadJiraIssues } = useWorklogs({
+  const { openLogModal, handleSaveWorklog, handleDeleteWorklog, handleEditWorklog, loadJiraIssues } = useWorklogs({
     worklogs, setWorklogs, activeDay, currentUser: CURRENT_USER, notify,
   });
 
-  const handleOpenLog = useCallback((opts = {}) => {
-    setLogModal(openLogModal(opts));
+  const handleOpenLog = useCallback((opts: any = {}) => {
+    setLogModal({ ...openLogModal(opts), editWorklog: opts.editWorklog || null, originalDate: opts.originalDate || null });
   }, [openLogModal]);
+
+  const handleSaveOrEdit = useCallback(async (date: string, wl: any) => {
+    if (wl.isEdit && logModal?.originalDate && logModal?.editWorklog?.id) {
+      await handleEditWorklog(logModal.originalDate, logModal.editWorklog.id, date, wl);
+    } else {
+      await handleSaveWorklog(date, wl);
+    }
+  }, [handleSaveWorklog, handleEditWorklog, logModal]);
 
   const [exportModal, setExportModal] = useState<any>(null);
   const [exportPresets, setExportPresets] = useState<any[]>(CURRENT_USER?.export_presets ?? []);
@@ -220,61 +229,51 @@ function WorkSuiteApp() {
 
           {/* ── Top bar ─────────────────────────────────────────── */}
           <header className="topbar">
-            <AppSwitcher
-              currentMod={mod}
-              userModules={CURRENT_USER.modules || ["jt", "hd", "retro", "deploy"]}
-              onNavigate={navigate}
-            />
-            <div className="logo">
-              <div className="logo-dot" />
-              <span style={{ color: "var(--ac2)", fontWeight: 700 }}>Work</span>
-              <span style={{ color: "var(--tx2)", fontWeight: 300 }}>Suite</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <AppSwitcher
+                currentMod={mod}
+                userModules={CURRENT_USER.modules || ["jt", "hd", "retro", "deploy"]}
+                onNavigate={navigate}
+              />
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ac2)' }}>WorkSuite</span>
+              {!window.location.hostname.startsWith('worksuite-phi') && (
+                <span style={{
+                  fontSize: 9, fontWeight: 700, color: 'var(--ac)',
+                  letterSpacing: '0.05em', padding: '2px 6px',
+                  borderRadius: 4, background: 'var(--ac-dim)',
+                }}>PREVIEW</span>
+              )}
             </div>
-            <div className="top-right">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 title={theme === "dark" ? t("theme.switchToLight") : t("theme.switchToDark")}
-                style={{
-                  background: 'transparent', border: '1px solid var(--bd)',
-                  borderRadius: 'var(--r)', cursor: 'pointer', fontSize: 14,
-                  color: 'var(--tx2)', padding: '4px 10px', height: 28,
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                }}
+                className="tb-icon-btn"
               >
-                {theme === "dark" ? "🌙" : "☀️"}
+                <span className="material-symbols-outlined" style={{
+                  fontSize: 16, color: 'var(--tx2)',
+                  fontVariationSettings: "'wght' 300",
+                }}>{theme === "dark" ? "dark_mode" : "light_mode"}</span>
               </button>
-              <div className="sw-group">
-                <button className={`sw-btn ${locale === "en" ? "active" : ""}`} onClick={() => setLocale("en")}>EN</button>
-                <button className={`sw-btn ${locale === "es" ? "active" : ""}`} onClick={() => setLocale("es")}>ES</button>
-              </div>
+              <button
+                className="tb-icon-btn"
+                onClick={() => setLocale(locale === "en" ? "es" : "en")}
+                style={{ padding: '4px 8px' }}
+              >
+                <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx2)' }}>{locale.toUpperCase()}</span>
+              </button>
               <NotificationsBell userId={CURRENT_USER.id} repo={notificationRepo} />
-              <div className="o-dot" />
-              <button onClick={() => navigate('/admin')}
-                style={{
-                  background: view === "admin" ? "var(--ac)" : "rgba(79,110,247,.15)",
-                  border: `1px solid ${view === "admin" ? "var(--ac)" : "rgba(79,110,247,.4)"}`,
-                  borderRadius: "var(--r)", color: view === "admin" ? "#fff" : "var(--ac2)",
-                  fontSize: 11, fontWeight: 700, padding: "5px 12px", cursor: "pointer",
-                  transition: "var(--ease)", display: "flex", alignItems: "center", gap: 6,
-                  boxShadow: view === "admin" ? "0 0 10px rgba(79,110,247,.3)" : "none",
-                }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-                {isAdmin ? t('nav.admin') : t('nav.config')}
-              </button>
               <UserMenu user={CURRENT_USER} onLogout={logout} />
             </div>
           </header>
 
-          {/* ── Sub-nav ─────────────────────────────────────────── */}
-          {mod !== "retro" && mod !== "deploy" && mod !== "envtracker" && mod !== "chrono" && mod !== "chrono-admin" && mod !== "vector-logic" && mod !== "profile" && mod !== "hd" && mod !== "admin" && (
+          {/* ── Sub-nav (JT uses sidebar nav instead) ─────────── */}
+          {mod !== "jt" && mod !== "retro" && mod !== "deploy" && mod !== "envtracker" && mod !== "chrono" && mod !== "chrono-admin" && mod !== "vector-logic" && mod !== "profile" && mod !== "hd" && mod !== "admin" && (
             <nav className="nav-bar">
               {currentNavItems.map(item => (
                 <button key={item.id}
                   className={`n-btn ${view === item.id ? (mod === "hd" ? "active-hd" : "active") : ""}`}
-                  onClick={() => navigate(mod === 'jt' ? `/jira-tracker/${item.id}` : `/hotdesk/${item.id}`)}>
+                  onClick={() => navigate(`/hotdesk/${item.id}`)}>
                   {item.label}
                 </button>
               ))}
@@ -290,11 +289,27 @@ function WorkSuiteApp() {
           {/* ── Body ────────────────────────────────────────────── */}
           <div className="body">
             {mod === "jt" && view !== "admin" && (
-              <JTFilterSidebar filters={filters} onApply={f => { setFilters(f); setSbOpen(false); }} onExport={handleExport} mobileOpen={sbOpen} onMobileClose={() => setSbOpen(false)} users={users} onProjectChange={handleLoadJiraIssues} jiraProjects={jiraProjects} jiraUsers={jiraUsers} jiraUserFilter={jiraUserFilter} onJiraUserFilter={setJiraUserFilter} />
+              <JiraTrackerPage
+                view={view}
+                filters={filters}
+                worklogs={worklogs}
+                users={users}
+                jiraIssues={jiraIssues}
+                jiraProjects={jiraProjects}
+                jiraUsers={jiraUsers}
+                jiraUserFilter={jiraUserFilter}
+                activeDay={activeDay}
+                onApplyFilters={f => { setFilters(f); setSbOpen(false); }}
+                onExport={handleExport}
+                onDayClick={handleDayClick}
+                onOpenLog={handleOpenLog}
+                onDeleteWorklog={handleDeleteWorklog}
+                onDateChange={setActiveDay}
+                onProjectChange={handleLoadJiraIssues}
+                onJiraUserFilter={setJiraUserFilter}
+                onNavigate={v => navigate(`/jira-tracker/${v}`)}
+              />
             )}
-            {mod === "jt" && view === "calendar" && <main className="content" style={{display:'flex'}}><div style={{flex:1,minWidth:0,overflow:'auto'}}><CalendarView filters={filters} worklogs={worklogs} onDayClick={handleDayClick} onOpenLog={handleOpenLog} /></div><RecentTasksSidebar worklogs={worklogs} onOpenLog={handleOpenLog} /></main>}
-            {mod === "jt" && view === "day" && <main className="content" style={{display:'flex'}}><div style={{flex:1,minWidth:0,overflow:'auto'}}><DayView date={activeDay} filters={filters} worklogs={worklogs} onDateChange={setActiveDay} onOpenLog={handleOpenLog} onDeleteWorklog={handleDeleteWorklog} /></div><RecentTasksSidebar worklogs={worklogs} onOpenLog={handleOpenLog} /></main>}
-            {mod === "jt" && view === "tasks" && <main className="content" style={{display:'flex'}}><div style={{flex:1,minWidth:0,overflow:'auto'}}><TasksView filters={filters} onOpenLog={handleOpenLog} worklogs={worklogs} jiraIssues={jiraIssues} jiraProjects={jiraProjects} /></div><RecentTasksSidebar worklogs={worklogs} onOpenLog={handleOpenLog} /></main>}
             {mod === "hd" && (view === "map" || view === "table") && (
               <main className="content" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <HDMapView
@@ -362,7 +377,7 @@ function WorkSuiteApp() {
 
       {/* ── Modals & Toast ────────────────────────────────────── */}
       {logModal && (
-        <LogWorklogModal initialDate={logModal.date} initialIssueKey={logModal.issueKey} onClose={() => setLogModal(null)} onSave={handleSaveWorklog} currentUser={CURRENT_USER} jiraIssues={jiraIssues} />
+        <LogWorklogModal initialDate={logModal.date} initialIssueKey={logModal.issueKey} editWorklog={logModal.editWorklog} onClose={() => setLogModal(null)} onSave={handleSaveOrEdit} currentUser={CURRENT_USER} jiraIssues={jiraIssues} />
       )}
       {exportModal && (
         <ExportConfigModal

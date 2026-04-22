@@ -40,14 +40,13 @@ export function NotificationsBell({ userId, repo }: Props) {
       <button
         onClick={() => setOpen(v => !v)}
         title={t('chrono.alertas')}
-        style={{
-          position: 'relative', background: 'transparent', border: '1px solid var(--bd)',
-          borderRadius: 'var(--r)', cursor: 'pointer', fontSize: 14,
-          color: 'var(--tx2)', padding: '4px 8px', height: 28,
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        }}
+        className="tb-icon-btn"
+        style={{ position: 'relative' }}
       >
-        🔔
+        <span className="material-symbols-outlined" style={{
+          fontSize: 16, color: 'var(--tx2)',
+          fontVariationSettings: "'wght' 300",
+        }}>notifications</span>
         {unread > 0 && (
           <span style={{
             position: 'absolute', top: -5, right: -5,
