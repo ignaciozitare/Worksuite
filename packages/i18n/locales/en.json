@@ -369,6 +369,8 @@
     "activeTasks":   "ACTIVE TASKS",
     "topProject":    "TOP PROJECT",
     "searchTickets": "Search tickets...",
+    "from":          "Start",
+    "to":            "End",
     "all":           "All",
     "more":          "more",
     "logHours":      "+ Log hours",

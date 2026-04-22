@@ -284,7 +284,7 @@ function LeftSidebar({
             background: 'var(--ac-dim)', border: '1px solid rgba(79,110,247,.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Icon name="query_stats" size={20} weight={300} style={{ color: 'var(--ac2)' }} />
+            <Icon name="timer" size={20} weight={300} style={{ color: 'var(--ac2)' }} />
           </div>
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.01em' }}>

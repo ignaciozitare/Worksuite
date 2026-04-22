@@ -228,11 +228,13 @@ function WorkSuiteApp() {
                 onNavigate={navigate}
               />
               <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ac2)' }}>WorkSuite</span>
-              <span style={{
-                fontSize: 9, fontWeight: 700, color: 'var(--ac)',
-                letterSpacing: '0.05em', padding: '2px 6px',
-                borderRadius: 4, background: 'var(--ac-dim)',
-              }}>PREVIEW</span>
+              {!window.location.hostname.startsWith('worksuite-phi') && (
+                <span style={{
+                  fontSize: 9, fontWeight: 700, color: 'var(--ac)',
+                  letterSpacing: '0.05em', padding: '2px 6px',
+                  borderRadius: 4, background: 'var(--ac-dim)',
+                }}>PREVIEW</span>
+              )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <button

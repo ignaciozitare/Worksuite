@@ -369,6 +369,8 @@
     "activeTasks":   "TAREAS ACTIVAS",
     "topProject":    "TOP PROYECTO",
     "searchTickets": "Buscar tickets...",
+    "from":          "Inicio",
+    "to":            "Fin",
     "all":           "Todos",
     "more":          "más",
     "logHours":      "+ Imputar horas",
