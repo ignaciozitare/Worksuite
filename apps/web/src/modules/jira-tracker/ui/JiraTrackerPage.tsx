@@ -28,7 +28,7 @@ interface JiraTrackerPageProps {
   onNavigate: (view: string) => void;
 }
 
-/* ─── Scoped styles (glass, gradients, animations) ─────────────────────── */
+/* ─── Scoped styles ────────────────────────────────────────────────────── */
 
 const JT_CSS = `
 /* ── Layout ─────────────────────────────────────────────────────────── */
@@ -90,13 +90,14 @@ const JT_CSS = `
 
 /* ── Right sidebar ──────────────────────────────────────────────────── */
 .jt-right{
-  width:260px;min-width:260px;height:100%;
+  display:flex;flex-direction:column;align-self:stretch;
   background:var(--sf-lowest);
   border-left:1px solid var(--bd);
-  display:flex;flex-direction:column;overflow:hidden;
+  overflow:hidden;
   transition:width .2s ease,min-width .2s ease;
 }
-.jt-right.collapsed{width:0;min-width:0;border-left:none;padding:0}
+.jt-right.open{width:260px;min-width:260px}
+.jt-right.closed{width:40px;min-width:40px}
 
 /* ── Ticket cards (green filete + radial glow) ──────────────────────── */
 .jt-ticket{
@@ -125,15 +126,21 @@ const JT_CSS = `
   background:var(--sf-lowest);border:1px solid var(--bd);
   color:var(--tx);font:500 11px/1.4 'Inter',sans-serif;
   outline:none;transition:border-color .15s ease;
+  appearance:none;-webkit-appearance:none;
 }
 .jt-input:focus{border-color:var(--ac)}
 .jt-input::placeholder{color:var(--tx3)}
+select.jt-input{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238888a8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;
+  padding-right:28px;cursor:pointer;
+}
 
 /* ── Project chips ──────────────────────────────────────────────────── */
 .jt-pchip{
   display:inline-flex;align-items:center;gap:5px;
-  padding:4px 10px;border-radius:6px;
-  font:500 11px/1 'Inter',sans-serif;
+  padding:5px 12px;border-radius:6px;
+  font:600 11px/1 'Inter',sans-serif;
   cursor:pointer;transition:all .15s ease;
   border:none;background:var(--sf2);color:var(--tx2);opacity:.5;
 }
@@ -142,6 +149,24 @@ const JT_CSS = `
 
 /* ── Main content ───────────────────────────────────────────────────── */
 .jt-main{flex:1;min-width:0;overflow:auto;display:flex;flex-direction:column}
+
+/* ── Date range picker ──────────────────────────────────────────────── */
+.jt-date-range{
+  display:flex;align-items:center;gap:0;
+  border-radius:8px;background:var(--sf-lowest);
+  border:1px solid var(--bd);overflow:hidden;
+}
+.jt-date-range input[type="date"]{
+  flex:1;padding:8px 8px;border:none;background:none;
+  color:var(--tx);font:500 11px/1.4 'Inter',sans-serif;
+  outline:none;min-width:0;
+}
+.jt-date-range input[type="date"]::-webkit-calendar-picker-indicator{
+  filter:invert(.5);cursor:pointer;
+}
+[data-theme="light"] .jt-date-range input[type="date"]::-webkit-calendar-picker-indicator{
+  filter:none;
+}
 `;
 
 /* ─── Material icon helper ─────────────────────────────────────────────── */
@@ -154,6 +179,20 @@ function Icon({ name, size = 20, weight = 300, fill = false, style }: {
       fontSize: size, fontVariationSettings: `'wght' ${weight}, 'FILL' ${fill ? 1 : 0}`,
       lineHeight: 1, ...style,
     }}>{name}</span>
+  );
+}
+
+/* ── Section label helper ─────────────────────────────────────────────── */
+
+function SectionLabel({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={{
+      fontSize: 9, fontWeight: 700, color: 'var(--tx3)',
+      letterSpacing: '0.12em', textTransform: 'uppercase' as const,
+      padding: '10px 0 6px', ...style,
+    }}>
+      {children}
+    </div>
   );
 }
 
@@ -170,52 +209,34 @@ export function JiraTrackerPage({
 }: JiraTrackerPageProps) {
 
   return (
-      <div className="jt-page">
-        <style>{JT_CSS}</style>
-        <LeftSidebar
-          view={view}
-          filters={filters}
-          users={users}
-          jiraProjects={jiraProjects}
-          jiraUsers={jiraUsers}
-          jiraUserFilter={jiraUserFilter}
-          onApplyFilters={onApplyFilters}
-          onExport={onExport}
-          onProjectChange={onProjectChange}
-          onJiraUserFilter={onJiraUserFilter}
-          onNavigate={onNavigate}
-        />
-        <div className="jt-main">
-          {view === 'calendar' && (
-            <CalendarView
-              filters={filters}
-              worklogs={worklogs}
-              onDayClick={onDayClick}
-              onOpenLog={onOpenLog}
-            />
-          )}
-          {view === 'day' && (
-            <DayView
-              date={activeDay}
-              filters={filters}
-              worklogs={worklogs}
-              onDateChange={onDateChange}
-              onOpenLog={onOpenLog}
-              onDeleteWorklog={onDeleteWorklog}
-            />
-          )}
-          {view === 'tasks' && (
-            <TasksView
-              filters={filters}
-              onOpenLog={onOpenLog}
-              worklogs={worklogs}
-              jiraIssues={jiraIssues}
-              jiraProjects={jiraProjects}
-            />
-          )}
-        </div>
-        <RightSidebar worklogs={worklogs} onOpenLog={onOpenLog} />
+    <div className="jt-page">
+      <style>{JT_CSS}</style>
+      <LeftSidebar
+        view={view}
+        filters={filters}
+        users={users}
+        jiraProjects={jiraProjects}
+        jiraUsers={jiraUsers}
+        jiraUserFilter={jiraUserFilter}
+        onApplyFilters={onApplyFilters}
+        onExport={onExport}
+        onProjectChange={onProjectChange}
+        onJiraUserFilter={onJiraUserFilter}
+        onNavigate={onNavigate}
+      />
+      <div className="jt-main">
+        {view === 'calendar' && (
+          <CalendarView filters={filters} worklogs={worklogs} onDayClick={onDayClick} onOpenLog={onOpenLog} />
+        )}
+        {view === 'day' && (
+          <DayView date={activeDay} filters={filters} worklogs={worklogs} onDateChange={onDateChange} onOpenLog={onOpenLog} onDeleteWorklog={onDeleteWorklog} />
+        )}
+        {view === 'tasks' && (
+          <TasksView filters={filters} onOpenLog={onOpenLog} worklogs={worklogs} jiraIssues={jiraIssues} jiraProjects={jiraProjects} />
+        )}
       </div>
+      <RightSidebar worklogs={worklogs} jiraIssues={jiraIssues} onOpenLog={onOpenLog} />
+    </div>
   );
 }
 
@@ -271,20 +292,20 @@ function LeftSidebar({
   return (
     <aside className="jt-sidebar">
       {/* ── Brand ──────────────────────────────────────────────── */}
-      <div style={{ padding: '24px 12px 8px 12px' }}>
+      <div style={{ padding: '20px 4px 4px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
-            width: 40, height: 40, borderRadius: 8,
+            width: 36, height: 36, borderRadius: 8,
             background: 'var(--ac-dim)', border: '1px solid rgba(79,110,247,.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Icon name="query_stats" size={22} weight={300} style={{ color: 'var(--ac2)' }} />
+            <Icon name="query_stats" size={20} weight={300} style={{ color: 'var(--ac2)' }} />
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.01em' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.01em' }}>
               Jira Tracker
             </div>
-            <div style={{ fontSize: 10, color: 'var(--tx3)', letterSpacing: '0.1em', opacity: 0.6 }}>
+            <div style={{ fontSize: 9, color: 'var(--tx3)', letterSpacing: '0.1em', opacity: 0.5 }}>
               WORKLOGS
             </div>
           </div>
@@ -292,7 +313,7 @@ function LeftSidebar({
       </div>
 
       {/* ── Navigation ─────────────────────────────────────────── */}
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '16px 0' }}>
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '12px 0' }}>
         {navItems.map(item => (
           <button
             key={item.id}
@@ -300,8 +321,7 @@ function LeftSidebar({
             onClick={() => onNavigate(item.id)}
           >
             <Icon
-              name={item.icon}
-              size={20}
+              name={item.icon} size={20}
               weight={view === item.id ? 400 : 300}
               fill={view === item.id}
               style={{ color: view === item.id ? 'var(--ac2)' : 'inherit' }}
@@ -312,66 +332,39 @@ function LeftSidebar({
       </nav>
 
       {/* ── Separator ──────────────────────────────────────────── */}
-      <div style={{ height: 1, background: 'rgba(255,255,255,.05)', margin: '4px 0' }} />
+      <div style={{ height: 1, background: 'rgba(255,255,255,.05)', margin: '2px 0' }} />
 
-      {/* ── FILTERS label ──────────────────────────────────────── */}
-      <div style={{
-        fontSize: 9, fontWeight: 700, color: 'var(--tx3)',
-        letterSpacing: '0.12em', textTransform: 'uppercase' as const,
-        padding: '12px 0 6px',
-      }}>
-        {t('jiraTracker.filters', 'FILTERS')}
-      </div>
-
-      {/* ── Date Range ─────────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-        <Icon name="calendar_month" size={16} style={{ color: 'var(--ac2)', flexShrink: 0 }} />
+      {/* ── DATE RANGE ─────────────────────────────────────────── */}
+      <SectionLabel>{t('jiraTracker.dateRange')}</SectionLabel>
+      <div className="jt-date-range" style={{ marginBottom: 8 }}>
+        <Icon name="calendar_month" size={16} style={{ color: 'var(--ac2)', padding: '0 0 0 10px', flexShrink: 0 }} />
         <input
           type="date"
-          className="jt-input"
           value={local.from}
           onChange={e => setLocal({ ...local, from: e.target.value })}
-          style={{ flex: 1 }}
         />
-        <Icon name="arrow_forward" size={14} style={{ color: 'var(--tx3)', flexShrink: 0 }} />
+        <Icon name="arrow_forward" size={12} style={{ color: 'var(--tx3)', flexShrink: 0 }} />
         <input
           type="date"
-          className="jt-input"
           value={local.to}
           onChange={e => setLocal({ ...local, to: e.target.value })}
-          style={{ flex: 1 }}
         />
       </div>
 
-      {/* ── User filter (Jira) ─────────────────────────────────── */}
+      {/* ── FILTER BY USER ─────────────────────────────────────── */}
+      <SectionLabel>{t('jiraTracker.filterByUser')}</SectionLabel>
       <select
         className="jt-input"
         value={jiraUserFilter}
         onChange={e => onJiraUserFilter(e.target.value)}
-        style={{ marginBottom: 6 }}
+        style={{ marginBottom: 8 }}
       >
         <option value="">{t('jiraTracker.allUsers')}</option>
         {jiraUsers.map(u => <option key={u} value={u}>{u}</option>)}
       </select>
 
-      {/* ── User filter (WorkSuite) ────────────────────────────── */}
-      <select
-        className="jt-input"
-        value={local.authorId}
-        onChange={e => setLocal({ ...local, authorId: e.target.value })}
-        style={{ marginBottom: 8 }}
-      >
-        <option value="">{t('jiraTracker.allUsers')}</option>
-        {(users || []).map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
-      </select>
-
-      {/* ── Projects ───────────────────────────────────────────── */}
-      <div style={{
-        fontSize: 9, fontWeight: 700, color: 'var(--tx3)',
-        letterSpacing: '0.12em', textTransform: 'uppercase' as const,
-        display: 'flex', alignItems: 'center', gap: 6,
-        padding: '4px 0 6px',
-      }}>
+      {/* ── PROJECTS ───────────────────────────────────────────── */}
+      <SectionLabel style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         {t('jiraTracker.spaces', 'PROJECTS')}
         {local.spaceKeys.length > 0 && (
           <span style={{
@@ -382,19 +375,11 @@ function LeftSidebar({
             {local.spaceKeys.length}
           </span>
         )}
-      </div>
-
-      <input
-        className="jt-input"
-        placeholder={t('jiraTracker.searchSpaces')}
-        value={spaceQ}
-        onChange={e => setSpaceQ(e.target.value)}
-        style={{ marginBottom: 6, fontSize: 10 }}
-      />
+      </SectionLabel>
 
       <div style={{
-        display: 'flex', flexWrap: 'wrap' as const, gap: 4,
-        maxHeight: 120, overflowY: 'auto' as const, marginBottom: 8,
+        display: 'flex', flexWrap: 'wrap' as const, gap: 6,
+        marginBottom: 6,
       }}>
         {filteredProjects.map((p: any) => {
           const on = local.spaceKeys.includes(p.key);
@@ -412,11 +397,6 @@ function LeftSidebar({
             </button>
           );
         })}
-        {filteredProjects.length === 0 && (
-          <div style={{ fontSize: 10, color: 'var(--tx3)', padding: '4px 0' }}>
-            {t('jiraTracker.noResults', 'No results')}
-          </div>
-        )}
       </div>
 
       {local.spaceKeys.length > 0 && (
@@ -433,12 +413,12 @@ function LeftSidebar({
       )}
 
       {/* ── Hint ───────────────────────────────────────────────── */}
-      <div style={{ fontSize: 10, color: 'var(--tx3)', lineHeight: 1.5, marginBottom: 8, opacity: 0.6 }}>
-        {t('jiraTracker.exportHint')}
+      <div style={{ fontSize: 10, color: 'var(--tx3)', lineHeight: 1.5, marginBottom: 4, opacity: 0.5 }}>
+        Shift + Click = {t('jiraTracker.exportHint')}
       </div>
 
       {/* ── Action buttons ─────────────────────────────────────── */}
-      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8, marginTop: 'auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8, marginTop: 'auto', paddingTop: 8 }}>
         <button className="jt-gbtn primary" onClick={() => onApplyFilters(local)}>
           <Icon name="filter_alt" size={16} />
           {t('jiraTracker.applyFilters')}
@@ -453,19 +433,21 @@ function LeftSidebar({
 }
 
 /* ═══════════════════════════════════════════════════════════════════════ */
-/*  Right Sidebar (Recent Tasks)                                          */
+/*  Right Sidebar (Tasks)                                                 */
 /* ═══════════════════════════════════════════════════════════════════════ */
 
 interface RightSidebarProps {
   worklogs: Record<string, any[]>;
+  jiraIssues: any[];
   onOpenLog: (opts: any) => void;
 }
 
-function RightSidebar({ worklogs, onOpenLog }: RightSidebarProps) {
+function RightSidebar({ worklogs, jiraIssues, onOpenLog }: RightSidebarProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(true);
   const [search, setSearch] = useState('');
 
+  /* Recent tasks from worklogs (for display when no search) */
   const recentTasks = useMemo(() => {
     const all: { issue: string; summary: string; date: string }[] = [];
     for (const [date, dayWls] of Object.entries(worklogs || {})) {
@@ -486,18 +468,28 @@ function RightSidebar({ worklogs, onOpenLog }: RightSidebarProps) {
     return unique;
   }, [worklogs]);
 
-  const filtered = search.trim()
-    ? recentTasks.filter(rt =>
-        rt.issue.toLowerCase().includes(search.toLowerCase()) ||
-        rt.summary.toLowerCase().includes(search.toLowerCase()))
-    : recentTasks;
+  /* Search: when typing, search ALL jira issues; when empty, show recent */
+  const displayed = useMemo(() => {
+    if (!search.trim()) return recentTasks;
+    const q = search.toLowerCase();
+    // Search all jira issues
+    const fromJira = (jiraIssues || [])
+      .filter((i: any) =>
+        i.key.toLowerCase().includes(q) ||
+        (i.summary || '').toLowerCase().includes(q) ||
+        (i.assignee || '').toLowerCase().includes(q))
+      .slice(0, 30)
+      .map((i: any) => ({ issue: i.key, summary: i.summary || i.key, date: '' }));
+    return fromJira;
+  }, [search, recentTasks, jiraIssues]);
 
   return (
-    <div className={`jt-right ${open ? '' : 'collapsed'}`}>
+    <div className={`jt-right ${open ? 'open' : 'closed'}`}>
       {/* ── Header ─────────────────────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
-        padding: '16px 14px 12px', flexShrink: 0,
+        padding: open ? '16px 14px 12px' : '16px 6px 12px',
+        flexShrink: 0,
       }}>
         {open && (
           <>
@@ -522,7 +514,7 @@ function RightSidebar({ worklogs, onOpenLog }: RightSidebarProps) {
             width: 28, height: 28, borderRadius: 6, border: 'none',
             background: 'var(--sf2)', color: 'var(--tx2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', flexShrink: 0, marginLeft: open ? 0 : 'auto',
+            cursor: 'pointer', flexShrink: 0,
           }}
         >
           <Icon name={open ? 'chevron_right' : 'chevron_left'} size={18} />
@@ -550,12 +542,18 @@ function RightSidebar({ worklogs, onOpenLog }: RightSidebarProps) {
                   width: '100%',
                 }}
               />
+              {search && (
+                <button onClick={() => setSearch('')} style={{
+                  background: 'none', border: 'none', color: 'var(--tx3)',
+                  cursor: 'pointer', padding: 0, fontSize: 14, lineHeight: 1,
+                }}>×</button>
+              )}
             </div>
           </div>
 
           {/* ── Ticket cards ─────────────────────────────────────── */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '0 14px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {filtered.map(rt => (
+            {displayed.map(rt => (
               <div
                 key={rt.issue}
                 className="jt-ticket"
@@ -581,7 +579,7 @@ function RightSidebar({ worklogs, onOpenLog }: RightSidebarProps) {
                 </div>
               </div>
             ))}
-            {filtered.length === 0 && (
+            {displayed.length === 0 && (
               <div style={{
                 fontSize: 11, color: 'var(--tx3)', textAlign: 'center',
                 padding: '24px 0', opacity: 0.7,
