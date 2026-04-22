@@ -221,50 +221,38 @@ function WorkSuiteApp() {
 
           {/* ── Top bar ─────────────────────────────────────────── */}
           <header className="topbar">
-            <AppSwitcher
-              currentMod={mod}
-              userModules={CURRENT_USER.modules || ["jt", "hd", "retro", "deploy"]}
-              onNavigate={navigate}
-            />
-            <div className="logo">
-              <div className="logo-dot" />
-              <span style={{ color: "var(--ac2)", fontWeight: 700 }}>Work</span>
-              <span style={{ color: "var(--tx2)", fontWeight: 300 }}>Suite</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <AppSwitcher
+                currentMod={mod}
+                userModules={CURRENT_USER.modules || ["jt", "hd", "retro", "deploy"]}
+                onNavigate={navigate}
+              />
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ac2)' }}>WorkSuite</span>
+              <span style={{
+                fontSize: 9, fontWeight: 700, color: 'var(--ac)',
+                letterSpacing: '0.05em', padding: '2px 6px',
+                borderRadius: 4, background: 'var(--ac-dim)',
+              }}>PREVIEW</span>
             </div>
-            <div className="top-right">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 title={theme === "dark" ? t("theme.switchToLight") : t("theme.switchToDark")}
-                style={{
-                  background: 'transparent', border: '1px solid var(--bd)',
-                  borderRadius: 'var(--r)', cursor: 'pointer', fontSize: 14,
-                  color: 'var(--tx2)', padding: '4px 10px', height: 28,
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                }}
+                className="tb-icon-btn"
               >
-                {theme === "dark" ? "🌙" : "☀️"}
+                <span className="material-symbols-outlined" style={{
+                  fontSize: 16, color: 'var(--tx2)',
+                  fontVariationSettings: "'wght' 300",
+                }}>{theme === "dark" ? "dark_mode" : "light_mode"}</span>
               </button>
-              <div className="sw-group">
-                <button className={`sw-btn ${locale === "en" ? "active" : ""}`} onClick={() => setLocale("en")}>EN</button>
-                <button className={`sw-btn ${locale === "es" ? "active" : ""}`} onClick={() => setLocale("es")}>ES</button>
-              </div>
+              <button
+                className="tb-icon-btn"
+                onClick={() => setLocale(locale === "en" ? "es" : "en")}
+                style={{ padding: '4px 8px' }}
+              >
+                <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx2)' }}>{locale.toUpperCase()}</span>
+              </button>
               <NotificationsBell userId={CURRENT_USER.id} repo={notificationRepo} />
-              <div className="o-dot" />
-              <button onClick={() => navigate('/admin')}
-                style={{
-                  background: view === "admin" ? "var(--ac)" : "rgba(79,110,247,.15)",
-                  border: `1px solid ${view === "admin" ? "var(--ac)" : "rgba(79,110,247,.4)"}`,
-                  borderRadius: "var(--r)", color: view === "admin" ? "#fff" : "var(--ac2)",
-                  fontSize: 11, fontWeight: 700, padding: "5px 12px", cursor: "pointer",
-                  transition: "var(--ease)", display: "flex", alignItems: "center", gap: 6,
-                  boxShadow: view === "admin" ? "0 0 10px rgba(79,110,247,.3)" : "none",
-                }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-                {isAdmin ? t('nav.admin') : t('nav.config')}
-              </button>
               <UserMenu user={CURRENT_USER} onLogout={logout} />
             </div>
           </header>
