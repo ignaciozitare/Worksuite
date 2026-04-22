@@ -11,7 +11,8 @@ import { useHotDesk } from './shared/hooks/useHotDesk';
 import './WorkSuiteApp.css';
 
 // Module UI — eagerly loaded (always visible)
-import { LogWorklogModal, JTFilterSidebar, CalendarView, DayView, TasksView, RecentTasksSidebar } from './modules/jira-tracker/ui';
+import { LogWorklogModal } from './modules/jira-tracker/ui';
+import { JiraTrackerPage } from './modules/jira-tracker/ui/JiraTrackerPage';
 import { ExportConfigModal, exportWithColumns } from './modules/jira-tracker/ui/ExportConfigModal';
 import { BlueprintHDMap, HDTableView, HDReserveModal, HDMapView } from './modules/hotdesk/ui';
 import { BuildingFloorSelectors } from './shared/admin';
@@ -268,13 +269,13 @@ function WorkSuiteApp() {
             </div>
           </header>
 
-          {/* ── Sub-nav ─────────────────────────────────────────── */}
-          {mod !== "retro" && mod !== "deploy" && mod !== "envtracker" && mod !== "chrono" && mod !== "chrono-admin" && mod !== "vector-logic" && mod !== "profile" && mod !== "hd" && mod !== "admin" && (
+          {/* ── Sub-nav (JT uses sidebar nav instead) ─────────── */}
+          {mod !== "jt" && mod !== "retro" && mod !== "deploy" && mod !== "envtracker" && mod !== "chrono" && mod !== "chrono-admin" && mod !== "vector-logic" && mod !== "profile" && mod !== "hd" && mod !== "admin" && (
             <nav className="nav-bar">
               {currentNavItems.map(item => (
                 <button key={item.id}
                   className={`n-btn ${view === item.id ? (mod === "hd" ? "active-hd" : "active") : ""}`}
-                  onClick={() => navigate(mod === 'jt' ? `/jira-tracker/${item.id}` : `/hotdesk/${item.id}`)}>
+                  onClick={() => navigate(`/hotdesk/${item.id}`)}>
                   {item.label}
                 </button>
               ))}
@@ -290,11 +291,27 @@ function WorkSuiteApp() {
           {/* ── Body ────────────────────────────────────────────── */}
           <div className="body">
             {mod === "jt" && view !== "admin" && (
-              <JTFilterSidebar filters={filters} onApply={f => { setFilters(f); setSbOpen(false); }} onExport={handleExport} mobileOpen={sbOpen} onMobileClose={() => setSbOpen(false)} users={users} onProjectChange={handleLoadJiraIssues} jiraProjects={jiraProjects} jiraUsers={jiraUsers} jiraUserFilter={jiraUserFilter} onJiraUserFilter={setJiraUserFilter} />
+              <JiraTrackerPage
+                view={view}
+                filters={filters}
+                worklogs={worklogs}
+                users={users}
+                jiraIssues={jiraIssues}
+                jiraProjects={jiraProjects}
+                jiraUsers={jiraUsers}
+                jiraUserFilter={jiraUserFilter}
+                activeDay={activeDay}
+                onApplyFilters={f => { setFilters(f); setSbOpen(false); }}
+                onExport={handleExport}
+                onDayClick={handleDayClick}
+                onOpenLog={handleOpenLog}
+                onDeleteWorklog={handleDeleteWorklog}
+                onDateChange={setActiveDay}
+                onProjectChange={handleLoadJiraIssues}
+                onJiraUserFilter={setJiraUserFilter}
+                onNavigate={v => navigate(`/jira-tracker/${v}`)}
+              />
             )}
-            {mod === "jt" && view === "calendar" && <main className="content" style={{display:'flex'}}><div style={{flex:1,minWidth:0,overflow:'auto'}}><CalendarView filters={filters} worklogs={worklogs} onDayClick={handleDayClick} onOpenLog={handleOpenLog} /></div><RecentTasksSidebar worklogs={worklogs} onOpenLog={handleOpenLog} /></main>}
-            {mod === "jt" && view === "day" && <main className="content" style={{display:'flex'}}><div style={{flex:1,minWidth:0,overflow:'auto'}}><DayView date={activeDay} filters={filters} worklogs={worklogs} onDateChange={setActiveDay} onOpenLog={handleOpenLog} onDeleteWorklog={handleDeleteWorklog} /></div><RecentTasksSidebar worklogs={worklogs} onOpenLog={handleOpenLog} /></main>}
-            {mod === "jt" && view === "tasks" && <main className="content" style={{display:'flex'}}><div style={{flex:1,minWidth:0,overflow:'auto'}}><TasksView filters={filters} onOpenLog={handleOpenLog} worklogs={worklogs} jiraIssues={jiraIssues} jiraProjects={jiraProjects} /></div><RecentTasksSidebar worklogs={worklogs} onOpenLog={handleOpenLog} /></main>}
             {mod === "hd" && (view === "map" || view === "table") && (
               <main className="content" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <HDMapView

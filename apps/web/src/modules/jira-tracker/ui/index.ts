@@ -4,3 +4,4 @@ export { CalendarView } from './CalendarView';
 export { DayView } from './DayView';
 export { TasksView } from './TasksView';
 export { RecentTasksSidebar } from './RecentTasksSidebar';
+export { JiraTrackerPage } from './JiraTrackerPage';
