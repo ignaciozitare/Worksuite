@@ -279,8 +279,8 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
                       ? '1px solid var(--ac)'
                       : `1px solid ${isDragTarget ? 'var(--ac)' : 'var(--bd)'}`,
                     borderTopWidth: isToday ? 2 : 1,
-                    padding: 6,
-                    display: 'flex', flexDirection: 'column', gap: 2,
+                    padding: 10,
+                    display: 'flex', flexDirection: 'column', gap: 4,
                     cursor: 'pointer', overflow: 'hidden',
                     opacity: c.isCurrentMonth ? 1 : 0.35,
                     boxShadow: isDragTarget ? '0 0 12px rgba(79,110,247,.15)' : 'none',
@@ -289,13 +289,13 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
                   {/* Top: day number + add button */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{
-                      fontSize: 11, fontWeight: isToday ? 700 : 500,
+                      fontSize: 16, fontWeight: isToday ? 700 : 500,
                       color: isToday ? 'var(--ac)' : 'var(--tx)',
                     }}>{c.day}</span>
                     <div
                       onClick={e => { e.stopPropagation(); onOpenLog({ date: c.date }); }}
                       style={{
-                        width: 18, height: 18, borderRadius: 4, fontSize: 13,
+                        width: 22, height: 22, borderRadius: 4, fontSize: 16,
                         color: 'var(--tx3)', display: 'flex', alignItems: 'center',
                         justifyContent: 'center', cursor: 'pointer', opacity: 0.5,
                       }}
@@ -306,8 +306,8 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
 
                   {/* Hours */}
                   {hrs > 0 && (
-                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)', lineHeight: 1 }}>
-                      {hrs.toFixed(1)}<span style={{ fontSize: 9, fontWeight: 500 }}>h</span>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--green)', lineHeight: 1 }}>
+                      {hrs.toFixed(1)}<span style={{ fontSize: 12, fontWeight: 500 }}>h</span>
                     </div>
                   )}
 
@@ -316,13 +316,13 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 1, marginTop: 'auto' }}>
                       {top.map(k => (
                         <div key={k} style={{
-                          fontSize: 8, color: 'var(--ac2)', fontWeight: 600,
+                          fontSize: 11, color: 'var(--ac2)', fontWeight: 600,
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           fontFamily: 'var(--mono)',
                         }}>{k}</div>
                       ))}
                       {[...new Set(dw.map((w: any) => w.issue))].length > 2 && (
-                        <span style={{ fontSize: 8, color: 'var(--tx3)' }}>
+                        <span style={{ fontSize: 10, color: 'var(--tx3)' }}>
                           +{[...new Set(dw.map((w: any) => w.issue))].length - 2} {t('jiraTracker.more')}
                         </span>
                       )}
