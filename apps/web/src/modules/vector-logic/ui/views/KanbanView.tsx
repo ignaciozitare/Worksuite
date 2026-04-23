@@ -12,6 +12,7 @@ import { taskRepo, taskTypeRepo, stateRepo, priorityRepo } from '../../container
 import { RichTextEditor } from '../components/RichTextEditor';
 import { UserPicker } from '../components/UserPicker';
 import { WorldClock } from '../components/WorldClock';
+import { TaskTypeSwitcher } from '../components/TaskTypeSwitcher';
 
 const CAT_COLORS: Record<StateCategory, { color: string; bg: string }> = {
   BACKLOG:     { color: 'var(--tx3)',   bg: 'rgba(140,144,159,.08)' },
@@ -583,6 +584,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
         <TaskDetailModal
           task={detailTask}
           taskType={selectedType}
+          taskTypes={taskTypes}
           wfStates={wfStates}
           wsUsers={wsUsers}
           priorities={priorities}
@@ -782,8 +784,8 @@ function NewTaskModal({ taskTypes, defaultTypeId, onClose, onCreate }: {
 }
 
 /* ── Task Detail Modal ─────────────────────────────────────────────────── */
-function TaskDetailModal({ task, taskType, wfStates, wsUsers, priorities, currentUser, onClose, onUpdate, onDelete }: {
-  task: Task; taskType: TaskType; wfStates: WorkflowState[];
+function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorities, currentUser, onClose, onUpdate, onDelete }: {
+  task: Task; taskType: TaskType; taskTypes: TaskType[]; wfStates: WorkflowState[];
   wsUsers: WSUser[];
   priorities: Priority[];
   currentUser: { id: string; [k: string]: unknown };
@@ -791,84 +793,247 @@ function TaskDetailModal({ task, taskType, wfStates, wsUsers, priorities, curren
 }) {
   const { t } = useTranslation();
   const dialog = useDialog();
-  const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [data, setData] = useState(task.data);
   const [stateId, setStateId] = useState(task.stateId);
   const [priority, setPriority] = useState(task.priority);
+  const [dueDate, setDueDate] = useState<string | null>(task.dueDate);
+  const [assigneeId, setAssigneeId] = useState<string | null>(task.assigneeId);
+  const [currentType, setCurrentType] = useState<TaskType>(taskType);
 
-  const schema = (taskType.schema as SchemaField[]) || [];
+  // Auto-save indicator: flashes after each persisted change, then fades.
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const autoSave = async (patch: Partial<Task>) => {
+    await onUpdate(patch);
+    setSavedAt(Date.now());
+  };
+
+  const schema = (currentType.schema as SchemaField[]) || [];
   const detailFields = schema.filter(f => f.showOnDetail);
 
-  const save = async () => {
-    await onUpdate({ title, data, stateId, priority });
-    setEditing(false);
+  const handleTypeSwitch = (newTypeId: string, mapping: Record<string, string | null>) => {
+    const next = taskTypes.find(x => x.id === newTypeId);
+    if (!next) return;
+    // Reshape data according to mapping: orphaned fields either get mapped
+    // onto a new field id, or are dropped entirely (null mapping).
+    const nextData = { ...data };
+    for (const [fromId, toId] of Object.entries(mapping)) {
+      const v = nextData[fromId];
+      delete nextData[fromId];
+      if (toId) nextData[toId] = v;
+    }
+    setCurrentType(next);
+    setData(nextData);
+    autoSave({ taskTypeId: next.id, data: nextData });
   };
 
   return (
-    <Modal title={task.title} onClose={onClose} width={560}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {/* Status row */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <select value={stateId ?? ''} onChange={e => { setStateId(e.target.value); onUpdate({ stateId: e.target.value }); }}
-            style={{ ...inpStyle({ width: 'auto' }), fontSize: 12 }}>
-            {wfStates.map(ws => (
-              <option key={ws.stateId} value={ws.stateId}>{ws.state?.name}</option>
-            ))}
-          </select>
-          <select value={priority ?? ''} onChange={e => { setPriority(e.target.value); onUpdate({ priority: e.target.value }); }}
-            style={{ ...inpStyle({ width: 'auto' }), fontSize: 12 }}>
-            <option value="">—</option>
-            {priorities.map(p => (
-              <option key={p.id} value={p.name}>{p.name}</option>
-            ))}
-          </select>
+    <Modal
+      title={task.code ? `${task.code} · ${currentType.name}` : currentType.name}
+      onClose={onClose}
+      width={1120}
+      titleAccessory={<SavedIndicator savedAt={savedAt} />}
+    >
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 20 }}>
+        {/* ── Main column ─────────────────────────────── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Inline title (big) */}
+          {detailFields.some(f => f.fieldType === 'title') ? null : (
+            <input
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              onBlur={() => autoSave({ title })}
+              placeholder={t('vectorLogic.taskTitle')}
+              style={{
+                width: '100%', padding: '4px 0', fontSize: 22,
+                fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
+                background: 'transparent', border: 'none', borderBottom: '1px solid transparent',
+                color: 'var(--tx)', outline: 'none', transition: 'border-color .15s',
+              }}
+              onFocus={e => e.currentTarget.style.borderBottomColor = 'var(--ac)'}
+            />
+          )}
+
+          {/* Dynamic schema fields */}
+          {detailFields.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {detailFields.map(field => (
+                <DynamicFieldRenderer
+                  key={field.id}
+                  field={field}
+                  value={field.fieldType === 'title' ? title : data[field.id]}
+                  wsUsers={wsUsers}
+                  onChange={(v) => {
+                    if (field.fieldType === 'title') {
+                      setTitle(v as string);
+                      autoSave({ title: v as string });
+                    } else {
+                      const newData = { ...data, [field.id]: v };
+                      setData(newData);
+                      autoSave({ data: newData });
+                    }
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {detailFields.length === 0 && (
+            <div style={{ color: 'var(--tx3)', fontSize: 11, padding: '20px 0', textAlign: 'center' }}>
+              {t('vectorLogic.noDetailFields')}
+            </div>
+          )}
         </div>
 
-        {/* Dynamic schema fields (title is rendered as a special big input
-            via the title field type if present; otherwise we still show the
-            built-in editable title input below as a safety net). */}
-        {detailFields.some(f => f.fieldType === 'title') ? null : (
+        {/* ── Sidebar ──────────────────────────────────── */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: 16,
+          padding: 16, background: 'var(--sf2)', borderRadius: 12,
+        }}>
+          {/* Type */}
+          <div style={{ position: 'relative' }}>
+            <div style={sideLbl}>{t('vectorLogic.taskType')}</div>
+            <TaskTypeSwitcher
+              current={currentType}
+              types={taskTypes}
+              data={data}
+              onSwitch={handleTypeSwitch}
+            />
+          </div>
+
+          {/* State */}
           <div>
-            <label style={lblStyle}>{t('vectorLogic.taskTitle')}</label>
-            <input value={title} onChange={e => setTitle(e.target.value)} onBlur={() => onUpdate({ title })}
-              style={inpStyle()} />
+            <div style={sideLbl}>{t('vectorLogic.state')}</div>
+            <select
+              value={stateId ?? ''}
+              onChange={e => { setStateId(e.target.value); autoSave({ stateId: e.target.value }); }}
+              style={sideInp}
+            >
+              {wfStates.map(ws => (
+                <option key={ws.stateId} value={ws.stateId}>{ws.state?.name}</option>
+              ))}
+            </select>
           </div>
-        )}
-        {detailFields.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 8, borderTop: '1px solid var(--bd)' }}>
-            {detailFields.map(field => (
-              <DynamicFieldRenderer
-                key={field.id}
-                field={field}
-                value={field.fieldType === 'title' ? title : data[field.id]}
-                wsUsers={wsUsers}
-                onChange={(v) => {
-                  if (field.fieldType === 'title') {
-                    setTitle(v as string);
-                    onUpdate({ title: v as string });
-                  } else {
-                    const newData = { ...data, [field.id]: v };
-                    setData(newData);
-                    onUpdate({ data: newData });
-                  }
-                }}
-              />
-            ))}
-          </div>
-        )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 12, borderTop: '1px solid var(--bd)' }}>
-          <button style={btnStyle('danger')} onClick={async () => { if (await dialog.confirm(t('vectorLogic.deleteTaskConfirm'), { danger: true })) onDelete(); }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
-            {t('common.delete')}
-          </button>
-          <button style={btnStyle('ghost')} onClick={onClose}>{t('common.close')}</button>
+          {/* Priority */}
+          <div>
+            <div style={sideLbl}>{t('vectorLogic.priority')}</div>
+            <select
+              value={priority ?? ''}
+              onChange={e => { setPriority(e.target.value); autoSave({ priority: e.target.value }); }}
+              style={sideInp}
+            >
+              <option value="">—</option>
+              {priorities.map(p => (
+                <option key={p.id} value={p.name}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Assignee */}
+          <div>
+            <div style={sideLbl}>{t('vectorLogic.assignee')}</div>
+            <UserPicker
+              users={wsUsers}
+              value={assigneeId}
+              onChange={(v) => { setAssigneeId(v as string | null); autoSave({ assigneeId: (v as string | null) }); }}
+            />
+          </div>
+
+          {/* Due date */}
+          <div>
+            <div style={sideLbl}>{t('vectorLogic.dueDate')}</div>
+            <input
+              type="date"
+              value={dueDate ?? ''}
+              onChange={e => { setDueDate(e.target.value || null); autoSave({ dueDate: e.target.value || null }); }}
+              style={sideInp}
+            />
+          </div>
+
+          {/* Metadata (read-only) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 10, borderTop: '1px solid var(--bd)' }}>
+            {task.code && (
+              <MetaRow
+                icon="tag"
+                label={t('vectorLogic.code')}
+                value={task.code}
+              />
+            )}
+            <MetaRow
+              icon="schedule"
+              label={t('vectorLogic.created')}
+              value={new Date(task.createdAt).toLocaleDateString()}
+            />
+            <MetaRow
+              icon="timer"
+              label={t('vectorLogic.daysInColumn')}
+              value={`${daysBetween(task.stateEnteredAt, new Date())}d`}
+            />
+          </div>
         </div>
+      </div>
+
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', gap: 8,
+        paddingTop: 16, marginTop: 16, borderTop: '1px solid var(--bd)',
+      }}>
+        <button
+          style={btnStyle('danger')}
+          onClick={async () => {
+            if (await dialog.confirm(t('vectorLogic.deleteTaskConfirm'), { danger: true })) onDelete();
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+          {t('common.delete')}
+        </button>
+        <button style={btnStyle('ghost')} onClick={onClose}>{t('common.close')}</button>
       </div>
     </Modal>
   );
 }
+
+/** Small "Auto-saved" pill that flashes after every persisted edit. */
+function SavedIndicator({ savedAt }: { savedAt: number | null }) {
+  const { t } = useTranslation();
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (savedAt == null) return;
+    setVisible(true);
+    const h = setTimeout(() => setVisible(false), 1800);
+    return () => clearTimeout(h);
+  }, [savedAt]);
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      fontSize: 10, fontWeight: 600, color: 'var(--green)',
+      opacity: visible ? 1 : 0, transition: 'opacity .25s',
+    }}>
+      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>cloud_done</span>
+      {t('vectorLogic.autoSaved')}
+    </span>
+  );
+}
+
+function MetaRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10 }}>
+      <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>{icon}</span>
+      <span style={{ color: 'var(--tx3)', flex: 1, letterSpacing: '.04em', textTransform: 'uppercase', fontWeight: 600 }}>{label}</span>
+      <span style={{ color: 'var(--tx)', fontWeight: 600, fontFamily: "'Space Grotesk',sans-serif" }}>{value}</span>
+    </div>
+  );
+}
+
+const sideLbl = {
+  fontSize: 9, fontWeight: 700, color: 'var(--tx3)',
+  letterSpacing: '.1em', textTransform: 'uppercase' as const, marginBottom: 6,
+};
+const sideInp = {
+  width: '100%', padding: '7px 10px', fontSize: 12, fontFamily: 'inherit',
+  background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 6,
+  color: 'var(--tx)', outline: 'none',
+};
 
 /* ── Dynamic Field Renderer ─────────────────────────────────────────────── */
 function DynamicFieldRenderer({ field, value, onChange, wsUsers }: { field: SchemaField; value: unknown; onChange: (v: unknown) => void; wsUsers: WSUser[] }) {
@@ -1013,7 +1178,10 @@ const lblStyle = {
 };
 
 /* ── Modal ──────────────────────────────────────────────────────────────── */
-function Modal({ title, onClose, children, width = 480 }: { title: string; onClose: () => void; children: React.ReactNode; width?: number }) {
+function Modal({ title, onClose, children, width = 480, titleAccessory }: {
+  title: string; onClose: () => void; children: React.ReactNode; width?: number;
+  titleAccessory?: React.ReactNode;
+}) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center',
@@ -1028,7 +1196,10 @@ function Modal({ title, onClose, children, width = 480 }: { title: string; onClo
           padding: '16px 20px', borderBottom: '1px solid var(--bd)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
         }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', margin: 0 }}>{title}</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</h3>
+            {titleAccessory}
+          </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)' }}>
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
           </button>
