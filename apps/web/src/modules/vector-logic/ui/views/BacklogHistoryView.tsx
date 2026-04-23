@@ -26,26 +26,41 @@ export function BacklogHistoryView({ currentUser }: Props) {
   const [mode, setMode] = useState<Mode>('backlog');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [types, setTypes] = useState<TaskType[]>([]);
-  /** taskTypeId → { openStateId, hasOpen }. Resolved once per page load. */
+  /** taskTypeId → OPEN state id of its workflow (for row action). */
   const [openStateByType, setOpenStateByType] = useState<Record<string, string | null>>({});
+  /** taskTypeId → BACKLOG state id of its workflow (for create action). */
+  const [backlogStateByType, setBacklogStateByType] = useState<Record<string, string | null>>({});
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [actingTaskId, setActingTaskId] = useState<string | null>(null);
 
-  // Initial load of types + their workflows' OPEN state (used to wire row actions).
+  // Quick-add state
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [qaTypeId, setQaTypeId] = useState<string>('');
+  const [qaTitle, setQaTitle] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  // Initial load of types + OPEN/BACKLOG state per workflow (used to wire actions).
   useEffect(() => {
     (async () => {
       const allTypes = await taskTypeRepo.findAll();
       setTypes(allTypes);
       const entries = await Promise.all(
         allTypes.map(async (tt) => {
-          if (!tt.workflowId) return [tt.id, null] as const;
+          if (!tt.workflowId) {
+            return [tt.id, { open: null, backlog: null }] as const;
+          }
           const wfStates = await stateRepo.findByWorkflow(tt.workflowId);
           const openWs = wfStates.find((ws) => ws.state?.category === 'OPEN');
-          return [tt.id, openWs?.stateId ?? null] as const;
+          const backlogWs = wfStates.find((ws) => ws.state?.category === 'BACKLOG');
+          return [
+            tt.id,
+            { open: openWs?.stateId ?? null, backlog: backlogWs?.stateId ?? null },
+          ] as const;
         }),
       );
-      setOpenStateByType(Object.fromEntries(entries));
+      setOpenStateByType(Object.fromEntries(entries.map(([id, s]) => [id, s.open])));
+      setBacklogStateByType(Object.fromEntries(entries.map(([id, s]) => [id, s.backlog])));
     })();
   }, []);
 
@@ -75,6 +90,42 @@ export function BacklogHistoryView({ currentUser }: Props) {
     }),
     [tasks, search],
   );
+
+  /** Types that can receive a new backlog task (their workflow has a BACKLOG state). */
+  const creatableTypes = useMemo(
+    () => types.filter((tt) => backlogStateByType[tt.id]),
+    [types, backlogStateByType],
+  );
+
+  const openQuickAdd = () => {
+    setQaTypeId(creatableTypes[0]?.id ?? '');
+    setQaTitle('');
+    setShowQuickAdd(true);
+  };
+
+  const handleCreate = async () => {
+    const title = qaTitle.trim();
+    if (!title || !qaTypeId) return;
+    const stateId = backlogStateByType[qaTypeId];
+    if (!stateId) return;
+    setCreating(true);
+    try {
+      const created = await taskRepo.create({
+        taskTypeId: qaTypeId,
+        stateId,
+        title,
+        data: {},
+        assigneeId: currentUser.id,
+        priority: null,
+        createdBy: currentUser.id,
+      });
+      setTasks((prev) => [created, ...prev]);
+      setShowQuickAdd(false);
+      setQaTitle('');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const handleAction = async (task: Task) => {
     const openStateId = openStateByType[task.taskTypeId];
@@ -131,7 +182,91 @@ export function BacklogHistoryView({ currentUser }: Props) {
             }}
           />
         </div>
+
+        {mode === 'backlog' && (
+          <button
+            onClick={openQuickAdd}
+            disabled={creatableTypes.length === 0}
+            title={creatableTypes.length === 0 ? t('vectorLogic.noBacklogStateForAnyType') : undefined}
+            style={{
+              padding: '8px 14px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+              cursor: creatableTypes.length === 0 ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit', border: 'none',
+              background: creatableTypes.length === 0 ? 'var(--sf3)' : 'var(--ac)',
+              color: creatableTypes.length === 0 ? 'var(--tx3)' : 'var(--ac-on)',
+              letterSpacing: '.02em',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              boxShadow: creatableTypes.length === 0 ? 'none' : '0 0 20px var(--ac-dim)',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+            {t('vectorLogic.newTask')}
+          </button>
+        )}
       </div>
+
+      {/* Quick-add panel (backlog only) */}
+      {mode === 'backlog' && showQuickAdd && (
+        <div style={{
+          display: 'flex', gap: 10, padding: 14,
+          background: 'var(--sf2)', borderRadius: 12, border: '1px solid var(--bd)',
+          alignItems: 'center',
+        }}>
+          <select
+            value={qaTypeId}
+            onChange={(e) => setQaTypeId(e.target.value)}
+            style={{
+              padding: '8px 10px', borderRadius: 8, fontSize: 12,
+              background: 'var(--sf)', border: '1px solid var(--bd)', color: 'var(--tx)',
+              fontFamily: 'inherit', minWidth: 160, cursor: 'pointer',
+            }}
+          >
+            {creatableTypes.map((tt) => (
+              <option key={tt.id} value={tt.id}>{tt.name}</option>
+            ))}
+          </select>
+          <input
+            autoFocus
+            value={qaTitle}
+            onChange={(e) => setQaTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleCreate();
+              else if (e.key === 'Escape') setShowQuickAdd(false);
+            }}
+            placeholder={t('vectorLogic.taskTitle')}
+            style={{
+              flex: 1, padding: '8px 12px', borderRadius: 8, fontSize: 12,
+              background: 'var(--sf)', border: '1px solid var(--bd)', color: 'var(--tx)',
+              outline: 'none', fontFamily: 'inherit',
+            }}
+          />
+          <button
+            onClick={handleCreate}
+            disabled={!qaTitle.trim() || creating}
+            style={{
+              padding: '8px 14px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+              cursor: !qaTitle.trim() || creating ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit', border: 'none',
+              background: !qaTitle.trim() || creating ? 'var(--sf3)' : 'var(--ac)',
+              color: !qaTitle.trim() || creating ? 'var(--tx3)' : 'var(--ac-on)',
+              letterSpacing: '.02em',
+            }}
+          >
+            {creating ? t('common.loading') : t('common.create')}
+          </button>
+          <button
+            onClick={() => setShowQuickAdd(false)}
+            disabled={creating}
+            style={{
+              padding: '8px 10px', borderRadius: 8, fontSize: 11,
+              cursor: creating ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+              border: '1px solid var(--bd)', background: 'transparent', color: 'var(--tx2)',
+            }}
+          >
+            {t('common.cancel')}
+          </button>
+        </div>
+      )}
 
       {/* Cards */}
       {loading ? (

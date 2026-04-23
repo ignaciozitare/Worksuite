@@ -1086,6 +1086,7 @@
     "created":            "Creada",
     "archived":           "Archivada",
     "noOpenStateForType": "Este tipo de tarea no tiene un workflow con estado OPEN",
+    "noBacklogStateForAnyType": "Ningún tipo de tarea tiene un workflow con estado BACKLOG",
     "worldClock":         "Reloj mundial",
     "worldClockCities":   "CIUDADES",
     "noWorldCities":      "Aún no agregaste ciudades",

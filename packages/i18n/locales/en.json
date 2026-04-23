@@ -1086,6 +1086,7 @@
     "created":            "Created",
     "archived":           "Archived",
     "noOpenStateForType": "This task type has no workflow with an OPEN state",
+    "noBacklogStateForAnyType": "No task type has a workflow with a BACKLOG state",
     "worldClock":         "World clock",
     "worldClockCities":   "CITIES",
     "noWorldCities":      "No cities added yet",
