@@ -11,6 +11,7 @@ import { FIELD_TYPES } from '../../domain/entities/FieldType';
 import { taskRepo, taskTypeRepo, stateRepo, priorityRepo } from '../../container';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { UserPicker } from '../components/UserPicker';
+import { WorldClock } from '../components/WorldClock';
 
 const CAT_COLORS: Record<StateCategory, { color: string; bg: string }> = {
   BACKLOG:     { color: 'var(--tx3)',   bg: 'rgba(140,144,159,.08)' },
@@ -51,6 +52,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   const [filterAssignee, setFilterAssignee] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'manual' | 'priority' | 'assignee'>('manual');
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -96,9 +98,11 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
 
   // Apply filters and sort, then group by stateId
   const tasksByState = useMemo(() => {
+    const q = search.trim().toLowerCase();
     const filtered = tasks.filter(t => {
       if (filterAssignee !== 'all' && t.assigneeId !== (filterAssignee === 'unassigned' ? null : filterAssignee)) return false;
       if (filterPriority !== 'all' && (t.priority ?? '').toLowerCase() !== filterPriority.toLowerCase()) return false;
+      if (q && !t.title.toLowerCase().includes(q) && !(t.code ?? '').toLowerCase().includes(q)) return false;
       return true;
     });
 
@@ -127,7 +131,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
     });
 
     return map;
-  }, [tasks, wfStates, filterAssignee, filterPriority, sortBy, priorityRankByName]);
+  }, [tasks, wfStates, filterAssignee, filterPriority, sortBy, priorityRankByName, search]);
 
   // Distinct assignees present in loaded tasks
   const assigneesInTasks = useMemo(() => {
@@ -313,7 +317,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                 title={tt.name}
                 style={{
                   background: selectedType?.id === tt.id ? 'var(--ac)' : 'transparent',
-                  color: selectedType?.id === tt.id ? '#fff' : 'var(--tx3)',
+                  color: selectedType?.id === tt.id ? 'var(--ac-on)' : 'var(--tx3)',
                   border: 'none', borderRadius: 6, cursor: 'pointer',
                   fontWeight: selectedType?.id === tt.id ? 600 : 400,
                   fontSize: 11, padding: '5px 12px', fontFamily: 'inherit',
@@ -354,7 +358,32 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
           </select>
         </div>
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6, background: 'var(--sf2)',
+            border: '1px solid var(--bd)', borderRadius: 8, padding: '6px 10px', width: 200,
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>search</span>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('vectorLogic.searchKanban')}
+              style={{
+                flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                color: 'var(--tx)', fontSize: 11, fontFamily: 'inherit',
+              }}
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                title={t('common.clear')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', padding: 0, display: 'flex' }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+              </button>
+            )}
+          </div>
+          <WorldClock currentUser={currentUser} />
           <span style={{ fontSize: 11, color: 'var(--tx3)', alignSelf: 'center' }}>
             {tasks.length} {t('vectorLogic.tasks')}
           </span>
@@ -470,6 +499,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                             />
                           )}
                           <TaskCard task={task}
+                            taskType={selectedType}
                             priorityColor={priorityColorByName[(task.priority ?? '').toLowerCase()] ?? 'var(--tx3)'}
                             assignee={wsUsers.find(u => u.id === task.assigneeId) ?? null}
                             onClick={() => setDetailTask(task)}
@@ -567,8 +597,20 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
 }
 
 /* ── Task Card ─────────────────────────────────────────────────────────── */
-function TaskCard({ task, priorityColor, assignee, onClick, onDragStart, onDragEnd, isDragging }: {
+/**
+ * Returns the number of whole days between `iso` and `now`.
+ * Both are compared at midnight (local) to avoid partial-day drift.
+ */
+function daysBetween(iso: string, now: Date): number {
+  const a = new Date(iso);
+  const aMid = new Date(a.getFullYear(), a.getMonth(), a.getDate()).getTime();
+  const nMid = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  return Math.round((nMid - aMid) / 86_400_000);
+}
+
+function TaskCard({ task, taskType, priorityColor, assignee, onClick, onDragStart, onDragEnd, isDragging }: {
   task: Task;
+  taskType: TaskType | null;
   priorityColor: string;
   assignee: WSUser | null;
   onClick: () => void;
@@ -577,6 +619,21 @@ function TaskCard({ task, priorityColor, assignee, onClick, onDragStart, onDragE
   isDragging?: boolean;
 }) {
   const initials = assignee ? (assignee.name || assignee.email).trim().split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase() : '';
+  const now = new Date();
+  const daysInColumn = daysBetween(task.stateEnteredAt, now);
+
+  // Due-date color: today=amber, overdue=red, future/none=muted
+  let dueColor = 'var(--tx3)';
+  let dueBg = 'transparent';
+  let dueLabel: string | null = null;
+  if (task.dueDate) {
+    const daysUntil = daysBetween(task.dueDate, now) * -1; // positive = days ahead, negative = overdue
+    if (daysUntil < 0)      { dueColor = 'var(--red)';   dueBg = 'rgba(224,82,82,.12)'; }
+    else if (daysUntil === 0) { dueColor = 'var(--amber)'; dueBg = 'rgba(245,158,11,.12)'; }
+    const d = new Date(task.dueDate);
+    dueLabel = `${d.getMonth() + 1}/${d.getDate()}`;
+  }
+
   return (
     <div
       draggable
@@ -592,17 +649,35 @@ function TaskCard({ task, priorityColor, assignee, onClick, onDragStart, onDragE
         boxShadow: '0 1px 2px rgba(0,0,0,.2)',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.background = 'rgba(79,110,247,.08)';
+        e.currentTarget.style.background = 'var(--ac-dim)';
         e.currentTarget.style.transform = 'translateY(-1px)';
-        e.currentTarget.style.boxShadow = '0 4px 14px rgba(79,110,247,.18)';
+        e.currentTarget.style.boxShadow = '0 4px 14px var(--ac-dim)';
       }}
       onMouseLeave={e => {
         e.currentTarget.style.background = 'var(--sf3)';
         e.currentTarget.style.transform = 'translateY(0)';
         e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,.2)';
       }}>
+      {/* Top row: type icon + code */}
+      {(taskType || task.code) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+          {taskType?.icon && (
+            <span className="material-symbols-outlined" style={{ fontSize: 13, color: 'var(--tx3)' }}>
+              {taskType.icon}
+            </span>
+          )}
+          {task.code && (
+            <span style={{
+              fontSize: 9, fontWeight: 700, color: 'var(--ac)',
+              fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '.04em',
+            }}>
+              {task.code}
+            </span>
+          )}
+        </div>
+      )}
       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.35 }}>{task.title}</div>
-      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
         {task.priority && (
           <span style={{
             fontSize: 9, padding: '2px 6px', borderRadius: 3,
@@ -610,15 +685,35 @@ function TaskCard({ task, priorityColor, assignee, onClick, onDragStart, onDragE
             fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase',
           }}>{task.priority}</span>
         )}
+        {daysInColumn > 0 && (
+          <span style={{
+            fontSize: 9, padding: '2px 6px', borderRadius: 3,
+            background: 'var(--sf2)', color: 'var(--tx3)',
+            fontWeight: 700, letterSpacing: '.04em',
+          }}>
+            {daysInColumn}d
+          </span>
+        )}
+        {dueLabel && (
+          <span style={{
+            fontSize: 9, padding: '2px 6px', borderRadius: 3,
+            background: dueBg, color: dueColor,
+            fontWeight: 700, letterSpacing: '.04em',
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 11 }}>event</span>
+            {dueLabel}
+          </span>
+        )}
         <div style={{ flex: 1 }} />
         {assignee && (
           <div title={assignee.name || assignee.email}
             style={{
               width: 22, height: 22, borderRadius: '50%',
               background: 'linear-gradient(135deg, var(--ac), var(--ac2))',
-              color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--ac-on)', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 9, fontWeight: 700, letterSpacing: '.02em',
-              border: '1px solid rgba(255,255,255,.12)',
+              border: '1px solid var(--bd)',
             }}>
             {initials}
           </div>
@@ -882,9 +977,9 @@ const btnStyle = (variant = 'primary', extra = {}) => ({
   borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer', border: 'none',
   fontFamily: 'inherit', transition: 'all .2s',
   ...(variant === 'primary' && {
-    background: 'linear-gradient(135deg, #adc6ff, #4d8eff)',
-    color: '#fff',
-    boxShadow: '0 2px 12px rgba(77,142,255,.3)',
+    background: 'linear-gradient(135deg, var(--ac2), var(--ac))',
+    color: 'var(--ac-on)',
+    boxShadow: '0 2px 12px var(--ac-dim)',
   }),
   ...(variant === 'ghost' && {
     background: 'rgba(42,42,42,.8)',

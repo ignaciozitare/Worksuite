@@ -1079,6 +1079,7 @@
     "backlog":            "Backlog",
     "history":            "History",
     "searchBacklog":      "Search backlog...",
+    "searchKanban":       "Search tasks...",
     "noBacklog":          "No tasks in backlog",
     "noHistory":          "No archived tasks",
     "toBoard":            "To Board",

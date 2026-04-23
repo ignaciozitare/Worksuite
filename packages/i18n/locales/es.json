@@ -1079,6 +1079,7 @@
     "backlog":            "Backlog",
     "history":            "Historial",
     "searchBacklog":      "Buscar en backlog...",
+    "searchKanban":       "Buscar tareas...",
     "noBacklog":          "No hay tareas en el backlog",
     "noHistory":          "No hay tareas archivadas",
     "toBoard":            "Al Tablero",
