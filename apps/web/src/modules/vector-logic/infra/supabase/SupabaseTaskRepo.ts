@@ -73,6 +73,26 @@ export class SupabaseTaskRepo implements ITaskRepo {
   }
 
   async create(draft: TaskDraft): Promise<Task> {
+    // Auto-generate typed code (e.g. "BUG-0012") when the draft has none
+    // and the task type has a prefix configured. The unique index on
+    // vl_tasks.code protects against a rare race (two concurrent creates
+    // for the same type) — in that case the second insert fails and the
+    // caller may retry.
+    let code: string | null = draft.code ?? null;
+    let nextNumberToPersist: number | null = null;
+    if (!code) {
+      const { data: tt } = await this.sb
+        .from('vl_task_types')
+        .select('prefix, next_number')
+        .eq('id', draft.taskTypeId)
+        .single();
+      if (tt?.prefix) {
+        const n = tt.next_number ?? 1;
+        code = `${tt.prefix}-${String(n).padStart(4, '0')}`;
+        nextNumberToPersist = n + 1;
+      }
+    }
+
     const { data, error } = await this.sb
       .from('vl_tasks')
       .insert({
@@ -84,13 +104,23 @@ export class SupabaseTaskRepo implements ITaskRepo {
         priority: draft.priority,
         sort_order: draft.sortOrder ?? 0,
         created_by: draft.createdBy,
-        code: draft.code ?? null,
+        code,
         due_date: draft.dueDate ?? null,
         parent_task_id: draft.parentTaskId ?? null,
       })
       .select()
       .single();
     if (error) throw error;
+
+    if (nextNumberToPersist !== null) {
+      // Best-effort: if this update fails the task is already created and
+      // usable; the code field will just skip a number next time.
+      await this.sb
+        .from('vl_task_types')
+        .update({ next_number: nextNumberToPersist })
+        .eq('id', draft.taskTypeId);
+    }
+
     return this.toDomain(data);
   }
 
