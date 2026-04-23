@@ -24,3 +24,29 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
 }
+
+/**
+ * What a caller supplies to create a new task.
+ * Fields excluded entirely are DB-managed: `id`, `createdAt`, `updatedAt`,
+ * `stateEnteredAt` (trigger), `archivedAt`, `archivedBy` (set via archive()).
+ * Fields reduced to optional are the Phase-5 additions — existing callers
+ * (pre-v2) can continue passing the v1 draft shape unchanged.
+ */
+export type TaskDraft = Omit<
+  Task,
+  | 'id'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'stateEnteredAt'
+  | 'archivedAt'
+  | 'archivedBy'
+  | 'code'
+  | 'dueDate'
+  | 'parentTaskId'
+  | 'sortOrder'
+> & {
+  code?: string | null;
+  dueDate?: string | null;
+  parentTaskId?: string | null;
+  sortOrder?: number;
+};

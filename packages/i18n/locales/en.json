@@ -1084,6 +1084,8 @@
     "toBoard":            "To Board",
     "reopen":             "Reopen",
     "created":            "Created",
+    "archived":           "Archived",
+    "noOpenStateForType": "This task type has no workflow with an OPEN state",
     "worldClock":         "World clock",
     "worldClockCities":   "CITIES",
     "noWorldCities":      "No cities added yet",

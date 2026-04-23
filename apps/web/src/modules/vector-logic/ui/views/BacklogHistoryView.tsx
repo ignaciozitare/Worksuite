@@ -17,30 +17,49 @@ type Mode = 'backlog' | 'history';
  * - Backlog: tasks whose state.category === 'BACKLOG' (waiting to enter the workflow).
  * - History: tasks with archived_at IS NOT NULL (closed + auto-archived).
  *
- * Skeleton — visuals follow Pencil frame "VectorLogic/Backlog-History".
- * Full interactions (move-to-board, reopen, search) land in the Dev Agent pass.
+ * Row actions:
+ * - Backlog → "Move to board": state moves to the OPEN state of the task type's workflow.
+ * - History → "Reopen": archived_at cleared and state set to OPEN of the workflow.
  */
 export function BacklogHistoryView({ currentUser }: Props) {
   const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>('backlog');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [types, setTypes] = useState<TaskType[]>([]);
+  /** taskTypeId → { openStateId, hasOpen }. Resolved once per page load. */
+  const [openStateByType, setOpenStateByType] = useState<Record<string, string | null>>({});
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [actingTaskId, setActingTaskId] = useState<string | null>(null);
 
+  // Initial load of types + their workflows' OPEN state (used to wire row actions).
+  useEffect(() => {
+    (async () => {
+      const allTypes = await taskTypeRepo.findAll();
+      setTypes(allTypes);
+      const entries = await Promise.all(
+        allTypes.map(async (tt) => {
+          if (!tt.workflowId) return [tt.id, null] as const;
+          const wfStates = await stateRepo.findByWorkflow(tt.workflowId);
+          const openWs = wfStates.find((ws) => ws.state?.category === 'OPEN');
+          return [tt.id, openWs?.stateId ?? null] as const;
+        }),
+      );
+      setOpenStateByType(Object.fromEntries(entries));
+    })();
+  }, []);
+
+  // Reload task list on mode change.
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [allTypes] = await Promise.all([taskTypeRepo.findAll()]);
-      setTypes(allTypes);
-      // Dev Agent: replace with repo methods `findBacklog(userId)` / `findArchived(userId)`.
       const list = mode === 'backlog'
-        ? await (taskRepo as any).findBacklog?.(currentUser.id) ?? []
-        : await (taskRepo as any).findArchived?.(currentUser.id) ?? [];
+        ? await taskRepo.findBacklog()
+        : await taskRepo.findArchived();
       setTasks(list);
       setLoading(false);
     })();
-  }, [mode, currentUser.id]);
+  }, [mode]);
 
   const typeById = useMemo(() => {
     const m: Record<string, TaskType> = {};
@@ -49,13 +68,29 @@ export function BacklogHistoryView({ currentUser }: Props) {
   }, [types]);
 
   const filtered = useMemo(
-    () => tasks.filter((t) => {
+    () => tasks.filter((task) => {
       if (!search.trim()) return true;
       const q = search.toLowerCase();
-      return t.title.toLowerCase().includes(q) || (t.code ?? '').toLowerCase().includes(q);
+      return task.title.toLowerCase().includes(q) || (task.code ?? '').toLowerCase().includes(q);
     }),
     [tasks, search],
   );
+
+  const handleAction = async (task: Task) => {
+    const openStateId = openStateByType[task.taskTypeId];
+    if (!openStateId) return;
+    setActingTaskId(task.id);
+    try {
+      if (mode === 'backlog') {
+        await taskRepo.moveToState(task.id, openStateId);
+      } else {
+        await taskRepo.reopen(task.id, openStateId);
+      }
+      setTasks((prev) => prev.filter((x) => x.id !== task.id));
+    } finally {
+      setActingTaskId(null);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -114,6 +149,8 @@ export function BacklogHistoryView({ currentUser }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {filtered.map((task) => {
             const tt = typeById[task.taskTypeId];
+            const canAct = Boolean(openStateByType[task.taskTypeId]);
+            const busy = actingTaskId === task.id;
             return (
               <div key={task.id} style={{
                 display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
@@ -132,16 +169,25 @@ export function BacklogHistoryView({ currentUser }: Props) {
                     {task.title}
                   </div>
                   <div style={{ fontSize: 10, color: 'var(--tx3)' }}>
-                    {t('vectorLogic.created')} {new Date(task.createdAt).toLocaleDateString()}
+                    {mode === 'history' && task.archivedAt
+                      ? `${t('vectorLogic.archived')} ${new Date(task.archivedAt).toLocaleDateString()}`
+                      : `${t('vectorLogic.created')} ${new Date(task.createdAt).toLocaleDateString()}`}
                   </div>
                 </div>
-                {/* Action — Dev Agent wires move-to-board / reopen. */}
-                <button style={{
-                  padding: '8px 12px', borderRadius: 8, fontSize: 10, fontWeight: 600,
-                  cursor: 'pointer', fontFamily: 'inherit', border: 'none',
-                  background: 'var(--ac-dim)', color: 'var(--ac)',
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                }}>
+                <button
+                  disabled={!canAct || busy}
+                  onClick={() => handleAction(task)}
+                  title={canAct ? undefined : t('vectorLogic.noOpenStateForType')}
+                  style={{
+                    padding: '8px 12px', borderRadius: 8, fontSize: 10, fontWeight: 600,
+                    cursor: canAct && !busy ? 'pointer' : 'not-allowed',
+                    fontFamily: 'inherit', border: 'none',
+                    background: canAct ? 'var(--ac-dim)' : 'var(--sf3)',
+                    color: canAct ? 'var(--ac)' : 'var(--tx3)',
+                    opacity: busy ? 0.5 : 1,
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                  }}
+                >
                   <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
                     {mode === 'backlog' ? 'move_item' : 'restart_alt'}
                   </span>
@@ -164,7 +210,7 @@ function ToggleBtn({ active, icon, label, count, onClick }: {
       padding: '6px 14px', borderRadius: 6, fontSize: 11, fontWeight: active ? 600 : 400,
       cursor: 'pointer', fontFamily: 'inherit', border: 'none',
       background: active ? 'var(--ac)' : 'transparent',
-      color: active ? '#fff' : 'var(--tx3)',
+      color: active ? 'var(--ac-on)' : 'var(--tx3)',
       display: 'inline-flex', alignItems: 'center', gap: 5,
     }}>
       <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{icon}</span>
@@ -173,7 +219,7 @@ function ToggleBtn({ active, icon, label, count, onClick }: {
         <span style={{
           padding: '1px 6px', borderRadius: 10, fontSize: 9, fontWeight: 700,
           background: active ? 'rgba(255,255,255,.2)' : 'var(--sf3)',
-          color: active ? '#fff' : 'var(--tx3)',
+          color: active ? 'var(--ac-on)' : 'var(--tx3)',
         }}>
           {count}
         </span>

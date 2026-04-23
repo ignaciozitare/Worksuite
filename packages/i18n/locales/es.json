@@ -1084,6 +1084,8 @@
     "toBoard":            "Al Tablero",
     "reopen":             "Reabrir",
     "created":            "Creada",
+    "archived":           "Archivada",
+    "noOpenStateForType": "Este tipo de tarea no tiene un workflow con estado OPEN",
     "worldClock":         "Reloj mundial",
     "worldClockCities":   "CIUDADES",
     "noWorldCities":      "Aún no agregaste ciudades",
