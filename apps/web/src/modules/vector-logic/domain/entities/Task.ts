@@ -7,12 +7,18 @@ export type TaskPriority = string;
 
 export interface Task {
   id: string;
+  code: string | null;
   taskTypeId: string;
   stateId: string | null;
   title: string;
   data: Record<string, unknown>;
   assigneeId: string | null;
   priority: TaskPriority | null;
+  dueDate: string | null;
+  stateEnteredAt: string;
+  parentTaskId: string | null;
+  archivedAt: string | null;
+  archivedBy: string | null;
   sortOrder: number;
   createdBy: string | null;
   createdAt: string;
