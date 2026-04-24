@@ -32,21 +32,32 @@ export function WorldClock({ currentUser }: Props) {
     return () => clearInterval(h);
   }, []);
 
+  /** Validate an IANA timezone string by trying to construct a DateTimeFormat with it. */
+  const isValidTz = (tz: string): boolean => {
+    try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); return true; }
+    catch { return false; }
+  };
+
   useEffect(() => {
     (async () => {
       const [settings, cs] = await Promise.all([
         userSettingsRepo.get(currentUser.id),
         worldCityRepo.list(currentUser.id),
       ]);
-      if (settings) {
+      const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
+      if (settings && isValidTz(settings.homeTimezone)) {
         setHomeTimezone(settings.homeTimezone);
-        if (settings.homeCity) setHomeCity(settings.homeCity);
+        setHomeCity(settings.homeCity || settings.homeTimezone.split('/').pop()?.replaceAll('_', ' ') || settings.homeTimezone);
       } else {
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
-        setHomeTimezone(tz);
-        setHomeCity(tz.split('/').pop()?.replaceAll('_', ' ') ?? tz);
+        // No settings, or stored homeTimezone is invalid (e.g. "buenos aires"
+        // instead of "America/Argentina/Buenos_Aires") — fall back to the
+        // browser's resolved zone so nothing crashes.
+        setHomeTimezone(browserTz);
+        setHomeCity(browserTz.split('/').pop()?.replaceAll('_', ' ') ?? browserTz);
       }
-      setCities(cs);
+      // Silently drop cities with an invalid timezone so the popover
+      // stays usable even if the DB has legacy rows.
+      setCities(cs.filter(c => isValidTz(c.timezone)));
     })();
   }, [currentUser.id]);
 
@@ -66,10 +77,15 @@ export function WorldClock({ currentUser }: Props) {
     ];
   }, []);
 
-  const formatTime = (tz: string) =>
-    new Intl.DateTimeFormat(undefined, {
-      hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz,
-    }).format(now);
+  const formatTime = (tz: string): string => {
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz,
+      }).format(now);
+    } catch {
+      return '—';
+    }
+  };
 
   /**
    * Offset in minutes of `tz` relative to `baseTz` at the given instant.
@@ -95,6 +111,13 @@ export function WorldClock({ currentUser }: Props) {
   const handleAdd = async () => {
     const tz = newTz.trim();
     if (!tz) return;
+    if (!isValidTz(tz)) {
+      // Show a lightweight inline hint by resetting to empty — the Add
+      // button remains disabled until a valid zone is typed.
+      // eslint-disable-next-line no-console
+      console.warn('[WorldClock] invalid IANA timezone rejected:', tz);
+      return;
+    }
     const city = newCity.trim() || tz.split('/').pop()?.replaceAll('_', ' ') || tz;
     try {
       const created = await worldCityRepo.create({
@@ -232,12 +255,12 @@ export function WorldClock({ currentUser }: Props) {
                 style={addInp}
               />
               <div style={{ display: 'flex', gap: 6 }}>
-                <button onClick={handleAdd} disabled={!newTz.trim()} style={{
+                <button onClick={handleAdd} disabled={!isValidTz(newTz.trim())} style={{
                   flex: 1, padding: '6px 10px', borderRadius: 6,
-                  background: newTz.trim() ? 'var(--ac)' : 'var(--sf3)',
-                  color: newTz.trim() ? 'var(--ac-on)' : 'var(--tx3)',
+                  background: isValidTz(newTz.trim()) ? 'var(--ac)' : 'var(--sf3)',
+                  color: isValidTz(newTz.trim()) ? 'var(--ac-on)' : 'var(--tx3)',
                   border: 'none', fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
-                  cursor: newTz.trim() ? 'pointer' : 'not-allowed',
+                  cursor: isValidTz(newTz.trim()) ? 'pointer' : 'not-allowed',
                 }}>
                   {t('common.create')}
                 </button>
