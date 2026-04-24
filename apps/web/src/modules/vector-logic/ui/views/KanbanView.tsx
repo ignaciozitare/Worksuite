@@ -8,7 +8,7 @@ import type { WorkflowState, StateCategory } from '../../domain/entities/State';
 import type { SchemaField } from '../../domain/entities/FieldType';
 import type { Priority } from '../../domain/entities/Priority';
 import { FIELD_TYPES } from '../../domain/entities/FieldType';
-import { taskRepo, taskTypeRepo, stateRepo, priorityRepo, taskAlarmRepo } from '../../container';
+import { taskRepo, taskTypeRepo, stateRepo, priorityRepo, taskAlarmRepo, userSettingsRepo } from '../../container';
 import type { TaskAlarm } from '../../domain/entities/TaskAlarm';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { UserPicker } from '../components/UserPicker';
@@ -67,11 +67,51 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
       setTaskTypes(assigned);
       setPriorities(prs);
       if (assigned.length > 0) {
-        await loadType(assigned[0]);
+        await loadType(assigned[0], { runAutoArchive: true });
       }
       setLoading(false);
     })();
   }, []);
+
+  /**
+   * Done-column auto-archive.
+   * - doneMaxDays: archive any Done task whose state_entered_at is older than N days.
+   * - doneMaxCount: if Done tasks still exceed N, archive the oldest until the limit is met.
+   * - 0 on either setting means "no limit" for that dimension.
+   */
+  const autoArchiveDone = async (
+    tsks: Task[],
+    wfs: WorkflowState[],
+    doneMaxDays: number,
+    doneMaxCount: number,
+  ): Promise<string[]> => {
+    if (doneMaxDays <= 0 && doneMaxCount <= 0) return [];
+    const doneStateIds = new Set(
+      wfs.filter(ws => ws.state?.category === 'DONE').map(ws => ws.stateId),
+    );
+    let done = tsks.filter(t => t.stateId && doneStateIds.has(t.stateId));
+    const now = Date.now();
+    const archiveIds = new Set<string>();
+
+    if (doneMaxDays > 0) {
+      const cutoff = now - doneMaxDays * 86_400_000;
+      done.forEach(t => {
+        if (new Date(t.stateEnteredAt).getTime() < cutoff) archiveIds.add(t.id);
+      });
+    }
+
+    if (doneMaxCount > 0) {
+      const survivors = done
+        .filter(t => !archiveIds.has(t.id))
+        .sort((a, b) => new Date(a.stateEnteredAt).getTime() - new Date(b.stateEnteredAt).getTime());
+      const overflow = survivors.length - doneMaxCount;
+      for (let i = 0; i < overflow; i++) archiveIds.add(survivors[i].id);
+    }
+
+    if (archiveIds.size === 0) return [];
+    await Promise.all(Array.from(archiveIds).map(id => taskRepo.archive(id, currentUser.id)));
+    return Array.from(archiveIds);
+  };
 
   // Map priority name → color for rendering badges
   const priorityColorByName = useMemo(() => {
@@ -88,15 +128,28 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
     return map;
   }, [priorities]);
 
-  const loadType = async (tt: TaskType) => {
+  const loadType = async (tt: TaskType, opts?: { runAutoArchive?: boolean }) => {
     setSelectedType(tt);
     if (!tt.workflowId) { setWfStates([]); setTasks([]); return; }
-    const [ws, tsks] = await Promise.all([
+    const [ws, tsks, settings] = await Promise.all([
       stateRepo.findByWorkflow(tt.workflowId),
       taskRepo.findByTaskType(tt.id),
+      opts?.runAutoArchive ? userSettingsRepo.get(currentUser.id) : Promise.resolve(null),
     ]);
+
+    let finalTasks = tsks;
+    if (opts?.runAutoArchive) {
+      const doneMaxDays = settings?.doneMaxDays ?? 7;
+      const doneMaxCount = settings?.doneMaxCount ?? 20;
+      const archived = await autoArchiveDone(tsks, ws, doneMaxDays, doneMaxCount);
+      if (archived.length > 0) {
+        const archivedSet = new Set(archived);
+        finalTasks = tsks.filter(t => !archivedSet.has(t.id));
+      }
+    }
+
     setWfStates(ws);
-    setTasks(tsks);
+    setTasks(finalTasks);
   };
 
   // Apply filters and sort, then group by stateId
@@ -432,7 +485,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                   }}
                   style={{
                     background: isDropTarget
-                      ? `linear-gradient(180deg, rgba(79,110,247,.14) 0%, rgba(79,110,247,.04) 100%)`
+                      ? `linear-gradient(180deg, var(--ac-dim) 0%, transparent 100%)`
                       : 'var(--sf2)',
                     borderRadius: 12,
                     borderTop: `3px solid ${ws.state?.color || cc.color}`,
@@ -442,7 +495,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                     opacity: isDragging ? .4 : 1,
                     transform: isDropTarget ? 'scale(1.015)' : 'scale(1)',
                     boxShadow: isDropTarget
-                      ? `0 0 0 4px rgba(79,110,247,.08), 0 16px 40px rgba(79,110,247,.2)`
+                      ? `0 0 0 4px var(--ac-dim), 0 16px 40px var(--ac-dim)`
                       : '0 2px 8px rgba(0,0,0,.18)',
                     transition: 'all .22s cubic-bezier(.215,.61,.355,1)',
                   }}>
