@@ -1098,6 +1098,7 @@
     "noAlarms":           "Sin alarmas configuradas",
     "noSubtasks":         "No hay subtareas todavía",
     "addSubtask":         "Agregar subtarea",
+    "sameTime":           "igual",
     "worldClock":         "Reloj mundial",
     "worldClockCities":   "CIUDADES",
     "noWorldCities":      "Aún no agregaste ciudades",

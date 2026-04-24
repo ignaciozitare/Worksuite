@@ -12,7 +12,6 @@ import { taskRepo, taskTypeRepo, stateRepo, priorityRepo, taskAlarmRepo, userSet
 import type { TaskAlarm } from '../../domain/entities/TaskAlarm';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { UserPicker } from '../components/UserPicker';
-import { WorldClock } from '../components/WorldClock';
 import { TaskTypeSwitcher } from '../components/TaskTypeSwitcher';
 import { TaskAlarmPicker } from '../components/TaskAlarmPicker';
 
@@ -439,7 +438,6 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
               </button>
             )}
           </div>
-          <WorldClock currentUser={currentUser} />
           <span style={{ fontSize: 11, color: 'var(--tx3)', alignSelf: 'center' }}>
             {tasks.length} {t('vectorLogic.tasks')}
           </span>

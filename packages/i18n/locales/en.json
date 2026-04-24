@@ -1098,6 +1098,7 @@
     "noAlarms":           "No alarms set",
     "noSubtasks":         "No subtasks yet",
     "addSubtask":         "Add subtask",
+    "sameTime":           "same",
     "worldClock":         "World clock",
     "worldClockCities":   "CITIES",
     "noWorldCities":      "No cities added yet",
