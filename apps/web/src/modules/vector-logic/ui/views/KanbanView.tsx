@@ -1081,6 +1081,127 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
               {t('vectorLogic.noDetailFields')}
             </div>
           )}
+
+          {/* Subtasks — always in the main column at the bottom. */}
+          <div style={{ marginTop: 6, paddingTop: 14, borderTop: '1px solid var(--bd)' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--ac)' }}>account_tree</span>
+              <span style={{
+                fontSize: 11, fontWeight: 700, color: 'var(--tx)',
+                letterSpacing: '.05em', textTransform: 'uppercase',
+              }}>
+                {t('vectorLogic.subtasks')}
+              </span>
+              {subtasks.length > 0 && (
+                <span style={{
+                  fontSize: 10, fontWeight: 600, color: 'var(--tx3)',
+                  padding: '2px 8px', background: 'var(--sf2)', borderRadius: 10,
+                }}>
+                  {subtaskStats.done}/{subtaskStats.total}
+                </span>
+              )}
+            </div>
+            {subtasks.length === 0 ? (
+              <div style={{ fontSize: 11, color: 'var(--tx3)', padding: '6px 0 10px' }}>
+                {t('vectorLogic.noSubtasks')}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {subtasks.map(s => {
+                  const done = stateById[s.stateId ?? '']?.category === 'DONE';
+                  return (
+                    <div key={s.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '8px 10px', borderRadius: 8, background: 'var(--sf2)',
+                      fontSize: 12,
+                    }}>
+                      <span
+                        className="material-symbols-outlined"
+                        style={{ fontSize: 16, color: done ? 'var(--green)' : 'var(--tx3)' }}
+                      >
+                        {done ? 'check_box' : 'check_box_outline_blank'}
+                      </span>
+                      {s.code && (
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, color: 'var(--ac)',
+                          fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '.04em',
+                        }}>{s.code}</span>
+                      )}
+                      <span style={{
+                        flex: 1, color: 'var(--tx)',
+                        textDecoration: done ? 'line-through' : 'none',
+                        opacity: done ? 0.7 : 1,
+                      }}>
+                        {s.title}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {showSubtaskForm ? (
+              <div style={{ marginTop: 8, display: 'flex', gap: 6 }}>
+                <select
+                  value={subtaskTypeId}
+                  onChange={e => setSubtaskTypeId(e.target.value)}
+                  style={{ ...sideInp, width: 160, fontSize: 12 }}
+                >
+                  {taskTypes.filter(tt => tt.workflowId).map(tt => (
+                    <option key={tt.id} value={tt.id}>{tt.name}</option>
+                  ))}
+                </select>
+                <input
+                  autoFocus
+                  value={subtaskTitle}
+                  onChange={e => setSubtaskTitle(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleCreateSubtask();
+                    else if (e.key === 'Escape') { setShowSubtaskForm(false); setSubtaskTitle(''); }
+                  }}
+                  placeholder={t('vectorLogic.taskTitle')}
+                  style={{ ...sideInp, flex: 1, fontSize: 12 }}
+                />
+                <button
+                  onClick={handleCreateSubtask}
+                  disabled={!subtaskTitle.trim() || creatingSub}
+                  style={{
+                    padding: '7px 14px', borderRadius: 8,
+                    background: !subtaskTitle.trim() || creatingSub ? 'var(--sf3)' : 'var(--ac)',
+                    color: !subtaskTitle.trim() || creatingSub ? 'var(--tx3)' : 'var(--ac-on)',
+                    border: 'none', fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
+                    cursor: !subtaskTitle.trim() || creatingSub ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {t('common.create')}
+                </button>
+                <button
+                  onClick={() => { setShowSubtaskForm(false); setSubtaskTitle(''); }}
+                  style={{
+                    padding: '7px 10px', borderRadius: 8, background: 'transparent',
+                    color: 'var(--tx2)', border: '1px solid var(--bd)',
+                    fontFamily: 'inherit', fontSize: 11, cursor: 'pointer',
+                  }}
+                >
+                  {t('common.cancel')}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowSubtaskForm(true)}
+                style={{
+                  marginTop: 8, padding: '7px 12px', borderRadius: 8,
+                  background: 'var(--ac-dim)', color: 'var(--ac)', border: 'none',
+                  fontFamily: 'inherit', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add</span>
+                {t('vectorLogic.addSubtask')}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ── Sidebar ──────────────────────────────────── */}
@@ -1187,119 +1308,6 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
               <span className="material-symbols-outlined" style={{ fontSize: 12 }}>add</span>
               {t('vectorLogic.addAlarm')}
             </button>
-          </div>
-
-          {/* Subtasks */}
-          <div>
-            <div style={{ ...sideLbl, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--ac)' }}>account_tree</span>
-              {t('vectorLogic.subtasks')}
-              {subtasks.length > 0 && (
-                <span style={{ marginLeft: 'auto', fontSize: 9, color: 'var(--tx3)' }}>
-                  {subtaskStats.done}/{subtaskStats.total}
-                </span>
-              )}
-            </div>
-            {subtasks.length === 0 ? (
-              <div style={{ fontSize: 10, color: 'var(--tx3)', padding: '4px 0' }}>
-                {t('vectorLogic.noSubtasks')}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {subtasks.map(s => {
-                  const done = stateById[s.stateId ?? '']?.category === 'DONE';
-                  return (
-                    <div key={s.id} style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '5px 8px', borderRadius: 6, background: 'var(--sf)',
-                      fontSize: 11,
-                    }}>
-                      <span
-                        className="material-symbols-outlined"
-                        style={{ fontSize: 14, color: done ? 'var(--green)' : 'var(--tx3)' }}
-                      >
-                        {done ? 'check_box' : 'check_box_outline_blank'}
-                      </span>
-                      {s.code && (
-                        <span style={{
-                          fontSize: 9, fontWeight: 700, color: 'var(--ac)',
-                          fontFamily: "'Space Grotesk',sans-serif",
-                        }}>{s.code}</span>
-                      )}
-                      <span style={{
-                        flex: 1, color: 'var(--tx)',
-                        textDecoration: done ? 'line-through' : 'none',
-                        opacity: done ? 0.7 : 1,
-                      }}>
-                        {s.title}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            {showSubtaskForm ? (
-              <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <select
-                  value={subtaskTypeId}
-                  onChange={e => setSubtaskTypeId(e.target.value)}
-                  style={{ ...sideInp, fontSize: 10, padding: '5px 8px' }}
-                >
-                  {taskTypes.filter(tt => tt.workflowId).map(tt => (
-                    <option key={tt.id} value={tt.id}>{tt.name}</option>
-                  ))}
-                </select>
-                <input
-                  autoFocus
-                  value={subtaskTitle}
-                  onChange={e => setSubtaskTitle(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') handleCreateSubtask();
-                    else if (e.key === 'Escape') { setShowSubtaskForm(false); setSubtaskTitle(''); }
-                  }}
-                  placeholder={t('vectorLogic.taskTitle')}
-                  style={{ ...sideInp, fontSize: 10, padding: '5px 8px' }}
-                />
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button
-                    onClick={handleCreateSubtask}
-                    disabled={!subtaskTitle.trim() || creatingSub}
-                    style={{
-                      flex: 1, padding: '5px 8px', borderRadius: 6,
-                      background: !subtaskTitle.trim() || creatingSub ? 'var(--sf3)' : 'var(--ac)',
-                      color: !subtaskTitle.trim() || creatingSub ? 'var(--tx3)' : 'var(--ac-on)',
-                      border: 'none', fontFamily: 'inherit', fontSize: 10, fontWeight: 600,
-                      cursor: !subtaskTitle.trim() || creatingSub ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    {t('common.create')}
-                  </button>
-                  <button
-                    onClick={() => { setShowSubtaskForm(false); setSubtaskTitle(''); }}
-                    style={{
-                      padding: '5px 8px', borderRadius: 6, background: 'transparent',
-                      color: 'var(--tx2)', border: '1px solid var(--bd)',
-                      fontFamily: 'inherit', fontSize: 10, cursor: 'pointer',
-                    }}
-                  >
-                    {t('common.cancel')}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowSubtaskForm(true)}
-                style={{
-                  marginTop: 6, width: '100%', padding: '6px 10px', borderRadius: 6,
-                  background: 'var(--ac-dim)', color: 'var(--ac)', border: 'none',
-                  fontFamily: 'inherit', fontSize: 10, fontWeight: 600, cursor: 'pointer',
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 12 }}>add</span>
-                {t('vectorLogic.addSubtask')}
-              </button>
-            )}
           </div>
 
           {/* Metadata (read-only) */}
