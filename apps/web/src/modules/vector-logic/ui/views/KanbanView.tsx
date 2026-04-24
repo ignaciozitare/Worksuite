@@ -613,7 +613,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
       ) : (
         <div style={{
           flex: 1, display: 'grid',
-          gridTemplateColumns: `repeat(${effectiveWfStates.length}, minmax(260px, 1fr))`,
+          gridTemplateColumns: `repeat(${effectiveWfStates.length}, minmax(220px, 1fr))`,
           gap: 12, overflowX: 'auto', overflowY: 'hidden',
         }}>
           {[...effectiveWfStates]
@@ -1214,7 +1214,13 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
       width={1120}
       titleAccessory={<SavedIndicator savedAt={savedAt} />}
     >
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 20 }}>
+      <style>{`
+        .vl-tdm-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 20px; }
+        @media (max-width: 1200px) {
+          .vl-tdm-grid { grid-template-columns: 1fr; gap: 16px; }
+        }
+      `}</style>
+      <div className="vl-tdm-grid">
         {/* ── Main column ─────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* Inline title (big) — fallback when the schema has no title field in the main column. */}

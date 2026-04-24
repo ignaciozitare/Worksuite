@@ -411,7 +411,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
     <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: 0 }}>
       {/* ── Left sidebar — Task Types list ─────────────────────────────── */}
       <aside style={{
-        width: 220, minWidth: 220, background: 'var(--sf)', borderRight: '1px solid var(--bd)',
+        width: 200, minWidth: 200, background: 'var(--sf)', borderRight: '1px solid var(--bd)',
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
       }}>
         <div style={{ padding: '16px 14px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -470,7 +470,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
         <>
           {/* Field library */}
           <aside style={{
-            width: 200, minWidth: 200, background: 'var(--sf)', borderRight: '1px solid var(--bd)',
+            width: 180, minWidth: 180, background: 'var(--sf)', borderRight: '1px solid var(--bd)',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
           }}>
             <div style={{ padding: '16px 14px 8px' }}>
@@ -651,7 +651,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
 
           {/* Right sidebar — Field Settings */}
           <aside style={{
-            width: 260, minWidth: 260, background: 'var(--sf)', borderLeft: '1px solid var(--bd)',
+            width: 240, minWidth: 240, background: 'var(--sf)', borderLeft: '1px solid var(--bd)',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
           }}>
             {selectedField ? (
