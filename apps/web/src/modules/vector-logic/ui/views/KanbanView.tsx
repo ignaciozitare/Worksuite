@@ -34,11 +34,18 @@ interface Props {
   wsUsers?: WSUser[];
 }
 
+const CATEGORIES: StateCategory[] = ['BACKLOG', 'OPEN', 'IN_PROGRESS', 'DONE'];
+
 export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   const { t } = useTranslation();
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
   const [selectedType, setSelectedType] = useState<TaskType | null>(null);
+  /** Multi-select task type filter. Empty = all types. Size 1 = single-workflow mode. */
+  const [selectedTypeIds, setSelectedTypeIds] = useState<Set<string>>(new Set());
+  const [typeFilterOpen, setTypeFilterOpen] = useState(false);
   const [wfStates, setWfStates] = useState<WorkflowState[]>([]);
+  /** Map from any state id to its category — populated on mount, used for aggregate grouping. */
+  const [allStatesMap, setAllStatesMap] = useState<Map<string, StateCategory>>(new Map());
   const [tasks, setTasks] = useState<Task[]>([]);
   const [priorities, setPriorities] = useState<Priority[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,21 +63,54 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   const [sortBy, setSortBy] = useState<'manual' | 'priority' | 'assignee'>('manual');
   const [search, setSearch] = useState('');
 
+  /** True when the filter has 0 or 2+ types selected. In that case the kanban
+   *  collapses into 4 fixed category columns (BACKLOG/OPEN/IN_PROGRESS/DONE)
+   *  aggregating tasks across the selected types (or all types if 0 selected). */
+  const isAggregate = selectedTypeIds.size !== 1;
+
   useEffect(() => {
     (async () => {
-      const [tts, prs] = await Promise.all([
+      const [tts, prs, allStates] = await Promise.all([
         taskTypeRepo.findAll(),
         priorityRepo.ensureDefaults(currentUser.id),
+        stateRepo.findAll(),
       ]);
       const assigned = tts.filter(tt => tt.workflowId);
       setTaskTypes(assigned);
       setPriorities(prs);
+      const m = new Map<string, StateCategory>();
+      allStates.forEach(s => m.set(s.id, s.category));
+      setAllStatesMap(m);
       if (assigned.length > 0) {
+        // Default the filter to the first type (preserves the v1 single-workflow
+        // experience). The user can clear/expand the filter from the dropdown.
+        setSelectedTypeIds(new Set([assigned[0].id]));
         await loadType(assigned[0], { runAutoArchive: true });
       }
       setLoading(false);
     })();
   }, []);
+
+  /** Reload the kanban payload whenever the type filter changes after the
+   *  initial mount. Single-mode: load that type's workflow. Aggregate-mode:
+   *  load all live tasks (filtered by selectedTypeIds when set) without states. */
+  useEffect(() => {
+    if (loading) return; // initial load handled in the mount effect above
+    (async () => {
+      if (selectedTypeIds.size === 1) {
+        const tt = taskTypes.find(x => selectedTypeIds.has(x.id));
+        if (tt) await loadType(tt);
+      } else {
+        setSelectedType(taskTypes[0] ?? null);
+        setWfStates([]);
+        const all = await taskRepo.findAll();
+        const filtered = selectedTypeIds.size === 0
+          ? all
+          : all.filter(x => selectedTypeIds.has(x.taskTypeId));
+        setTasks(filtered);
+      }
+    })();
+  }, [Array.from(selectedTypeIds).sort().join(',')]);
 
   /**
    * Done-column auto-archive.
@@ -127,6 +167,46 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
     return map;
   }, [priorities]);
 
+  /**
+   * What we actually render as columns. In single-mode it's the workflow's
+   * states; in aggregate-mode we synthesize 4 category-level "states" so the
+   * existing column/card render code keeps working.
+   */
+  const effectiveWfStates: WorkflowState[] = useMemo(() => {
+    if (!isAggregate) return wfStates;
+    return CATEGORIES.map((cat, i) => ({
+      id: `__cat_${cat}`,
+      workflowId: '',
+      stateId: `__cat_${cat}`,
+      positionX: 0,
+      positionY: 0,
+      isInitial: false,
+      sortOrder: i,
+      state: {
+        id: `__cat_${cat}`,
+        name: t(`vectorLogic.cat${cat}`),
+        category: cat,
+        color: null,
+        isGlobal: false,
+        createdAt: '',
+      },
+    }));
+  }, [isAggregate, wfStates, t]);
+
+  /**
+   * Tasks remapped for the effective columns. In aggregate mode each task's
+   * stateId is replaced by the synthetic `__cat_{category}` id derived from
+   * its real state via `allStatesMap`. The original task is kept untouched
+   * — drag handlers consult the original via the `tasks` array.
+   */
+  const effectiveTasks: Task[] = useMemo(() => {
+    if (!isAggregate) return tasks;
+    return tasks.map(task => {
+      const cat = (task.stateId && allStatesMap.get(task.stateId)) || 'OPEN';
+      return { ...task, stateId: `__cat_${cat}` };
+    });
+  }, [isAggregate, tasks, allStatesMap]);
+
   const loadType = async (tt: TaskType, opts?: { runAutoArchive?: boolean }) => {
     setSelectedType(tt);
     if (!tt.workflowId) { setWfStates([]); setTasks([]); return; }
@@ -154,7 +234,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   // Apply filters and sort, then group by stateId
   const tasksByState = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const filtered = tasks.filter(t => {
+    const filtered = effectiveTasks.filter(t => {
       if (filterAssignee !== 'all' && t.assigneeId !== (filterAssignee === 'unassigned' ? null : filterAssignee)) return false;
       if (filterPriority !== 'all' && (t.priority ?? '').toLowerCase() !== filterPriority.toLowerCase()) return false;
       if (q && !t.title.toLowerCase().includes(q) && !(t.code ?? '').toLowerCase().includes(q)) return false;
@@ -162,7 +242,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
     });
 
     const map: Record<string, Task[]> = {};
-    wfStates.forEach(ws => { map[ws.stateId] = []; });
+    effectiveWfStates.forEach(ws => { map[ws.stateId] = []; });
     filtered.forEach(task => {
       if (task.stateId && map[task.stateId] != null) {
         map[task.stateId].push(task);
@@ -186,7 +266,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
     });
 
     return map;
-  }, [tasks, wfStates, filterAssignee, filterPriority, sortBy, priorityRankByName, search]);
+  }, [effectiveTasks, effectiveWfStates, filterAssignee, filterPriority, sortBy, priorityRankByName, search]);
 
   // Distinct assignees present in loaded tasks
   const assigneesInTasks = useMemo(() => {
@@ -366,27 +446,98 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
           {t('vectorLogic.smartKanban')}
         </h2>
         {taskTypes.length > 0 && (
-          <div style={{ display: 'flex', gap: 4, background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 8, padding: 3 }}>
-            {taskTypes.map(tt => (
-              <button key={tt.id} onClick={() => loadType(tt)}
-                title={tt.name}
-                style={{
-                  background: selectedType?.id === tt.id ? 'var(--ac)' : 'transparent',
-                  color: selectedType?.id === tt.id ? 'var(--ac-on)' : 'var(--tx3)',
-                  border: 'none', borderRadius: 6, cursor: 'pointer',
-                  fontWeight: selectedType?.id === tt.id ? 600 : 400,
-                  fontSize: 11, padding: '5px 12px', fontFamily: 'inherit',
-                  display: 'flex', alignItems: 'center', gap: 6,
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setTypeFilterOpen(v => !v)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '6px 12px', borderRadius: 8, fontFamily: 'inherit',
+                background: 'var(--sf2)', border: '1px solid var(--bd)',
+                color: 'var(--tx)', cursor: 'pointer', fontSize: 12,
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--ac)' }}>
+                filter_list
+              </span>
+              <span style={{ fontWeight: 600 }}>
+                {selectedTypeIds.size === 0
+                  ? t('vectorLogic.allTypes')
+                  : selectedTypeIds.size === 1
+                    ? (taskTypes.find(x => selectedTypeIds.has(x.id))?.name ?? '')
+                    : `${selectedTypeIds.size} ${t('vectorLogic.typesSelected')}`}
+              </span>
+              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>
+                keyboard_arrow_down
+              </span>
+            </button>
+
+            {typeFilterOpen && (
+              <>
+                <div onClick={() => setTypeFilterOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 100 }} />
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, marginTop: 6, zIndex: 101,
+                  width: 240, background: 'var(--sf)', border: '1px solid var(--bd)',
+                  borderRadius: 10, padding: 6, boxShadow: '0 8px 24px rgba(0,0,0,.4)',
+                  display: 'flex', flexDirection: 'column', gap: 2,
                 }}>
-                <span className="material-symbols-outlined" style={{
-                  fontSize: 14,
-                  color: selectedType?.id === tt.id ? 'inherit' : (tt.iconColor || 'var(--tx3)'),
-                }}>
-                  {tt.icon || 'task_alt'}
-                </span>
-                {tt.name}
-              </button>
-            ))}
+                  <button
+                    onClick={() => setSelectedTypeIds(new Set())}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '8px 10px', borderRadius: 6,
+                      background: selectedTypeIds.size === 0 ? 'var(--ac-dim)' : 'transparent',
+                      border: 'none', fontFamily: 'inherit', fontSize: 12,
+                      color: 'var(--tx)', cursor: 'pointer', textAlign: 'left',
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{
+                      fontSize: 14, color: selectedTypeIds.size === 0 ? 'var(--ac)' : 'var(--tx3)',
+                    }}>
+                      {selectedTypeIds.size === 0 ? 'check_circle' : 'radio_button_unchecked'}
+                    </span>
+                    <span style={{ flex: 1, fontWeight: selectedTypeIds.size === 0 ? 600 : 400 }}>
+                      {t('vectorLogic.allTypes')}
+                    </span>
+                  </button>
+                  <div style={{ height: 1, background: 'var(--bd)', margin: '4px 0' }} />
+                  {taskTypes.map(tt => {
+                    const checked = selectedTypeIds.has(tt.id);
+                    return (
+                      <button
+                        key={tt.id}
+                        onClick={() => {
+                          setSelectedTypeIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(tt.id)) next.delete(tt.id);
+                            else next.add(tt.id);
+                            return next;
+                          });
+                        }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          padding: '8px 10px', borderRadius: 6,
+                          background: checked ? 'var(--ac-dim)' : 'transparent',
+                          border: 'none', fontFamily: 'inherit', fontSize: 12,
+                          color: 'var(--tx)', cursor: 'pointer', textAlign: 'left',
+                        }}
+                      >
+                        <span className="material-symbols-outlined" style={{
+                          fontSize: 14, color: checked ? 'var(--ac)' : 'var(--tx3)',
+                        }}>
+                          {checked ? 'check_box' : 'check_box_outline_blank'}
+                        </span>
+                        <span className="material-symbols-outlined" style={{
+                          fontSize: 14, color: tt.iconColor || 'var(--tx2)',
+                        }}>
+                          {tt.icon || 'task_alt'}
+                        </span>
+                        <span style={{ flex: 1, fontWeight: checked ? 600 : 400 }}>{tt.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -454,7 +605,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
       </div>
 
       {/* Columns */}
-      {wfStates.length === 0 ? (
+      {effectiveWfStates.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--tx3)' }}>
           <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: .2, display: 'block', marginBottom: 12 }}>account_tree</span>
           <div style={{ fontSize: 13 }}>{t('vectorLogic.workflowHasNoStates')}</div>
@@ -462,10 +613,10 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
       ) : (
         <div style={{
           flex: 1, display: 'grid',
-          gridTemplateColumns: `repeat(${wfStates.length}, minmax(260px, 1fr))`,
+          gridTemplateColumns: `repeat(${effectiveWfStates.length}, minmax(260px, 1fr))`,
           gap: 12, overflowX: 'auto', overflowY: 'hidden',
         }}>
-          {[...wfStates]
+          {[...effectiveWfStates]
             .sort(byCurrentOrder)
             .map(ws => {
               const cc = CAT_COLORS[ws.state?.category ?? 'BACKLOG'];
@@ -503,11 +654,11 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                     transition: 'all .22s cubic-bezier(.215,.61,.355,1)',
                   }}>
                   <div
-                    draggable
-                    onDragStart={onColumnDragStart(ws.id)}
+                    draggable={!isAggregate}
+                    onDragStart={isAggregate ? undefined : onColumnDragStart(ws.id)}
                     style={{
                       padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8,
-                      flexShrink: 0, cursor: 'grab', userSelect: 'none',
+                      flexShrink: 0, cursor: isAggregate ? 'default' : 'grab', userSelect: 'none',
                     }}
                     onMouseDown={e => (e.currentTarget.style.cursor = 'grabbing')}
                     onMouseUp={e => (e.currentTarget.style.cursor = 'grab')}>
@@ -558,12 +709,12 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                             />
                           )}
                           <TaskCard task={task}
-                            taskType={selectedType}
+                            taskType={taskTypes.find(x => x.id === task.taskTypeId) ?? selectedType}
                             priorityColor={priorityColorByName[(task.priority ?? '').toLowerCase()] ?? 'var(--tx3)'}
                             assignee={wsUsers.find(u => u.id === task.assigneeId) ?? null}
                             onClick={() => setDetailTask(task)}
-                            onDragStart={onDragStart(task.id)}
-                            onDragEnd={onTaskDragEnd}
+                            onDragStart={isAggregate ? undefined : onDragStart(task.id)}
+                            onDragEnd={isAggregate ? undefined : onTaskDragEnd}
                             isDragging={dragTaskId === task.id} />
                         </div>
                       );
@@ -702,10 +853,12 @@ function TaskCard({ task, taskType, priorityColor, assignee, onClick, onDragStar
   priorityColor: string;
   assignee: WSUser | null;
   onClick: () => void;
-  onDragStart: (e: React.DragEvent) => void;
+  /** Omit to render the card non-draggable (used in aggregate kanban mode). */
+  onDragStart?: (e: React.DragEvent) => void;
   onDragEnd?: () => void;
   isDragging?: boolean;
 }) {
+  const isDraggable = typeof onDragStart === 'function';
   const initials = assignee ? (assignee.name || assignee.email).trim().split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase() : '';
   const now = new Date();
   const daysInColumn = daysBetween(task.stateEnteredAt, now);
@@ -733,13 +886,13 @@ function TaskCard({ task, taskType, priorityColor, assignee, onClick, onDragStar
 
   return (
     <div
-      draggable
+      draggable={isDraggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onClick}
       style={{
         background: 'var(--sf3)', borderRadius: 10, padding: '10px 12px',
-        cursor: isDragging ? 'grabbing' : 'grab',
+        cursor: !isDraggable ? 'pointer' : isDragging ? 'grabbing' : 'grab',
         transition: 'all .15s',
         borderLeft: `3px solid ${priorityColor}`,
         opacity: isDragging ? .4 : 1,
