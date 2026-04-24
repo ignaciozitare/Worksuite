@@ -8,11 +8,13 @@ import type { WorkflowState, StateCategory } from '../../domain/entities/State';
 import type { SchemaField } from '../../domain/entities/FieldType';
 import type { Priority } from '../../domain/entities/Priority';
 import { FIELD_TYPES } from '../../domain/entities/FieldType';
-import { taskRepo, taskTypeRepo, stateRepo, priorityRepo } from '../../container';
+import { taskRepo, taskTypeRepo, stateRepo, priorityRepo, taskAlarmRepo } from '../../container';
+import type { TaskAlarm } from '../../domain/entities/TaskAlarm';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { UserPicker } from '../components/UserPicker';
 import { WorldClock } from '../components/WorldClock';
 import { TaskTypeSwitcher } from '../components/TaskTypeSwitcher';
+import { TaskAlarmPicker } from '../components/TaskAlarmPicker';
 
 const CAT_COLORS: Record<StateCategory, { color: string; bg: string }> = {
   BACKLOG:     { color: 'var(--tx3)',   bg: 'rgba(140,144,159,.08)' },
@@ -808,6 +810,70 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
     setSavedAt(Date.now());
   };
 
+  // Subtasks and alarms — loaded once per task.
+  const [subtasks, setSubtasks] = useState<Task[]>([]);
+  const [alarms, setAlarms] = useState<TaskAlarm[]>([]);
+  const [showAlarmPicker, setShowAlarmPicker] = useState(false);
+  const [showSubtaskForm, setShowSubtaskForm] = useState(false);
+  const [subtaskTitle, setSubtaskTitle] = useState('');
+  const [subtaskTypeId, setSubtaskTypeId] = useState<string>(taskType.id);
+  const [creatingSub, setCreatingSub] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const [children, alarmList] = await Promise.all([
+        taskRepo.findChildren(task.id),
+        taskAlarmRepo.listByTask(task.id),
+      ]);
+      setSubtasks(children);
+      setAlarms(alarmList);
+    })();
+  }, [task.id]);
+
+  const stateById = useMemo(() => {
+    const m: Record<string, { name?: string; category?: string }> = {};
+    wfStates.forEach(ws => { m[ws.stateId] = { name: ws.state?.name, category: ws.state?.category }; });
+    return m;
+  }, [wfStates]);
+
+  const subtaskStats = useMemo(() => {
+    const done = subtasks.filter(s => stateById[s.stateId ?? '']?.category === 'DONE').length;
+    return { done, total: subtasks.length };
+  }, [subtasks, stateById]);
+
+  const handleCreateSubtask = async () => {
+    const title = subtaskTitle.trim();
+    if (!title) return;
+    const tt = taskTypes.find(x => x.id === subtaskTypeId);
+    if (!tt?.workflowId) return;
+    setCreatingSub(true);
+    try {
+      const wfs = await stateRepo.findByWorkflow(tt.workflowId);
+      const open = wfs.find(ws => ws.state?.category === 'OPEN') ?? wfs.find(ws => ws.isInitial) ?? wfs[0];
+      if (!open) return;
+      const created = await taskRepo.create({
+        taskTypeId: tt.id,
+        stateId: open.stateId,
+        title,
+        data: {},
+        assigneeId: currentUser.id,
+        priority: null,
+        createdBy: currentUser.id,
+        parentTaskId: task.id,
+      });
+      setSubtasks(prev => [...prev, created]);
+      setSubtaskTitle('');
+      setShowSubtaskForm(false);
+    } finally {
+      setCreatingSub(false);
+    }
+  };
+
+  const handleDeleteAlarm = async (alarmId: string) => {
+    await taskAlarmRepo.remove(alarmId);
+    setAlarms(prev => prev.filter(a => a.id !== alarmId));
+  };
+
   const schema = (currentType.schema as SchemaField[]) || [];
   const detailFields = schema.filter(f => f.showOnDetail);
 
@@ -951,6 +1017,166 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
             />
           </div>
 
+          {/* Alarms */}
+          <div>
+            <div style={{ ...sideLbl, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--amber)' }}>alarm</span>
+              {t('vectorLogic.alarms')}
+            </div>
+            {alarms.length === 0 ? (
+              <div style={{ fontSize: 10, color: 'var(--tx3)', padding: '4px 0' }}>
+                {t('vectorLogic.noAlarms')}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {alarms.map(a => (
+                  <div key={a.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '5px 8px', borderRadius: 6, background: 'var(--sf)',
+                    fontSize: 11,
+                  }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--amber)' }}>alarm</span>
+                    <span style={{ flex: 1, color: 'var(--tx)' }}>
+                      {new Date(a.triggerAt).toLocaleString()}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteAlarm(a.id)}
+                      title={t('common.delete')}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', padding: 0, display: 'flex' }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 12 }}>close</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={() => setShowAlarmPicker(true)}
+              style={{
+                marginTop: 6, width: '100%', padding: '6px 10px', borderRadius: 6,
+                background: 'var(--ac-dim)', color: 'var(--ac)', border: 'none',
+                fontFamily: 'inherit', fontSize: 10, fontWeight: 600, cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 12 }}>add</span>
+              {t('vectorLogic.addAlarm')}
+            </button>
+          </div>
+
+          {/* Subtasks */}
+          <div>
+            <div style={{ ...sideLbl, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--ac)' }}>account_tree</span>
+              {t('vectorLogic.subtasks')}
+              {subtasks.length > 0 && (
+                <span style={{ marginLeft: 'auto', fontSize: 9, color: 'var(--tx3)' }}>
+                  {subtaskStats.done}/{subtaskStats.total}
+                </span>
+              )}
+            </div>
+            {subtasks.length === 0 ? (
+              <div style={{ fontSize: 10, color: 'var(--tx3)', padding: '4px 0' }}>
+                {t('vectorLogic.noSubtasks')}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {subtasks.map(s => {
+                  const done = stateById[s.stateId ?? '']?.category === 'DONE';
+                  return (
+                    <div key={s.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '5px 8px', borderRadius: 6, background: 'var(--sf)',
+                      fontSize: 11,
+                    }}>
+                      <span
+                        className="material-symbols-outlined"
+                        style={{ fontSize: 14, color: done ? 'var(--green)' : 'var(--tx3)' }}
+                      >
+                        {done ? 'check_box' : 'check_box_outline_blank'}
+                      </span>
+                      {s.code && (
+                        <span style={{
+                          fontSize: 9, fontWeight: 700, color: 'var(--ac)',
+                          fontFamily: "'Space Grotesk',sans-serif",
+                        }}>{s.code}</span>
+                      )}
+                      <span style={{
+                        flex: 1, color: 'var(--tx)',
+                        textDecoration: done ? 'line-through' : 'none',
+                        opacity: done ? 0.7 : 1,
+                      }}>
+                        {s.title}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {showSubtaskForm ? (
+              <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <select
+                  value={subtaskTypeId}
+                  onChange={e => setSubtaskTypeId(e.target.value)}
+                  style={{ ...sideInp, fontSize: 10, padding: '5px 8px' }}
+                >
+                  {taskTypes.filter(tt => tt.workflowId).map(tt => (
+                    <option key={tt.id} value={tt.id}>{tt.name}</option>
+                  ))}
+                </select>
+                <input
+                  autoFocus
+                  value={subtaskTitle}
+                  onChange={e => setSubtaskTitle(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleCreateSubtask();
+                    else if (e.key === 'Escape') { setShowSubtaskForm(false); setSubtaskTitle(''); }
+                  }}
+                  placeholder={t('vectorLogic.taskTitle')}
+                  style={{ ...sideInp, fontSize: 10, padding: '5px 8px' }}
+                />
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    onClick={handleCreateSubtask}
+                    disabled={!subtaskTitle.trim() || creatingSub}
+                    style={{
+                      flex: 1, padding: '5px 8px', borderRadius: 6,
+                      background: !subtaskTitle.trim() || creatingSub ? 'var(--sf3)' : 'var(--ac)',
+                      color: !subtaskTitle.trim() || creatingSub ? 'var(--tx3)' : 'var(--ac-on)',
+                      border: 'none', fontFamily: 'inherit', fontSize: 10, fontWeight: 600,
+                      cursor: !subtaskTitle.trim() || creatingSub ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {t('common.create')}
+                  </button>
+                  <button
+                    onClick={() => { setShowSubtaskForm(false); setSubtaskTitle(''); }}
+                    style={{
+                      padding: '5px 8px', borderRadius: 6, background: 'transparent',
+                      color: 'var(--tx2)', border: '1px solid var(--bd)',
+                      fontFamily: 'inherit', fontSize: 10, cursor: 'pointer',
+                    }}
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowSubtaskForm(true)}
+                style={{
+                  marginTop: 6, width: '100%', padding: '6px 10px', borderRadius: 6,
+                  background: 'var(--ac-dim)', color: 'var(--ac)', border: 'none',
+                  fontFamily: 'inherit', fontSize: 10, fontWeight: 600, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 12 }}>add</span>
+                {t('vectorLogic.addSubtask')}
+              </button>
+            )}
+          </div>
+
           {/* Metadata (read-only) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 10, borderTop: '1px solid var(--bd)' }}>
             {task.code && (
@@ -989,6 +1215,15 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
         </button>
         <button style={btnStyle('ghost')} onClick={onClose}>{t('common.close')}</button>
       </div>
+
+      {showAlarmPicker && (
+        <TaskAlarmPicker
+          taskId={task.id}
+          userId={currentUser.id}
+          onCreated={(a) => setAlarms(prev => [...prev, a])}
+          onClose={() => setShowAlarmPicker(false)}
+        />
+      )}
     </Modal>
   );
 }

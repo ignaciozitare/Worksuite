@@ -120,7 +120,7 @@ const inpStyle = {
 const primaryBtn = {
   padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
   cursor: 'pointer', border: 'none', fontFamily: 'inherit',
-  background: 'linear-gradient(135deg, #adc6ff, #4d8eff)', color: '#fff',
+  background: 'linear-gradient(135deg, var(--ac2), var(--ac))', color: 'var(--ac-on)',
 };
 const ghostBtn = {
   padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
