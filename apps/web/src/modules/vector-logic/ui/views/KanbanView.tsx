@@ -378,7 +378,12 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                   fontSize: 11, padding: '5px 12px', fontFamily: 'inherit',
                   display: 'flex', alignItems: 'center', gap: 6,
                 }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{tt.icon || 'task_alt'}</span>
+                <span className="material-symbols-outlined" style={{
+                  fontSize: 14,
+                  color: selectedType?.id === tt.id ? 'inherit' : (tt.iconColor || 'var(--tx3)'),
+                }}>
+                  {tt.icon || 'task_alt'}
+                </span>
                 {tt.name}
               </button>
             ))}
@@ -748,7 +753,10 @@ function TaskCard({ task, taskType, priorityColor, assignee, onClick, onDragStar
       {(taskType || task.code) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
           {taskType?.icon && (
-            <span className="material-symbols-outlined" style={{ fontSize: 13, color: 'var(--tx3)' }}>
+            <span className="material-symbols-outlined" style={{
+              fontSize: 13,
+              color: taskType.iconColor || 'var(--tx3)',
+            }}>
               {taskType.icon}
             </span>
           )}
@@ -868,7 +876,12 @@ function NewTaskModal({ taskTypes, defaultTypeId, onClose, onCreate }: {
                       border: `1px solid ${active ? 'var(--ac)' : 'var(--bd)'}`,
                       transition: 'all .15s',
                     }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{tt.icon || 'task_alt'}</span>
+                    <span className="material-symbols-outlined" style={{
+                      fontSize: 16,
+                      color: tt.iconColor || (active ? 'var(--ac)' : 'var(--tx2)'),
+                    }}>
+                      {tt.icon || 'task_alt'}
+                    </span>
                     {tt.name}
                   </button>
                 );

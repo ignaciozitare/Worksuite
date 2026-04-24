@@ -34,6 +34,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
   const [showNewType, setShowNewType] = useState(false);
   const [newTypeName, setNewTypeName] = useState('');
   const [newTypeIcon, setNewTypeIcon] = useState('task_alt');
+  const [newTypeIconColor, setNewTypeIconColor] = useState<string | null>(null);
 
   // Inline rename of selected task type
   const [renamingType, setRenamingType] = useState(false);
@@ -65,12 +66,13 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
     const created = await taskTypeRepo.create({
       name: newTypeName.trim(),
       icon: newTypeIcon,
+      iconColor: newTypeIconColor,
       workflowId: null,
       schema: initialFields as unknown[],
     });
     setTaskTypes(prev => [...prev, created]);
     selectTaskType(created);
-    setNewTypeName(''); setNewTypeIcon('task_alt'); setShowNewType(false);
+    setNewTypeName(''); setNewTypeIcon('task_alt'); setNewTypeIconColor(null); setShowNewType(false);
   };
 
   const deleteSelectedType = async () => {
@@ -95,6 +97,13 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
     await taskTypeRepo.update(selected.id, { icon });
     setTaskTypes(prev => prev.map(t => t.id === selected.id ? { ...t, icon } : t));
     setSelected({ ...selected, icon });
+  };
+
+  const updateSelectedTypeIconColor = async (iconColor: string | null) => {
+    if (!selected) return;
+    await taskTypeRepo.update(selected.id, { iconColor });
+    setTaskTypes(prev => prev.map(t => t.id === selected.id ? { ...t, iconColor } : t));
+    setSelected({ ...selected, iconColor });
   };
 
   /** Split fields into their column buckets, sorted by order within each. */
@@ -436,7 +445,10 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                 onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--sf2)'; }}
                 onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}>
                 <span className="material-symbols-outlined"
-                  style={{ fontSize: 18, color: isSelected ? 'var(--ac)' : 'var(--tx3)' }}>
+                  style={{
+                    fontSize: 18,
+                    color: tt.iconColor || (isSelected ? 'var(--ac)' : 'var(--tx3)'),
+                  }}>
                   {tt.icon || 'task_alt'}
                 </span>
                 <span style={{ flex: 1, fontSize: 12, color: 'var(--tx)', fontWeight: isSelected ? 600 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -518,7 +530,13 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
               padding: '14px 20px', borderBottom: '1px solid var(--bd)',
               display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0,
             }}>
-              <IconPicker value={selected.icon || 'task_alt'} onChange={updateSelectedTypeIcon} size={20} />
+              <IconPicker
+                value={selected.icon || 'task_alt'}
+                onChange={updateSelectedTypeIcon}
+                color={selected.iconColor ?? null}
+                onColorChange={updateSelectedTypeIconColor}
+                size={20}
+              />
               {renamingType ? (
                 <input value={renameValue} onChange={e => setRenameValue(e.target.value)} autoFocus
                   onBlur={renameSelectedType}
@@ -676,7 +694,13 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
               <div>
                 <label style={lblStyle}>{t('vectorLogic.icon')}</label>
-                <IconPicker value={newTypeIcon} onChange={setNewTypeIcon} size={28} />
+                <IconPicker
+                  value={newTypeIcon}
+                  onChange={setNewTypeIcon}
+                  color={newTypeIconColor}
+                  onColorChange={setNewTypeIconColor}
+                  size={28}
+                />
               </div>
               <div style={{ flex: 1 }}>
                 <label style={lblStyle}>{t('common.name')}</label>
