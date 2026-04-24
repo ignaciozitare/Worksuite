@@ -663,6 +663,28 @@ function daysBetween(iso: string, now: Date): number {
   return Math.round((nMid - aMid) / 86_400_000);
 }
 
+/** Reads the display value for a card chip — routes native-shadowed types
+ *  (assignee/due_date) to native columns. Returns null for anything empty. */
+function readCardFieldValue(task: Task, field: SchemaField): unknown {
+  if (field.fieldType === 'due_date') return task.dueDate;
+  if (field.fieldType === 'assignee') return task.assigneeId;
+  if (field.fieldType === 'title')    return task.title;
+  return (task.data ?? {})[field.id];
+}
+
+/** Turns a value into a short string for a card chip. */
+function formatCardValue(field: SchemaField, v: unknown): string | null {
+  if (v === null || v === undefined || v === '') return null;
+  if (field.fieldType === 'due_date' || field.fieldType === 'date' || field.fieldType === 'start_date') {
+    const d = new Date(v as string);
+    if (isNaN(d.getTime())) return String(v);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  }
+  if (field.fieldType === 'checkbox') return v ? '✓' : null;
+  if (Array.isArray(v)) return v.length ? v.join(', ') : null;
+  return String(v).slice(0, 24);
+}
+
 function TaskCard({ task, taskType, priorityColor, assignee, onClick, onDragStart, onDragEnd, isDragging }: {
   task: Task;
   taskType: TaskType | null;
@@ -677,14 +699,23 @@ function TaskCard({ task, taskType, priorityColor, assignee, onClick, onDragStar
   const now = new Date();
   const daysInColumn = daysBetween(task.stateEnteredAt, now);
 
-  // Due-date color: today=amber, overdue=red, future/none=muted
+  // User-configured card chips (up to 4). Assignee is rendered as the avatar,
+  // never as a chip — filter it out here.
+  const schema = ((taskType?.schema as SchemaField[]) || []);
+  const cardFields = schema
+    .filter(f => f.showOnCard && f.fieldType !== 'assignee' && f.fieldType !== 'title')
+    .sort((a, b) => a.order - b.order)
+    .slice(0, 4);
+  const hasCardFields = cardFields.length > 0;
+
+  // Due-date color (also used for a "due" chip in the default layout).
   let dueColor = 'var(--tx3)';
   let dueBg = 'transparent';
   let dueLabel: string | null = null;
   if (task.dueDate) {
-    const daysUntil = daysBetween(task.dueDate, now) * -1; // positive = days ahead, negative = overdue
-    if (daysUntil < 0)      { dueColor = 'var(--red)';   dueBg = 'rgba(224,82,82,.12)'; }
-    else if (daysUntil === 0) { dueColor = 'var(--amber)'; dueBg = 'rgba(245,158,11,.12)'; }
+    const daysUntil = daysBetween(task.dueDate, now) * -1;
+    if (daysUntil < 0)        { dueColor = 'var(--red)';   dueBg = 'var(--red-dim)'; }
+    else if (daysUntil === 0) { dueColor = 'var(--amber)'; dueBg = 'var(--amber-dim)'; }
     const d = new Date(task.dueDate);
     dueLabel = `${d.getMonth() + 1}/${d.getDate()}`;
   }
@@ -733,32 +764,56 @@ function TaskCard({ task, taskType, priorityColor, assignee, onClick, onDragStar
       )}
       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.35 }}>{task.title}</div>
       <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-        {task.priority && (
-          <span style={{
-            fontSize: 9, padding: '2px 6px', borderRadius: 3,
-            background: `${priorityColor}22`, color: priorityColor,
-            fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase',
-          }}>{task.priority}</span>
-        )}
-        {daysInColumn > 0 && (
-          <span style={{
-            fontSize: 9, padding: '2px 6px', borderRadius: 3,
-            background: 'var(--sf2)', color: 'var(--tx3)',
-            fontWeight: 700, letterSpacing: '.04em',
-          }}>
-            {daysInColumn}d
-          </span>
-        )}
-        {dueLabel && (
-          <span style={{
-            fontSize: 9, padding: '2px 6px', borderRadius: 3,
-            background: dueBg, color: dueColor,
-            fontWeight: 700, letterSpacing: '.04em',
-            display: 'inline-flex', alignItems: 'center', gap: 3,
-          }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 11 }}>event</span>
-            {dueLabel}
-          </span>
+        {hasCardFields ? (
+          // Configured chips (up to 4) — drive what the user wants to see at-a-glance.
+          cardFields.map(field => {
+            const raw = readCardFieldValue(task, field);
+            const value = formatCardValue(field, raw);
+            if (!value) return null;
+            const isDue = field.fieldType === 'due_date';
+            return (
+              <span key={field.id} style={{
+                fontSize: 9, padding: '2px 6px', borderRadius: 3,
+                background: isDue ? dueBg : 'var(--sf2)',
+                color: isDue ? dueColor : 'var(--tx2)',
+                fontWeight: 700, letterSpacing: '.04em',
+                display: 'inline-flex', alignItems: 'center', gap: 3,
+                maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {value}
+              </span>
+            );
+          })
+        ) : (
+          <>
+            {task.priority && (
+              <span style={{
+                fontSize: 9, padding: '2px 6px', borderRadius: 3,
+                background: `${priorityColor}22`, color: priorityColor,
+                fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase',
+              }}>{task.priority}</span>
+            )}
+            {daysInColumn > 0 && (
+              <span style={{
+                fontSize: 9, padding: '2px 6px', borderRadius: 3,
+                background: 'var(--sf2)', color: 'var(--tx3)',
+                fontWeight: 700, letterSpacing: '.04em',
+              }}>
+                {daysInColumn}d
+              </span>
+            )}
+            {dueLabel && (
+              <span style={{
+                fontSize: 9, padding: '2px 6px', borderRadius: 3,
+                background: dueBg, color: dueColor,
+                fontWeight: 700, letterSpacing: '.04em',
+                display: 'inline-flex', alignItems: 'center', gap: 3,
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 11 }}>event</span>
+                {dueLabel}
+              </span>
+            )}
+          </>
         )}
         <div style={{ flex: 1 }} />
         {assignee && (
@@ -927,6 +982,42 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
 
   const schema = (currentType.schema as SchemaField[]) || [];
   const detailFields = schema.filter(f => f.showOnDetail);
+  const mainDetailFields = detailFields
+    .filter(f => (f.column ?? 'main') === 'main')
+    .sort((a, b) => a.order - b.order);
+  const sideDetailFields = detailFields
+    .filter(f => (f.column ?? 'main') === 'sidebar')
+    .sort((a, b) => a.order - b.order);
+
+  /** Reads the effective value for a schema field — from native task columns
+   *  when the field type shadows one, otherwise from task.data. */
+  const readValue = (field: SchemaField): unknown => {
+    if (field.fieldType === 'title') return title;
+    if (field.fieldType === 'assignee') return assigneeId;
+    if (field.fieldType === 'due_date') return dueDate;
+    return data[field.id];
+  };
+
+  /** Writes the value for a schema field — routes native-shadowed types
+   *  (title/assignee/due_date) to their native columns instead of task.data. */
+  const writeValue = (field: SchemaField, v: unknown) => {
+    if (field.fieldType === 'title') {
+      setTitle(v as string);
+      autoSave({ title: v as string });
+    } else if (field.fieldType === 'assignee') {
+      const next = v as string | null;
+      setAssigneeId(next);
+      autoSave({ assigneeId: next });
+    } else if (field.fieldType === 'due_date') {
+      const next = v as string | null;
+      setDueDate(next);
+      autoSave({ dueDate: next });
+    } else {
+      const newData = { ...data, [field.id]: v };
+      setData(newData);
+      autoSave({ data: newData });
+    }
+  };
 
   const handleTypeSwitch = (newTypeId: string, mapping: Record<string, string | null>) => {
     const next = taskTypes.find(x => x.id === newTypeId);
@@ -954,8 +1045,8 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 20 }}>
         {/* ── Main column ─────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* Inline title (big) */}
-          {detailFields.some(f => f.fieldType === 'title') ? null : (
+          {/* Inline title (big) — fallback when the schema has no title field in the main column. */}
+          {mainDetailFields.some(f => f.fieldType === 'title') ? null : (
             <input
               value={title}
               onChange={e => setTitle(e.target.value)}
@@ -971,25 +1062,15 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
             />
           )}
 
-          {/* Dynamic schema fields */}
-          {detailFields.length > 0 && (
+          {mainDetailFields.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {detailFields.map(field => (
+              {mainDetailFields.map(field => (
                 <DynamicFieldRenderer
                   key={field.id}
                   field={field}
-                  value={field.fieldType === 'title' ? title : data[field.id]}
+                  value={readValue(field)}
                   wsUsers={wsUsers}
-                  onChange={(v) => {
-                    if (field.fieldType === 'title') {
-                      setTitle(v as string);
-                      autoSave({ title: v as string });
-                    } else {
-                      const newData = { ...data, [field.id]: v };
-                      setData(newData);
-                      autoSave({ data: newData });
-                    }
-                  }}
+                  onChange={(v) => writeValue(field, v)}
                 />
               ))}
             </div>
@@ -1047,26 +1128,19 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
             </select>
           </div>
 
-          {/* Assignee */}
-          <div>
-            <div style={sideLbl}>{t('vectorLogic.assignee')}</div>
-            <UserPicker
-              users={wsUsers}
-              value={assigneeId}
-              onChange={(v) => { setAssigneeId(v as string | null); autoSave({ assigneeId: (v as string | null) }); }}
-            />
-          </div>
-
-          {/* Due date */}
-          <div>
-            <div style={sideLbl}>{t('vectorLogic.dueDate')}</div>
-            <input
-              type="date"
-              value={dueDate ?? ''}
-              onChange={e => { setDueDate(e.target.value || null); autoSave({ dueDate: e.target.value || null }); }}
-              style={sideInp}
-            />
-          </div>
+          {/* Sidebar schema fields (assignee/due date/custom fields live here
+              when the user drops them on the sidebar column in the builder). */}
+          {sideDetailFields.map(field => (
+            <div key={field.id}>
+              <div style={sideLbl}>{field.label}</div>
+              <DynamicFieldRenderer
+                field={field}
+                value={readValue(field)}
+                wsUsers={wsUsers}
+                onChange={(v) => writeValue(field, v)}
+              />
+            </div>
+          ))}
 
           {/* Alarms */}
           <div>

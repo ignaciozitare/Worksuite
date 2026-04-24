@@ -1,10 +1,13 @@
 // @ts-nocheck
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { useDialog } from '@worksuite/ui';
 import type { TaskType } from '../../domain/entities/TaskType';
 import type { SchemaField, FieldTypeId } from '../../domain/entities/FieldType';
-import { FIELD_TYPES, defaultFieldsForNewTaskType } from '../../domain/entities/FieldType';
+import { FIELD_TYPES, defaultFieldsForNewTaskType, MAX_CARD_FIELDS } from '../../domain/entities/FieldType';
+
+type FieldColumn = 'main' | 'sidebar';
+const colOf = (f: SchemaField): FieldColumn => f.column ?? 'main';
 import { taskTypeRepo } from '../../container';
 import { IconPicker } from '../components/IconPicker';
 
@@ -39,7 +42,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
   // DnD state
   const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null);
   const [draggingLibField, setDraggingLibField] = useState<FieldTypeId | null>(null);
-  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState<{ column: FieldColumn; idx: number } | null>(null);
 
   useEffect(() => {
     taskTypeRepo.findAll().then(tts => {
@@ -94,7 +97,22 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
     setSelected({ ...selected, icon });
   };
 
-  const addField = (typeId: FieldTypeId, insertAt?: number) => {
+  /** Split fields into their column buckets, sorted by order within each. */
+  const splitByCol = (fs: SchemaField[]) => ({
+    main: fs.filter(f => colOf(f) === 'main').sort((a, b) => a.order - b.order),
+    sidebar: fs.filter(f => colOf(f) === 'sidebar').sort((a, b) => a.order - b.order),
+  });
+
+  /** Rebuild the flat list after a column op, reassigning sequential orders per column. */
+  const joinCols = (byCol: { main: SchemaField[]; sidebar: SchemaField[] }): SchemaField[] => {
+    const out: SchemaField[] = [];
+    (['main', 'sidebar'] as const).forEach(col => {
+      byCol[col].forEach((f, i) => out.push({ ...f, column: col, order: i }));
+    });
+    return out;
+  };
+
+  const addField = (typeId: FieldTypeId, column: FieldColumn = 'main', insertAt?: number) => {
     const def = FIELD_TYPES.find(f => f.id === typeId);
     if (!def) return;
     const newField: SchemaField = {
@@ -104,30 +122,39 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
       required: false,
       showOnCreate: true,
       showOnDetail: true,
+      column,
+      showOnCard: false,
       options: def.hasOptions ? [`${t('vectorLogic.defaultOption')} 1`, `${t('vectorLogic.defaultOption')} 2`] : undefined,
       order: 0,
     };
     setFields(prev => {
-      const idx = insertAt == null ? prev.length : Math.max(0, Math.min(insertAt, prev.length));
-      const next = [...prev];
-      next.splice(idx, 0, newField);
-      const result = next.map((f, i) => ({ ...f, order: i }));
+      const cols = splitByCol(prev);
+      const list = cols[column];
+      const idx = insertAt == null ? list.length : Math.max(0, Math.min(insertAt, list.length));
+      cols[column] = [...list.slice(0, idx), newField, ...list.slice(idx)];
+      const result = joinCols(cols);
       autoSave(result);
       return result;
     });
     setSelectedField(newField);
   };
 
-  const moveFieldTo = (id: string, targetIdx: number) => {
+  const moveFieldTo = (id: string, targetColumn: FieldColumn, targetIdx: number) => {
     setFields(prev => {
-      const fromIdx = prev.findIndex(f => f.id === id);
-      if (fromIdx === -1) return prev;
-      let to = Math.max(0, Math.min(targetIdx, prev.length));
-      const next = [...prev];
-      const [item] = next.splice(fromIdx, 1);
-      if (fromIdx < to) to -= 1;
-      next.splice(to, 0, item);
-      const result = next.map((f, i) => ({ ...f, order: i }));
+      const cols = splitByCol(prev);
+      let moved: SchemaField | null = null;
+      (['main', 'sidebar'] as const).forEach(col => {
+        const idx = cols[col].findIndex(f => f.id === id);
+        if (idx !== -1) {
+          moved = cols[col][idx];
+          cols[col] = [...cols[col].slice(0, idx), ...cols[col].slice(idx + 1)];
+        }
+      });
+      if (!moved) return prev;
+      const list = cols[targetColumn];
+      const safeIdx = Math.max(0, Math.min(targetIdx, list.length));
+      cols[targetColumn] = [...list.slice(0, safeIdx), { ...moved, column: targetColumn }, ...list.slice(safeIdx)];
+      const result = joinCols(cols);
       autoSave(result);
       return result;
     });
@@ -195,6 +222,178 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
     relation: t('vectorLogic.categoryRelationFields'),
   };
 
+  const mainFields = useMemo(
+    () => fields.filter(f => colOf(f) === 'main').sort((a, b) => a.order - b.order),
+    [fields],
+  );
+  const sidebarFields = useMemo(
+    () => fields.filter(f => colOf(f) === 'sidebar').sort((a, b) => a.order - b.order),
+    [fields],
+  );
+  const cardFieldCount = useMemo(() => fields.filter(f => f.showOnCard).length, [fields]);
+
+  /**
+   * One of the two column drop zones in the form canvas. Renders field cards,
+   * inter-card drop zones for reordering within the column, and a trailing
+   * drop zone for appending + cross-column moves.
+   */
+  const FieldColumnCanvas = ({ column, title, fields: colFields, flex }: {
+    column: FieldColumn;
+    title: string;
+    fields: SchemaField[];
+    flex: number;
+  }) => (
+    <div style={{
+      flex, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0,
+      padding: 14, background: 'var(--sf2)', borderRadius: 10,
+      border: '1px dashed var(--bd)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 4 }}>
+        <span style={{
+          fontSize: 9, fontWeight: 700, color: 'var(--tx3)',
+          letterSpacing: '.1em', textTransform: 'uppercase',
+        }}>{title}</span>
+        <span style={{ fontSize: 9, color: 'var(--tx3)', opacity: .6 }}>
+          · {colFields.length} {t('vectorLogic.fieldsWord')}
+        </span>
+      </div>
+
+      {colFields.length === 0 && !dragOver && (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--tx3)', fontSize: 11 }}>
+          {t('vectorLogic.dropFieldHere')}
+        </div>
+      )}
+
+      {colFields.map((field, i) => {
+        const def = FIELD_TYPES.find(f => f.id === field.fieldType);
+        const isSelected = selectedField?.id === field.id;
+        const isDraggingThis = draggingFieldId === field.id;
+        const isDropBefore = dragOver?.column === column && dragOver.idx === i;
+        return (
+          <div key={field.id}>
+            {/* Drop zone above this card */}
+            <div
+              onDragOver={(e) => {
+                if (draggingLibField || draggingFieldId) {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = draggingLibField ? 'copy' : 'move';
+                  if (!dragOver || dragOver.column !== column || dragOver.idx !== i) {
+                    setDragOver({ column, idx: i });
+                  }
+                }
+              }}
+              onDragLeave={() => { if (isDropBefore) setDragOver(null); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (draggingLibField) {
+                  addField(draggingLibField, column, i);
+                  setDraggingLibField(null);
+                } else if (draggingFieldId) {
+                  moveFieldTo(draggingFieldId, column, i);
+                  setDraggingFieldId(null);
+                }
+                setDragOver(null);
+              }}
+              style={{
+                height: isDropBefore ? 36 : 6,
+                background: isDropBefore ? 'var(--ac-dim)' : 'transparent',
+                border: isDropBefore ? '2px dashed var(--ac)' : '2px dashed transparent',
+                borderRadius: 6, transition: 'all .15s ease',
+              }}
+            />
+            <div
+              draggable
+              onDragStart={(e) => {
+                setDraggingFieldId(field.id);
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', field.id);
+              }}
+              onDragEnd={() => { setDraggingFieldId(null); setDragOver(null); }}
+              onClick={() => setSelectedField(field)}
+              style={{
+                background: isSelected ? 'var(--ac-dim)' : 'var(--sf3)',
+                border: `1px solid ${isSelected ? 'var(--ac)' : 'var(--bd)'}`,
+                borderRadius: 8, padding: '10px 12px',
+                cursor: isDraggingThis ? 'grabbing' : 'grab',
+                transition: 'all .15s ease',
+                opacity: isDraggingThis ? .4 : 1,
+                display: 'flex', alignItems: 'center', gap: 10,
+              }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)', opacity: .6 }}>drag_indicator</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--ac)' }}>{def?.icon}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {field.label}
+              </span>
+              {field.required && (
+                <span style={{ fontSize: 8, padding: '2px 6px', borderRadius: 3, background: 'var(--red-dim)', color: 'var(--red)', fontWeight: 700 }}>
+                  {t('vectorLogic.badgeRequired')}
+                </span>
+              )}
+              <div style={{ flex: 1 }} />
+              <div style={{ display: 'flex', gap: 3 }}>
+                {field.showOnCreate && <TogglePill color="var(--green)" dim="var(--green-dim)" label={t('vectorLogic.badgeCreate')} />}
+                {field.showOnDetail && <TogglePill color="var(--ac)" dim="var(--ac-dim)" label={t('vectorLogic.badgeDetail')} />}
+                {field.showOnCard && <TogglePill color="var(--purple)" dim="var(--purple-dim)" label={t('vectorLogic.badgeCard')} />}
+              </div>
+              <button
+                onClick={e => { e.stopPropagation(); removeField(field.id); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', opacity: .5, padding: 0, display: 'flex' }}
+                title={t('common.delete')}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+              </button>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Trailing drop zone */}
+      <div
+        onDragOver={(e) => {
+          if (draggingLibField || draggingFieldId) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = draggingLibField ? 'copy' : 'move';
+            const tailIdx = colFields.length;
+            if (!dragOver || dragOver.column !== column || dragOver.idx !== tailIdx) {
+              setDragOver({ column, idx: tailIdx });
+            }
+          }
+        }}
+        onDragLeave={() => {
+          if (dragOver?.column === column && dragOver.idx === colFields.length) setDragOver(null);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (draggingLibField) {
+            addField(draggingLibField, column, colFields.length);
+            setDraggingLibField(null);
+          } else if (draggingFieldId) {
+            moveFieldTo(draggingFieldId, column, colFields.length);
+            setDraggingFieldId(null);
+          }
+          setDragOver(null);
+        }}
+        style={{
+          minHeight: dragOver?.column === column && dragOver.idx === colFields.length ? 56 : 32,
+          marginTop: 4, borderRadius: 8,
+          border: dragOver?.column === column && dragOver.idx === colFields.length
+            ? '2px dashed var(--ac)'
+            : '2px dashed var(--bd)',
+          background: dragOver?.column === column && dragOver.idx === colFields.length
+            ? 'var(--ac-dim)'
+            : 'transparent',
+          transition: 'all .15s',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'var(--tx3)', fontSize: 10,
+        }}
+      >
+        {dragOver?.column === column && dragOver.idx === colFields.length
+          ? t('vectorLogic.dropFieldHere')
+          : colFields.length === 0 ? '' : '+'}
+      </div>
+    </div>
+  );
+
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--tx3)' }}>{t('common.loading')}</div>;
   }
@@ -213,7 +412,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
           <button onClick={() => setShowNewType(true)}
             title={t('vectorLogic.newTaskType')}
             style={{
-              background: 'var(--ac)', color: '#fff', border: 'none', borderRadius: 6,
+              background: 'var(--ac)', color: 'var(--ac-on)', border: 'none', borderRadius: 6,
               width: 22, height: 22, cursor: 'pointer', display: 'flex',
               alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
             }}>
@@ -353,158 +552,19 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
               </div>
             </div>
 
-            <div
-              style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}
-              onDragOver={(e) => {
-                if ((draggingLibField || draggingFieldId) && fields.length === 0) {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = draggingLibField ? 'copy' : 'move';
-                }
-              }}
-              onDrop={(e) => {
-                if (fields.length === 0 && draggingLibField) {
-                  e.preventDefault();
-                  addField(draggingLibField, 0);
-                  setDraggingLibField(null);
-                }
-              }}>
-              {fields.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--tx3)' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: .2, display: 'block', marginBottom: 12 }}>drag_indicator</span>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{t('vectorLogic.dropFieldHere')}</div>
-                </div>
-              )}
-              {fields.map((field, i) => {
-                const def = FIELD_TYPES.find(f => f.id === field.fieldType);
-                const isSelected = selectedField?.id === field.id;
-                const isDraggingThis = draggingFieldId === field.id;
-                return (
-                  <div key={field.id}>
-                    {/* Drop zone above this card */}
-                    <div
-                      onDragOver={(e) => {
-                        if (draggingLibField || draggingFieldId) {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = draggingLibField ? 'copy' : 'move';
-                          if (dragOverIdx !== i) setDragOverIdx(i);
-                        }
-                      }}
-                      onDragLeave={() => { if (dragOverIdx === i) setDragOverIdx(null); }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (draggingLibField) {
-                          addField(draggingLibField, i);
-                          setDraggingLibField(null);
-                        } else if (draggingFieldId) {
-                          moveFieldTo(draggingFieldId, i);
-                          setDraggingFieldId(null);
-                        }
-                        setDragOverIdx(null);
-                      }}
-                      style={{
-                        height: dragOverIdx === i ? 48 : 8,
-                        margin: '0',
-                        background: dragOverIdx === i ? 'rgba(79,110,247,.15)' : 'transparent',
-                        border: dragOverIdx === i ? '2px dashed var(--ac)' : '2px dashed transparent',
-                        borderRadius: 8,
-                        transition: 'all .15s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      {dragOverIdx === i && (
-                        <span style={{ fontSize: 10, color: 'var(--ac)', fontWeight: 600, opacity: .7 }}>
-                          {t('vectorLogic.dropFieldHere')}
-                        </span>
-                      )}
-                    </div>
-                    <div
-                      draggable
-                      onDragStart={(e) => {
-                        setDraggingFieldId(field.id);
-                        e.dataTransfer.effectAllowed = 'move';
-                        e.dataTransfer.setData('text/plain', field.id);
-                      }}
-                      onDragEnd={() => { setDraggingFieldId(null); setDragOverIdx(null); }}
-                      onClick={() => setSelectedField(field)}
-                      onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--sf3)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,.2)'; }}
-                      onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'var(--sf2)'; e.currentTarget.style.boxShadow = isSelected ? '0 0 0 1px var(--ac), 0 4px 24px rgba(79,110,247,.15)' : 'none'; }}
-                      style={{
-                        background: isSelected ? 'rgba(79,110,247,.06)' : 'var(--sf2)',
-                        border: `1px solid ${isSelected ? 'var(--ac)' : 'rgba(255,255,255,.04)'}`,
-                        borderRadius: 10, padding: '14px 16px',
-                        cursor: isDraggingThis ? 'grabbing' : 'grab',
-                        transition: 'all .2s ease',
-                        opacity: isDraggingThis ? .4 : 1,
-                        boxShadow: isSelected ? '0 0 0 1px var(--ac), 0 4px 24px rgba(79,110,247,.15)' : 'none',
-                      }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--tx3)', opacity: .5 }}>drag_indicator</span>
-                      <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--ac)' }}>{def?.icon}</span>
-                      <span style={{
-                        fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
-                        background: 'rgba(79,110,247,.1)', color: 'var(--ac)',
-                        letterSpacing: '.05em', textTransform: 'uppercase',
-                      }}>{def ? t(def.labelKey) : field.fieldType}</span>
-                      {field.required && <span style={{ fontSize: 9, color: 'var(--red)', fontWeight: 700 }}>{t('vectorLogic.badgeRequired')}</span>}
-                      <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
-                        {field.showOnCreate && <span style={{ fontSize: 8, padding: '2px 6px', borderRadius: 3, background: 'rgba(62,207,142,.1)', color: 'var(--green)', fontWeight: 700 }}>{t('vectorLogic.badgeCreate')}</span>}
-                        {field.showOnDetail && <span style={{ fontSize: 8, padding: '2px 6px', borderRadius: 3, background: 'rgba(79,110,247,.1)', color: 'var(--ac)', fontWeight: 700 }}>{t('vectorLogic.badgeDetail')}</span>}
-                      </div>
-                      <button onClick={e => { e.stopPropagation(); removeField(field.id); }}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', opacity: .5 }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
-                      </button>
-                    </div>
-                    <div style={{ paddingLeft: 60 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)' }}>{field.label}</div>
-                      {field.options && (
-                        <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                          {field.options.map((opt, j) => (
-                            <span key={j} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 12, background: 'var(--sf3)', color: 'var(--tx3)' }}>{opt}</span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    </div>
-                  </div>
-                );
-              })}
-              {/* Trailing drop zone — appends at end */}
-              {fields.length > 0 && (
-                <div
-                  onDragOver={(e) => {
-                    if (draggingLibField || draggingFieldId) {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = draggingLibField ? 'copy' : 'move';
-                      if (dragOverIdx !== fields.length) setDragOverIdx(fields.length);
-                    }
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (draggingLibField) {
-                      addField(draggingLibField, fields.length);
-                      setDraggingLibField(null);
-                    } else if (draggingFieldId) {
-                      moveFieldTo(draggingFieldId, fields.length);
-                      setDraggingFieldId(null);
-                    }
-                    setDragOverIdx(null);
-                  }}
-                  style={{
-                    height: dragOverIdx === fields.length ? 56 : 32,
-                    marginTop: 4,
-                    borderRadius: 8,
-                    border: `2px dashed ${dragOverIdx === fields.length ? 'var(--ac)' : 'transparent'}`,
-                    background: dragOverIdx === fields.length ? 'rgba(79,110,247,.1)' : 'transparent',
-                    transition: 'all .15s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                />
-              )}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', gap: 14 }}>
+              <FieldColumnCanvas
+                column="main"
+                title={t('vectorLogic.mainColumn')}
+                fields={mainFields}
+                flex={2}
+              />
+              <FieldColumnCanvas
+                column="sidebar"
+                title={t('vectorLogic.sidebarColumn')}
+                fields={sidebarFields}
+                flex={1}
+              />
             </div>
           </div>
 
@@ -514,7 +574,11 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
           }}>
             {selectedField ? (
-              <FieldSettingsPanel field={selectedField} onUpdate={(patch) => updateField(selectedField.id, patch)} />
+              <FieldSettingsPanel
+                field={selectedField}
+                onUpdate={(patch) => updateField(selectedField.id, patch)}
+                cardFieldCount={cardFieldCount}
+              />
             ) : (
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx3)', fontSize: 12, padding: 20, textAlign: 'center' }}>
                 {t('vectorLogic.selectFieldToEdit')}
@@ -574,12 +638,18 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
 }
 
 /* ── Field Settings Panel ─────────────────────────────────────────────── */
-function FieldSettingsPanel({ field, onUpdate }: { field: SchemaField; onUpdate: (patch: Partial<SchemaField>) => void }) {
+function FieldSettingsPanel({ field, onUpdate, cardFieldCount }: {
+  field: SchemaField;
+  onUpdate: (patch: Partial<SchemaField>) => void;
+  cardFieldCount: number;
+}) {
   const { t } = useTranslation();
 
   const supportsOptions = ['single_select', 'multi_select', 'radio_group'].includes(field.fieldType);
   const supportsRequired = !['title'].includes(field.fieldType);
   const supportsVisibility = !['title'].includes(field.fieldType);
+  const currentColumn: 'main' | 'sidebar' = field.column ?? 'main';
+  const canAddToCard = field.showOnCard || cardFieldCount < MAX_CARD_FIELDS;
 
   return (
     <div style={{ padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', flex: 1 }}>
@@ -594,11 +664,53 @@ function FieldSettingsPanel({ field, onUpdate }: { field: SchemaField; onUpdate:
 
       {supportsVisibility && (
         <div>
+          <label style={{ ...lblStyle, marginBottom: 8 }}>{t('vectorLogic.column')}</label>
+          <div style={{
+            display: 'flex', gap: 0, background: 'var(--sf2)',
+            border: '1px solid var(--bd)', borderRadius: 6, padding: 3,
+          }}>
+            <button
+              onClick={() => onUpdate({ column: 'main' })}
+              style={{
+                flex: 1, padding: '5px 10px', borderRadius: 4, border: 'none',
+                background: currentColumn === 'main' ? 'var(--ac)' : 'transparent',
+                color: currentColumn === 'main' ? 'var(--ac-on)' : 'var(--tx2)',
+                fontSize: 10, fontWeight: 700, letterSpacing: '.04em',
+                fontFamily: 'inherit', cursor: 'pointer',
+              }}
+            >
+              {t('vectorLogic.mainColumn')}
+            </button>
+            <button
+              onClick={() => onUpdate({ column: 'sidebar' })}
+              style={{
+                flex: 1, padding: '5px 10px', borderRadius: 4, border: 'none',
+                background: currentColumn === 'sidebar' ? 'var(--ac)' : 'transparent',
+                color: currentColumn === 'sidebar' ? 'var(--ac-on)' : 'var(--tx2)',
+                fontSize: 10, fontWeight: 700, letterSpacing: '.04em',
+                fontFamily: 'inherit', cursor: 'pointer',
+              }}
+            >
+              {t('vectorLogic.sidebarColumn')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {supportsVisibility && (
+        <div>
           <label style={{ ...lblStyle, marginBottom: 10 }}>{t('vectorLogic.displayLogic')}</label>
           <ToggleRow label={t('vectorLogic.showOnCreate')} value={field.showOnCreate}
             onChange={v => onUpdate({ showOnCreate: v })} color="var(--green)" />
           <ToggleRow label={t('vectorLogic.showOnDetail')} value={field.showOnDetail}
             onChange={v => onUpdate({ showOnDetail: v })} color="var(--ac)" />
+          <ToggleRow
+            label={`${t('vectorLogic.showOnCard')} (${cardFieldCount}/${MAX_CARD_FIELDS})`}
+            value={!!field.showOnCard}
+            onChange={v => { if (canAddToCard || !v) onUpdate({ showOnCard: v }); }}
+            color="var(--purple)"
+            disabled={!canAddToCard}
+          />
         </div>
       )}
 
@@ -638,17 +750,34 @@ function FieldSettingsPanel({ field, onUpdate }: { field: SchemaField; onUpdate:
   );
 }
 
-function ToggleRow({ label, value, onChange, color }: { label: string; value: boolean; onChange: (v: boolean) => void; color: string }) {
+function TogglePill({ color, dim, label }: { color: string; dim: string; label: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0' }}>
+    <span style={{
+      fontSize: 8, padding: '2px 6px', borderRadius: 3,
+      background: dim, color: color,
+      fontWeight: 700, letterSpacing: '.04em',
+    }}>{label}</span>
+  );
+}
+
+function ToggleRow({ label, value, onChange, color, disabled }: {
+  label: string; value: boolean; onChange: (v: boolean) => void; color: string; disabled?: boolean;
+}) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0',
+      opacity: disabled ? 0.4 : 1,
+    }}>
       <span style={{ fontSize: 12, color: 'var(--tx)' }}>{label}</span>
-      <button onClick={() => onChange(!value)}
+      <button onClick={() => { if (!disabled) onChange(!value); }}
+        disabled={disabled}
         style={{
-          width: 36, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
+          width: 36, height: 20, borderRadius: 10, border: 'none',
+          cursor: disabled ? 'not-allowed' : 'pointer',
           background: value ? color : 'var(--sf3)', position: 'relative', transition: 'background .2s',
         }}>
         <div style={{
-          width: 14, height: 14, borderRadius: '50%', background: '#fff',
+          width: 14, height: 14, borderRadius: '50%', background: 'var(--ac-on)',
           position: 'absolute', top: 3, left: value ? 19 : 3, transition: 'left .2s',
         }} />
       </button>
@@ -661,8 +790,8 @@ const btnStyle = (variant = 'primary', extra = {}) => ({
   borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer', border: 'none',
   fontFamily: 'inherit', transition: 'all .2s',
   ...(variant === 'primary' && {
-    background: 'linear-gradient(135deg, #adc6ff, #4d8eff)',
-    color: '#fff',
+    background: 'linear-gradient(135deg, var(--ac2), var(--ac))',
+    color: 'var(--ac-on)',
     boxShadow: '0 2px 12px rgba(77,142,255,.3)',
   }),
   ...(variant === 'ghost' && {
