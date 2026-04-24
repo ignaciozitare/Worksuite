@@ -61,7 +61,10 @@ export function TaskTypeSwitcher({ current, types, data, onSwitch }: Props) {
         }}
         title={t('vectorLogic.changeTaskType')}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+        <span className="material-symbols-outlined" style={{
+          fontSize: 16,
+          color: current.iconColor || 'var(--ac)',
+        }}>
           {current.icon || 'task_alt'}
         </span>
         <span style={{ fontWeight: 600 }}>{current.name}</span>
@@ -85,7 +88,10 @@ export function TaskTypeSwitcher({ current, types, data, onSwitch }: Props) {
                 padding: '8px 10px', borderRadius: 6, background: isCurrent ? 'var(--ac-dim)' : 'transparent',
                 border: 'none', fontFamily: 'inherit', fontSize: 12, color: 'var(--tx)', cursor: 'pointer',
               }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                <span className="material-symbols-outlined" style={{
+                  fontSize: 16,
+                  color: tt.iconColor || (isCurrent ? 'var(--ac)' : 'var(--tx2)'),
+                }}>
                   {tt.icon || 'task_alt'}
                 </span>
                 <span style={{ flex: 1, textAlign: 'left', fontWeight: isCurrent ? 600 : 400 }}>{tt.name}</span>

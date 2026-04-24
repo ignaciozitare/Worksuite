@@ -6,7 +6,22 @@ interface Props {
   value: string;
   onChange: (icon: string) => void;
   size?: number;
+  /** Current icon color (CSS value). Null/undefined falls back to var(--ac). */
+  color?: string | null;
+  /** Called when the user picks a color from the swatch row. Null = reset to default. */
+  onColorChange?: (color: string | null) => void;
 }
+
+/** Curated palette for icon color. Each swatch stores the CSS var reference
+ *  that drives the icon fill; null = default accent (theme-aware). */
+const COLOR_SWATCHES: Array<{ value: string | null; varName: string; labelKey: string }> = [
+  { value: null,              varName: 'var(--ac)',     labelKey: 'vectorLogic.colorDefault' },
+  { value: 'var(--green)',    varName: 'var(--green)',  labelKey: 'vectorLogic.colorGreen' },
+  { value: 'var(--amber)',    varName: 'var(--amber)',  labelKey: 'vectorLogic.colorAmber' },
+  { value: 'var(--red)',      varName: 'var(--red)',    labelKey: 'vectorLogic.colorRed' },
+  { value: 'var(--purple)',   varName: 'var(--purple)', labelKey: 'vectorLogic.colorPurple' },
+  { value: 'var(--tx3)',      varName: 'var(--tx3)',    labelKey: 'vectorLogic.colorGray' },
+];
 
 /**
  * Curated icon library from Material Symbols Outlined. The full library is
@@ -56,7 +71,7 @@ const ICONS = [
   'celebration', 'workspace_premium', 'military_tech', 'emoji_events',
 ];
 
-export function IconPicker({ value, onChange, size = 24 }: Props) {
+export function IconPicker({ value, onChange, size = 24, color, onColorChange }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -64,6 +79,8 @@ export function IconPicker({ value, onChange, size = 24 }: Props) {
   const filtered = search
     ? ICONS.filter(i => i.toLowerCase().includes(search.toLowerCase()))
     : ICONS;
+
+  const effectiveColor = color || 'var(--ac)';
 
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -74,7 +91,7 @@ export function IconPicker({ value, onChange, size = 24 }: Props) {
           width: size + 16, height: size + 16, borderRadius: 8,
           background: 'var(--sf3)', border: '1px solid var(--bd)',
           cursor: 'pointer', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', color: 'var(--ac)', fontFamily: 'inherit',
+          justifyContent: 'center', color: effectiveColor, fontFamily: 'inherit',
           transition: 'all .15s',
         }}
         onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--ac)'}
@@ -112,32 +129,72 @@ export function IconPicker({ value, onChange, size = 24 }: Props) {
               flex: 1, overflowY: 'auto', padding: 8,
               display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 4,
             }}>
-              {filtered.map(name => (
-                <button
-                  key={name}
-                  type="button"
-                  title={name}
-                  onClick={() => { onChange(name); setOpen(false); }}
-                  style={{
-                    width: 34, height: 34, borderRadius: 6,
-                    background: value === name ? 'rgba(79,110,247,.15)' : 'transparent',
-                    border: value === name ? '1px solid var(--ac)' : '1px solid transparent',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center',
-                    color: value === name ? 'var(--ac)' : 'var(--tx2)',
-                    fontFamily: 'inherit', transition: 'all .12s',
-                  }}
-                  onMouseEnter={e => { if (value !== name) { e.currentTarget.style.background = 'var(--sf2)'; e.currentTarget.style.color = 'var(--tx)'; } }}
-                  onMouseLeave={e => { if (value !== name) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--tx2)'; } }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{name}</span>
-                </button>
-              ))}
+              {filtered.map(name => {
+                const selected = value === name;
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    title={name}
+                    onClick={() => { onChange(name); setOpen(false); }}
+                    style={{
+                      width: 34, height: 34, borderRadius: 6,
+                      background: selected ? 'var(--ac-dim)' : 'transparent',
+                      border: selected ? '1px solid var(--ac)' : '1px solid transparent',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center',
+                      justifyContent: 'center',
+                      color: selected ? effectiveColor : 'var(--tx2)',
+                      fontFamily: 'inherit', transition: 'all .12s',
+                    }}
+                    onMouseEnter={e => { if (!selected) { e.currentTarget.style.background = 'var(--sf2)'; e.currentTarget.style.color = 'var(--tx)'; } }}
+                    onMouseLeave={e => { if (!selected) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--tx2)'; } }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{name}</span>
+                  </button>
+                );
+              })}
               {filtered.length === 0 && (
                 <div style={{ gridColumn: '1 / -1', fontSize: 11, color: 'var(--tx3)', textAlign: 'center', padding: '20px 0' }}>
                   No icons match "{search}"
                 </div>
               )}
             </div>
+
+            {/* Color swatch row — only when onColorChange is provided */}
+            {onColorChange && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 12px', borderTop: '1px solid var(--bd)',
+                background: 'var(--sf2)',
+              }}>
+                <span style={{
+                  fontSize: 9, fontWeight: 700, letterSpacing: '.08em',
+                  color: 'var(--tx3)', textTransform: 'uppercase',
+                }}>
+                  {t('vectorLogic.iconColor')}
+                </span>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {COLOR_SWATCHES.map(sw => {
+                    const active = (color ?? null) === sw.value;
+                    return (
+                      <button
+                        key={sw.labelKey}
+                        type="button"
+                        title={t(sw.labelKey)}
+                        onClick={() => onColorChange(sw.value)}
+                        style={{
+                          width: 22, height: 22, borderRadius: '50%',
+                          background: sw.varName,
+                          border: active ? '2px solid var(--tx)' : '2px solid transparent',
+                          cursor: 'pointer', padding: 0,
+                          boxShadow: active ? '0 0 0 2px var(--bg)' : 'none',
+                          transition: 'all .12s',
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

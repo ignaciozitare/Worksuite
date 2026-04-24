@@ -20,6 +20,7 @@ export class SupabaseTaskTypeRepo implements ITaskTypeRepo {
       .insert({
         name: draft.name,
         icon: draft.icon,
+        icon_color: draft.iconColor ?? null,
         workflow_id: draft.workflowId,
         schema: draft.schema,
         prefix: draft.prefix,
@@ -35,6 +36,7 @@ export class SupabaseTaskTypeRepo implements ITaskTypeRepo {
     const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (patch.name !== undefined) row.name = patch.name;
     if (patch.icon !== undefined) row.icon = patch.icon;
+    if (patch.iconColor !== undefined) row.icon_color = patch.iconColor;
     if (patch.workflowId !== undefined) row.workflow_id = patch.workflowId;
     if (patch.schema !== undefined) row.schema = patch.schema;
     if (patch.prefix !== undefined) row.prefix = patch.prefix;
@@ -53,6 +55,7 @@ export class SupabaseTaskTypeRepo implements ITaskTypeRepo {
       id: row.id,
       name: row.name,
       icon: row.icon,
+      iconColor: row.icon_color ?? null,
       prefix: row.prefix ?? null,
       nextNumber: row.next_number ?? 1,
       workflowId: row.workflow_id,
