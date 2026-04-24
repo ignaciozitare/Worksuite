@@ -4,6 +4,7 @@ import { useTranslation } from '@worksuite/i18n';
 import { KanbanView } from './views/KanbanView';
 import { ChatView } from './views/ChatView';
 import { AIDetectionsView } from './views/AIDetectionsView';
+import { BacklogHistoryView } from './views/BacklogHistoryView';
 import { aiRepo } from '../container';
 import type { AIMode } from '../domain/entities/AI';
 
@@ -23,7 +24,7 @@ const CSS = `
 .vl .vl-section-label{font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.12em;padding:16px 12px 6px;user-select:none;}
 `;
 
-type Tab = 'kanban' | 'chat' | 'detections';
+type Tab = 'kanban' | 'chat' | 'detections' | 'backlogHistory';
 
 interface Props {
   currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown };
@@ -51,8 +52,9 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
   // global Admin panel → Vector Logic tab.
   const NAV: Array<{ section?: string; id?: Tab; label?: string; icon?: string }> = [
     { section: t('vectorLogic.workspace') },
-    { id: 'kanban',     label: t('vectorLogic.smartKanban'),  icon: 'view_kanban' },
-    { id: 'detections', label: t('vectorLogic.aiDetections'), icon: 'mark_email_unread' },
+    { id: 'kanban',         label: t('vectorLogic.smartKanban'),    icon: 'view_kanban' },
+    { id: 'backlogHistory', label: t('vectorLogic.backlogHistory'), icon: 'inbox_customize' },
+    { id: 'detections',     label: t('vectorLogic.aiDetections'),   icon: 'mark_email_unread' },
     ...(mode === 'embedded' ? [{ id: 'chat' as Tab, label: t('vectorLogic.chat'), icon: 'forum' }] : []),
   ];
 
@@ -119,9 +121,10 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
         overflow: view === 'kanban' || view === 'chat' ? 'hidden' : 'auto',
         padding: view === 'chat' ? 0 : '28px 32px',
       }}>
-        {view === 'kanban'     && <KanbanView        currentUser={currentUser} wsUsers={wsUsers} />}
-        {view === 'chat'       && mode === 'embedded' && <ChatView currentUser={currentUser} />}
-        {view === 'detections' && <AIDetectionsView  currentUser={currentUser} />}
+        {view === 'kanban'         && <KanbanView         currentUser={currentUser} wsUsers={wsUsers} />}
+        {view === 'backlogHistory' && <BacklogHistoryView currentUser={currentUser} />}
+        {view === 'chat'           && mode === 'embedded' && <ChatView currentUser={currentUser} />}
+        {view === 'detections'     && <AIDetectionsView   currentUser={currentUser} />}
       </div>
     </div>
   );

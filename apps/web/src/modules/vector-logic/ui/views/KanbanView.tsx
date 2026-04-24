@@ -8,9 +8,12 @@ import type { WorkflowState, StateCategory } from '../../domain/entities/State';
 import type { SchemaField } from '../../domain/entities/FieldType';
 import type { Priority } from '../../domain/entities/Priority';
 import { FIELD_TYPES } from '../../domain/entities/FieldType';
-import { taskRepo, taskTypeRepo, stateRepo, priorityRepo } from '../../container';
+import { taskRepo, taskTypeRepo, stateRepo, priorityRepo, taskAlarmRepo, userSettingsRepo } from '../../container';
+import type { TaskAlarm } from '../../domain/entities/TaskAlarm';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { UserPicker } from '../components/UserPicker';
+import { TaskTypeSwitcher } from '../components/TaskTypeSwitcher';
+import { TaskAlarmPicker } from '../components/TaskAlarmPicker';
 
 const CAT_COLORS: Record<StateCategory, { color: string; bg: string }> = {
   BACKLOG:     { color: 'var(--tx3)',   bg: 'rgba(140,144,159,.08)' },
@@ -51,6 +54,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   const [filterAssignee, setFilterAssignee] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'manual' | 'priority' | 'assignee'>('manual');
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -62,11 +66,51 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
       setTaskTypes(assigned);
       setPriorities(prs);
       if (assigned.length > 0) {
-        await loadType(assigned[0]);
+        await loadType(assigned[0], { runAutoArchive: true });
       }
       setLoading(false);
     })();
   }, []);
+
+  /**
+   * Done-column auto-archive.
+   * - doneMaxDays: archive any Done task whose state_entered_at is older than N days.
+   * - doneMaxCount: if Done tasks still exceed N, archive the oldest until the limit is met.
+   * - 0 on either setting means "no limit" for that dimension.
+   */
+  const autoArchiveDone = async (
+    tsks: Task[],
+    wfs: WorkflowState[],
+    doneMaxDays: number,
+    doneMaxCount: number,
+  ): Promise<string[]> => {
+    if (doneMaxDays <= 0 && doneMaxCount <= 0) return [];
+    const doneStateIds = new Set(
+      wfs.filter(ws => ws.state?.category === 'DONE').map(ws => ws.stateId),
+    );
+    let done = tsks.filter(t => t.stateId && doneStateIds.has(t.stateId));
+    const now = Date.now();
+    const archiveIds = new Set<string>();
+
+    if (doneMaxDays > 0) {
+      const cutoff = now - doneMaxDays * 86_400_000;
+      done.forEach(t => {
+        if (new Date(t.stateEnteredAt).getTime() < cutoff) archiveIds.add(t.id);
+      });
+    }
+
+    if (doneMaxCount > 0) {
+      const survivors = done
+        .filter(t => !archiveIds.has(t.id))
+        .sort((a, b) => new Date(a.stateEnteredAt).getTime() - new Date(b.stateEnteredAt).getTime());
+      const overflow = survivors.length - doneMaxCount;
+      for (let i = 0; i < overflow; i++) archiveIds.add(survivors[i].id);
+    }
+
+    if (archiveIds.size === 0) return [];
+    await Promise.all(Array.from(archiveIds).map(id => taskRepo.archive(id, currentUser.id)));
+    return Array.from(archiveIds);
+  };
 
   // Map priority name → color for rendering badges
   const priorityColorByName = useMemo(() => {
@@ -83,22 +127,37 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
     return map;
   }, [priorities]);
 
-  const loadType = async (tt: TaskType) => {
+  const loadType = async (tt: TaskType, opts?: { runAutoArchive?: boolean }) => {
     setSelectedType(tt);
     if (!tt.workflowId) { setWfStates([]); setTasks([]); return; }
-    const [ws, tsks] = await Promise.all([
+    const [ws, tsks, settings] = await Promise.all([
       stateRepo.findByWorkflow(tt.workflowId),
       taskRepo.findByTaskType(tt.id),
+      opts?.runAutoArchive ? userSettingsRepo.get(currentUser.id) : Promise.resolve(null),
     ]);
+
+    let finalTasks = tsks;
+    if (opts?.runAutoArchive) {
+      const doneMaxDays = settings?.doneMaxDays ?? 7;
+      const doneMaxCount = settings?.doneMaxCount ?? 20;
+      const archived = await autoArchiveDone(tsks, ws, doneMaxDays, doneMaxCount);
+      if (archived.length > 0) {
+        const archivedSet = new Set(archived);
+        finalTasks = tsks.filter(t => !archivedSet.has(t.id));
+      }
+    }
+
     setWfStates(ws);
-    setTasks(tsks);
+    setTasks(finalTasks);
   };
 
   // Apply filters and sort, then group by stateId
   const tasksByState = useMemo(() => {
+    const q = search.trim().toLowerCase();
     const filtered = tasks.filter(t => {
       if (filterAssignee !== 'all' && t.assigneeId !== (filterAssignee === 'unassigned' ? null : filterAssignee)) return false;
       if (filterPriority !== 'all' && (t.priority ?? '').toLowerCase() !== filterPriority.toLowerCase()) return false;
+      if (q && !t.title.toLowerCase().includes(q) && !(t.code ?? '').toLowerCase().includes(q)) return false;
       return true;
     });
 
@@ -127,7 +186,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
     });
 
     return map;
-  }, [tasks, wfStates, filterAssignee, filterPriority, sortBy, priorityRankByName]);
+  }, [tasks, wfStates, filterAssignee, filterPriority, sortBy, priorityRankByName, search]);
 
   // Distinct assignees present in loaded tasks
   const assigneesInTasks = useMemo(() => {
@@ -313,7 +372,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                 title={tt.name}
                 style={{
                   background: selectedType?.id === tt.id ? 'var(--ac)' : 'transparent',
-                  color: selectedType?.id === tt.id ? '#fff' : 'var(--tx3)',
+                  color: selectedType?.id === tt.id ? 'var(--ac-on)' : 'var(--tx3)',
                   border: 'none', borderRadius: 6, cursor: 'pointer',
                   fontWeight: selectedType?.id === tt.id ? 600 : 400,
                   fontSize: 11, padding: '5px 12px', fontFamily: 'inherit',
@@ -354,7 +413,31 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
           </select>
         </div>
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6, background: 'var(--sf2)',
+            border: '1px solid var(--bd)', borderRadius: 8, padding: '6px 10px', width: 200,
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>search</span>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('vectorLogic.searchKanban')}
+              style={{
+                flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                color: 'var(--tx)', fontSize: 11, fontFamily: 'inherit',
+              }}
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                title={t('common.clear')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', padding: 0, display: 'flex' }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+              </button>
+            )}
+          </div>
           <span style={{ fontSize: 11, color: 'var(--tx3)', alignSelf: 'center' }}>
             {tasks.length} {t('vectorLogic.tasks')}
           </span>
@@ -400,7 +483,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                   }}
                   style={{
                     background: isDropTarget
-                      ? `linear-gradient(180deg, rgba(79,110,247,.14) 0%, rgba(79,110,247,.04) 100%)`
+                      ? `linear-gradient(180deg, var(--ac-dim) 0%, transparent 100%)`
                       : 'var(--sf2)',
                     borderRadius: 12,
                     borderTop: `3px solid ${ws.state?.color || cc.color}`,
@@ -410,7 +493,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                     opacity: isDragging ? .4 : 1,
                     transform: isDropTarget ? 'scale(1.015)' : 'scale(1)',
                     boxShadow: isDropTarget
-                      ? `0 0 0 4px rgba(79,110,247,.08), 0 16px 40px rgba(79,110,247,.2)`
+                      ? `0 0 0 4px var(--ac-dim), 0 16px 40px var(--ac-dim)`
                       : '0 2px 8px rgba(0,0,0,.18)',
                     transition: 'all .22s cubic-bezier(.215,.61,.355,1)',
                   }}>
@@ -470,6 +553,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                             />
                           )}
                           <TaskCard task={task}
+                            taskType={selectedType}
                             priorityColor={priorityColorByName[(task.priority ?? '').toLowerCase()] ?? 'var(--tx3)'}
                             assignee={wsUsers.find(u => u.id === task.assigneeId) ?? null}
                             onClick={() => setDetailTask(task)}
@@ -553,6 +637,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
         <TaskDetailModal
           task={detailTask}
           taskType={selectedType}
+          taskTypes={taskTypes}
           wfStates={wfStates}
           wsUsers={wsUsers}
           priorities={priorities}
@@ -567,8 +652,42 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
 }
 
 /* ── Task Card ─────────────────────────────────────────────────────────── */
-function TaskCard({ task, priorityColor, assignee, onClick, onDragStart, onDragEnd, isDragging }: {
+/**
+ * Returns the number of whole days between `iso` and `now`.
+ * Both are compared at midnight (local) to avoid partial-day drift.
+ */
+function daysBetween(iso: string, now: Date): number {
+  const a = new Date(iso);
+  const aMid = new Date(a.getFullYear(), a.getMonth(), a.getDate()).getTime();
+  const nMid = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  return Math.round((nMid - aMid) / 86_400_000);
+}
+
+/** Reads the display value for a card chip — routes native-shadowed types
+ *  (assignee/due_date) to native columns. Returns null for anything empty. */
+function readCardFieldValue(task: Task, field: SchemaField): unknown {
+  if (field.fieldType === 'due_date') return task.dueDate;
+  if (field.fieldType === 'assignee') return task.assigneeId;
+  if (field.fieldType === 'title')    return task.title;
+  return (task.data ?? {})[field.id];
+}
+
+/** Turns a value into a short string for a card chip. */
+function formatCardValue(field: SchemaField, v: unknown): string | null {
+  if (v === null || v === undefined || v === '') return null;
+  if (field.fieldType === 'due_date' || field.fieldType === 'date' || field.fieldType === 'start_date') {
+    const d = new Date(v as string);
+    if (isNaN(d.getTime())) return String(v);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  }
+  if (field.fieldType === 'checkbox') return v ? '✓' : null;
+  if (Array.isArray(v)) return v.length ? v.join(', ') : null;
+  return String(v).slice(0, 24);
+}
+
+function TaskCard({ task, taskType, priorityColor, assignee, onClick, onDragStart, onDragEnd, isDragging }: {
   task: Task;
+  taskType: TaskType | null;
   priorityColor: string;
   assignee: WSUser | null;
   onClick: () => void;
@@ -577,6 +696,30 @@ function TaskCard({ task, priorityColor, assignee, onClick, onDragStart, onDragE
   isDragging?: boolean;
 }) {
   const initials = assignee ? (assignee.name || assignee.email).trim().split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase() : '';
+  const now = new Date();
+  const daysInColumn = daysBetween(task.stateEnteredAt, now);
+
+  // User-configured card chips (up to 4). Assignee is rendered as the avatar,
+  // never as a chip — filter it out here.
+  const schema = ((taskType?.schema as SchemaField[]) || []);
+  const cardFields = schema
+    .filter(f => f.showOnCard && f.fieldType !== 'assignee' && f.fieldType !== 'title')
+    .sort((a, b) => a.order - b.order)
+    .slice(0, 4);
+  const hasCardFields = cardFields.length > 0;
+
+  // Due-date color (also used for a "due" chip in the default layout).
+  let dueColor = 'var(--tx3)';
+  let dueBg = 'transparent';
+  let dueLabel: string | null = null;
+  if (task.dueDate) {
+    const daysUntil = daysBetween(task.dueDate, now) * -1;
+    if (daysUntil < 0)        { dueColor = 'var(--red)';   dueBg = 'var(--red-dim)'; }
+    else if (daysUntil === 0) { dueColor = 'var(--amber)'; dueBg = 'var(--amber-dim)'; }
+    const d = new Date(task.dueDate);
+    dueLabel = `${d.getMonth() + 1}/${d.getDate()}`;
+  }
+
   return (
     <div
       draggable
@@ -592,23 +735,85 @@ function TaskCard({ task, priorityColor, assignee, onClick, onDragStart, onDragE
         boxShadow: '0 1px 2px rgba(0,0,0,.2)',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.background = 'rgba(79,110,247,.08)';
+        e.currentTarget.style.background = 'var(--ac-dim)';
         e.currentTarget.style.transform = 'translateY(-1px)';
-        e.currentTarget.style.boxShadow = '0 4px 14px rgba(79,110,247,.18)';
+        e.currentTarget.style.boxShadow = '0 4px 14px var(--ac-dim)';
       }}
       onMouseLeave={e => {
         e.currentTarget.style.background = 'var(--sf3)';
         e.currentTarget.style.transform = 'translateY(0)';
         e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,.2)';
       }}>
+      {/* Top row: type icon + code */}
+      {(taskType || task.code) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+          {taskType?.icon && (
+            <span className="material-symbols-outlined" style={{ fontSize: 13, color: 'var(--tx3)' }}>
+              {taskType.icon}
+            </span>
+          )}
+          {task.code && (
+            <span style={{
+              fontSize: 9, fontWeight: 700, color: 'var(--ac)',
+              fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '.04em',
+            }}>
+              {task.code}
+            </span>
+          )}
+        </div>
+      )}
       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.35 }}>{task.title}</div>
-      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-        {task.priority && (
-          <span style={{
-            fontSize: 9, padding: '2px 6px', borderRadius: 3,
-            background: `${priorityColor}22`, color: priorityColor,
-            fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase',
-          }}>{task.priority}</span>
+      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        {hasCardFields ? (
+          // Configured chips (up to 4) — drive what the user wants to see at-a-glance.
+          cardFields.map(field => {
+            const raw = readCardFieldValue(task, field);
+            const value = formatCardValue(field, raw);
+            if (!value) return null;
+            const isDue = field.fieldType === 'due_date';
+            return (
+              <span key={field.id} style={{
+                fontSize: 9, padding: '2px 6px', borderRadius: 3,
+                background: isDue ? dueBg : 'var(--sf2)',
+                color: isDue ? dueColor : 'var(--tx2)',
+                fontWeight: 700, letterSpacing: '.04em',
+                display: 'inline-flex', alignItems: 'center', gap: 3,
+                maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {value}
+              </span>
+            );
+          })
+        ) : (
+          <>
+            {task.priority && (
+              <span style={{
+                fontSize: 9, padding: '2px 6px', borderRadius: 3,
+                background: `${priorityColor}22`, color: priorityColor,
+                fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase',
+              }}>{task.priority}</span>
+            )}
+            {daysInColumn > 0 && (
+              <span style={{
+                fontSize: 9, padding: '2px 6px', borderRadius: 3,
+                background: 'var(--sf2)', color: 'var(--tx3)',
+                fontWeight: 700, letterSpacing: '.04em',
+              }}>
+                {daysInColumn}d
+              </span>
+            )}
+            {dueLabel && (
+              <span style={{
+                fontSize: 9, padding: '2px 6px', borderRadius: 3,
+                background: dueBg, color: dueColor,
+                fontWeight: 700, letterSpacing: '.04em',
+                display: 'inline-flex', alignItems: 'center', gap: 3,
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 11 }}>event</span>
+                {dueLabel}
+              </span>
+            )}
+          </>
         )}
         <div style={{ flex: 1 }} />
         {assignee && (
@@ -616,9 +821,9 @@ function TaskCard({ task, priorityColor, assignee, onClick, onDragStart, onDragE
             style={{
               width: 22, height: 22, borderRadius: '50%',
               background: 'linear-gradient(135deg, var(--ac), var(--ac2))',
-              color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--ac-on)', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 9, fontWeight: 700, letterSpacing: '.02em',
-              border: '1px solid rgba(255,255,255,.12)',
+              border: '1px solid var(--bd)',
             }}>
             {initials}
           </div>
@@ -687,8 +892,8 @@ function NewTaskModal({ taskTypes, defaultTypeId, onClose, onCreate }: {
 }
 
 /* ── Task Detail Modal ─────────────────────────────────────────────────── */
-function TaskDetailModal({ task, taskType, wfStates, wsUsers, priorities, currentUser, onClose, onUpdate, onDelete }: {
-  task: Task; taskType: TaskType; wfStates: WorkflowState[];
+function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorities, currentUser, onClose, onUpdate, onDelete }: {
+  task: Task; taskType: TaskType; taskTypes: TaskType[]; wfStates: WorkflowState[];
   wsUsers: WSUser[];
   priorities: Priority[];
   currentUser: { id: string; [k: string]: unknown };
@@ -696,84 +901,499 @@ function TaskDetailModal({ task, taskType, wfStates, wsUsers, priorities, curren
 }) {
   const { t } = useTranslation();
   const dialog = useDialog();
-  const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [data, setData] = useState(task.data);
   const [stateId, setStateId] = useState(task.stateId);
   const [priority, setPriority] = useState(task.priority);
+  const [dueDate, setDueDate] = useState<string | null>(task.dueDate);
+  const [assigneeId, setAssigneeId] = useState<string | null>(task.assigneeId);
+  const [currentType, setCurrentType] = useState<TaskType>(taskType);
 
-  const schema = (taskType.schema as SchemaField[]) || [];
+  // Auto-save indicator: flashes after each persisted change, then fades.
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const autoSave = async (patch: Partial<Task>) => {
+    await onUpdate(patch);
+    setSavedAt(Date.now());
+  };
+
+  // Subtasks and alarms — loaded once per task.
+  const [subtasks, setSubtasks] = useState<Task[]>([]);
+  const [alarms, setAlarms] = useState<TaskAlarm[]>([]);
+  const [showAlarmPicker, setShowAlarmPicker] = useState(false);
+  const [showSubtaskForm, setShowSubtaskForm] = useState(false);
+  const [subtaskTitle, setSubtaskTitle] = useState('');
+  const [subtaskTypeId, setSubtaskTypeId] = useState<string>(taskType.id);
+  const [creatingSub, setCreatingSub] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const [children, alarmList] = await Promise.all([
+        taskRepo.findChildren(task.id),
+        taskAlarmRepo.listByTask(task.id),
+      ]);
+      setSubtasks(children);
+      setAlarms(alarmList);
+    })();
+  }, [task.id]);
+
+  const stateById = useMemo(() => {
+    const m: Record<string, { name?: string; category?: string }> = {};
+    wfStates.forEach(ws => { m[ws.stateId] = { name: ws.state?.name, category: ws.state?.category }; });
+    return m;
+  }, [wfStates]);
+
+  const subtaskStats = useMemo(() => {
+    const done = subtasks.filter(s => stateById[s.stateId ?? '']?.category === 'DONE').length;
+    return { done, total: subtasks.length };
+  }, [subtasks, stateById]);
+
+  const handleCreateSubtask = async () => {
+    const title = subtaskTitle.trim();
+    if (!title) return;
+    const tt = taskTypes.find(x => x.id === subtaskTypeId);
+    if (!tt?.workflowId) return;
+    setCreatingSub(true);
+    try {
+      const wfs = await stateRepo.findByWorkflow(tt.workflowId);
+      const open = wfs.find(ws => ws.state?.category === 'OPEN') ?? wfs.find(ws => ws.isInitial) ?? wfs[0];
+      if (!open) return;
+      const created = await taskRepo.create({
+        taskTypeId: tt.id,
+        stateId: open.stateId,
+        title,
+        data: {},
+        assigneeId: currentUser.id,
+        priority: null,
+        createdBy: currentUser.id,
+        parentTaskId: task.id,
+      });
+      setSubtasks(prev => [...prev, created]);
+      setSubtaskTitle('');
+      setShowSubtaskForm(false);
+    } finally {
+      setCreatingSub(false);
+    }
+  };
+
+  const handleDeleteAlarm = async (alarmId: string) => {
+    await taskAlarmRepo.remove(alarmId);
+    setAlarms(prev => prev.filter(a => a.id !== alarmId));
+  };
+
+  const schema = (currentType.schema as SchemaField[]) || [];
   const detailFields = schema.filter(f => f.showOnDetail);
+  const mainDetailFields = detailFields
+    .filter(f => (f.column ?? 'main') === 'main')
+    .sort((a, b) => a.order - b.order);
+  const sideDetailFields = detailFields
+    .filter(f => (f.column ?? 'main') === 'sidebar')
+    .sort((a, b) => a.order - b.order);
 
-  const save = async () => {
-    await onUpdate({ title, data, stateId, priority });
-    setEditing(false);
+  /** Reads the effective value for a schema field — from native task columns
+   *  when the field type shadows one, otherwise from task.data. */
+  const readValue = (field: SchemaField): unknown => {
+    if (field.fieldType === 'title') return title;
+    if (field.fieldType === 'assignee') return assigneeId;
+    if (field.fieldType === 'due_date') return dueDate;
+    return data[field.id];
+  };
+
+  /** Writes the value for a schema field — routes native-shadowed types
+   *  (title/assignee/due_date) to their native columns instead of task.data. */
+  const writeValue = (field: SchemaField, v: unknown) => {
+    if (field.fieldType === 'title') {
+      setTitle(v as string);
+      autoSave({ title: v as string });
+    } else if (field.fieldType === 'assignee') {
+      const next = v as string | null;
+      setAssigneeId(next);
+      autoSave({ assigneeId: next });
+    } else if (field.fieldType === 'due_date') {
+      const next = v as string | null;
+      setDueDate(next);
+      autoSave({ dueDate: next });
+    } else {
+      const newData = { ...data, [field.id]: v };
+      setData(newData);
+      autoSave({ data: newData });
+    }
+  };
+
+  const handleTypeSwitch = (newTypeId: string, mapping: Record<string, string | null>) => {
+    const next = taskTypes.find(x => x.id === newTypeId);
+    if (!next) return;
+    // Reshape data according to mapping: orphaned fields either get mapped
+    // onto a new field id, or are dropped entirely (null mapping).
+    const nextData = { ...data };
+    for (const [fromId, toId] of Object.entries(mapping)) {
+      const v = nextData[fromId];
+      delete nextData[fromId];
+      if (toId) nextData[toId] = v;
+    }
+    setCurrentType(next);
+    setData(nextData);
+    autoSave({ taskTypeId: next.id, data: nextData });
   };
 
   return (
-    <Modal title={task.title} onClose={onClose} width={560}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {/* Status row */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <select value={stateId ?? ''} onChange={e => { setStateId(e.target.value); onUpdate({ stateId: e.target.value }); }}
-            style={{ ...inpStyle({ width: 'auto' }), fontSize: 12 }}>
-            {wfStates.map(ws => (
-              <option key={ws.stateId} value={ws.stateId}>{ws.state?.name}</option>
-            ))}
-          </select>
-          <select value={priority ?? ''} onChange={e => { setPriority(e.target.value); onUpdate({ priority: e.target.value }); }}
-            style={{ ...inpStyle({ width: 'auto' }), fontSize: 12 }}>
-            <option value="">—</option>
-            {priorities.map(p => (
-              <option key={p.id} value={p.name}>{p.name}</option>
-            ))}
-          </select>
+    <Modal
+      title={task.code ? `${task.code} · ${currentType.name}` : currentType.name}
+      onClose={onClose}
+      width={1120}
+      titleAccessory={<SavedIndicator savedAt={savedAt} />}
+    >
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 20 }}>
+        {/* ── Main column ─────────────────────────────── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Inline title (big) — fallback when the schema has no title field in the main column. */}
+          {mainDetailFields.some(f => f.fieldType === 'title') ? null : (
+            <input
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              onBlur={() => autoSave({ title })}
+              placeholder={t('vectorLogic.taskTitle')}
+              style={{
+                width: '100%', padding: '4px 0', fontSize: 22,
+                fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
+                background: 'transparent', border: 'none', borderBottom: '1px solid transparent',
+                color: 'var(--tx)', outline: 'none', transition: 'border-color .15s',
+              }}
+              onFocus={e => e.currentTarget.style.borderBottomColor = 'var(--ac)'}
+            />
+          )}
+
+          {mainDetailFields.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {mainDetailFields.map(field => (
+                <DynamicFieldRenderer
+                  key={field.id}
+                  field={field}
+                  value={readValue(field)}
+                  wsUsers={wsUsers}
+                  onChange={(v) => writeValue(field, v)}
+                />
+              ))}
+            </div>
+          )}
+
+          {detailFields.length === 0 && (
+            <div style={{ color: 'var(--tx3)', fontSize: 11, padding: '20px 0', textAlign: 'center' }}>
+              {t('vectorLogic.noDetailFields')}
+            </div>
+          )}
         </div>
 
-        {/* Dynamic schema fields (title is rendered as a special big input
-            via the title field type if present; otherwise we still show the
-            built-in editable title input below as a safety net). */}
-        {detailFields.some(f => f.fieldType === 'title') ? null : (
-          <div>
-            <label style={lblStyle}>{t('vectorLogic.taskTitle')}</label>
-            <input value={title} onChange={e => setTitle(e.target.value)} onBlur={() => onUpdate({ title })}
-              style={inpStyle()} />
+        {/* ── Sidebar ──────────────────────────────────── */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: 16,
+          padding: 16, background: 'var(--sf2)', borderRadius: 12,
+        }}>
+          {/* Type */}
+          <div style={{ position: 'relative' }}>
+            <div style={sideLbl}>{t('vectorLogic.taskType')}</div>
+            <TaskTypeSwitcher
+              current={currentType}
+              types={taskTypes}
+              data={data}
+              onSwitch={handleTypeSwitch}
+            />
           </div>
-        )}
-        {detailFields.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 8, borderTop: '1px solid var(--bd)' }}>
-            {detailFields.map(field => (
-              <DynamicFieldRenderer
-                key={field.id}
-                field={field}
-                value={field.fieldType === 'title' ? title : data[field.id]}
-                wsUsers={wsUsers}
-                onChange={(v) => {
-                  if (field.fieldType === 'title') {
-                    setTitle(v as string);
-                    onUpdate({ title: v as string });
-                  } else {
-                    const newData = { ...data, [field.id]: v };
-                    setData(newData);
-                    onUpdate({ data: newData });
-                  }
-                }}
-              />
-            ))}
-          </div>
-        )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 12, borderTop: '1px solid var(--bd)' }}>
-          <button style={btnStyle('danger')} onClick={async () => { if (await dialog.confirm(t('vectorLogic.deleteTaskConfirm'), { danger: true })) onDelete(); }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
-            {t('common.delete')}
-          </button>
-          <button style={btnStyle('ghost')} onClick={onClose}>{t('common.close')}</button>
+          {/* State */}
+          <div>
+            <div style={sideLbl}>{t('vectorLogic.state')}</div>
+            <select
+              value={stateId ?? ''}
+              onChange={e => { setStateId(e.target.value); autoSave({ stateId: e.target.value }); }}
+              style={sideInp}
+            >
+              {wfStates.map(ws => (
+                <option key={ws.stateId} value={ws.stateId}>{ws.state?.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Priority */}
+          <div>
+            <div style={sideLbl}>{t('vectorLogic.priority')}</div>
+            <select
+              value={priority ?? ''}
+              onChange={e => { setPriority(e.target.value); autoSave({ priority: e.target.value }); }}
+              style={sideInp}
+            >
+              <option value="">—</option>
+              {priorities.map(p => (
+                <option key={p.id} value={p.name}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sidebar schema fields (assignee/due date/custom fields live here
+              when the user drops them on the sidebar column in the builder). */}
+          {sideDetailFields.map(field => (
+            <div key={field.id}>
+              <div style={sideLbl}>{field.label}</div>
+              <DynamicFieldRenderer
+                field={field}
+                value={readValue(field)}
+                wsUsers={wsUsers}
+                onChange={(v) => writeValue(field, v)}
+              />
+            </div>
+          ))}
+
+          {/* Alarms */}
+          <div>
+            <div style={{ ...sideLbl, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--amber)' }}>alarm</span>
+              {t('vectorLogic.alarms')}
+            </div>
+            {alarms.length === 0 ? (
+              <div style={{ fontSize: 10, color: 'var(--tx3)', padding: '4px 0' }}>
+                {t('vectorLogic.noAlarms')}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {alarms.map(a => (
+                  <div key={a.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '5px 8px', borderRadius: 6, background: 'var(--sf)',
+                    fontSize: 11,
+                  }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--amber)' }}>alarm</span>
+                    <span style={{ flex: 1, color: 'var(--tx)' }}>
+                      {new Date(a.triggerAt).toLocaleString()}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteAlarm(a.id)}
+                      title={t('common.delete')}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', padding: 0, display: 'flex' }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 12 }}>close</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={() => setShowAlarmPicker(true)}
+              style={{
+                marginTop: 6, width: '100%', padding: '6px 10px', borderRadius: 6,
+                background: 'var(--ac-dim)', color: 'var(--ac)', border: 'none',
+                fontFamily: 'inherit', fontSize: 10, fontWeight: 600, cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 12 }}>add</span>
+              {t('vectorLogic.addAlarm')}
+            </button>
+          </div>
+
+          {/* Subtasks */}
+          <div>
+            <div style={{ ...sideLbl, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--ac)' }}>account_tree</span>
+              {t('vectorLogic.subtasks')}
+              {subtasks.length > 0 && (
+                <span style={{ marginLeft: 'auto', fontSize: 9, color: 'var(--tx3)' }}>
+                  {subtaskStats.done}/{subtaskStats.total}
+                </span>
+              )}
+            </div>
+            {subtasks.length === 0 ? (
+              <div style={{ fontSize: 10, color: 'var(--tx3)', padding: '4px 0' }}>
+                {t('vectorLogic.noSubtasks')}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {subtasks.map(s => {
+                  const done = stateById[s.stateId ?? '']?.category === 'DONE';
+                  return (
+                    <div key={s.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '5px 8px', borderRadius: 6, background: 'var(--sf)',
+                      fontSize: 11,
+                    }}>
+                      <span
+                        className="material-symbols-outlined"
+                        style={{ fontSize: 14, color: done ? 'var(--green)' : 'var(--tx3)' }}
+                      >
+                        {done ? 'check_box' : 'check_box_outline_blank'}
+                      </span>
+                      {s.code && (
+                        <span style={{
+                          fontSize: 9, fontWeight: 700, color: 'var(--ac)',
+                          fontFamily: "'Space Grotesk',sans-serif",
+                        }}>{s.code}</span>
+                      )}
+                      <span style={{
+                        flex: 1, color: 'var(--tx)',
+                        textDecoration: done ? 'line-through' : 'none',
+                        opacity: done ? 0.7 : 1,
+                      }}>
+                        {s.title}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {showSubtaskForm ? (
+              <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <select
+                  value={subtaskTypeId}
+                  onChange={e => setSubtaskTypeId(e.target.value)}
+                  style={{ ...sideInp, fontSize: 10, padding: '5px 8px' }}
+                >
+                  {taskTypes.filter(tt => tt.workflowId).map(tt => (
+                    <option key={tt.id} value={tt.id}>{tt.name}</option>
+                  ))}
+                </select>
+                <input
+                  autoFocus
+                  value={subtaskTitle}
+                  onChange={e => setSubtaskTitle(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleCreateSubtask();
+                    else if (e.key === 'Escape') { setShowSubtaskForm(false); setSubtaskTitle(''); }
+                  }}
+                  placeholder={t('vectorLogic.taskTitle')}
+                  style={{ ...sideInp, fontSize: 10, padding: '5px 8px' }}
+                />
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    onClick={handleCreateSubtask}
+                    disabled={!subtaskTitle.trim() || creatingSub}
+                    style={{
+                      flex: 1, padding: '5px 8px', borderRadius: 6,
+                      background: !subtaskTitle.trim() || creatingSub ? 'var(--sf3)' : 'var(--ac)',
+                      color: !subtaskTitle.trim() || creatingSub ? 'var(--tx3)' : 'var(--ac-on)',
+                      border: 'none', fontFamily: 'inherit', fontSize: 10, fontWeight: 600,
+                      cursor: !subtaskTitle.trim() || creatingSub ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {t('common.create')}
+                  </button>
+                  <button
+                    onClick={() => { setShowSubtaskForm(false); setSubtaskTitle(''); }}
+                    style={{
+                      padding: '5px 8px', borderRadius: 6, background: 'transparent',
+                      color: 'var(--tx2)', border: '1px solid var(--bd)',
+                      fontFamily: 'inherit', fontSize: 10, cursor: 'pointer',
+                    }}
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowSubtaskForm(true)}
+                style={{
+                  marginTop: 6, width: '100%', padding: '6px 10px', borderRadius: 6,
+                  background: 'var(--ac-dim)', color: 'var(--ac)', border: 'none',
+                  fontFamily: 'inherit', fontSize: 10, fontWeight: 600, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 12 }}>add</span>
+                {t('vectorLogic.addSubtask')}
+              </button>
+            )}
+          </div>
+
+          {/* Metadata (read-only) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 10, borderTop: '1px solid var(--bd)' }}>
+            {task.code && (
+              <MetaRow
+                icon="tag"
+                label={t('vectorLogic.code')}
+                value={task.code}
+              />
+            )}
+            <MetaRow
+              icon="schedule"
+              label={t('vectorLogic.created')}
+              value={new Date(task.createdAt).toLocaleDateString()}
+            />
+            <MetaRow
+              icon="timer"
+              label={t('vectorLogic.daysInColumn')}
+              value={`${daysBetween(task.stateEnteredAt, new Date())}d`}
+            />
+          </div>
         </div>
       </div>
+
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', gap: 8,
+        paddingTop: 16, marginTop: 16, borderTop: '1px solid var(--bd)',
+      }}>
+        <button
+          style={btnStyle('danger')}
+          onClick={async () => {
+            if (await dialog.confirm(t('vectorLogic.deleteTaskConfirm'), { danger: true })) onDelete();
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+          {t('common.delete')}
+        </button>
+        <button style={btnStyle('ghost')} onClick={onClose}>{t('common.close')}</button>
+      </div>
+
+      {showAlarmPicker && (
+        <TaskAlarmPicker
+          taskId={task.id}
+          userId={currentUser.id}
+          onCreated={(a) => setAlarms(prev => [...prev, a])}
+          onClose={() => setShowAlarmPicker(false)}
+        />
+      )}
     </Modal>
   );
 }
+
+/** Small "Auto-saved" pill that flashes after every persisted edit. */
+function SavedIndicator({ savedAt }: { savedAt: number | null }) {
+  const { t } = useTranslation();
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (savedAt == null) return;
+    setVisible(true);
+    const h = setTimeout(() => setVisible(false), 1800);
+    return () => clearTimeout(h);
+  }, [savedAt]);
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      fontSize: 10, fontWeight: 600, color: 'var(--green)',
+      opacity: visible ? 1 : 0, transition: 'opacity .25s',
+    }}>
+      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>cloud_done</span>
+      {t('vectorLogic.autoSaved')}
+    </span>
+  );
+}
+
+function MetaRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10 }}>
+      <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>{icon}</span>
+      <span style={{ color: 'var(--tx3)', flex: 1, letterSpacing: '.04em', textTransform: 'uppercase', fontWeight: 600 }}>{label}</span>
+      <span style={{ color: 'var(--tx)', fontWeight: 600, fontFamily: "'Space Grotesk',sans-serif" }}>{value}</span>
+    </div>
+  );
+}
+
+const sideLbl = {
+  fontSize: 9, fontWeight: 700, color: 'var(--tx3)',
+  letterSpacing: '.1em', textTransform: 'uppercase' as const, marginBottom: 6,
+};
+const sideInp = {
+  width: '100%', padding: '7px 10px', fontSize: 12, fontFamily: 'inherit',
+  background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 6,
+  color: 'var(--tx)', outline: 'none',
+};
 
 /* ── Dynamic Field Renderer ─────────────────────────────────────────────── */
 function DynamicFieldRenderer({ field, value, onChange, wsUsers }: { field: SchemaField; value: unknown; onChange: (v: unknown) => void; wsUsers: WSUser[] }) {
@@ -882,9 +1502,9 @@ const btnStyle = (variant = 'primary', extra = {}) => ({
   borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer', border: 'none',
   fontFamily: 'inherit', transition: 'all .2s',
   ...(variant === 'primary' && {
-    background: 'linear-gradient(135deg, #adc6ff, #4d8eff)',
-    color: '#fff',
-    boxShadow: '0 2px 12px rgba(77,142,255,.3)',
+    background: 'linear-gradient(135deg, var(--ac2), var(--ac))',
+    color: 'var(--ac-on)',
+    boxShadow: '0 2px 12px var(--ac-dim)',
   }),
   ...(variant === 'ghost' && {
     background: 'rgba(42,42,42,.8)',
@@ -918,7 +1538,10 @@ const lblStyle = {
 };
 
 /* ── Modal ──────────────────────────────────────────────────────────────── */
-function Modal({ title, onClose, children, width = 480 }: { title: string; onClose: () => void; children: React.ReactNode; width?: number }) {
+function Modal({ title, onClose, children, width = 480, titleAccessory }: {
+  title: string; onClose: () => void; children: React.ReactNode; width?: number;
+  titleAccessory?: React.ReactNode;
+}) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center',
@@ -933,7 +1556,10 @@ function Modal({ title, onClose, children, width = 480 }: { title: string; onClo
           padding: '16px 20px', borderBottom: '1px solid var(--bd)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
         }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', margin: 0 }}>{title}</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</h3>
+            {titleAccessory}
+          </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)' }}>
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
           </button>

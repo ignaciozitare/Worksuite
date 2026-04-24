@@ -308,3 +308,194 @@ Every new table has Row Level Security enabled with policies scoped by `auth.uid
 Fast lookups for: the user's Gmail connection, the user's active rules in priority order, the user's pending detections in recent-first order, and the reverse lookup from a `gmail_message_id` back to a task.
 
 Migration file: `supabase/migrations/20260416_vl_email_intelligence_initial.sql` (applied to prod).
+
+---
+
+## Phase 5: Smart Kanban v2
+
+### What it does
+
+13 enhancements to the Smart Kanban that add search, typed task IDs, alarms with browser notifications, world clock, task hierarchies (up to 5 levels), Backlog/History views, and auto-archiving of completed tasks.
+
+### Status: Spec confirmed — ready for DBA
+
+### Feature 1 — Search bar
+
+- Search input in the Kanban header.
+- Searches by task title or ID (e.g., "BUG-0012") in real time.
+- Filters visible cards across all columns. Empty columns show "No results" message.
+
+### Feature 2 — Task IDs per Task Type
+
+- Each Task Type has a **configurable prefix** set in Admin (e.g., "BUG", "FEAT", "OPS").
+- IDs are auto-incremental per type: BUG-0001, BUG-0002, FEAT-0001...
+- The ID is visible on the card and in the detail modal.
+- The prefix is configured when creating/editing a Task Type in Admin.
+
+### Feature 3 — Task type filter as dropdown
+
+- Replaces the current tab pills with a **dropdown/select**.
+- First option: "All Types" (shows all tasks).
+- Then each Task Type individually.
+
+### Feature 4 — Column task counter
+
+- Each column shows the count of visible tasks (respecting active filters).
+- Already partially exists — confirmed behavior: counter reflects filtered results.
+
+### Feature 5 — Days in column
+
+- Each task card shows a badge with how many days the task has been in its current column.
+- Calculated from the timestamp when the task entered that column.
+- Updates daily.
+
+### Feature 6 — Due date with color alerts
+
+- Due date is displayed on the card.
+- **Normal**: neutral color (text-dim).
+- **Today**: **yellow** (warning).
+- **Overdue**: **red** (danger).
+
+### Feature 7 — Fully editable detail modal
+
+- The task detail modal allows editing **all** fields: title, description, priority, state, assignee, due date, dynamic schema fields.
+- All previously read-only fields become editable.
+
+### Feature 8 — Task alarms with browser notifications
+
+- Each task can have one or more alarms.
+- When creating an alarm the user selects:
+  - **Date and time** — using the Jira Tracker datepicker + time picker.
+  - **Advance notice**: how early to notify (15 min, 30 min, 1h, 2h, 1 day, custom).
+  - **Repetitions**: how many times the notification repeats.
+- Notification is shown as a **native browser notification** (Web Notifications API) styled like a post-it with the task title and pending action.
+- Browser notification permission is requested on first use.
+
+### Feature 9 — World clock
+
+- The Kanban header shows the **current time + city name** of the user (geolocation or manual config).
+- A button opens a **popover** where:
+  - Other cities' times are displayed.
+  - Cities can be **added/removed** quickly from the same popover.
+- User's cities are stored in per-user preferences.
+- Module-level configuration lives in Settings.
+
+### Feature 10 — Double-width detail modal
+
+- Task detail modal opens at **double the current width** (~560px → ~1120px).
+- Internal layout reorganized into 2 columns: main info + sidebar with metadata.
+
+### Feature 11 — Backlog / History view
+
+- A **single view** accessible from the sidebar with a **toggle** to switch between:
+  - **Backlog**: tasks created but not yet assigned to any workflow column. List view.
+  - **History**: archived/closed tasks. List view with close date, who closed it.
+- From History: **reopen** a task and send it back to the board (OPEN state).
+- From Backlog: **move** a task to the board (assign to OPEN state).
+
+### Feature 12 — Done column limits
+
+- Configurable from module Settings:
+  - **Max time** in Done (e.g., 7 days) — after which the task is auto-archived to History.
+  - **Max count** of tasks in Done (e.g., 20) — when exceeded, oldest tasks are auto-archived.
+- Auto-archiving executes when the board loads.
+
+### Feature 13 — Task hierarchies
+
+- Parent-child relationships between Task Types are configured from Admin (e.g., "Epic" can contain "Story", "Story" can contain "Bug").
+- **Up to 5 levels** of depth.
+- On a parent task's card: a **subtask counter** (e.g., "3/5 done").
+- In the detail modal: a **list of child tasks** with their state (like Jira).
+- Subtasks can be created directly from the parent's modal.
+- Subtasks have their own ID with their Task Type's prefix.
+
+### Feature 14 — Backlog redesign + state semantics
+
+- The Backlog view has the same visual DNA as the Kanban (cards, glassmorphism, stat cards).
+- Stat cards (bento): Waiting count, Oldest age, High priority count, Added this week.
+- Backlog toggle counters show quantity on each side (Backlog / History).
+- Search bar inside the Backlog view.
+- Backlog membership is **state-based**: a task whose `state.category = 'BACKLOG'` stays in the Backlog view. If moved to any other category (OPEN/IN_PROGRESS/DONE), it moves to the Kanban board.
+
+### Feature 15 — Drag-over column glow
+
+- When dragging a task in the Kanban, the target column shows a **drag-over visual state**: dashed blue border, gradient tint background, outer glow shadow, slight scale-up.
+- Matches the standard drag highlight pattern used across WorkSuite (blue tint, dashed border, scale 1.015).
+
+### Feature 16 — Task type icon on cards
+
+- Each task card shows its Task Type icon next to the ID.
+- Icon comes from the `vl_task_types.icon` column (Material Symbol name).
+- Uses the semantic color associated with the type (bug=red, feature=amber, ops=green, epic=purple).
+
+### Feature 17 — Task type switcher from modal
+
+- Clicking the task type icon/chip inside the modal opens a dropdown listing all available Task Types.
+- If the user picks a **different type** whose schema differs from the current one, a **field mapping dialog** appears:
+  - Lists every field from the current schema that does not exist in the new schema.
+  - For each orphaned field the user can either: map it to a field in the new schema, or delete the value.
+  - Only after the user confirms the mapping does the type change.
+- If the schemas are identical (or a superset), the switch happens immediately.
+
+### Feature 18 — Auto-save on modal blur/close
+
+- Every editable field in the modal auto-saves on change (debounced).
+- On modal close or focus loss without an explicit save, pending changes are persisted automatically.
+- A small **"Auto-saved"** indicator in the modal header confirms state (with a `cloud_done` icon).
+- No "Save" button — the UX trusts auto-save.
+
+### Out of scope (v2)
+
+- Automation: "when all subtasks are DONE, move parent to DONE".
+- Filter by hierarchy level (show only epics, only stories).
+- Export Backlog/History to CSV.
+- Push notifications (browser notifications only in this version).
+
+### Connections
+
+- **Jira Tracker**: reuses the datepicker component (with time picker added).
+- **TimeClock**: visual pattern for world clock (no shared code, pattern only).
+- **Admin Panel**: configuration of prefixes, Task Type hierarchies, Done column limits.
+- **Browser Notifications API**: for task alarms.
+
+### UI Reference
+
+- Pencil designs: `pencil-new.pen` frames `VectorLogic/Kanban`, `VectorLogic/Chat`, `VectorLogic/AI Detections`.
+
+## Modelo de datos (Phase 5)
+
+Four new tables plus extensions to `vl_tasks` and `vl_task_types`. All new tables have Row Level Security enabled.
+
+### Extensions to `vl_task_types`
+Two new columns:
+- `prefix` (text) — the short code used to build typed task IDs (e.g. "BUG", "FEAT"). Configured from Admin when creating/editing a Task Type.
+- `next_number` (integer, default 1) — the next sequence number to assign. Incremented atomically when a task is created.
+
+Existing rows are backfilled with a default prefix derived from the type name (first 4 uppercase letters).
+
+### Extensions to `vl_tasks`
+Five new columns:
+- `code` (text, unique when set) — the human-readable ID (e.g. "BUG-0012"). Backfilled for legacy tasks as they are read/edited.
+- `due_date` (date) — first-class due date, replacing the dynamic-schema representation. Drives the color-coded due-date badge.
+- `state_entered_at` (timestamptz) — automatically updated by a trigger whenever `state_id` changes. Powers the "days in column" counter on cards.
+- `archived_at` / `archived_by` — a task is considered archived (and appears in History) when `archived_at IS NOT NULL`. `archived_by` records who archived it.
+- `parent_task_id` (uuid, self-FK, nullable) — the direct parent for hierarchical tasks. The application layer enforces the 5-level maximum depth.
+
+A BEFORE-UPDATE trigger resets `state_entered_at` to `now()` whenever the row's `state_id` changes, so the days-in-column counter is always accurate.
+
+### `vl_task_alarms`
+One row per alarm. A task can have many alarms. Stores `trigger_at` (the target time), `advance_minutes` (how early to notify before the target), `repetitions` (how many times the notification fires), and `fired_count` (how many times it has already fired). Scoped to the user so each person's alarms are private.
+
+### `vl_user_world_cities`
+One row per city the user has added to the quick-access world clock popover. Stores `city_name`, IANA `timezone`, and `sort_order`. Managed inline from the Kanban header popover.
+
+### `vl_user_settings`
+One row per user. Holds general Vector Logic preferences that are not specific to email: `done_max_days` (Done-column age limit for auto-archive), `done_max_count` (Done-column size limit), and the user's `home_timezone` / `home_city` for the header clock.
+
+### `vl_task_type_hierarchy`
+Admin-configured parent-child whitelist between Task Types. Stores `(parent_type_id, child_type_id)` pairs with a uniqueness constraint and a self-reference guard. Determines which Task Types a given type can contain as subtasks.
+
+### Relationships in plain language
+A task type has many tasks. A task has many alarms (per-user), optionally has a parent task (also a task), and records who archived it (a user). A user has many cities, one settings row, and many alarms. The task-type hierarchy is a many-to-many relationship between task types.
+
+Migration file: `supabase/migrations/20260423_vl_smart_kanban_v2.sql` (NOT yet applied to prod — DBA Agent has written it pending review).

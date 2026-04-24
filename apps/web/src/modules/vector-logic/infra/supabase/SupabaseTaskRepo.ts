@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ITaskRepo } from '../../domain/ports/ITaskRepo';
-import type { Task } from '../../domain/entities/Task';
+import type { Task, TaskDraft } from '../../domain/entities/Task';
 
 export class SupabaseTaskRepo implements ITaskRepo {
   constructor(private sb: SupabaseClient) {}
@@ -10,17 +10,19 @@ export class SupabaseTaskRepo implements ITaskRepo {
       .from('vl_tasks')
       .select('*')
       .eq('task_type_id', taskTypeId)
+      .is('archived_at', null)
       .order('sort_order', { ascending: true })
       .order('updated_at', { ascending: false });
     if (error) throw error;
     return (data ?? []).map((row) => this.toDomain(row));
   }
 
-  /** Find ALL tasks across task types — used by the unified Kanban view */
+  /** Find ALL live (non-archived) tasks across task types — used by the unified Kanban view */
   async findAll(): Promise<Task[]> {
     const { data, error } = await this.sb
       .from('vl_tasks')
       .select('*')
+      .is('archived_at', null)
       .order('sort_order', { ascending: true })
       .order('updated_at', { ascending: false });
     if (error) throw error;
@@ -37,7 +39,60 @@ export class SupabaseTaskRepo implements ITaskRepo {
     return this.toDomain(data);
   }
 
-  async create(draft: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> {
+  async findBacklog(): Promise<Task[]> {
+    // Inner-join against vl_states to keep only rows whose state.category='BACKLOG'.
+    const { data, error } = await this.sb
+      .from('vl_tasks')
+      .select('*, vl_states!inner(category)')
+      .eq('vl_states.category', 'BACKLOG')
+      .is('archived_at', null)
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((row) => this.toDomain(row));
+  }
+
+  async findArchived(): Promise<Task[]> {
+    const { data, error } = await this.sb
+      .from('vl_tasks')
+      .select('*')
+      .not('archived_at', 'is', null)
+      .order('archived_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((row) => this.toDomain(row));
+  }
+
+  async findChildren(parentTaskId: string): Promise<Task[]> {
+    const { data, error } = await this.sb
+      .from('vl_tasks')
+      .select('*')
+      .eq('parent_task_id', parentTaskId)
+      .is('archived_at', null)
+      .order('sort_order', { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map((row) => this.toDomain(row));
+  }
+
+  async create(draft: TaskDraft): Promise<Task> {
+    // Auto-generate typed code (e.g. "BUG-0012") when the draft has none
+    // and the task type has a prefix configured. The unique index on
+    // vl_tasks.code protects against a rare race (two concurrent creates
+    // for the same type) — in that case the second insert fails and the
+    // caller may retry.
+    let code: string | null = draft.code ?? null;
+    let nextNumberToPersist: number | null = null;
+    if (!code) {
+      const { data: tt } = await this.sb
+        .from('vl_task_types')
+        .select('prefix, next_number')
+        .eq('id', draft.taskTypeId)
+        .single();
+      if (tt?.prefix) {
+        const n = tt.next_number ?? 1;
+        code = `${tt.prefix}-${String(n).padStart(4, '0')}`;
+        nextNumberToPersist = n + 1;
+      }
+    }
+
     const { data, error } = await this.sb
       .from('vl_tasks')
       .insert({
@@ -49,10 +104,23 @@ export class SupabaseTaskRepo implements ITaskRepo {
         priority: draft.priority,
         sort_order: draft.sortOrder ?? 0,
         created_by: draft.createdBy,
+        code,
+        due_date: draft.dueDate ?? null,
+        parent_task_id: draft.parentTaskId ?? null,
       })
       .select()
       .single();
     if (error) throw error;
+
+    if (nextNumberToPersist !== null) {
+      // Best-effort: if this update fails the task is already created and
+      // usable; the code field will just skip a number next time.
+      await this.sb
+        .from('vl_task_types')
+        .update({ next_number: nextNumberToPersist })
+        .eq('id', draft.taskTypeId);
+    }
+
     return this.toDomain(data);
   }
 
@@ -64,6 +132,9 @@ export class SupabaseTaskRepo implements ITaskRepo {
     if (patch.assigneeId !== undefined) row.assignee_id = patch.assigneeId;
     if (patch.priority !== undefined) row.priority = patch.priority;
     if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
+    if (patch.code !== undefined) row.code = patch.code;
+    if (patch.dueDate !== undefined) row.due_date = patch.dueDate;
+    if (patch.parentTaskId !== undefined) row.parent_task_id = patch.parentTaskId;
     const { error } = await this.sb.from('vl_tasks').update(row).eq('id', id);
     if (error) throw error;
   }
@@ -85,6 +156,31 @@ export class SupabaseTaskRepo implements ITaskRepo {
     }));
   }
 
+  async archive(id: string, userId: string): Promise<void> {
+    const { error } = await this.sb
+      .from('vl_tasks')
+      .update({
+        archived_at: new Date().toISOString(),
+        archived_by: userId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+    if (error) throw error;
+  }
+
+  async reopen(id: string, stateId: string): Promise<void> {
+    const { error } = await this.sb
+      .from('vl_tasks')
+      .update({
+        archived_at: null,
+        archived_by: null,
+        state_id: stateId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+    if (error) throw error;
+  }
+
   async remove(id: string): Promise<void> {
     const { error } = await this.sb.from('vl_tasks').delete().eq('id', id);
     if (error) throw error;
@@ -93,12 +189,18 @@ export class SupabaseTaskRepo implements ITaskRepo {
   private toDomain(row: any): Task {
     return {
       id: row.id,
+      code: row.code ?? null,
       taskTypeId: row.task_type_id,
       stateId: row.state_id,
       title: row.title,
       data: row.data ?? {},
       assigneeId: row.assignee_id,
       priority: row.priority,
+      dueDate: row.due_date ?? null,
+      stateEnteredAt: row.state_entered_at ?? row.created_at,
+      parentTaskId: row.parent_task_id ?? null,
+      archivedAt: row.archived_at ?? null,
+      archivedBy: row.archived_by ?? null,
       sortOrder: row.sort_order ?? 0,
       createdBy: row.created_by,
       createdAt: row.created_at,

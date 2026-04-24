@@ -22,6 +22,8 @@ export class SupabaseTaskTypeRepo implements ITaskTypeRepo {
         icon: draft.icon,
         workflow_id: draft.workflowId,
         schema: draft.schema,
+        prefix: draft.prefix,
+        next_number: draft.nextNumber ?? 1,
       })
       .select()
       .single();
@@ -35,6 +37,8 @@ export class SupabaseTaskTypeRepo implements ITaskTypeRepo {
     if (patch.icon !== undefined) row.icon = patch.icon;
     if (patch.workflowId !== undefined) row.workflow_id = patch.workflowId;
     if (patch.schema !== undefined) row.schema = patch.schema;
+    if (patch.prefix !== undefined) row.prefix = patch.prefix;
+    if (patch.nextNumber !== undefined) row.next_number = patch.nextNumber;
     const { error } = await this.sb.from('vl_task_types').update(row).eq('id', id);
     if (error) throw error;
   }
@@ -49,6 +53,8 @@ export class SupabaseTaskTypeRepo implements ITaskTypeRepo {
       id: row.id,
       name: row.name,
       icon: row.icon,
+      prefix: row.prefix ?? null,
+      nextNumber: row.next_number ?? 1,
       workflowId: row.workflow_id,
       schema: row.schema ?? [],
       createdAt: row.created_at,

@@ -17,6 +17,8 @@ import { ExportConfigModal, exportWithColumns } from './modules/jira-tracker/ui/
 import { BlueprintHDMap, HDTableView, HDReserveModal, HDMapView } from './modules/hotdesk/ui';
 import { BuildingFloorSelectors } from './shared/admin';
 import { NotificationsBell } from './shared/ui/NotificationsBell';
+import { WorldClock } from './modules/vector-logic/ui/components/WorldClock';
+import { TaskAlarmScheduler } from './modules/vector-logic/ui/TaskAlarmScheduler';
 import { UserMenu } from './shared/ui/UserMenu';
 import { AppSwitcher } from './shared/ui/AppSwitcher';
 import { SupabaseNotificationRepo } from './shared/infra/SupabaseNotificationRepo';
@@ -209,9 +211,9 @@ function WorkSuiteApp() {
   // Loading
   if (loadingData) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg, #0d0d10)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'var(--tx3, #50506a)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ac, #4f6ef7)', boxShadow: '0 0 12px var(--ac, #4f6ef7)', margin: '0 auto 12px', animation: 'pulse 1.5s ease infinite' }} />
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'var(--tx3)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ac)', boxShadow: '0 0 12px var(--ac)', margin: '0 auto 12px', animation: 'pulse 1.5s ease infinite' }} />
           {t('common.loading')}
         </div>
       </div>
@@ -224,6 +226,7 @@ function WorkSuiteApp() {
 
   return (
     <>
+      <TaskAlarmScheduler currentUser={CURRENT_USER} />
       <div data-theme={theme} style={{ height: "100vh", overflow: "hidden", background: "var(--bg)", color: "var(--tx)" }}>
         <div className="shell">
 
@@ -262,6 +265,7 @@ function WorkSuiteApp() {
               >
                 <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx2)' }}>{locale.toUpperCase()}</span>
               </button>
+              <WorldClock currentUser={CURRENT_USER} />
               <NotificationsBell userId={CURRENT_USER.id} repo={notificationRepo} />
               <UserMenu user={CURRENT_USER} onLogout={logout} />
             </div>

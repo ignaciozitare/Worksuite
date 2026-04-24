@@ -75,10 +75,24 @@ export interface SchemaField {
   required: boolean;
   showOnCreate: boolean;
   showOnDetail: boolean;
+  /**
+   * Which column of the detail modal the field renders in.
+   * Optional for backward-compat: legacy fields without this value
+   * are treated as 'main'.
+   */
+  column?: 'main' | 'sidebar';
+  /** Render this field on Kanban task cards. Enforced max 4 per task type in UI. */
+  showOnCard?: boolean;
   options?: string[];
   defaultValue?: unknown;
   order: number;
 }
+
+/** Maximum number of fields that can be toggled into the Kanban card. */
+export const MAX_CARD_FIELDS = 4;
+
+/** Field types that shadow a native column on `vl_tasks` — writes go to the native column, not task.data. */
+export const NATIVE_FIELD_TYPES: FieldTypeId[] = ['assignee', 'due_date', 'start_date'];
 
 /**
  * Default fields automatically added when a new task type is created.
@@ -93,6 +107,7 @@ export function defaultFieldsForNewTaskType(): SchemaField[] {
       required: true,
       showOnCreate: true,
       showOnDetail: true,
+      column: 'main',
       order: 0,
     },
     {
@@ -102,6 +117,7 @@ export function defaultFieldsForNewTaskType(): SchemaField[] {
       required: false,
       showOnCreate: true,
       showOnDetail: true,
+      column: 'main',
       order: 1,
     },
     {
@@ -111,6 +127,8 @@ export function defaultFieldsForNewTaskType(): SchemaField[] {
       required: false,
       showOnCreate: true,
       showOnDetail: true,
+      column: 'sidebar',
+      showOnCard: true,
       order: 2,
     },
     {
@@ -120,6 +138,7 @@ export function defaultFieldsForNewTaskType(): SchemaField[] {
       required: false,
       showOnCreate: false,
       showOnDetail: true,
+      column: 'sidebar',
       order: 3,
     },
     {
@@ -129,6 +148,8 @@ export function defaultFieldsForNewTaskType(): SchemaField[] {
       required: false,
       showOnCreate: true,
       showOnDetail: true,
+      column: 'sidebar',
+      showOnCard: true,
       order: 4,
     },
   ];
