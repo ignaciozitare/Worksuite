@@ -7,6 +7,7 @@ export type FieldTypeId =
   | 'single_select'
   | 'multi_select'
   | 'checkbox'
+  | 'checklist'
   | 'radio_group'
   | 'date'
   | 'start_date'
@@ -47,6 +48,7 @@ export const FIELD_TYPES: FieldTypeDefinition[] = [
   { id: 'single_select',  labelKey: 'vectorLogic.fieldSingleSelect',  icon: 'arrow_drop_down',  category: 'selection', hasOptions: true },
   { id: 'multi_select',   labelKey: 'vectorLogic.fieldMultiSelect',   icon: 'checklist',        category: 'selection', hasOptions: true },
   { id: 'checkbox',       labelKey: 'vectorLogic.fieldCheckbox',      icon: 'check_box',        category: 'selection' },
+  { id: 'checklist',      labelKey: 'vectorLogic.fieldChecklist',     icon: 'checklist_rtl',    category: 'selection' },
   { id: 'radio_group',    labelKey: 'vectorLogic.fieldRadioGroup',    icon: 'radio_button_checked', category: 'selection', hasOptions: true },
   // Date & Time
   { id: 'date',           labelKey: 'vectorLogic.fieldDate',          icon: 'calendar_today',   category: 'date' },

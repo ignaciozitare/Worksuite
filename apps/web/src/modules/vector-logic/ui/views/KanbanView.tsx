@@ -686,6 +686,12 @@ function formatCardValue(field: SchemaField, v: unknown): string | null {
     return `${d.getMonth() + 1}/${d.getDate()}`;
   }
   if (field.fieldType === 'checkbox') return v ? '✓' : null;
+  if (field.fieldType === 'checklist' && Array.isArray(v)) {
+    const total = v.length;
+    if (total === 0) return null;
+    const done = (v as Array<{ checked?: boolean }>).filter(x => x?.checked).length;
+    return `${done}/${total}`;
+  }
   if (Array.isArray(v)) return v.length ? v.join(', ') : null;
   return String(v).slice(0, 24);
 }
@@ -1463,6 +1469,8 @@ function DynamicFieldRenderer({ field, value, onChange, wsUsers }: { field: Sche
       case 'checkbox':
         return <input type="checkbox" checked={!!value} onChange={e => onChange(e.target.checked)}
           style={{ width: 18, height: 18, cursor: 'pointer' }} />;
+      case 'checklist':
+        return <ChecklistField value={value} onChange={onChange} />;
       case 'assignee':
       case 'user_picker':
         return <UserPicker users={wsUsers} value={(value as string) || null} onChange={onChange} />;
@@ -1508,6 +1516,102 @@ function DynamicFieldRenderer({ field, value, onChange, wsUsers }: { field: Sche
         {field.required && <span style={{ color: 'var(--red)' }}>*</span>}
       </label>
       {renderInput()}
+    </div>
+  );
+}
+
+/* ── Checklist field ────────────────────────────────────────────────────
+ * Editable list of { id, label, checked }. Items can be added inline,
+ * their label edited, toggled on/off, or deleted. Shape is stored as an
+ * array on task.data[fieldId] — no schema migration needed. */
+function ChecklistField({ value, onChange }: { value: unknown; onChange: (v: unknown) => void }) {
+  const { t } = useTranslation();
+  const items: Array<{ id: string; label: string; checked: boolean }> = Array.isArray(value)
+    ? (value as any[]).filter(x => x && typeof x === 'object')
+    : [];
+  const [draft, setDraft] = useState('');
+
+  const update = (next: typeof items) => onChange(next);
+
+  const toggle = (id: string) => update(items.map(it => it.id === id ? { ...it, checked: !it.checked } : it));
+  const setLabel = (id: string, label: string) => update(items.map(it => it.id === id ? { ...it, label } : it));
+  const remove = (id: string) => update(items.filter(it => it.id !== id));
+  const addDraft = () => {
+    const label = draft.trim();
+    if (!label) return;
+    const id = Math.random().toString(36).slice(2, 10);
+    update([...items, { id, label, checked: false }]);
+    setDraft('');
+  };
+
+  const doneCount = items.filter(it => it.checked).length;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {items.length > 0 && (
+        <div style={{ fontSize: 10, color: 'var(--tx3)', letterSpacing: '.04em' }}>
+          {doneCount}/{items.length} {t('vectorLogic.checklistDone')}
+        </div>
+      )}
+      {items.map(it => (
+        <div key={it.id} style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '6px 10px', background: 'var(--sf2)', borderRadius: 6,
+        }}>
+          <input
+            type="checkbox"
+            checked={it.checked}
+            onChange={() => toggle(it.id)}
+            style={{ width: 16, height: 16, cursor: 'pointer' }}
+          />
+          <input
+            value={it.label}
+            onChange={e => setLabel(it.id, e.target.value)}
+            style={{
+              flex: 1, border: 'none', outline: 'none', background: 'transparent',
+              color: 'var(--tx)', fontSize: 12, fontFamily: 'inherit',
+              textDecoration: it.checked ? 'line-through' : 'none',
+              opacity: it.checked ? 0.7 : 1,
+            }}
+          />
+          <button
+            onClick={() => remove(it.id)}
+            title={t('common.delete')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', padding: 0, display: 'flex' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+          </button>
+        </div>
+      ))}
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--tx3)' }}>add</span>
+        <input
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && draft.trim()) { e.preventDefault(); addDraft(); }
+          }}
+          placeholder={t('vectorLogic.checklistAddItem')}
+          style={{
+            flex: 1, border: '1px dashed var(--bd)', outline: 'none',
+            background: 'transparent', color: 'var(--tx)', fontSize: 12,
+            padding: '6px 10px', borderRadius: 6, fontFamily: 'inherit',
+          }}
+        />
+        <button
+          onClick={addDraft}
+          disabled={!draft.trim()}
+          style={{
+            padding: '6px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+            background: draft.trim() ? 'var(--ac-dim)' : 'var(--sf3)',
+            color: draft.trim() ? 'var(--ac)' : 'var(--tx3)',
+            border: 'none', fontFamily: 'inherit',
+            cursor: draft.trim() ? 'pointer' : 'not-allowed',
+          }}
+        >
+          {t('common.add')}
+        </button>
+      </div>
     </div>
   );
 }
