@@ -8,7 +8,8 @@ export interface WorksuiteUser {
   id:        string;
   name:      string;
   email:     string;
-  avatar:    string;       // 2-char initials
+  avatar:    string;       // 2-char initials (legacy default)
+  avatarUrl?: string | null; // optional photo URL or `preset:NAME` (purple/blue/green/amber/red/teal/pink/gray)
   role:      AppRole;
   deskType:  DeskType;
   active:    boolean;

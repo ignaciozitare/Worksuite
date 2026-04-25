@@ -9,6 +9,7 @@ import {
   DualPanelPicker,
   DateRangePicker,
   MultiSelectDropdown,
+  UserAvatar,
   BugIcon,
   Card,
 } from '@worksuite/ui';
@@ -111,6 +112,7 @@ const TOC_ITEMS = [
   { id: 'datepicker', label: 'DateRangePicker' },
   { id: 'dualpanel',  label: 'DualPanelPicker' },
   { id: 'msd',        label: 'MultiSelectDropdown' },
+  { id: 'useravatar', label: 'UserAvatar' },
   { id: 'statusmgr',  label: 'StatusManager' },
   { id: 'gantt',      label: 'GanttTimeline' },
   { id: 'bugicon',    label: 'BugIcon' },
@@ -784,6 +786,19 @@ export function UIKit() {
             />
           </div>
           <Row label="Import"><Code>{"import { MultiSelectDropdown } from '@worksuite/ui'"}</Code></Row>
+        </Section>
+
+        {/* ── UserAvatar ── */}
+        <Section id="useravatar" title="UserAvatar" description="Renders a user's avatar from initials, an uploaded photo URL, or a preset gradient. Falls back to initials when no avatarUrl is set."
+          usedIn={['profile', 'admin', 'topbar', 'vector-logic']}>
+          <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+            <UserAvatar user={{ name: 'Ignacio Zitare' }} size={48} />
+            <UserAvatar user={{ name: 'Ainhoa Solis', avatarUrl: 'preset:purple' }} size={48} />
+            <UserAvatar user={{ name: 'Carlos Ruiz',  avatarUrl: 'preset:green' }} size={48} />
+            <UserAvatar user={{ name: 'Elena Martínez', avatarUrl: 'preset:amber' }} size={48} />
+            <UserAvatar user={{ name: 'Dev User', avatarUrl: 'preset:teal' }} size={48} />
+          </div>
+          <Row label="Import"><Code>{"import { UserAvatar } from '@worksuite/ui'"}</Code></Row>
         </Section>
 
         {/* ── StatusManager ── */}

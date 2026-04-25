@@ -637,3 +637,26 @@ No changes. The `user_picker` field already persists the user ID in `task.data[f
 No changes. Both fixes are pure UI.
 
 **DBA verdict (2026-04-25):** no migration — both are pure presentation tweaks.
+
+---
+
+## Phase 5 — Bundle of fixes (revisión 2026-04-25 #4)
+
+### Fix #1 — Tooltip clipped by column overflow
+**Problem.** The CSS `::after` tooltip is contained inside the column's `overflow-y: auto`, so it gets clipped when the card sits near the column edge.
+**Behaviour.** Replace the CSS tooltip with a React portal rendered into `document.body` and positioned with `position: fixed` from the avatar's `getBoundingClientRect()`. Hover shows it, mouse-leave hides it. No clipping anywhere.
+
+### Fix #2 — Show parent task in TaskDetailModal even without breadcrumb
+**Problem.** When a task with `parent_task_id` is opened directly (not via breadcrumb), the parent is hidden.
+**Behaviour.** When the open task has a parent, the modal renders a clickable line above the title: `↑ EPIC-12 — Migración Auth` (icon + parent code + parent title). Click opens the parent in the same modal via the existing `onOpenTask` callback. No parent → not rendered.
+
+### Fix #3 — Main column grows to match sidebar height
+**Problem.** The Rich Text + main fields block has natural height; the sidebar (state, priority, dates, alarms, etc.) is taller. Visual mismatch.
+**Behaviour.** The Rich Text container gets `flex: 1` to fill the available vertical space. The grid uses `align-items: stretch` so both columns end at the same minimum height.
+
+### Fix #4 — Tooltip name only
+**Problem.** Tooltip currently shows `Name — email`, redundant.
+**Behaviour.** Tooltip shows only the user's name; falls back to the email if the user has no name.
+
+### Data model
+No changes for fixes #1–#4. All UI.

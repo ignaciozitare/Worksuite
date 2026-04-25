@@ -14,6 +14,7 @@ interface AuthState {
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  refresh: () => Promise<void>;
 }
 
 const AuthCtx = createContext<AuthContextValue | null>(null);
@@ -44,7 +45,11 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
         return;
       }
 
-      setState({ user: profile as User, token, isLoading: false });
+      const mapped: User = {
+        ...(profile as any),
+        avatarUrl: (profile as any).avatar_url ?? null,
+      };
+      setState({ user: mapped, token, isLoading: false });
     } catch {
       setState({ user: null, token: null, isLoading: false });
     }
@@ -80,8 +85,13 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     setState({ user: null, token: null, isLoading: false });
   }, []);
 
+  const refresh = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+    if (data.session) await loadUser(data.session.access_token);
+  }, [loadUser]);
+
   return (
-    <AuthCtx.Provider value={{ ...state, login, logout }}>
+    <AuthCtx.Provider value={{ ...state, login, logout, refresh }}>
       {children}
     </AuthCtx.Provider>
   );
