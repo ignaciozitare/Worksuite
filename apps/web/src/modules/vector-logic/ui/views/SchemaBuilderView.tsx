@@ -326,31 +326,34 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                 cursor: isDraggingThis ? 'grabbing' : 'grab',
                 transition: 'all .15s ease',
                 opacity: isDraggingThis ? .4 : 1,
-                display: 'flex', alignItems: 'center', gap: 10,
+                display: 'flex', flexDirection: 'column', gap: 6,
               }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)', opacity: .6 }}>drag_indicator</span>
-              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--ac)' }}>{def?.icon}</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {field.label}
-              </span>
-              {field.required && (
-                <span style={{ fontSize: 8, padding: '2px 6px', borderRadius: 3, background: 'var(--red-dim)', color: 'var(--red)', fontWeight: 700 }}>
-                  {t('vectorLogic.badgeRequired')}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)', opacity: .6, flexShrink: 0 }}>drag_indicator</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--ac)', flexShrink: 0 }}>{def?.icon}</span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {field.label}
                 </span>
-              )}
-              <div style={{ flex: 1 }} />
-              <div style={{ display: 'flex', gap: 3 }}>
-                {field.showOnCreate && <TogglePill color="var(--green)" dim="var(--green-dim)" label={t('vectorLogic.badgeCreate')} />}
-                {field.showOnDetail && <TogglePill color="var(--ac)" dim="var(--ac-dim)" label={t('vectorLogic.badgeDetail')} />}
-                {field.showOnCard && <TogglePill color="var(--purple)" dim="var(--purple-dim)" label={t('vectorLogic.badgeCard')} />}
+                <button
+                  onClick={e => { e.stopPropagation(); removeField(field.id); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', opacity: .5, padding: 0, display: 'flex', flexShrink: 0 }}
+                  title={t('common.delete')}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+                </button>
               </div>
-              <button
-                onClick={e => { e.stopPropagation(); removeField(field.id); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', opacity: .5, padding: 0, display: 'flex' }}
-                title={t('common.delete')}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
-              </button>
+              {(field.required || field.showOnCreate || field.showOnDetail || field.showOnCard) && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, paddingLeft: 28 }}>
+                  {field.required && (
+                    <span style={{ fontSize: 8, padding: '2px 6px', borderRadius: 3, background: 'var(--red-dim)', color: 'var(--red)', fontWeight: 700 }}>
+                      {t('vectorLogic.badgeRequired')}
+                    </span>
+                  )}
+                  {field.showOnCreate && <TogglePill color="var(--green)" dim="var(--green-dim)" label={t('vectorLogic.badgeCreate')} />}
+                  {field.showOnDetail && <TogglePill color="var(--ac)" dim="var(--ac-dim)" label={t('vectorLogic.badgeDetail')} />}
+                  {field.showOnCard && <TogglePill color="var(--purple)" dim="var(--purple-dim)" label={t('vectorLogic.badgeCard')} />}
+                </div>
+              )}
             </div>
           </div>
         );

@@ -789,10 +789,11 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
       )}
 
       {/* Task detail modal */}
-      {detailTask && selectedType && (
+      {detailTask && (
         <TaskDetailModal
+          key={detailTask.id}
           task={detailTask}
-          taskType={selectedType}
+          taskType={taskTypes.find(t => t.id === detailTask.taskTypeId) ?? selectedType!}
           taskTypes={taskTypes}
           wfStates={wfStates}
           wsUsers={wsUsers}
@@ -801,6 +802,10 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
           onClose={() => setDetailTask(null)}
           onUpdate={(patch) => updateTask(detailTask.id, patch)}
           onDelete={() => removeTask(detailTask.id)}
+          onOpenTask={async (id) => {
+            const found = await taskRepo.findById(id);
+            if (found) setDetailTask(found);
+          }}
         />
       )}
     </div>
@@ -1064,12 +1069,13 @@ function NewTaskModal({ taskTypes, defaultTypeId, onClose, onCreate }: {
 }
 
 /* ── Task Detail Modal ─────────────────────────────────────────────────── */
-function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorities, currentUser, onClose, onUpdate, onDelete }: {
+function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorities, currentUser, onClose, onUpdate, onDelete, onOpenTask }: {
   task: Task; taskType: TaskType; taskTypes: TaskType[]; wfStates: WorkflowState[];
   wsUsers: WSUser[];
   priorities: Priority[];
   currentUser: { id: string; [k: string]: unknown };
   onClose: () => void; onUpdate: (patch: Partial<Task>) => void; onDelete: () => void;
+  onOpenTask?: (taskId: string) => void | Promise<void>;
 }) {
   const { t } = useTranslation();
   const dialog = useDialog();
@@ -1097,6 +1103,13 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
   const [subtaskTypeId, setSubtaskTypeId] = useState<string>(taskType.id);
   const [creatingSub, setCreatingSub] = useState(false);
 
+  // Ancestor breadcrumb (oldest → direct parent). Capped at 5 hops by Phase 5 rules.
+  const [ancestors, setAncestors] = useState<Task[]>([]);
+
+  // Subtask drag-reorder state.
+  const [dragSubId, setDragSubId] = useState<string | null>(null);
+  const [dragOverSubId, setDragOverSubId] = useState<string | null>(null);
+
   useEffect(() => {
     (async () => {
       const [children, alarmList] = await Promise.all([
@@ -1107,6 +1120,48 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
       setAlarms(alarmList);
     })();
   }, [task.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const chain: Task[] = [];
+      let pid = task.parentTaskId ?? null;
+      let safety = 6;
+      while (pid && safety-- > 0) {
+        const parent = await taskRepo.findById(pid);
+        if (!parent) break;
+        chain.unshift(parent);
+        pid = parent.parentTaskId ?? null;
+      }
+      if (!cancelled) setAncestors(chain);
+    })();
+    return () => { cancelled = true; };
+  }, [task.id, task.parentTaskId]);
+
+  const reorderSubtasks = async (draggedId: string, targetId: string) => {
+    if (draggedId === targetId) return;
+    const fromIdx = subtasks.findIndex(s => s.id === draggedId);
+    const toIdx   = subtasks.findIndex(s => s.id === targetId);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const next = [...subtasks];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    setSubtasks(next);
+    await taskRepo.reorder(next.map((s, i) => ({ id: s.id, sortOrder: i })));
+  };
+
+  const toggleSubtaskDone = async (sub: Task) => {
+    const tt = taskTypes.find(x => x.id === sub.taskTypeId);
+    if (!tt?.workflowId) return;
+    const wfs = await stateRepo.findByWorkflow(tt.workflowId);
+    const isDone = wfs.find(ws => ws.stateId === sub.stateId)?.state?.category === 'DONE';
+    const targetCat = isDone ? 'OPEN' : 'DONE';
+    const target = wfs.find(ws => ws.state?.category === targetCat)
+      ?? (isDone ? wfs.find(ws => ws.isInitial) ?? wfs[0] : wfs[wfs.length - 1]);
+    if (!target) return;
+    await taskRepo.moveToState(sub.id, target.stateId);
+    setSubtasks(prev => prev.map(s => s.id === sub.id ? { ...s, stateId: target.stateId } : s));
+  };
 
   const stateById = useMemo(() => {
     const m: Record<string, { name?: string; category?: string }> = {};
@@ -1220,6 +1275,42 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
           .vl-tdm-grid { grid-template-columns: 1fr; gap: 16px; }
         }
       `}</style>
+      {ancestors.length > 0 && (
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4,
+          fontSize: 11, color: 'var(--tx3)', marginBottom: 12,
+        }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)', marginRight: 2 }}>
+            subdirectory_arrow_right
+          </span>
+          {ancestors.map((a, i) => (
+            <span key={a.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              {i > 0 && <span style={{ color: 'var(--tx3)', opacity: .5 }}>/</span>}
+              <button
+                type="button"
+                onClick={() => onOpenTask?.(a.id)}
+                style={{
+                  background: 'none', border: 'none', cursor: onOpenTask ? 'pointer' : 'default',
+                  padding: '2px 6px', borderRadius: 4, fontFamily: 'inherit',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  color: 'var(--tx2)', fontSize: 11,
+                }}
+                title={a.title}
+              >
+                {a.code && (
+                  <span style={{
+                    fontWeight: 700, color: 'var(--ac)',
+                    fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '.04em',
+                  }}>{a.code}</span>
+                )}
+                <span style={{
+                  maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>{a.title}</span>
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
       <div className="vl-tdm-grid">
         {/* ── Main column ─────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -1289,15 +1380,46 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {subtasks.map(s => {
                   const done = stateById[s.stateId ?? '']?.category === 'DONE';
+                  const isDragging = dragSubId === s.id;
+                  const isDragOver  = dragOverSubId === s.id && dragSubId && dragSubId !== s.id;
                   return (
-                    <div key={s.id} style={{
-                      display: 'flex', alignItems: 'center', gap: 8,
-                      padding: '8px 10px', borderRadius: 8, background: 'var(--sf2)',
-                      fontSize: 12,
-                    }}>
+                    <div
+                      key={s.id}
+                      draggable
+                      onDragStart={(e) => {
+                        setDragSubId(s.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        if (dragSubId && dragSubId !== s.id) setDragOverSubId(s.id);
+                      }}
+                      onDragLeave={() => { if (dragOverSubId === s.id) setDragOverSubId(null); }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (dragSubId) reorderSubtasks(dragSubId, s.id);
+                        setDragSubId(null); setDragOverSubId(null);
+                      }}
+                      onDragEnd={() => { setDragSubId(null); setDragOverSubId(null); }}
+                      onClick={() => onOpenTask?.(s.id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        padding: '8px 10px', borderRadius: 8,
+                        background: isDragOver ? 'var(--ac-dim)' : 'var(--sf2)',
+                        border: isDragOver ? '1px dashed var(--ac)' : '1px solid transparent',
+                        fontSize: 12,
+                        cursor: onOpenTask ? 'pointer' : 'default',
+                        opacity: isDragging ? 0.4 : 1,
+                        transition: 'background .12s, border-color .12s',
+                      }}
+                      onMouseEnter={e => { if (onOpenTask && !isDragOver) e.currentTarget.style.background = 'var(--sf3)'; }}
+                      onMouseLeave={e => { if (!isDragOver) e.currentTarget.style.background = 'var(--sf2)'; }}
+                    >
                       <span
                         className="material-symbols-outlined"
-                        style={{ fontSize: 16, color: done ? 'var(--green)' : 'var(--tx3)' }}
+                        style={{ fontSize: 16, color: done ? 'var(--green)' : 'var(--tx3)', cursor: 'pointer' }}
+                        onClick={(e) => { e.stopPropagation(); toggleSubtaskDone(s); }}
+                        title={done ? t('vectorLogic.markAsOpen') : t('vectorLogic.markAsDone')}
                       >
                         {done ? 'check_box' : 'check_box_outline_blank'}
                       </span>
@@ -1308,9 +1430,10 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
                         }}>{s.code}</span>
                       )}
                       <span style={{
-                        flex: 1, color: 'var(--tx)',
+                        flex: 1, minWidth: 0, color: 'var(--tx)',
                         textDecoration: done ? 'line-through' : 'none',
                         opacity: done ? 0.7 : 1,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>
                         {s.title}
                       </span>

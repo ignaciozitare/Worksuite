@@ -1110,6 +1110,8 @@
     "cardLayoutSearch":   "Search field…",
     "cardLayoutNoMatches": "No fields match",
     "cardLayoutNoFields": "No fields yet",
+    "markAsDone":         "Mark as done",
+    "markAsOpen":         "Mark as open",
     "maxCardFieldsReached": "Already 4 fields on the card — toggle one off first",
     "iconColor":          "Color",
     "colorDefault":       "Default",

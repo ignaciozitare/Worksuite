@@ -1110,6 +1110,8 @@
     "cardLayoutSearch":   "Buscar campo…",
     "cardLayoutNoMatches": "No hay coincidencias",
     "cardLayoutNoFields": "Todavía no hay campos",
+    "markAsDone":         "Marcar como hecha",
+    "markAsOpen":         "Marcar como pendiente",
     "maxCardFieldsReached": "Ya hay 4 campos en la card — desactivá uno antes",
     "iconColor":          "Color",
     "colorDefault":       "Default",
