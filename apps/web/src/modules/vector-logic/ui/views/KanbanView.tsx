@@ -28,6 +28,7 @@ interface WSUser {
   name?: string;
   email: string;
   avatar?: string;
+  avatarUrl?: string | null;
 }
 
 interface Props {

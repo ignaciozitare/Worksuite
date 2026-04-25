@@ -65,3 +65,25 @@ Every WorkSuite user can edit their own avatar from the Profile page. **Admins c
 - Image transformation enabled at request time via the URL params `?width=64&quality=80` (avatar chips) and `?width=256&quality=85` (profile page). Falls back to original size if the project tier doesn't support transforms.
 
 **DBA verdict (2026-04-25):** Migration `supabase/migrations/20260425_user_avatar_url_and_storage.sql` applied to prod. Column added, bucket provisioned, 7 RLS policies in place (1 public read + 3 owner write/update/delete + 3 admin write/update/delete).
+
+---
+
+## Bug fix: avatarUrl not propagated to global users state (2026-04-26)
+
+### Problem
+The global `useWorkSuiteData` hook maps the `users` rows but silently drops the new `avatar_url` column. Every view that reads `wsUsers` / `users` from this hook (Vector Logic, Retro, Environments, AdminUsers) renders initials even after a user picked a photo or preset. The topbar `UserMenu` is unaffected because it goes through `useAuth`, which already maps `avatar_url → avatarUrl`.
+
+### Fix
+- Add `avatarUrl: (u as any).avatar_url ?? null` to the mapping in `apps/web/src/shared/hooks/useWorkSuiteData.ts`.
+- Declare `avatar_url?: string | null` on `UserRow` in `apps/web/src/shared/domain/ports/UserPort.ts` for type cleanliness.
+- Add `avatarUrl?: string | null` to the local `WSUser` interface in `KanbanView.tsx`.
+
+### Expected behaviour after fix
+- After a user picks/uploads an avatar, it shows immediately on their own kanban cards, in the detail modal, in the admin list, and in every other view consuming `wsUsers`.
+- Other users' updated avatars become visible on the next reload of the global users list (next page load or navigation).
+
+### Out of scope
+- Realtime broadcast / multi-client sync of avatar changes.
+- Active re-fetch of global users when **another** user changes their avatar.
+
+**DBA verdict (2026-04-26):** no migration — pure mapping fix in the data hook plus type cleanup.
