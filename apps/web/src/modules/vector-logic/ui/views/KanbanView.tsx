@@ -358,6 +358,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   const onTaskDragEnd = () => {
     setDragTaskId(null);
     setDropTaskIdx(null);
+    setDropColumnId(null);
   };
 
   const onDragOverCol = (e: React.DragEvent) => {
@@ -440,6 +441,47 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
+      <style>{`
+        .vl-card [data-tooltip] { position: relative; }
+        .vl-card [data-tooltip]::after {
+          content: attr(data-tooltip);
+          position: absolute;
+          bottom: calc(100% + 6px);
+          left: 50%;
+          transform: translateX(-50%);
+          background: var(--sf3);
+          color: var(--tx);
+          border: 1px solid var(--bd);
+          border-radius: 6px;
+          padding: 4px 8px;
+          font-size: 11px;
+          font-weight: 500;
+          line-height: 1.3;
+          white-space: nowrap;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity .08s ease-out;
+          z-index: 50;
+          box-shadow: 0 6px 16px rgba(0,0,0,.4);
+        }
+        .vl-card [data-tooltip]::before {
+          content: '';
+          position: absolute;
+          bottom: calc(100% + 1px);
+          left: 50%;
+          transform: translateX(-50%) rotate(45deg);
+          width: 6px; height: 6px;
+          background: var(--sf3);
+          border-right: 1px solid var(--bd);
+          border-bottom: 1px solid var(--bd);
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity .08s ease-out;
+          z-index: 51;
+        }
+        .vl-card [data-tooltip]:hover::after,
+        .vl-card [data-tooltip]:hover::before { opacity: 1; }
+      `}</style>
       {/* Header */}
       <div style={{ padding: '0 4px 14px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
@@ -627,7 +669,14 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                 <div key={ws.id}
                   onDragOver={(e) => {
                     onDragOverCol(e);
-                    if (dragColumnId) onColumnDragOver(ws.id)(e);
+                    if (dragColumnId) {
+                      onColumnDragOver(ws.id)(e);
+                    } else if (dragTaskId) {
+                      const sourceStateId = tasks.find(t => t.id === dragTaskId)?.stateId;
+                      if (sourceStateId !== ws.stateId && dropColumnId !== ws.id) {
+                        setDropColumnId(ws.id);
+                      }
+                    }
                   }}
                   onDragLeave={onColumnDragLeave}
                   onDrop={(e) => {
@@ -636,6 +685,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                     } else {
                       onDropCol(ws.stateId)(e);
                     }
+                    setDropColumnId(null);
                   }}
                   style={{
                     background: isDropTarget
@@ -915,6 +965,7 @@ function TaskCard({ task, taskType, priorityColor, assignee, wsUsers, onClick, o
 
   return (
     <div
+      className="vl-card"
       draggable={isDraggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
@@ -1014,7 +1065,7 @@ function TaskCard({ task, taskType, priorityColor, assignee, wsUsers, onClick, o
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           {assignee && (
-            <div title={`${assignee.name || assignee.email}${assignee.email && assignee.name ? ` — ${assignee.email}` : ''}`}
+            <div data-tooltip={`${assignee.name || assignee.email}${assignee.email && assignee.name ? ` — ${assignee.email}` : ''}`}
               style={{
                 width: 22, height: 22, borderRadius: '50%',
                 background: 'linear-gradient(135deg, var(--ac), var(--ac2))',
@@ -1029,7 +1080,7 @@ function TaskCard({ task, taskType, priorityColor, assignee, wsUsers, onClick, o
             const ini = (u.name || u.email).trim().split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase();
             return (
               <div key={u.id}
-                title={`${u.name || u.email}${u.email && u.name ? ` — ${u.email}` : ''}`}
+                data-tooltip={`${u.name || u.email}${u.email && u.name ? ` — ${u.email}` : ''}`}
                 style={{
                   width: 22, height: 22, borderRadius: '50%',
                   background: 'linear-gradient(135deg, var(--purple), var(--ac))',
@@ -1042,7 +1093,7 @@ function TaskCard({ task, taskType, priorityColor, assignee, wsUsers, onClick, o
             );
           })}
           {overflowExtras > 0 && (
-            <div title={extraUsers.slice(3).map(u => u.name || u.email).join(', ')}
+            <div data-tooltip={extraUsers.slice(3).map(u => u.name || u.email).join(', ')}
               style={{
                 height: 22, padding: '0 6px', borderRadius: 11,
                 background: 'var(--sf2)', color: 'var(--tx2)',
