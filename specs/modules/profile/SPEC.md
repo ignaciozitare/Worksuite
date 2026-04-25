@@ -87,3 +87,6 @@ The global `useWorkSuiteData` hook maps the `users` rows but silently drops the 
 - Active re-fetch of global users when **another** user changes their avatar.
 
 **DBA verdict (2026-04-26):** no migration — pure mapping fix in the data hook plus type cleanup.
+
+### Follow-up (2026-04-26 #2): same bug in the navbar's CURRENT_USER mapping
+The navbar reads its user from a hand-rolled `CURRENT_USER` object built in `WorkSuiteApp.tsx:85-92` from `authUser`. That copy also dropped `avatarUrl`, so the topbar still showed initials. Fix: add `avatarUrl: authUser.avatarUrl ?? null` to the `CURRENT_USER` object so the avatar reaches the `UserMenu`.

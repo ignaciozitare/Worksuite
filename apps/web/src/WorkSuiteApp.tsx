@@ -85,11 +85,12 @@ function WorkSuiteApp() {
   const CURRENT_USER = authUser ? {
     id: authUser.id, name: authUser.name, email: authUser.email,
     avatar: authUser.avatar || (authUser.name || 'U').slice(0, 2).toUpperCase(),
+    avatarUrl: authUser.avatarUrl ?? null,
     role: authUser.role, deskType: authUser.desk_type || 'hotdesk',
     active: authUser.active !== false,
     modules: authUser.modules || ["jt", "hd", "retro", "deploy"],
     export_presets: authUser.export_presets || [],
-  } : { id: '', name: 'Loading...', email: '', avatar: '..', role: 'user', deskType: 'hotdesk', active: true, modules: ["jt", "hd", "retro", "deploy"], export_presets: [] };
+  } : { id: '', name: 'Loading...', email: '', avatar: '..', avatarUrl: null, role: 'user', deskType: 'hotdesk', active: true, modules: ["jt", "hd", "retro", "deploy"], export_presets: [] };
 
   // Toast
   const [toast, setToast] = useState<any>(null);
