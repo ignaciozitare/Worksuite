@@ -499,3 +499,83 @@ Admin-configured parent-child whitelist between Task Types. Stores `(parent_type
 A task type has many tasks. A task has many alarms (per-user), optionally has a parent task (also a task), and records who archived it (a user). A user has many cities, one settings row, and many alarms. The task-type hierarchy is a many-to-many relationship between task types.
 
 Migration file: `supabase/migrations/20260423_vl_smart_kanban_v2.sql` (NOT yet applied to prod — DBA Agent has written it pending review).
+
+---
+
+## Phase 5 — Schema Builder · Card Layout selector (revisión 2026-04-25)
+
+### What it does
+The Schema Builder lets admins pick which fields appear on a Kanban card for a given Task Type. Originally implemented as a horizontal "Card Layout band" of toggleable chips, it overflowed on 13" laptops and pushed the field canvas down. This revision replaces it with a compact dropdown multiselect placed in the schema header, next to **Save schema**.
+
+### Behaviour
+
+**Trigger button (in schema header):**
+- Label: `Card Layout`, icon `view_agenda`, counter `N/4` (selected fields).
+- Same visual treatment as the other header buttons (radius 8px, no hard border, hover glow).
+- Position in the header action row: `[Card Layout ▾ N/4] [🗑] [Save schema]`.
+
+**Dropdown panel (on click):**
+- Glassmorphic surface with backdrop blur, anchored under the trigger.
+- Search input at the top, placeholder `Search field…` (i18n key).
+- Scrollable list of all fields of the current Task Type **except Title** (Title is always shown on the card and is not optional).
+- Each row: checkbox + field-type icon + field label. Clicking the row toggles `showOnCard`.
+- The search filters by `field.label`, case-insensitive, partial match.
+- Empty states:
+  - No matches → `No fields match`.
+  - Task Type has no fields yet → `No fields yet`.
+- Click outside or `Esc` closes the panel; selection is preserved.
+
+### Rules (unchanged from previous implementation)
+- Maximum **4 card fields**. When the limit is reached, unselected items render disabled with tooltip `Max 4 fields reached`.
+- Title is always implicitly included on the card and never appears in the list.
+- Selection persists in `field.showOnCard` and is committed only when **Save schema** is pressed (no auto-save).
+
+### Responsive
+With the band gone, the header collapses cleanly on 1280px+ widths. Roughly 50px of vertical canvas is recovered on small laptops.
+
+### Out of scope
+- Reordering card fields (still controlled by Main/Sidebar columns).
+- Choosing fields for views other than the Kanban card.
+
+### Data model
+No schema changes. The `field.showOnCard` boolean already exists on each entry of the Task Type's field array, persisted as part of the JSONB `schema` column on the `vl_task_types` row (see `SupabaseTaskTypeRepo`). The dropdown writes through the same `updateField → saveSchema` path the chip band uses today, so no migration, port, or adapter changes are required.
+
+**DBA verdict (2026-04-25):** no migration created — confirmed pass-through.
+
+---
+
+## Phase 5 — Two follow-up fixes (revisión 2026-04-25 · bundled with Card Layout selector branch)
+
+### Fix #1 — FieldCard label wrapping in SchemaBuilderView
+
+**Problem.** In the Schema Builder field list — especially in the narrow Sidebar column (~180px) — the field name is truncated with ellipsis because it shares a single row with the *Required* badge and the *CREATE / DETAIL / CARD* toggle pills. Users see `St...`, `Us...`, `D...` instead of the full field name.
+
+**Behaviour.**
+- **First row** (full width): drag handle + field-type icon + full field label + delete (×) button.
+- **Second row** (below the label, indented to the label level): *Required* badge if applicable + active *Create / Detail / Card* pills.
+- If the second row would be empty (field is not required and has no active toggle pill), it is not rendered.
+- Behaviour is otherwise unchanged: clicking the card selects the field, dragging reorders, × deletes.
+
+### Fix #2 — Clickable subtasks in TaskDetailModal
+
+**Problem.** Subtasks listed in the task detail modal can be created and read, but cannot be opened — the row is a static `<div>`.
+
+**Behaviour.**
+- Each subtask row is interactive: hover highlight, `cursor: pointer`.
+- Clicking a subtask row opens **that subtask** inside the same `TaskDetailModal`, replacing the current task in view.
+- The checkbox on the left still toggles DONE/not-DONE without opening the modal (event propagation stopped).
+- When the task currently open has `parent_task_id`, the modal shows a **breadcrumb** above the title with the full ancestor chain (e.g. `↑ EPIC-1 / STORY-2`). Each ancestor in the breadcrumb is clickable and opens that ancestor in the modal. The Phase 5 hierarchy cap of 5 levels keeps the chain bounded.
+- When the task in view changes, all dependent state (subtasks list, alarms list, auto-save indicator) is reloaded for the new task.
+
+**Drag-and-drop reorder of subtasks.**
+- Subtasks can be reordered by dragging within the subtasks list. The order persists on the parent task and is visible to other users.
+- Implementation note for DBA: requires a `sort_order` (or equivalent) on subtasks scoped to their parent, if not already present.
+
+### Out of scope
+*(none — items previously listed here have been moved into scope.)*
+
+### Data model
+- No schema changes. `parent_task_id` already exists for the breadcrumb / subtask navigation.
+- For the drag-and-drop reorder, the application layer reuses the existing `vl_tasks.sort_order` column (integer, NOT NULL, default 0), scoped by `parent_task_id`. When listing children of a parent task, the repo orders by `sort_order ASC, created_at ASC`. Reordering issues an UPDATE on the affected rows' `sort_order`.
+
+**DBA verdict (2026-04-25):** no migration created — `parent_task_id` and `sort_order` are both pre-existing on `vl_tasks` (verified against prod schema).

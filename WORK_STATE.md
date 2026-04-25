@@ -1,61 +1,54 @@
 # WORK_STATE
 
-_Ultima actualizacion: 2026-04-23_
+_Ultima actualizacion: 2026-04-25_
 
 ---
 
 ## Tarea en curso
 
-**Vector Logic — Phase 5 "Smart Kanban v2" — Dev Agent (en curso)**
+**Vector Logic — Card Layout selector + 2 follow-up fixes (revisión UI)**
 
-Branch: `feat/vector-logic-smart-kanban-v2`
-Checkpoint: commit `ede82e3` — Phase 5 scaffold completo
-
-Pipeline: Spec ✅ → DBA ✅ → Scaffold ✅ → **Dev ⏳** → Review → QA → Deploy
+Branch: `feat/vl-card-layout-multiselect`
+Pipeline: Spec ✅ → DBA ✅ → Scaffold ✅ → Dev ✅ → Review ✅ → QA ⏳ → Deploy
 
 ## Punto exacto
 
-### Ya hecho (commit `ede82e3`)
-- `specs/modules/vector-logic/SPEC.md` — spec confirmado (18 features)
-- `supabase/migrations/20260423_vl_smart_kanban_v2.sql` — migración escrita, **NO aplicada** a prod todavía
-- Entidades nuevas: `TaskAlarm`, `WorldCity`, `UserSettings`, `TaskTypeHierarchy`
-- Extensiones a `Task` (code, due_date, state_entered_at, archived_at/by, parent_task_id) y `TaskType` (prefix, next_number)
-- Ports: `ITaskAlarmRepo`, `IWorldCityRepo`, `IUserSettingsRepo`, `ITaskTypeHierarchyRepo`
-- Adapters Supabase para los 4 ports nuevos
-- Skeleton UI: `WorldClock.tsx`, `TaskAlarmPicker.tsx`, `TaskTypeSwitcher.tsx`, `BacklogHistoryView.tsx`
-- i18n EN/ES agregado (35 keys nuevas)
-- Wiring en `container.ts`
+### Ya hecho
+- **Card Layout selector** (commit `4d164ef`, ya pusheado y con preview Vercel verde):
+  - Banda chips de fields reemplazada por dropdown `MultiSelectDropdown` (nuevo en `packages/ui`) junto a Save schema.
+- **Fix #1 — FieldCard label wrap** (uncommitted): cada field card ahora muestra nombre/× en row 1 y Required + Create/Detail/Card pills en row 2.
+- **Fix #2 — Subtareas interactivas en TaskDetailModal** (uncommitted):
+  - Filas clickeables → abren la subtarea en el mismo modal (`key={detailTask.id}` re-mounta limpio).
+  - Breadcrumb de ancestros sobre el body cuando `parent_task_id` existe; click en cada ancestor navega al padre. Cap 5 niveles.
+  - Drag-and-drop entre subtareas con `taskRepo.reorder` sobre `vl_tasks.sort_order`.
+  - Checkbox toggle DONE/OPEN con `taskRepo.moveToState` + `stopPropagation`.
+- 2 keys i18n nuevas: `markAsDone` / `markAsOpen` (EN + ES).
 
-### Pendiente Dev Agent (orden propuesto)
-1. **Aplicar migración** `20260423_vl_smart_kanban_v2.sql` a Supabase prod (bloquea el resto)
-2. **Extender `SupabaseTaskRepo`** con `findBacklog` / `findArchived` / `archive` / `reopen`
-3. **Cablear** `BacklogHistoryView`, `WorldClock`, `TaskAlarmPicker`, `TaskTypeSwitcher` dentro de `KanbanView` / `VectorLogicPage` / `TaskDetailModal`
-4. **Features restantes**: search bar, días en columna, due date con color, modal doble ancho, subtareas, auto-save, drag-over glow, task type icon, filtro dropdown, contador por columna
-5. **Browser notifications** schedulado desde `TaskAlarm` rows
+### Pendiente
+1. Commit + push de los 2 fixes (re-deploy preview).
+2. Verificación visual del usuario en preview.
+3. Merge a `main`.
 
 ## Decisiones tomadas
-- Backlog = state-based (tasks con `state.category = 'BACKLOG'`)
-- History = `archived_at IS NOT NULL`
-- Hasta 5 niveles de jerarquía — enforcement en capa de aplicación
-- `state_entered_at` se resetea via trigger BEFORE UPDATE cuando cambia `state_id`
-- Prefix backfilled con primeras 4 letras uppercase del nombre del tipo
-- Auto-archive ejecuta al cargar el board
-- Edit worklog (Jira Tracker) = delete old + insert new
+- Modal remonta vía `key={detailTask.id}` cuando se navega entre tareas (más simple que reset manual).
+- Parent (KanbanView) computa `taskType` por lookup desde `taskTypes.find(t => t.id === detailTask.taskTypeId)` para que el modal funcione con tareas de cualquier tipo.
+- Breadcrumb camina parent_task_id con `taskRepo.findById` repetido (max 5 hops por la regla de jerarquía de Phase 5). No hay batch endpoint — KISS.
+- Drag-and-drop reusa `vl_tasks.sort_order` (ya existía). Sin migración.
+- Toggle DONE/OPEN del checkbox: usa `stateRepo.findByWorkflow` por subtask (puede ser de tipo distinto al padre).
 
 ## Archivos de referencia
-- **Spec**: `specs/modules/vector-logic/SPEC.md`
-- **Migración**: `supabase/migrations/20260423_vl_smart_kanban_v2.sql`
-- **Diseños**: `pencil-new.pen` frames `VectorLogic/Kanban`, `VectorLogic/Chat`, `VectorLogic/AI Detections`
-- **Container**: `apps/web/src/modules/vector-logic/container.ts`
+- **Spec**: `specs/modules/vector-logic/SPEC.md` — sección "Phase 5 — Schema Builder · Card Layout selector revisión 2026-04-25" + "Two follow-up fixes (revisión 2026-04-25)"
+- **Componente compartido**: `packages/ui/src/components/MultiSelectDropdown.tsx`
+- **Vista admin**: `apps/web/src/modules/vector-logic/ui/views/SchemaBuilderView.tsx`
+- **Modal de detalle**: `apps/web/src/modules/vector-logic/ui/views/KanbanView.tsx` (función `TaskDetailModal`)
 
 ## Bloqueos / notas
-- **git commit sandbox**: macOS `com.apple.provenance` bloquea writes al `.git/index` — `git push` funciona OK
+- **TODO arrastrado (no en scope)**: `stateById` dentro del modal se construye con los `wfStates` del kanban (que sólo cubren `selectedType`). Cuando se navega por breadcrumb a una task de otro tipo, el cálculo de `done` para sus subtareas puede aparecer como false aunque la subtask esté en DONE. Pre-existente, más visible ahora con la navegación nueva.
 - **URL produccion**: worksuite-phi.vercel.app
-- **Jira Tracker redesign**: mergeado en commit `89c0a80` — no pendiente
-- **Login screen redesign**: esperando referencia visual de Pencil (sesiones anteriores)
+- **Login screen redesign**: sigue esperando referencia visual de Pencil.
 
 ## Cómo retomar esta sesión
 
-Usuario dirá: **"seguí con el Dev de Smart Kanban v2 desde el checkpoint"**
+Usuario dirá: **"seguí con el deploy del Card Layout"**
 
-Acción: arrancar por aplicar la migración a Supabase (paso 1 de los pendientes), previa lectura completa del SQL y confirmación con el usuario.
+Acción: commit de los 2 fixes pendientes en `feat/vl-card-layout-multiselect`, push, esperar preview Vercel verde, mergear a main, verificar producción.

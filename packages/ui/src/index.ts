@@ -46,5 +46,9 @@ export type { DateRangePickerProps }     from './components/DateRangePicker';
 export { Card }                          from './components/Card';
 export type { CardVariant, CardProps }   from './components/Card';
 
+// ── MultiSelect Dropdown ──────────────────────────────────────────────────────
+export { MultiSelectDropdown }           from './components/MultiSelectDropdown';
+export type { MultiSelectDropdownItem, MultiSelectDropdownProps } from './components/MultiSelectDropdown';
+
 // ── Icons ─────────────────────────────────────────────────────────────────────
 export { BugIcon }                       from './components/BugIcon';
