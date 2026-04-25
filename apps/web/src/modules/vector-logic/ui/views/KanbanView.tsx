@@ -712,6 +712,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                             taskType={taskTypes.find(x => x.id === task.taskTypeId) ?? selectedType}
                             priorityColor={priorityColorByName[(task.priority ?? '').toLowerCase()] ?? 'var(--tx3)'}
                             assignee={wsUsers.find(u => u.id === task.assigneeId) ?? null}
+                            wsUsers={wsUsers}
                             onClick={() => setDetailTask(task)}
                             onDragStart={isAggregate ? undefined : onDragStart(task.id)}
                             onDragEnd={isAggregate ? undefined : onTaskDragEnd}
@@ -852,9 +853,10 @@ function formatCardValue(field: SchemaField, v: unknown): string | null {
   return String(v).slice(0, 24);
 }
 
-function TaskCard({ task, taskType, priorityColor, assignee, onClick, onDragStart, onDragEnd, isDragging }: {
+function TaskCard({ task, taskType, priorityColor, assignee, wsUsers, onClick, onDragStart, onDragEnd, isDragging }: {
   task: Task;
   taskType: TaskType | null;
+  wsUsers: WSUser[];
   priorityColor: string;
   assignee: WSUser | null;
   onClick: () => void;
@@ -868,14 +870,36 @@ function TaskCard({ task, taskType, priorityColor, assignee, onClick, onDragStar
   const now = new Date();
   const daysInColumn = daysBetween(task.stateEnteredAt, now);
 
-  // User-configured card chips (up to 4). Assignee is rendered as the avatar,
-  // never as a chip — filter it out here.
+  // User-configured card chips (up to 4). Assignee + user_picker are rendered
+  // as avatars in the footer, never as text chips — filter them out here.
   const schema = ((taskType?.schema as SchemaField[]) || []);
   const cardFields = schema
-    .filter(f => f.showOnCard && f.fieldType !== 'assignee' && f.fieldType !== 'title')
+    .filter(f => f.showOnCard && f.fieldType !== 'assignee' && f.fieldType !== 'title' && f.fieldType !== 'user_picker')
     .sort((a, b) => a.order - b.order)
     .slice(0, 4);
   const hasCardFields = cardFields.length > 0;
+
+  // Extra users contributed by user_picker fields with showOnCard. Each chip
+  // resolves the stored user id to a WSUser, deduped against the native
+  // assignee, capped at 3 visible (rest collapse into +N).
+  const extraUsers: WSUser[] = (() => {
+    const seen = new Set<string>(assignee ? [assignee.id] : []);
+    const out: WSUser[] = [];
+    schema
+      .filter(f => f.showOnCard && f.fieldType === 'user_picker')
+      .sort((a, b) => a.order - b.order)
+      .forEach(f => {
+        const uid = (task.data ?? {})[f.id];
+        if (typeof uid !== 'string' || !uid || seen.has(uid)) return;
+        const u = wsUsers.find(x => x.id === uid);
+        if (!u) return;
+        seen.add(uid);
+        out.push(u);
+      });
+    return out;
+  })();
+  const visibleExtras = extraUsers.slice(0, 3);
+  const overflowExtras = extraUsers.length - visibleExtras.length;
 
   // Due-date color (also used for a "due" chip in the default layout).
   let dueColor = 'var(--tx3)';
@@ -988,18 +1012,48 @@ function TaskCard({ task, taskType, priorityColor, assignee, onClick, onDragStar
           </>
         )}
         <div style={{ flex: 1 }} />
-        {assignee && (
-          <div title={assignee.name || assignee.email}
-            style={{
-              width: 22, height: 22, borderRadius: '50%',
-              background: 'linear-gradient(135deg, var(--ac), var(--ac2))',
-              color: 'var(--ac-on)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 9, fontWeight: 700, letterSpacing: '.02em',
-              border: '1px solid var(--bd)',
-            }}>
-            {initials}
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {assignee && (
+            <div title={`${assignee.name || assignee.email}${assignee.email && assignee.name ? ` — ${assignee.email}` : ''}`}
+              style={{
+                width: 22, height: 22, borderRadius: '50%',
+                background: 'linear-gradient(135deg, var(--ac), var(--ac2))',
+                color: 'var(--ac-on)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 9, fontWeight: 700, letterSpacing: '.02em',
+                border: '1px solid var(--bd)',
+              }}>
+              {initials}
+            </div>
+          )}
+          {visibleExtras.map(u => {
+            const ini = (u.name || u.email).trim().split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase();
+            return (
+              <div key={u.id}
+                title={`${u.name || u.email}${u.email && u.name ? ` — ${u.email}` : ''}`}
+                style={{
+                  width: 22, height: 22, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, var(--purple), var(--ac))',
+                  color: 'var(--ac-on)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 9, fontWeight: 700, letterSpacing: '.02em',
+                  border: '1px solid var(--bd)',
+                }}>
+                {ini}
+              </div>
+            );
+          })}
+          {overflowExtras > 0 && (
+            <div title={extraUsers.slice(3).map(u => u.name || u.email).join(', ')}
+              style={{
+                height: 22, padding: '0 6px', borderRadius: 11,
+                background: 'var(--sf2)', color: 'var(--tx2)',
+                display: 'flex', alignItems: 'center',
+                fontSize: 9, fontWeight: 700,
+                border: '1px solid var(--bd)',
+              }}>
+              +{overflowExtras}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

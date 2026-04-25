@@ -579,3 +579,27 @@ No schema changes. The `field.showOnCard` boolean already exists on each entry o
 - For the drag-and-drop reorder, the application layer reuses the existing `vl_tasks.sort_order` column (integer, NOT NULL, default 0), scoped by `parent_task_id`. When listing children of a parent task, the repo orders by `sort_order ASC, created_at ASC`. Reordering issues an UPDATE on the affected rows' `sort_order`.
 
 **DBA verdict (2026-04-25):** no migration created — `parent_task_id` and `sort_order` are both pre-existing on `vl_tasks` (verified against prod schema).
+
+---
+
+## Phase 5 — Bug fix: User Picker rendering on Kanban cards (2026-04-25)
+
+### Problem
+When a `user_picker` field is marked **Show on card** on the Task Type schema, the Kanban renders it as a chip showing the truncated user UUID (e.g. `00000005-0000-0000-000`). The default `formatCardValue` falls through to `String(v).slice(0, 24)` because the chip filter only excludes `'assignee'` and `'title'`, not `'user_picker'`.
+
+### Behaviour
+- Any `user_picker` field with `showOnCard=true` is excluded from the chip rail (same treatment as `assignee` and `title`).
+- Each `user_picker` value is rendered in the card footer as a **small avatar chip (initials)** alongside the native assignee, matching the existing assignee visual (22px circle, gradient fill, monospaced initials). Full name and email surface via the hover tooltip — keeping the footer compact on narrow cards. The user_picker avatars use a purple→accent gradient to differentiate from the native assignee's accent gradient.
+- If the `user_picker` value equals the native `assigneeId`, the second chip is suppressed (avoid duplicates — the assignee chip already covers it).
+- When multiple `user_picker` fields are marked `showOnCard`, all distinct user chips are rendered. Visible cap of 3; any extras collapse into a `+N` indicator.
+- Each chip exposes a tooltip on hover showing `Name — email` (uses the native HTML `title` attribute; no extra UI components).
+- If the saved user ID does not resolve to any entry in `wsUsers`, the chip is silently skipped (no broken UI, no UUID leak).
+- If the value is null/empty, nothing is rendered.
+
+### Out of scope
+*(none — items previously listed have been moved into scope.)*
+
+### Data model
+No changes. The `user_picker` field already persists the user ID in `task.data[fieldId]`. The `WSUser[]` list is already passed to the `TaskCard` component for the assignee avatar; the same list resolves user_picker IDs.
+
+**DBA verdict (2026-04-25):** no migration created — pure presentation fix.
