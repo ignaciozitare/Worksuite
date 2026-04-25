@@ -603,3 +603,37 @@ When a `user_picker` field is marked **Show on card** on the Task Type schema, t
 No changes. The `user_picker` field already persists the user ID in `task.data[fieldId]`. The `WSUser[]` list is already passed to the `TaskCard` component for the assignee avatar; the same list resolves user_picker IDs.
 
 **DBA verdict (2026-04-25):** no migration created — pure presentation fix.
+
+---
+
+## Phase 5 — Two bug fixes (revisión 2026-04-25 #3)
+
+### Fix #1 — Avatar tooltip is delayed (~500ms)
+
+**Problem.** The user_picker (and assignee) avatars in the TaskCard footer rely on the native HTML `title` attribute, which takes 500–1000ms to appear. Users perceive this as broken.
+
+**Behaviour.**
+- Tooltip appears **instantly** on hover (≤100ms perceived).
+- Content: `Name — email` (or just email if no name).
+- Visual: small chip with `var(--sf3)` background and `var(--bd)` border, positioned above the avatar with an arrow pointing down at it.
+- Implementation: CSS-driven via a pseudo-element on a `data-tooltip` attribute. No external library, no React state per avatar.
+- Same treatment applied to the native assignee avatar for consistency.
+
+### Fix #2 — Destination column does not highlight when dragging a task
+
+**Problem.** When dragging a task between columns in the KanbanView, the destination column does not light up. The existing `isDropTarget` glow only triggers for column-to-column reorder because `onDragOverCol` (the task-drag handler) never sets `dropColumnId`.
+
+**Behaviour.**
+- Dragging a task over a column other than its source highlights that column with the existing `isDropTarget` styling (gradient `var(--ac-dim)`, dashed accent border, `scale(1.015)`, glow shadow).
+- Drag-leaving the column or dropping clears the highlight.
+- The source column does not highlight while dragging within itself (avoids visual noise).
+- Behaviour is identical in single-type and aggregate kanban modes.
+
+### Out of scope
+- Drop animation (only the during-drag glow).
+- Multi-line tooltip with avatar + extra metadata (just name — email).
+
+### Data model
+No changes. Both fixes are pure UI.
+
+**DBA verdict (2026-04-25):** no migration — both are pure presentation tweaks.
