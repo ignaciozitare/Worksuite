@@ -50,5 +50,9 @@ export type { CardVariant, CardProps }   from './components/Card';
 export { MultiSelectDropdown }           from './components/MultiSelectDropdown';
 export type { MultiSelectDropdownItem, MultiSelectDropdownProps } from './components/MultiSelectDropdown';
 
+// ── User Avatar ───────────────────────────────────────────────────────────────
+export { UserAvatar, AVATAR_PRESETS, PRESET_GRADIENT_MAP, getAvatarInitials, isPresetAvatarUrl, getPresetFromAvatarUrl } from './components/UserAvatar';
+export type { UserAvatarProps, UserAvatarUser, AvatarPreset } from './components/UserAvatar';
+
 // ── Icons ─────────────────────────────────────────────────────────────────────
 export { BugIcon }                       from './components/BugIcon';

@@ -1,12 +1,14 @@
 // @ts-nocheck
 import React, { useState, useRef } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { UserAvatar } from '@worksuite/ui';
 import { supabase } from '../lib/api';
 import { SupabaseAdminUserRepo } from '../infra/SupabaseAdminUserRepo';
 import { makeAvatar, isValidEmail } from '../lib/utils';
 import { PasswordStrength } from '../ui/PasswordStrength';
 import { DeskType } from '../../modules/hotdesk/domain/entities/constants';
 import { CsvService } from '../../modules/jira-tracker/domain/services/CsvService';
+import { AvatarPicker } from '../../modules/profile/ui/AvatarPicker';
 
 const adminUserRepo = new SupabaseAdminUserRepo(supabase);
 
@@ -142,6 +144,7 @@ function CsvImportModal({ existingUsers, onClose, onImport }) {
 }
 
 function AdminUsers({ users, setUsers, currentUser }) {
+  const [pickerUser, setPickerUser] = useState(null);
   const { t } = useTranslation();
   const [modal, setModal] = useState(null);
   const toggleRole = async (id) => {
@@ -186,7 +189,7 @@ function AdminUsers({ users, setUsers, currentUser }) {
           <thead><tr><th>{t("admin.colUser")}</th><th>{t("admin.colEmail")}</th><th>{t("admin.colRole")}</th><th>{t("admin.colDeskType")}</th><th>Módulos</th><th>{t("admin.colAccess")}</th><th>{t("admin.colActions")}</th></tr></thead>
           <tbody>{users.map(u=>(
             <tr key={u.id}>
-              <td><div style={{display:"flex",alignItems:"center",gap:8}}><div className="avatar" style={{width:26,height:26,fontSize:9,flexShrink:0}}>{u.avatar}</div><span style={{fontWeight:500}}>{u.name}</span>{u.id===currentUser.id&&<span style={{fontSize:9,color:"var(--tx3)"}}>{t("admin.you")}</span>}</div></td>
+              <td><div style={{display:"flex",alignItems:"center",gap:8}}><button type="button" onClick={()=>setPickerUser(u)} title={t("profile.avatarChange")} style={{background:"transparent",border:"none",padding:0,cursor:"pointer",borderRadius:"50%"}}><UserAvatar user={{id:u.id,name:u.name,email:u.email,avatar:u.avatar,avatarUrl:u.avatar_url ?? u.avatarUrl ?? null}} size={26} imageWidth={64}/></button><span style={{fontWeight:500}}>{u.name}</span>{u.id===currentUser.id&&<span style={{fontSize:9,color:"var(--tx3)"}}>{t("admin.you")}</span>}</div></td>
               <td style={{fontFamily:"var(--mono)",fontSize:11,color:"var(--tx3)"}}>{u.email}</td>
               <td><span className={`r-tag ${u.role==="admin"?"r-admin":"r-user"}`}>{u.role==="admin"?t("admin.roleAdmin"):t("admin.roleUser")}</span></td>
               <td><div style={{display:"flex",gap:3}}>{[DeskType.NONE, DeskType.HOTDESK, DeskType.FIXED].map(dt=>(<button key={dt} onClick={()=>changeDeskType(u.id,dt)} style={{fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:3,border:`1px solid ${u.deskType===dt?DESK_COLORS[dt]:"var(--bd)"}`,background:u.deskType===dt?`${DESK_COLORS[dt]}15`:"transparent",color:u.deskType===dt?DESK_COLORS[dt]:"var(--tx3)",cursor:"pointer"}}>{DESK_LABELS[dt]}</button>))}</div></td>
@@ -204,6 +207,15 @@ function AdminUsers({ users, setUsers, currentUser }) {
       {modal==="add"&&<AddUserModal existingUsers={users} onClose={()=>setModal(null)} onSave={handleAdd}/>}
       {modal==="csv"&&<CsvImportModal existingUsers={users} onClose={()=>setModal(null)} onImport={handleImport}/>}
       {modal?.type==="pwd"&&<ChangePasswordModal user={modal.user} onClose={()=>setModal(null)}/>}
+      {pickerUser && (
+        <AvatarPicker
+          user={{ id: pickerUser.id, name: pickerUser.name, email: pickerUser.email, avatar: pickerUser.avatar, avatarUrl: pickerUser.avatar_url ?? pickerUser.avatarUrl ?? null }}
+          onClose={() => setPickerUser(null)}
+          onSaved={(value) => {
+            setUsers(prev => prev.map(x => x.id === pickerUser.id ? { ...x, avatar_url: value, avatarUrl: value } : x));
+          }}
+        />
+      )}
     </div>
   );
 }

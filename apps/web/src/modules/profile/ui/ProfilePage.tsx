@@ -1,6 +1,9 @@
 // @ts-nocheck
+import { useState } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { UserAvatar } from '@worksuite/ui';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { AvatarPicker } from './AvatarPicker';
 
 const C = {
   bg: 'var(--bg)', sf: 'var(--sf)', sfHover: 'var(--sf2)', bd: 'var(--bd)',
@@ -10,7 +13,8 @@ const C = {
 
 export function ProfilePage() {
   const { t, locale, setLocale } = useTranslation();
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   if (!user) return null;
 
@@ -45,16 +49,31 @@ export function ProfilePage() {
         background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 10,
         padding: 28, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 24,
       }}>
-        <div style={{
-          width: 96, height: 96, borderRadius: '50%',
-          background: `linear-gradient(135deg,${C.amberDim},${C.bd})`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 36, fontWeight: 700, color: C.amber,
-          fontFamily: "'IBM Plex Mono',monospace",
-          boxShadow: `0 0 40px ${C.amberGlow}`,
-        }}>
-          {(user.name || user.email || '?').charAt(0).toUpperCase()}
-        </div>
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          title={t('profile.avatarChange')}
+          style={{
+            position: 'relative', width: 96, height: 96,
+            background: 'transparent', border: 'none', padding: 0,
+            cursor: 'pointer', borderRadius: '50%',
+            boxShadow: `0 0 40px ${C.amberGlow}`,
+          }}
+          onMouseEnter={e => { (e.currentTarget.querySelector('.profile-avatar-overlay') as HTMLElement).style.opacity = '1'; }}
+          onMouseLeave={e => { (e.currentTarget.querySelector('.profile-avatar-overlay') as HTMLElement).style.opacity = '0'; }}>
+          <UserAvatar user={user} size={96} imageWidth={256} />
+          <div className="profile-avatar-overlay" style={{
+            position: 'absolute', inset: 0, borderRadius: '50%',
+            background: 'rgba(0,0,0,.55)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            opacity: 0, transition: 'opacity .15s',
+            color: 'white', fontSize: 11, fontWeight: 700,
+            textTransform: 'uppercase', letterSpacing: '.1em',
+            gap: 4,
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>photo_camera</span>
+          </div>
+        </button>
 
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 22, fontWeight: 700, color: C.tx, marginBottom: 4 }}>
@@ -155,6 +174,14 @@ export function ProfilePage() {
       }}>
         {t('profile.comingSoon')}
       </div>
+
+      {pickerOpen && (
+        <AvatarPicker
+          user={user as any}
+          onClose={() => setPickerOpen(false)}
+          onSaved={() => { refresh?.(); }}
+        />
+      )}
     </div>
   );
 }

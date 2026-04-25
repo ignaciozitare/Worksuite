@@ -2,9 +2,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@worksuite/i18n';
+import { UserAvatar } from '@worksuite/ui';
 
 interface Props {
-  user: { id?: string; name?: string; email?: string; avatar?: string };
+  user: { id?: string; name?: string; email?: string; avatar?: string; avatarUrl?: string | null };
   onLogout: () => void;
 }
 
@@ -53,9 +54,7 @@ export function UserMenu({ user, onLogout }: Props) {
           height: 32,
         }}
       >
-        <div className="avatar" style={{ width: 24, height: 24, fontSize: 11 }}>
-          {user.avatar || (user.name || 'U').slice(0, 2).toUpperCase()}
-        </div>
+        <UserAvatar user={user} size={24} imageWidth={64} />
         <span style={{ fontSize: 12, color: 'var(--tx2)', fontWeight: 600 }}>
           {user.name || user.email}
         </span>

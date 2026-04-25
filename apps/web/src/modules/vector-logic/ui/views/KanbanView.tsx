@@ -1,7 +1,8 @@
 // @ts-nocheck
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from '@worksuite/i18n';
-import { useDialog } from '@worksuite/ui';
+import { useDialog, UserAvatar } from '@worksuite/ui';
 import type { Task, TaskPriority } from '../../domain/entities/Task';
 import type { TaskType } from '../../domain/entities/TaskType';
 import type { WorkflowState, StateCategory } from '../../domain/entities/State';
@@ -441,47 +442,6 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
-      <style>{`
-        .vl-card [data-tooltip] { position: relative; }
-        .vl-card [data-tooltip]::after {
-          content: attr(data-tooltip);
-          position: absolute;
-          bottom: calc(100% + 6px);
-          left: 50%;
-          transform: translateX(-50%);
-          background: var(--sf3);
-          color: var(--tx);
-          border: 1px solid var(--bd);
-          border-radius: 6px;
-          padding: 4px 8px;
-          font-size: 11px;
-          font-weight: 500;
-          line-height: 1.3;
-          white-space: nowrap;
-          pointer-events: none;
-          opacity: 0;
-          transition: opacity .08s ease-out;
-          z-index: 50;
-          box-shadow: 0 6px 16px rgba(0,0,0,.4);
-        }
-        .vl-card [data-tooltip]::before {
-          content: '';
-          position: absolute;
-          bottom: calc(100% + 1px);
-          left: 50%;
-          transform: translateX(-50%) rotate(45deg);
-          width: 6px; height: 6px;
-          background: var(--sf3);
-          border-right: 1px solid var(--bd);
-          border-bottom: 1px solid var(--bd);
-          pointer-events: none;
-          opacity: 0;
-          transition: opacity .08s ease-out;
-          z-index: 51;
-        }
-        .vl-card [data-tooltip]:hover::after,
-        .vl-card [data-tooltip]:hover::before { opacity: 1; }
-      `}</style>
       {/* Header */}
       <div style={{ padding: '0 4px 14px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
@@ -1065,44 +1025,31 @@ function TaskCard({ task, taskType, priorityColor, assignee, wsUsers, onClick, o
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           {assignee && (
-            <div data-tooltip={`${assignee.name || assignee.email}${assignee.email && assignee.name ? ` — ${assignee.email}` : ''}`}
-              style={{
-                width: 22, height: 22, borderRadius: '50%',
-                background: 'linear-gradient(135deg, var(--ac), var(--ac2))',
-                color: 'var(--ac-on)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 9, fontWeight: 700, letterSpacing: '.02em',
-                border: '1px solid var(--bd)',
-              }}>
-              {initials}
-            </div>
+            <Tooltip label={assignee.name || assignee.email}>
+              <UserAvatar user={assignee} size={22} imageWidth={64} />
+            </Tooltip>
           )}
-          {visibleExtras.map(u => {
-            const ini = (u.name || u.email).trim().split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase();
-            return (
-              <div key={u.id}
-                data-tooltip={`${u.name || u.email}${u.email && u.name ? ` — ${u.email}` : ''}`}
-                style={{
-                  width: 22, height: 22, borderRadius: '50%',
-                  background: 'linear-gradient(135deg, var(--purple), var(--ac))',
-                  color: 'var(--ac-on)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 9, fontWeight: 700, letterSpacing: '.02em',
-                  border: '1px solid var(--bd)',
-                }}>
-                {ini}
-              </div>
-            );
-          })}
+          {visibleExtras.map(u => (
+            <Tooltip key={u.id} label={u.name || u.email}>
+              <UserAvatar
+                user={u.avatarUrl ? u : { ...u, avatarUrl: 'preset:purple' }}
+                size={22}
+                imageWidth={64}
+              />
+            </Tooltip>
+          ))}
           {overflowExtras > 0 && (
-            <div data-tooltip={extraUsers.slice(3).map(u => u.name || u.email).join(', ')}
-              style={{
+            <Tooltip label={extraUsers.slice(3).map(u => u.name || u.email).join(', ')}>
+              <span style={{
                 height: 22, padding: '0 6px', borderRadius: 11,
                 background: 'var(--sf2)', color: 'var(--tx2)',
-                display: 'flex', alignItems: 'center',
+                display: 'inline-flex', alignItems: 'center',
                 fontSize: 9, fontWeight: 700,
                 border: '1px solid var(--bd)',
               }}>
-              +{overflowExtras}
-            </div>
+                +{overflowExtras}
+              </span>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -1382,34 +1329,41 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
       `}</style>
       {ancestors.length > 0 && (
         <div style={{
-          display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4,
-          fontSize: 11, color: 'var(--tx3)', marginBottom: 12,
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6,
+          padding: '8px 12px', marginBottom: 14,
+          background: 'var(--ac-dim)', borderRadius: 8,
+          border: '1px solid var(--bd)',
         }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)', marginRight: 2 }}>
-            subdirectory_arrow_right
+          <span style={{
+            fontSize: 9, fontWeight: 700, color: 'var(--ac)',
+            textTransform: 'uppercase', letterSpacing: '.08em',
+          }}>
+            {t('vectorLogic.parentLabel')}
           </span>
           {ancestors.map((a, i) => (
             <span key={a.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              {i > 0 && <span style={{ color: 'var(--tx3)', opacity: .5 }}>/</span>}
+              {i > 0 && <span style={{ color: 'var(--tx3)' }}>/</span>}
               <button
                 type="button"
                 onClick={() => onOpenTask?.(a.id)}
                 style={{
-                  background: 'none', border: 'none', cursor: onOpenTask ? 'pointer' : 'default',
+                  background: 'transparent', border: 'none',
+                  cursor: onOpenTask ? 'pointer' : 'default',
                   padding: '2px 6px', borderRadius: 4, fontFamily: 'inherit',
                   display: 'inline-flex', alignItems: 'center', gap: 6,
-                  color: 'var(--tx2)', fontSize: 11,
+                  color: 'var(--tx)', fontSize: 12,
                 }}
-                title={a.title}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--sf2)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 {a.code && (
                   <span style={{
                     fontWeight: 700, color: 'var(--ac)',
-                    fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '.04em',
+                    fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '.04em', fontSize: 11,
                   }}>{a.code}</span>
                 )}
                 <span style={{
-                  maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>{a.title}</span>
               </button>
             </span>
@@ -1437,15 +1391,21 @@ function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorit
           )}
 
           {mainDetailFields.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
               {mainDetailFields.map(field => (
-                <DynamicFieldRenderer
+                <div
                   key={field.id}
-                  field={field}
-                  value={readValue(field)}
-                  wsUsers={wsUsers}
-                  onChange={(v) => writeValue(field, v)}
-                />
+                  style={field.fieldType === 'rich_text'
+                    ? { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 220 }
+                    : undefined}
+                >
+                  <DynamicFieldRenderer
+                    field={field}
+                    value={readValue(field)}
+                    wsUsers={wsUsers}
+                    onChange={(v) => writeValue(field, v)}
+                  />
+                </div>
               ))}
             </div>
           )}
@@ -2079,5 +2039,37 @@ function Modal({ title, onClose, children, width = 480, titleAccessory }: {
         <div style={{ padding: '18px 20px', overflowY: 'auto', flex: 1 }}>{children}</div>
       </div>
     </div>
+  );
+}
+
+/* ── Tooltip (portal) ──────────────────────────────────────────────────── */
+function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
+  const ref = useRef<HTMLSpanElement | null>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+
+  const show = () => {
+    const el = ref.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    setPos({ x: r.left + r.width / 2, y: r.top - 8 });
+  };
+  const hide = () => setPos(null);
+
+  return (
+    <>
+      <span ref={ref} onMouseEnter={show} onMouseLeave={hide} style={{ display: 'inline-flex' }}>
+        {children}
+      </span>
+      {pos && createPortal(
+        <div style={{
+          position: 'fixed', left: pos.x, top: pos.y, transform: 'translate(-50%, -100%)',
+          background: 'var(--sf3)', color: 'var(--tx)', border: '1px solid var(--bd)',
+          borderRadius: 6, padding: '4px 8px', fontSize: 11, fontWeight: 500,
+          lineHeight: 1.3, whiteSpace: 'nowrap', pointerEvents: 'none',
+          boxShadow: '0 6px 16px rgba(0,0,0,.4)', zIndex: 9999,
+          fontFamily: 'inherit',
+        }}>{label}</div>,
+        document.body
+      )}
+    </>
   );
 }
