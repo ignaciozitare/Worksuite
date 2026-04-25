@@ -74,6 +74,7 @@ export function useWorkSuiteData(authUser: any) {
         setUsers(usersRows.map(u => ({
           id: u.id, name: u.name, email: u.email,
           avatar: u.avatar || u.name.slice(0, 2).toUpperCase(),
+          avatarUrl: (u as any).avatar_url ?? null,
           role: u.role, deskType: u.desk_type, active: u.active,
           modules: (u as any).modules || ["jt", "hd", "retro", "deploy"],
         })));

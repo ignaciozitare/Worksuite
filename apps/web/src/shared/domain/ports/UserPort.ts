@@ -5,6 +5,7 @@ export interface UserRow {
   role: string;
   desk_type: string;
   avatar: string;
+  avatar_url?: string | null;
   active: boolean;
   jira_api_token?: string;
   role_id?: string;
