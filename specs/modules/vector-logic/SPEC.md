@@ -499,3 +499,45 @@ Admin-configured parent-child whitelist between Task Types. Stores `(parent_type
 A task type has many tasks. A task has many alarms (per-user), optionally has a parent task (also a task), and records who archived it (a user). A user has many cities, one settings row, and many alarms. The task-type hierarchy is a many-to-many relationship between task types.
 
 Migration file: `supabase/migrations/20260423_vl_smart_kanban_v2.sql` (NOT yet applied to prod — DBA Agent has written it pending review).
+
+---
+
+## Phase 5 — Schema Builder · Card Layout selector (revisión 2026-04-25)
+
+### What it does
+The Schema Builder lets admins pick which fields appear on a Kanban card for a given Task Type. Originally implemented as a horizontal "Card Layout band" of toggleable chips, it overflowed on 13" laptops and pushed the field canvas down. This revision replaces it with a compact dropdown multiselect placed in the schema header, next to **Save schema**.
+
+### Behaviour
+
+**Trigger button (in schema header):**
+- Label: `Card Layout`, icon `view_agenda`, counter `N/4` (selected fields).
+- Same visual treatment as the other header buttons (radius 8px, no hard border, hover glow).
+- Position in the header action row: `[Card Layout ▾ N/4] [🗑] [Save schema]`.
+
+**Dropdown panel (on click):**
+- Glassmorphic surface with backdrop blur, anchored under the trigger.
+- Search input at the top, placeholder `Search field…` (i18n key).
+- Scrollable list of all fields of the current Task Type **except Title** (Title is always shown on the card and is not optional).
+- Each row: checkbox + field-type icon + field label. Clicking the row toggles `showOnCard`.
+- The search filters by `field.label`, case-insensitive, partial match.
+- Empty states:
+  - No matches → `No fields match`.
+  - Task Type has no fields yet → `No fields yet`.
+- Click outside or `Esc` closes the panel; selection is preserved.
+
+### Rules (unchanged from previous implementation)
+- Maximum **4 card fields**. When the limit is reached, unselected items render disabled with tooltip `Max 4 fields reached`.
+- Title is always implicitly included on the card and never appears in the list.
+- Selection persists in `field.showOnCard` and is committed only when **Save schema** is pressed (no auto-save).
+
+### Responsive
+With the band gone, the header collapses cleanly on 1280px+ widths. Roughly 50px of vertical canvas is recovered on small laptops.
+
+### Out of scope
+- Reordering card fields (still controlled by Main/Sidebar columns).
+- Choosing fields for views other than the Kanban card.
+
+### Data model
+No schema changes. The `field.showOnCard` boolean already exists on each entry of the Task Type's field array, persisted as part of the JSONB `schema` column on the `vl_task_types` row (see `SupabaseTaskTypeRepo`). The dropdown writes through the same `updateField → saveSchema` path the chip band uses today, so no migration, port, or adapter changes are required.
+
+**DBA verdict (2026-04-25):** no migration created — confirmed pass-through.

@@ -10,7 +10,7 @@ This index is updated automatically by the Spec Agent when a new spec is created
 
 | Module | Spec | Status |
 |---|---|---|
-| Vector Logic | [specs/modules/vector-logic/SPEC.md](modules/vector-logic/SPEC.md) | Phases 1–3 shipped · Phase 4 (Email Intelligence) shipped · Phase 5 (Smart Kanban v2) spec confirmed, pending DBA |
+| Vector Logic | [specs/modules/vector-logic/SPEC.md](modules/vector-logic/SPEC.md) | Phases 1–4 shipped · Phase 5 (Smart Kanban v2) shipped · Schema Builder Card Layout selector — spec confirmed 2026-04-25, pending Dev |
 | HotDesk | [specs/modules/hotdesk/SPEC.md](modules/hotdesk/SPEC.md) | Booking confirmation + delegation shipped |
 | Deploy Planner | [specs/modules/deploy-planner/SPEC.md](modules/deploy-planner/SPEC.md) | Task sidebar DRAFT |
 

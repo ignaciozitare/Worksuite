@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from '@worksuite/i18n';
-import { useDialog } from '@worksuite/ui';
+import { useDialog, MultiSelectDropdown } from '@worksuite/ui';
 import type { TaskType } from '../../domain/entities/TaskType';
 import type { SchemaField, FieldTypeId } from '../../domain/entities/FieldType';
 import { FIELD_TYPES, defaultFieldsForNewTaskType, MAX_CARD_FIELDS } from '../../domain/entities/FieldType';
@@ -561,75 +561,39 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
               )}
               <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
                 {saved && <span style={{ fontSize: 11, color: 'var(--green)', fontWeight: 600 }}>✓ {t('admin.envSaved')}</span>}
+                <MultiSelectDropdown
+                  triggerLabel={t('vectorLogic.cardLayout')}
+                  triggerIcon="view_agenda"
+                  triggerIconColor="var(--purple)"
+                  items={fields
+                    .filter(f => f.fieldType !== 'title')
+                    .map(f => ({
+                      id: f.id,
+                      label: f.label,
+                      icon: FIELD_TYPES.find(def => def.id === f.fieldType)?.icon,
+                    }))}
+                  selectedIds={fields.filter(f => f.showOnCard).map(f => f.id)}
+                  onToggle={(id) => {
+                    const f = fields.find(x => x.id === id);
+                    if (!f) return;
+                    const on = !!f.showOnCard;
+                    if (on || cardFieldCount < MAX_CARD_FIELDS) {
+                      updateField(id, { showOnCard: !on });
+                    }
+                  }}
+                  searchable
+                  searchPlaceholder={t('vectorLogic.cardLayoutSearch')}
+                  maxSelections={MAX_CARD_FIELDS}
+                  maxReachedTooltip={t('vectorLogic.maxCardFieldsReached')}
+                  emptyText={t('vectorLogic.cardLayoutNoFields')}
+                  noMatchesText={t('vectorLogic.cardLayoutNoMatches')}
+                />
                 <button onClick={deleteSelectedType} style={btnStyle('danger')}>
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
                 </button>
                 <button onClick={saveSchema} disabled={saving} style={btnStyle('primary')}>
                   {saving ? t('common.loading') : t('vectorLogic.saveSchema')}
                 </button>
-              </div>
-            </div>
-
-            {/* Card Layout band — always visible, no need to open each field's
-                settings to toggle it into the Kanban card. */}
-            <div style={{
-              padding: '14px 24px', borderBottom: '1px solid var(--bd)',
-              background: 'var(--sf2)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--purple)' }}>view_agenda</span>
-                <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--tx3)', letterSpacing: '.1em', textTransform: 'uppercase' }}>
-                  {t('vectorLogic.cardLayout')}
-                </span>
-                <span style={{
-                  fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 3,
-                  background: 'var(--purple-dim)', color: 'var(--purple)',
-                  fontFamily: "'Space Grotesk',sans-serif",
-                }}>
-                  {cardFieldCount}/{MAX_CARD_FIELDS}
-                </span>
-              </div>
-              <div style={{
-                display: 'flex', gap: 6, flex: 1, overflowX: 'auto', flexWrap: 'wrap',
-              }}>
-                {fields.filter(f => f.fieldType !== 'title').map(f => {
-                  const on = !!f.showOnCard;
-                  const canToggleOn = on || cardFieldCount < MAX_CARD_FIELDS;
-                  const def = FIELD_TYPES.find(def => def.id === f.fieldType);
-                  return (
-                    <button
-                      key={f.id}
-                      onClick={() => { if (on || canToggleOn) updateField(f.id, { showOnCard: !on }); }}
-                      disabled={!on && !canToggleOn}
-                      title={!on && !canToggleOn ? t('vectorLogic.maxCardFieldsReached') : undefined}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        padding: '5px 10px', borderRadius: 6, fontFamily: 'inherit',
-                        background: on ? 'var(--purple-dim)' : 'var(--sf)',
-                        color: on ? 'var(--purple)' : 'var(--tx2)',
-                        border: `1px solid ${on ? 'var(--purple)' : 'var(--bd)'}`,
-                        fontSize: 11, fontWeight: on ? 600 : 500,
-                        cursor: (!on && !canToggleOn) ? 'not-allowed' : 'pointer',
-                        opacity: (!on && !canToggleOn) ? 0.4 : 1,
-                      }}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
-                        {on ? 'check_circle' : 'radio_button_unchecked'}
-                      </span>
-                      {def && (
-                        <span className="material-symbols-outlined" style={{ fontSize: 12, opacity: .6 }}>
-                          {def.icon}
-                        </span>
-                      )}
-                      {f.label}
-                    </button>
-                  );
-                })}
-                {fields.length === 0 && (
-                  <span style={{ fontSize: 11, color: 'var(--tx3)' }}>
-                    {t('vectorLogic.cardLayoutEmpty')}
-                  </span>
-                )}
               </div>
             </div>
 

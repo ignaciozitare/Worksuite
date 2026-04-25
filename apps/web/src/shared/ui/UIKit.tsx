@@ -8,6 +8,7 @@ import {
   StatusManager,
   DualPanelPicker,
   DateRangePicker,
+  MultiSelectDropdown,
   BugIcon,
   Card,
 } from '@worksuite/ui';
@@ -109,6 +110,7 @@ const TOC_ITEMS = [
   { id: 'table',      label: 'Tables' },
   { id: 'datepicker', label: 'DateRangePicker' },
   { id: 'dualpanel',  label: 'DualPanelPicker' },
+  { id: 'msd',        label: 'MultiSelectDropdown' },
   { id: 'statusmgr',  label: 'StatusManager' },
   { id: 'gantt',      label: 'GanttTimeline' },
   { id: 'bugicon',    label: 'BugIcon' },
@@ -136,6 +138,7 @@ export function UIKit() {
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
   const [dualSelected, setDualSelected] = useState(['apple', 'banana']);
+  const [msdSelected, setMsdSelected] = useState<string[]>(['apple', 'cherry']);
   const [statuses, setStatuses] = useState([
     { id: '1', name: 'Backlog', color: '#6b7280', bg_color: '#6b728020', border: '#6b728066', ord: 0, status_category: 'backlog' },
     { id: '2', name: 'In Progress', color: '#f59e0b', bg_color: '#f59e0b20', border: '#f59e0b66', ord: 1, status_category: 'in_progress' },
@@ -760,6 +763,27 @@ export function UIKit() {
           usedIn={['environments']}>
           <DualPanelPicker label="Favorite fruits" allItems={dualItems} selected={dualSelected} onAdd={v => setDualSelected(s => [...s, v])} onRemove={v => setDualSelected(s => s.filter(x => x !== v))} />
           <Row label="Import"><Code>{"import { DualPanelPicker } from '@worksuite/ui'"}</Code></Row>
+        </Section>
+
+        {/* ── MultiSelectDropdown ── */}
+        <Section id="msd" title="MultiSelectDropdown" description="Compact dropdown for picking many items, with optional internal search and a max-selections cap."
+          usedIn={['vector-logic']}>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            <MultiSelectDropdown
+              triggerLabel="Fruits"
+              triggerIcon="nutrition"
+              items={dualItems.map(it => ({ id: it.value, label: it.label }))}
+              selectedIds={msdSelected}
+              onToggle={(id) => setMsdSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])}
+              searchable
+              searchPlaceholder="Search fruit…"
+              maxSelections={4}
+              maxReachedTooltip="Already 4 selected"
+              emptyText="No fruits"
+              noMatchesText="No matches"
+            />
+          </div>
+          <Row label="Import"><Code>{"import { MultiSelectDropdown } from '@worksuite/ui'"}</Code></Row>
         </Section>
 
         {/* ── StatusManager ── */}
