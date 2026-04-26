@@ -1,12 +1,14 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
+import { useDialog } from '@worksuite/ui';
 import { KanbanView } from './views/KanbanView';
 import { ChatView } from './views/ChatView';
 import { AIDetectionsView } from './views/AIDetectionsView';
 import { BacklogHistoryView } from './views/BacklogHistoryView';
-import { aiRepo } from '../container';
+import { aiRepo, boardRepo } from '../container';
 import type { AIMode } from '../domain/entities/AI';
+import type { KanbanBoard } from '../domain/entities/KanbanBoard';
 
 /* ─── CSS (Stitch / Carbon Logic) ────────────────────────────────────────── */
 const CSS = `
@@ -22,9 +24,23 @@ const CSS = `
 .vl .vl-nav-item.active{opacity:1;color:var(--ac);background:var(--ac-dim);font-weight:600;box-shadow:0 0 20px var(--ac-dim);}
 .vl .vl-nav-item.disabled{opacity:.3;cursor:not-allowed;pointer-events:none;}
 .vl .vl-section-label{font-size:9px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.12em;padding:16px 12px 6px;user-select:none;}
+.vl .vl-group-toggle{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--tx);transition:all .15s;text-align:left;width:100%;font-family:inherit;}
+.vl .vl-group-toggle:hover{background:var(--sf2);}
+.vl .vl-group-toggle .chev{transition:transform .15s;}
+.vl .vl-group-toggle .chev.open{transform:rotate(0deg);}
+.vl .vl-group-toggle .chev.closed{transform:rotate(-90deg);}
+.vl .vl-board-item{display:flex;align-items:center;gap:8px;padding:7px 10px 7px 28px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--tx2);transition:all .15s;text-align:left;width:100%;font-family:inherit;}
+.vl .vl-board-item:hover{background:var(--sf2);color:var(--tx);}
+.vl .vl-board-item:hover .vl-board-edit{opacity:.7;}
+.vl .vl-board-item.active{background:var(--ac-dim);color:var(--ac2);font-weight:600;}
+.vl .vl-board-edit{opacity:0;transition:opacity .15s;display:flex;}
+.vl .vl-board-edit:hover{opacity:1 !important;}
+.vl .vl-board-badge{font-size:8px;font-weight:700;letter-spacing:.05em;padding:2px 6px;border-radius:4px;background:var(--purple);color:var(--bg);}
+.vl .vl-add-board{display:flex;align-items:center;gap:8px;padding:7px 10px 7px 28px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--ac);transition:all .15s;text-align:left;width:100%;font-family:inherit;}
+.vl .vl-add-board:hover{background:var(--ac-dim);}
 `;
 
-type Tab = 'kanban' | 'chat' | 'detections' | 'backlogHistory';
+type Tab = 'kanban' | 'board' | 'chat' | 'detections' | 'backlogHistory';
 
 interface Props {
   currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown };
@@ -33,8 +49,12 @@ interface Props {
 
 export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
   const { t } = useTranslation();
+  const dialog = useDialog();
   const [view, setView] = useState<Tab>('kanban');
   const [mode, setMode] = useState<AIMode>('embedded');
+  const [boards, setBoards] = useState<KanbanBoard[]>([]);
+  const [skExpanded, setSkExpanded] = useState(true);
+  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
 
   // Load mode once so we know whether to show the Chat tab
   useEffect(() => {
@@ -43,16 +63,26 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
     }).catch(() => {});
   }, [currentUser.id]);
 
-  // Build NAV dynamically:
-  // - Chat tab is hidden in 'external' mode (user goes via Claude Desktop + MCP)
-  // - MCP Access tab is always visible (also useful in embedded mode if you want
-  //   to ALSO connect Claude Desktop alongside the embedded chat)
-  // User-facing nav only. All configuration (workflows, states, schema,
-  // assignment, rules, priorities, provider settings) lives under the
-  // global Admin panel → Vector Logic tab.
-  const NAV: Array<{ section?: string; id?: Tab; label?: string; icon?: string }> = [
-    { section: t('vectorLogic.workspace') },
-    { id: 'kanban',         label: t('vectorLogic.smartKanban'),    icon: 'view_kanban' },
+  // Load accessible boards for the current user (RLS-filtered)
+  useEffect(() => {
+    boardRepo.findAccessible().then(setBoards).catch(() => setBoards([]));
+  }, [currentUser.id]);
+
+  const handleAddBoard = async () => {
+    await dialog.alert(t('vectorLogic.boardComingSoon'), { title: t('vectorLogic.addBoard'), icon: 'view_kanban' });
+  };
+
+  const handleEditBoard = async (e: React.MouseEvent, _boardId: string) => {
+    e.stopPropagation();
+    await dialog.alert(t('vectorLogic.boardComingSoon'), { title: t('vectorLogic.editBoardTitle'), icon: 'edit' });
+  };
+
+  const handleSelectBoard = (boardId: string) => {
+    setSelectedBoardId(boardId);
+    setView('board');
+  };
+
+  const otherNav: Array<{ id?: Tab; label?: string; icon?: string }> = [
     { id: 'backlogHistory', label: t('vectorLogic.backlogHistory'), icon: 'inbox_customize' },
     { id: 'detections',     label: t('vectorLogic.aiDetections'),   icon: 'mark_email_unread' },
     ...(mode === 'embedded' ? [{ id: 'chat' as Tab, label: t('vectorLogic.chat'), icon: 'forum' }] : []),
@@ -83,10 +113,80 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
 
         {/* Nav */}
         <nav style={{flex:1,display:'flex',flexDirection:'column',gap:0,padding:'8px 0'}}>
-          {NAV.map((item, i) => {
-            if ('section' in item && !('id' in item)) {
-              return <div key={i} className="vl-section-label">{item.section}</div>;
-            }
+          <div className="vl-section-label">{t('vectorLogic.workspace')}</div>
+
+          {/* Smart Kanban group (expandable) */}
+          <button
+            type="button"
+            className="vl-group-toggle"
+            onClick={() => setSkExpanded(v => !v)}
+            aria-expanded={skExpanded}
+          >
+            <span className={`material-symbols-outlined chev ${skExpanded ? 'open' : 'closed'}`}
+                  style={{fontSize:18,color:'var(--tx2)'}}>
+              keyboard_arrow_down
+            </span>
+            <span className="material-symbols-outlined" style={{fontSize:20,color:'var(--ac)',opacity:.85}}>view_kanban</span>
+            <span style={{flex:1}}>{t('vectorLogic.smartKanban')}</span>
+          </button>
+
+          {skExpanded && (
+            <div style={{display:'flex',flexDirection:'column',gap:2,paddingTop:2}}>
+              <button
+                type="button"
+                className={`vl-board-item${view === 'kanban' ? ' active' : ''}`}
+                onClick={() => { setView('kanban'); setSelectedBoardId(null); }}
+              >
+                <span className="material-symbols-outlined" style={{fontSize:14}}>bolt</span>
+                <span style={{flex:1}}>{t('vectorLogic.smartKanbanAuto')}</span>
+              </button>
+
+              {boards.map(b => {
+                const active = view === 'board' && selectedBoardId === b.id;
+                return (
+                  <button
+                    key={b.id}
+                    type="button"
+                    className={`vl-board-item${active ? ' active' : ''}`}
+                    onClick={() => handleSelectBoard(b.id)}
+                  >
+                    <span className="material-symbols-outlined" style={{fontSize:14}}>
+                      {b.icon || 'view_kanban'}
+                    </span>
+                    <span style={{flex:1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                      {b.name}
+                    </span>
+                    {b.visibility === 'personal' && (
+                      <span className="vl-board-badge">{t('vectorLogic.badgePersonal')}</span>
+                    )}
+                    {b.ownerId === currentUser.id && (
+                      <span
+                        className="vl-board-edit material-symbols-outlined"
+                        style={{fontSize:14}}
+                        onClick={(e) => handleEditBoard(e, b.id)}
+                        role="button"
+                        aria-label={t('vectorLogic.editBoardTitle')}
+                      >
+                        edit
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+
+              <button
+                type="button"
+                className="vl-add-board"
+                onClick={handleAddBoard}
+              >
+                <span className="material-symbols-outlined" style={{fontSize:14}}>add</span>
+                <span>{t('vectorLogic.addBoard')}</span>
+              </button>
+            </div>
+          )}
+
+          {/* Other nav entries */}
+          {otherNav.map((item) => {
             const active = view === item.id;
             const disabled = (item as any).disabled;
             return (
@@ -110,11 +210,6 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
       </aside>
 
       {/* ── Main content ──────────────────────────────────── */}
-      {/*
-        Canvas needs full-bleed with no padding so React Flow can
-        measure its container properly. Other views get the padded
-        scrollable shell.
-      */}
       <div style={{
         flex: 1, minWidth: 0,
         display: 'flex', flexDirection: 'column',
@@ -122,6 +217,7 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
         padding: view === 'chat' ? 0 : '28px 32px',
       }}>
         {view === 'kanban'         && <KanbanView         currentUser={currentUser} wsUsers={wsUsers} />}
+        {view === 'board'          && <BoardPlaceholder boardId={selectedBoardId} boards={boards} t={t} />}
         {view === 'backlogHistory' && <BacklogHistoryView currentUser={currentUser} />}
         {view === 'chat'           && mode === 'embedded' && <ChatView currentUser={currentUser} />}
         {view === 'detections'     && <AIDetectionsView   currentUser={currentUser} />}
@@ -130,3 +226,24 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
   );
 }
 
+function BoardPlaceholder({ boardId, boards, t }: {
+  boardId: string | null;
+  boards: KanbanBoard[];
+  t: (k: string) => string;
+}) {
+  const board = boards.find(b => b.id === boardId);
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 12, padding: '60px 24px', color: 'var(--tx3)', textAlign: 'center',
+    }}>
+      <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: 0.4 }}>view_kanban</span>
+      <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--tx)' }}>
+        {board?.name ?? t('vectorLogic.boardComingSoon')}
+      </div>
+      <div style={{ fontSize: 13, maxWidth: 440 }}>
+        {t('vectorLogic.boardComingSoon')}
+      </div>
+    </div>
+  );
+}
