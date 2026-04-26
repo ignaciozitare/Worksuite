@@ -7,6 +7,7 @@ export interface IStateRepo {
   remove(id: string): Promise<void>;
 
   findByWorkflow(workflowId: string): Promise<WorkflowState[]>;
+  findAllWorkflowStates(): Promise<WorkflowState[]>;
   addToWorkflow(ws: Omit<WorkflowState, 'id'>): Promise<WorkflowState>;
   updatePosition(id: string, x: number, y: number): Promise<void>;
   removeFromWorkflow(id: string): Promise<void>;

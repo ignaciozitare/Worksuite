@@ -1147,6 +1147,7 @@
     "catOPEN":            "Abiertas",
     "catIN_PROGRESS":     "En curso",
     "catDONE":            "Listas",
+    "dragNoCategoryState": "{type} no tiene un estado de tipo {category}",
     "worldClock":         "Reloj mundial",
     "worldClockCities":   "CIUDADES",
     "noWorldCities":      "Aún no agregaste ciudades",

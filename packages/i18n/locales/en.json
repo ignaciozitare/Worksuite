@@ -1147,6 +1147,7 @@
     "catOPEN":            "Open",
     "catIN_PROGRESS":     "In progress",
     "catDONE":            "Done",
+    "dragNoCategoryState": "{type} has no {category} state",
     "worldClock":         "World clock",
     "worldClockCities":   "CITIES",
     "noWorldCities":      "No cities added yet",

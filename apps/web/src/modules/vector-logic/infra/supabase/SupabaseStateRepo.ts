@@ -54,6 +54,15 @@ export class SupabaseStateRepo implements IStateRepo {
     return (data ?? []).map((row) => this.toWorkflowState(row));
   }
 
+  async findAllWorkflowStates(): Promise<WorkflowState[]> {
+    const { data, error } = await this.sb
+      .from('vl_workflow_states')
+      .select('*, state:vl_states(*)')
+      .order('sort_order', { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map((row) => this.toWorkflowState(row));
+  }
+
   async addToWorkflow(ws: Omit<WorkflowState, 'id'>): Promise<WorkflowState> {
     const { data, error } = await this.sb
       .from('vl_workflow_states')
