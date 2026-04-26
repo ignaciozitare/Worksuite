@@ -16,7 +16,11 @@ import type { Priority } from '../../domain/entities/Priority';
 type DraftColumn = {
   /** Existing column id when editing, undefined when newly added in this session. */
   id?: string;
-  stateId: string;
+  /** User-chosen column label. */
+  name: string;
+  /** State ids from the library that map to this column. Tasks whose state
+   *  is in this list appear in the column. */
+  stateIds: string[];
   sortOrder: number;
   wipLimit: number | null;
 };
@@ -66,15 +70,28 @@ interface Props {
 const CAT_ORDER: StateCategory[] = ['BACKLOG', 'OPEN', 'IN_PROGRESS', 'DONE'];
 
 /**
- * Pick one state per category to seed a new board's columns.
- * Falls back to whatever is available if a category has no states.
+ * Seed a new board with one column per category, each mapping to every
+ * state in that category. Skips categories that have no states.
  */
 function buildDefaultColumns(allStates: State[]): DraftColumn[] {
+  const labels: Record<StateCategory, string> = {
+    BACKLOG: 'Backlog',
+    OPEN: 'To Do',
+    IN_PROGRESS: 'In Progress',
+    DONE: 'Done',
+  };
   const out: DraftColumn[] = [];
   let idx = 0;
   for (const cat of CAT_ORDER) {
-    const match = allStates.find(s => s.category === cat);
-    if (match) out.push({ stateId: match.id, sortOrder: idx++, wipLimit: null });
+    const matches = allStates.filter(s => s.category === cat);
+    if (matches.length > 0) {
+      out.push({
+        name: labels[cat],
+        stateIds: matches.map(s => s.id),
+        sortOrder: idx++,
+        wipLimit: null,
+      });
+    }
   }
   return out;
 }
@@ -127,7 +144,8 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
   const [originalColumnIds, setOriginalColumnIds] = useState<Set<string>>(new Set());
   const [originalBoard, setOriginalBoard] = useState<KanbanBoard | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [stateMenuOpen, setStateMenuOpen] = useState(false);
+  /** Index of the column whose "states" dropdown is open. Null = closed. */
+  const [openStateMenuColIdx, setOpenStateMenuColIdx] = useState<number | null>(null);
   /** Which filter dropdown is currently open (one at a time). */
   const [openFilter, setOpenFilter] = useState<BoardFilterDimension | null>(null);
   const [members, setMembers] = useState<DraftMember[]>([]);
@@ -174,7 +192,8 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
         const sorted = [...cols].sort((a, b) => a.sortOrder - b.sortOrder);
         setColumns(sorted.map<DraftColumn>(c => ({
           id: c.id,
-          stateId: c.stateId,
+          name: c.name,
+          stateIds: [...c.stateIds],
           sortOrder: c.sortOrder,
           wipLimit: c.wipLimit,
         })));
@@ -203,14 +222,12 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
     return m;
   }, [allStates]);
 
+  /** Every state id already used by SOME column on the board. A state can
+   *  only belong to one column at a time (otherwise tasks would appear in
+   *  two places at once). */
   const usedStateIds = useMemo(
-    () => new Set(columns.map(c => c.stateId)),
+    () => new Set(columns.flatMap(c => c.stateIds)),
     [columns],
-  );
-
-  const availableStates = useMemo(
-    () => allStates.filter(s => !usedStateIds.has(s.id)),
-    [allStates, usedStateIds],
   );
 
   const isOwner = isNew || (originalBoard?.ownerId === ownerId);
@@ -237,18 +254,34 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
     setMembers(prev => prev.map((m, i) => i === idx ? { ...m, permission } : m));
   };
 
-  const handleAddColumn = (stateId: string) => {
+  const handleAddColumn = () => {
     setColumns(prev => [
       ...prev,
-      { stateId, sortOrder: prev.length, wipLimit: null },
+      {
+        name: t('vectorLogic.boardNewColumnName'),
+        stateIds: [],
+        sortOrder: prev.length,
+        wipLimit: null,
+      },
     ]);
-    setStateMenuOpen(false);
   };
 
   const handleRemoveColumn = (idx: number) => {
     setColumns(prev => prev
       .filter((_, i) => i !== idx)
       .map((c, i) => ({ ...c, sortOrder: i })));
+  };
+
+  const handleColumnNameChange = (idx: number, name: string) => {
+    setColumns(prev => prev.map((c, i) => i === idx ? { ...c, name } : c));
+  };
+
+  const handleColumnToggleState = (idx: number, stateId: string) => {
+    setColumns(prev => prev.map((c, i) => {
+      if (i !== idx) return c;
+      const has = c.stateIds.includes(stateId);
+      return { ...c, stateIds: has ? c.stateIds.filter(x => x !== stateId) : [...c.stateIds, stateId] };
+    }));
   };
 
   const handleWipChange = (idx: number, raw: string) => {
@@ -317,16 +350,18 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
       for (const col of columns) {
         if (col.id) {
           await boardColumnRepo.update(col.id, {
-            stateId: col.stateId,
+            name: col.name,
             sortOrder: col.sortOrder,
             wipLimit: col.wipLimit,
+            stateIds: col.stateIds,
           });
         } else {
           await boardColumnRepo.create({
             boardId: board.id,
-            stateId: col.stateId,
+            name: col.name,
             sortOrder: col.sortOrder,
             wipLimit: col.wipLimit,
+            stateIds: col.stateIds,
           });
         }
       }
@@ -565,43 +600,18 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <label style={{ ...S.label, flex: 1 }}>{t('vectorLogic.boardColumns')}</label>
-                  <div style={{ position: 'relative' }}>
-                    <button
-                      type="button"
-                      onClick={() => setStateMenuOpen(v => !v)}
-                      disabled={availableStates.length === 0}
-                      style={S.smallButton}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--ac-strong)' }}>add</span>
-                      {t('vectorLogic.boardAddColumn')}
-                    </button>
-                    {stateMenuOpen && (
-                      <div style={S.statePickerPanel}>
-                        {availableStates.length === 0 ? (
-                          <div style={{ padding: 10, fontSize: 12, color: 'var(--tx3)' }}>
-                            {t('vectorLogic.boardNoMoreStates')}
-                          </div>
-                        ) : (
-                          availableStates.map(s => (
-                            <button
-                              key={s.id}
-                              type="button"
-                              onClick={() => handleAddColumn(s.id)}
-                              style={S.statePickerItem}
-                            >
-                              <span style={{
-                                width: 8, height: 8, borderRadius: '50%',
-                                background: s.color || 'var(--tx3)',
-                              }} />
-                              <span style={{ flex: 1, color: 'var(--tx)' }}>{s.name}</span>
-                              <span style={S.catLabel}>{s.category}</span>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddColumn}
+                    style={S.smallButton}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--ac-strong)' }}>add</span>
+                    {t('vectorLogic.boardAddColumn')}
+                  </button>
                 </div>
+                <p style={{ fontSize: 12, color: 'var(--tx3)', margin: 0 }}>
+                  {t('vectorLogic.boardColumnsHelp')}
+                </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {columns.length === 0 && (
@@ -610,10 +620,17 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                     </div>
                   )}
                   {columns.map((col, idx) => {
-                    const st = stateById.get(col.stateId);
+                    const isMenuOpen = openStateMenuColIdx === idx;
+                    const colStates = col.stateIds
+                      .map(id => stateById.get(id))
+                      .filter((s): s is State => !!s);
+                    const summary = colStates.length === 0
+                      ? t('vectorLogic.boardColumnNoStates')
+                      : colStates.map(s => s.name).join(' · ');
+                    const accent = colStates[0]?.color || 'var(--tx3)';
                     return (
                       <div
-                        key={col.id ?? `new-${idx}-${col.stateId}`}
+                        key={col.id ?? `new-${idx}`}
                         draggable
                         onDragStart={handleDragStart(idx)}
                         onDragOver={handleDragOver(idx)}
@@ -621,45 +638,110 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                         onDragEnd={handleDragEnd}
                         style={{
                           ...S.columnRow,
+                          flexDirection: 'column',
+                          alignItems: 'stretch',
+                          gap: 8,
                           opacity: dragIdx === idx ? 0.4 : 1,
                         }}
                       >
-                        <span className="material-symbols-outlined"
-                              style={{ fontSize: 16, color: 'var(--tx3)', cursor: 'grab' }}>
-                          drag_indicator
-                        </span>
-                        <span style={{
-                          width: 8, height: 8, borderRadius: '50%',
-                          background: st?.color || 'var(--tx3)', flexShrink: 0,
-                        }} />
-                        <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--tx)' }}>
-                          {st?.name ?? '—'}
-                        </span>
-                        <span style={S.catLabel}>{st?.category ?? ''}</span>
-                        <div style={S.wipBox}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span className="material-symbols-outlined"
-                                style={{ fontSize: 12, color: 'var(--tx3)' }}
-                                title={t('vectorLogic.boardWipLimit')}>
-                            speed
+                                style={{ fontSize: 16, color: 'var(--tx3)', cursor: 'grab' }}>
+                            drag_indicator
                           </span>
+                          <span style={{
+                            width: 8, height: 8, borderRadius: '50%',
+                            background: accent, flexShrink: 0,
+                          }} />
                           <input
-                            type="number"
-                            min={1}
-                            value={col.wipLimit ?? ''}
-                            onChange={(e) => handleWipChange(idx, e.target.value)}
-                            placeholder="—"
-                            aria-label={t('vectorLogic.boardWipLimit')}
-                            style={S.wipInput}
+                            type="text"
+                            value={col.name}
+                            onChange={(e) => handleColumnNameChange(idx, e.target.value)}
+                            placeholder={t('vectorLogic.boardColumnNamePlaceholder')}
+                            aria-label={t('vectorLogic.boardColumnName')}
+                            style={S.columnNameInput}
                           />
+                          <div style={S.wipBox}>
+                            <span className="material-symbols-outlined"
+                                  style={{ fontSize: 12, color: 'var(--tx3)' }}
+                                  title={t('vectorLogic.boardWipLimit')}>
+                              speed
+                            </span>
+                            <input
+                              type="number"
+                              min={1}
+                              value={col.wipLimit ?? ''}
+                              onChange={(e) => handleWipChange(idx, e.target.value)}
+                              placeholder="—"
+                              aria-label={t('vectorLogic.boardWipLimit')}
+                              style={S.wipInput}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveColumn(idx)}
+                            aria-label={t('common.delete')}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', display: 'flex' }}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveColumn(idx)}
-                          aria-label={t('common.delete')}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', display: 'flex' }}
-                        >
-                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
-                        </button>
+                        <div style={{ position: 'relative', paddingLeft: 26 }}>
+                          <button
+                            type="button"
+                            onClick={() => setOpenStateMenuColIdx(isMenuOpen ? null : idx)}
+                            style={S.statesPickerButton}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 13, color: 'var(--tx3)' }}>label</span>
+                            <span style={{
+                              flex: 1, color: colStates.length === 0 ? 'var(--tx3)' : 'var(--tx)',
+                              fontSize: 12, fontWeight: 500,
+                              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                            }}>
+                              {summary}
+                            </span>
+                            <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>
+                              keyboard_arrow_down
+                            </span>
+                          </button>
+                          {isMenuOpen && (
+                            <div style={{ ...S.statePickerPanel, top: 'calc(100% + 4px)', left: 26, right: 0 }}>
+                              {allStates.length === 0 ? (
+                                <div style={{ padding: 10, fontSize: 12, color: 'var(--tx3)' }}>—</div>
+                              ) : (
+                                allStates.map(s => {
+                                  const checked = col.stateIds.includes(s.id);
+                                  const usedElsewhere = !checked && usedStateIds.has(s.id);
+                                  return (
+                                    <label
+                                      key={s.id}
+                                      style={{
+                                        ...S.statePickerItem,
+                                        opacity: usedElsewhere ? 0.4 : 1,
+                                        cursor: usedElsewhere ? 'not-allowed' : 'pointer',
+                                      }}
+                                      title={usedElsewhere ? t('vectorLogic.boardStateAlreadyUsed') : ''}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        disabled={usedElsewhere}
+                                        onChange={() => handleColumnToggleState(idx, s.id)}
+                                        style={{ accentColor: 'var(--ac-strong)' }}
+                                      />
+                                      <span style={{
+                                        width: 8, height: 8, borderRadius: '50%',
+                                        background: s.color || 'var(--tx3)',
+                                      }} />
+                                      <span style={{ flex: 1, color: 'var(--tx)' }}>{s.name}</span>
+                                      <span style={S.catLabel}>{s.category}</span>
+                                    </label>
+                                  );
+                                })
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -938,6 +1020,19 @@ const S: Record<string, React.CSSProperties> = {
   columnRow: {
     display: 'flex', alignItems: 'center', gap: 12,
     background: 'var(--sf2)', borderRadius: 8, padding: '10px 14px',
+  },
+  columnNameInput: {
+    flex: 1, background: 'var(--sf3)', border: '1px solid var(--bd)',
+    borderRadius: 6, padding: '6px 10px', color: 'var(--tx)',
+    fontSize: 13, fontWeight: 500, fontFamily: 'inherit', outline: 'none',
+    minWidth: 0,
+  },
+  statesPickerButton: {
+    width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+    padding: '6px 10px', background: 'var(--sf3)', border: '1px solid var(--bd)',
+    borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
+    color: 'var(--tx2)', fontSize: 12, fontWeight: 500,
+    minWidth: 0,
   },
   filterRow: {
     position: 'relative', display: 'flex', alignItems: 'center', gap: 10,

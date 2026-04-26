@@ -86,9 +86,10 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
         setTaskTypes(types);
         setPriorities(prs);
 
-        // Tasks whose current stateId matches one of the board's column states.
-        // Per-filter narrowing happens in `visibleTasks` below.
-        const colStateIds = new Set(cols.map(c => c.stateId));
+        // Tasks whose current stateId is mapped to ANY of the board's
+        // columns. Per-filter narrowing happens in `visibleTasks` below.
+        const colStateIds = new Set<string>();
+        for (const c of cols) c.stateIds.forEach(id => colStateIds.add(id));
         setTasks(allTasks.filter(x => x.stateId && colStateIds.has(x.stateId)));
         setLoading(false);
       } catch (err: any) {
@@ -155,14 +156,22 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
     });
   }, [filters, tasks]);
 
-  /** Visible tasks grouped by stateId (= column.stateId). */
-  const tasksByState = useMemo(() => {
+  /** Visible tasks grouped by column id. A task belongs to a column when
+   *  its stateId is in the column's stateIds list. */
+  const tasksByColumn = useMemo(() => {
     const map: Record<string, Task[]> = {};
-    sortedColumns.forEach(c => { map[c.stateId] = []; });
+    sortedColumns.forEach(c => { map[c.id] = []; });
+    // Build a stateId → columnId index for O(1) lookup. The first column
+    // that owns a state wins; the modal already prevents the same state
+    // from being mapped to two columns.
+    const stateToCol = new Map<string, string>();
+    sortedColumns.forEach(c => c.stateIds.forEach(id => {
+      if (!stateToCol.has(id)) stateToCol.set(id, c.id);
+    }));
     visibleTasks.forEach(task => {
-      if (task.stateId && map[task.stateId] != null) map[task.stateId].push(task);
+      const colId = task.stateId ? stateToCol.get(task.stateId) : undefined;
+      if (colId && map[colId]) map[colId].push(task);
     });
-    // Stable per-column order: by sort_order, then created_at.
     Object.values(map).forEach(arr => {
       arr.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     });
@@ -190,42 +199,52 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
     setDragTaskId(null);
     setDropColumnId(null);
   };
-  const onColDragOver = (colStateId: string) => (e: React.DragEvent) => {
+  const onColDragOver = (columnId: string) => (e: React.DragEvent) => {
     if (!dragTaskId) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    const sourceStateId = tasks.find(x => x.id === dragTaskId)?.stateId;
-    if (sourceStateId !== colStateId && dropColumnId !== colStateId) {
-      setDropColumnId(colStateId);
-    }
+    const task = tasks.find(x => x.id === dragTaskId);
+    if (!task) return;
+    const destCol = sortedColumns.find(c => c.id === columnId);
+    if (!destCol) return;
+    // No glow when dropping on the column the task already belongs to.
+    if (task.stateId && destCol.stateIds.includes(task.stateId)) return;
+    if (dropColumnId !== columnId) setDropColumnId(columnId);
   };
   const onColDragLeave = () => setDropColumnId(null);
-  const onColDrop = (colStateId: string) => async (e: React.DragEvent) => {
+  const onColDrop = (columnId: string) => async (e: React.DragEvent) => {
     e.preventDefault();
     if (!dragTaskId) return;
     const id = dragTaskId;
     setDragTaskId(null);
     setDropColumnId(null);
     const task = tasks.find(x => x.id === id);
-    if (!task || task.stateId === colStateId) return;
+    if (!task) return;
 
-    // Enforce WIP limit: count tasks already in the destination column that
-    // pass the board's filters. Block drop and toast when the column is full.
-    const destCol = sortedColumns.find(c => c.stateId === colStateId);
-    if (destCol?.wipLimit != null) {
-      const currentCount = tasksByState[colStateId]?.length ?? 0;
+    const destCol = sortedColumns.find(c => c.id === columnId);
+    if (!destCol || destCol.stateIds.length === 0) return;
+    // Already in this column → no-op (the user dropped on the same group).
+    if (task.stateId && destCol.stateIds.includes(task.stateId)) return;
+
+    // Enforce WIP limit on the destination column.
+    if (destCol.wipLimit != null) {
+      const currentCount = tasksByColumn[columnId]?.length ?? 0;
       if (currentCount >= destCol.wipLimit) {
         setToast(t('vectorLogic.boardWipLimitReachedToast'));
         return;
       }
     }
 
+    // Pick the first state of the destination column. The modal guarantees
+    // each column has at least one state when used; the empty-states case is
+    // guarded above.
+    const destStateId = destCol.stateIds[0];
+
     // Optimistic update
-    setTasks(prev => prev.map(x => x.id === id ? { ...x, stateId: colStateId } : x));
+    setTasks(prev => prev.map(x => x.id === id ? { ...x, stateId: destStateId } : x));
     try {
-      await taskRepo.moveToState(id, colStateId);
+      await taskRepo.moveToState(id, destStateId);
     } catch (err) {
-      // Revert on error
       setTasks(prev => prev.map(x => x.id === id ? { ...x, stateId: task.stateId } : x));
     }
   };
@@ -316,17 +335,20 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
           gap: 12, overflowX: 'auto', overflowY: 'hidden',
         }}>
           {sortedColumns.map(col => {
-            const st = stateById.get(col.stateId);
-            const colTasks = tasksByState[col.stateId] ?? [];
-            const isDropTarget = dropColumnId === col.stateId;
-            const accent = st?.color || CAT_COLORS[(st?.category as StateCategory) ?? 'OPEN'];
+            const colTasks = tasksByColumn[col.id] ?? [];
+            const isDropTarget = dropColumnId === col.id;
+            // Accent comes from the first state mapped to this column (the
+            // user's "primary" choice). Fallback to grey when none.
+            const firstState = col.stateIds.length > 0 ? stateById.get(col.stateIds[0]) : undefined;
+            const accent = firstState?.color
+              || CAT_COLORS[(firstState?.category as StateCategory) ?? 'OPEN'];
             const wipReached = col.wipLimit != null && colTasks.length >= col.wipLimit;
             return (
               <div
                 key={col.id}
-                onDragOver={onColDragOver(col.stateId)}
+                onDragOver={onColDragOver(col.id)}
                 onDragLeave={onColDragLeave}
-                onDrop={onColDrop(col.stateId)}
+                onDrop={onColDrop(col.id)}
                 style={{
                   background: isDropTarget
                     ? 'linear-gradient(180deg, var(--ac-dim) 0%, transparent 100%)'
@@ -358,7 +380,7 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
                     textTransform: 'uppercase', letterSpacing: '.05em', flex: 1,
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   }}>
-                    {st?.name ?? '—'}
+                    {col.name}
                   </span>
                   {col.wipLimit != null ? (
                     <span style={{
