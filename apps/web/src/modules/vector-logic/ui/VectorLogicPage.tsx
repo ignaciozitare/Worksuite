@@ -6,6 +6,7 @@ import { KanbanView } from './views/KanbanView';
 import { ChatView } from './views/ChatView';
 import { AIDetectionsView } from './views/AIDetectionsView';
 import { BacklogHistoryView } from './views/BacklogHistoryView';
+import { BoardConfigModal } from './components/BoardConfigModal';
 import { aiRepo, boardRepo } from '../container';
 import type { AIMode } from '../domain/entities/AI';
 import type { KanbanBoard } from '../domain/entities/KanbanBoard';
@@ -55,6 +56,8 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
   const [boards, setBoards] = useState<KanbanBoard[]>([]);
   const [skExpanded, setSkExpanded] = useState(true);
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
+  /** When set, the BoardConfigModal is open. `null` means "create new". */
+  const [editingBoardId, setEditingBoardId] = useState<string | null | undefined>(undefined);
 
   // Load mode once so we know whether to show the Chat tab
   useEffect(() => {
@@ -68,18 +71,42 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
     boardRepo.findAccessible().then(setBoards).catch(() => setBoards([]));
   }, [currentUser.id]);
 
-  const handleAddBoard = async () => {
-    await dialog.alert(t('vectorLogic.boardComingSoon'), { title: t('vectorLogic.addBoard'), icon: 'view_kanban' });
+  const handleAddBoard = () => {
+    setEditingBoardId(null);
   };
 
-  const handleEditBoard = async (e: React.MouseEvent, _boardId: string) => {
+  const handleEditBoard = (e: React.MouseEvent, boardId: string) => {
     e.stopPropagation();
-    await dialog.alert(t('vectorLogic.boardComingSoon'), { title: t('vectorLogic.editBoardTitle'), icon: 'edit' });
+    setEditingBoardId(boardId);
   };
 
   const handleSelectBoard = (boardId: string) => {
     setSelectedBoardId(boardId);
     setView('board');
+  };
+
+  const handleBoardSaved = (saved: KanbanBoard) => {
+    setBoards(prev => {
+      const idx = prev.findIndex(b => b.id === saved.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = saved;
+        return next;
+      }
+      return [...prev, saved];
+    });
+    setSelectedBoardId(saved.id);
+    setView('board');
+    setEditingBoardId(undefined);
+  };
+
+  const handleBoardDeleted = (deletedId: string) => {
+    setBoards(prev => prev.filter(b => b.id !== deletedId));
+    if (selectedBoardId === deletedId) {
+      setSelectedBoardId(null);
+      setView('kanban');
+    }
+    setEditingBoardId(undefined);
   };
 
   const otherNav: Array<{ id?: Tab; label?: string; icon?: string }> = [
@@ -222,6 +249,16 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
         {view === 'chat'           && mode === 'embedded' && <ChatView currentUser={currentUser} />}
         {view === 'detections'     && <AIDetectionsView   currentUser={currentUser} />}
       </div>
+
+      {editingBoardId !== undefined && (
+        <BoardConfigModal
+          boardId={editingBoardId}
+          ownerId={currentUser.id}
+          onClose={() => setEditingBoardId(undefined)}
+          onSaved={handleBoardSaved}
+          onDeleted={handleBoardDeleted}
+        />
+      )}
     </div>
   );
 }
