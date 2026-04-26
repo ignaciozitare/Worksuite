@@ -465,7 +465,7 @@ function BoardTaskCard({ task, taskType, assignee, priority, onDragStart, onDrag
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 4,
             padding: '2px 7px', borderRadius: 4,
-            background: priority.color, color: 'var(--bg)',
+            background: `${priority.color}1A`, color: priority.color,
             fontSize: 9, fontWeight: 700, letterSpacing: '0.04em',
             textTransform: 'uppercase',
           }}>

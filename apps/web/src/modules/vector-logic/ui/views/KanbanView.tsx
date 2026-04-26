@@ -168,6 +168,13 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
     return map;
   }, [priorities]);
 
+  // Map priority name → full Priority object (used for icon + color in chips)
+  const priorityByName = useMemo(() => {
+    const map: Record<string, Priority> = {};
+    priorities.forEach(p => { map[p.name.toLowerCase()] = p; });
+    return map;
+  }, [priorities]);
+
   // Priority sort rank: follow priorities.sortOrder (urgent first typically)
   const priorityRankByName = useMemo(() => {
     const map: Record<string, number> = {};
@@ -798,6 +805,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                           <TaskCard task={task}
                             taskType={taskTypes.find(x => x.id === task.taskTypeId) ?? selectedType}
                             priorityColor={priorityColorByName[(task.priority ?? '').toLowerCase()] ?? 'var(--tx3)'}
+                            priorityIcon={priorityByName[(task.priority ?? '').toLowerCase()]?.icon ?? null}
                             assignee={wsUsers.find(u => u.id === task.assigneeId) ?? null}
                             wsUsers={wsUsers}
                             onClick={() => setDetailTask(task)}
@@ -940,11 +948,12 @@ function formatCardValue(field: SchemaField, v: unknown): string | null {
   return String(v).slice(0, 24);
 }
 
-function TaskCard({ task, taskType, priorityColor, assignee, wsUsers, onClick, onDragStart, onDragEnd, isDragging }: {
+function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUsers, onClick, onDragStart, onDragEnd, isDragging }: {
   task: Task;
   taskType: TaskType | null;
   wsUsers: WSUser[];
   priorityColor: string;
+  priorityIcon?: string | null;
   assignee: WSUser | null;
   onClick: () => void;
   /** Omit to render the card non-draggable (used in aggregate kanban mode). */
@@ -1072,10 +1081,18 @@ function TaskCard({ task, taskType, priorityColor, assignee, wsUsers, onClick, o
           <>
             {task.priority && (
               <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 3,
                 fontSize: 9, padding: '2px 6px', borderRadius: 3,
-                background: `${priorityColor}22`, color: priorityColor,
+                background: `${priorityColor}1A`, color: priorityColor,
                 fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase',
-              }}>{task.priority}</span>
+              }}>
+                {priorityIcon && (
+                  <span className="material-symbols-outlined" style={{ fontSize: 10 }}>
+                    {priorityIcon}
+                  </span>
+                )}
+                {task.priority}
+              </span>
             )}
             {daysInColumn > 0 && (
               <span style={{
