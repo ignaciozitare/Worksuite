@@ -689,3 +689,88 @@ Drag is enabled in aggregate mode. When a task is dropped on column `__cat_X` (X
 
 ### Data model
 No changes — purely UI logic that derives `toStateId` from `category` + the task's own workflow before calling the existing `moveTask` use case.
+
+---
+
+## Multi-Board Kanban + Priority visuals (revisión 2026-04-26)
+
+### 1. Propósito
+Permitir que el usuario cree, configure y comparta tableros Kanban con columnas explícitas, filtros, WIP limits y permisos por usuario. Reemplaza el uso del Smart Kanban genérico cuando equipos quieren vistas dedicadas. El Smart Kanban actual queda intacto como "board implícito" (Smart Kanban Auto).
+
+### 2. Conceptos
+
+**Board.** Tiene nombre, icono opcional (default según category de columnas), descripción opcional. Pertenece a un owner (el usuario que lo creó). Visibilidad: `personal` (sólo el owner lo ve) o `shared` (visible a todos los miembros del workspace, sujeto a permisos).
+
+**Columnas del board.** Cada columna referencia un `vl_states` existente. Tiene orden manual (drag-reorder en el modal de config). Tiene WIP limit opcional (entero ≥ 1, o vacío = sin límite). Una misma `state` puede aparecer una sola vez por board.
+
+**Filtros del board.** Configurables, todos opcionales y combinables con AND:
+- Task types (multi-select).
+- Assignees (multi o "Anyone").
+- Priorities (multi).
+- Labels / Tags (multi — placeholder hasta que la entidad exista).
+- Created by (multi).
+- Due date range (from / to / vacío).
+
+Una tarea aparece en el board si su `stateId` matchea una columna configurada Y pasa todos los filtros activos.
+
+**Permisos sobre boards compartidos.** El owner asigna por usuario:
+- `use` (default al compartir): puede ver el board, mover tareas dentro de él, crear tareas. NO puede modificar columnas, filtros, WIP, ni permisos.
+- `edit`: todo lo de `use` + modificar config del board (columnas, filtros, WIP). NO puede borrar el board ni cambiar el owner.
+
+Sólo el owner puede eliminar el board, transferir ownership, o cambiar la visibilidad personal↔shared. El owner puede revocar permisos en cualquier momento. Cambiar visibilidad de `shared` → `personal` automáticamente borra todos los permisos otorgados.
+
+### 3. UX
+
+**Sidebar.** "Smart Kanban" pasa a ser grupo expandible. Hijos: `Smart Kanban (Auto)` (siempre primero, no editable, comportamiento actual con multi-type drag fix), seguido de cada board accesible (propios + compartidos donde tengo permisos), terminado por `+ Add board`. Boards personales muestran badge `PERSONAL` violeta. Boards compartidos sin badge. Cada board tiene icono `edit` en hover (visible si tengo permiso `edit` o soy owner; oculto si sólo tengo `use`).
+
+**Modal "Edit board".** Campos según diseño Pencil (`pencil-new.pen` mocks dark + light):
+- Nombre.
+- Visibilidad: toggle `Personal` / `Shared`.
+- Cuando `Shared` → bloque adicional `Permissions` con lista de usuarios + dropdown `Use` / `Edit` por cada uno + botón "Add user".
+- Columnas: lista drag-reorder; cada item con dot color (state.color), nombre del state, categoría, WIP limit editable, botón remove. Botón "+ Add column" (selector de state).
+- Filtros: una fila por dimensión.
+- Footer: `Delete board` (rojo, sólo owner) · Cancel · Save changes.
+
+**Board view.** Header con nombre + badge `SHARED`/`PERSONAL` + meta (count types y tareas) + Edit board (sólo si tengo permiso) + New task. Columnas según config, con barra superior de color del state, dot + nombre + chip `actual / limit`. WIP limit alcanzado: borde de la columna ámbar, chip ámbar con icono warning, banner inferior `"WIP limit reached — drop blocked"`. Drop bloqueado en esa columna hasta que el conteo baje.
+
+**"Add board".** Abre el mismo modal con valores por defecto: nombre vacío, visibilidad `Personal`, columnas iniciales = 4 categorías (BACKLOG/OPEN/IN_PROGRESS/DONE) usando los primeros estados disponibles, sin filtros, sin WIP.
+
+### 4. Reglas
+- WIP limit aplica al count actual de tareas en esa columna (sólo cuenta las que pasan los filtros del board).
+- Drop a columna con WIP limit alcanzado se rechaza con toast `"WIP limit reached"`.
+- Eliminar un state usado en columnas de boards: el state queda referenciado, las columnas que lo usen se marcan como inválidas (rojo) en el modal hasta que el owner las arregle. No bloqueamos la eliminación pero alertamos.
+- Smart Kanban (Auto) no se puede borrar ni configurar — es siempre el comportamiento actual.
+
+### 5. Priority visuals (mejora paralela)
+Acompaña esta feature porque los boards muestran prioridad como chip y el visual hacía falta desde antes.
+- `vl_priorities` ya tiene `color` (hex). Si está vacío, default por nombre (Critical=red, High=amber, Medium=primary, Low=tx3).
+- Agregar columna `icon` (text nullable) con nombre de Material Symbols (ej: `priority_high`, `keyboard_arrow_up`, `remove`, `keyboard_arrow_down`).
+- Cualquier UI que renderiza el chip de prioridad: pinta background con el color (10% opacity) + texto color sólido + icono si está seteado. Aplica retroactivamente a TaskCard del Smart Kanban actual y al board view nuevo.
+
+### 6. Fuera de alcance
+- Vistas no-Kanban (lista, gantt, calendar).
+- Plantillas de boards.
+- Bulk move / multi-select de tareas.
+- Notificaciones cuando alguien mueve tarea en board compartido.
+- Compartir boards con usuarios externos al workspace.
+- Auto-archive específico por board (sigue siendo global per-user en User Settings).
+
+### 7. Modelo de datos
+
+Confirmado por DBA Agent (2026-04-26). Migración: `supabase/migrations/20260426_vl_kanban_boards.sql`.
+
+**`vl_kanban_boards`** — un row por tablero que crea un usuario. Guarda quién es el dueño (`owner_id`), el nombre, una descripción opcional, un icono opcional (Material Symbols), y la visibilidad (`personal` o `shared`). Cuando se borra un usuario, sus boards se borran en cascada. Lleva `created_at` y `updated_at` (este último actualizado por trigger).
+
+**`vl_board_columns`** — un row por columna dentro de cada board. Cada columna referencia un estado existente de la librería (`vl_states.id`) y guarda el orden manual (`sort_order`) y un WIP limit opcional (entero ≥ 1, o vacío). Constraint UNIQUE`(board_id, state_id)` impide que el mismo estado aparezca dos veces en un board. Si se borra el board se borran sus columnas; si se borra un estado usado por una columna, la operación se rechaza (`on delete restrict`) — el owner debe limpiar primero las referencias.
+
+**`vl_board_filters`** — un row por filtro activo en cada board. Cada fila tiene una `dimension` (uno de `task_type`, `assignee`, `priority`, `label`, `created_by`, `due_from`, `due_to`) y un `value` JSONB que contiene el valor o lista de valores aplicables. Una tarea aparece en el board sólo si pasa todos los filtros (AND).
+
+**`vl_board_members`** — un row por usuario al que el owner le otorgó acceso a un board compartido. Guarda el `permission` que tiene (`use` para leer/mover tareas, `edit` para modificar config). Constraint UNIQUE`(board_id, user_id)` impide duplicados. Cuando un board pasa de `shared` a `personal`, esta tabla se vacía para ese board (manejado en código de aplicación).
+
+**`vl_priorities`** — se agrega columna `icon` (text, nullable). Permite que cada prioridad lleve un icono Material Symbols. Los chips de prioridad en TaskCards y board view pintan background con `color` al 10% + texto color sólido + icono si está seteado.
+
+**Row Level Security.**
+- `vl_kanban_boards`: SELECT si owner OR `visibility = 'shared'` OR member del board. INSERT requiere `owner_id = auth.uid()`. UPDATE/DELETE sólo owner.
+- `vl_board_columns` y `vl_board_filters`: SELECT a quien tenga acceso al board. CRUD a owner OR member con `permission = 'edit'`.
+- `vl_board_members`: SELECT al owner y al propio user. INSERT/UPDATE/DELETE sólo el owner del board.
+- Todas las nuevas tablas tienen RLS habilitado.
