@@ -29,6 +29,7 @@ export class SupabasePriorityRepo implements IPriorityRepo {
         user_id: p.userId,
         name: p.name,
         color: p.color,
+        icon: p.icon ?? null,
         sort_order: p.sortOrder,
       })
       .select()
@@ -41,6 +42,7 @@ export class SupabasePriorityRepo implements IPriorityRepo {
     const row: Record<string, unknown> = {};
     if (patch.name !== undefined) row.name = patch.name;
     if (patch.color !== undefined) row.color = patch.color;
+    if (patch.icon !== undefined) row.icon = patch.icon;
     if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
     const { error } = await this.sb.from('vl_priorities').update(row).eq('id', id);
     if (error) throw error;
@@ -67,6 +69,7 @@ export class SupabasePriorityRepo implements IPriorityRepo {
       userId: row.user_id,
       name: row.name,
       color: row.color,
+      icon: row.icon ?? null,
       sortOrder: row.sort_order,
       createdAt: row.created_at,
     };
