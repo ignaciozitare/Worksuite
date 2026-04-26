@@ -721,7 +721,7 @@ Sólo el owner puede eliminar el board, transferir ownership, o cambiar la visib
 
 ### 3. UX
 
-**Sidebar.** "Smart Kanban" pasa a ser grupo expandible. Hijos: `Smart Kanban (Auto)` (siempre primero, no editable, comportamiento actual con multi-type drag fix), seguido de cada board accesible (propios + compartidos donde tengo permisos), terminado por `+ Add board`. Boards personales muestran badge `PERSONAL` violeta. Boards compartidos sin badge. Cada board tiene icono `edit` en hover (visible si tengo permiso `edit` o soy owner; oculto si sólo tengo `use`).
+**Sidebar.** "Smart Kanban" es un grupo expandible. Hijos: el board **default** del usuario (auto-creado en su primera visita, llamado "Smart Kanban", siempre primero, editable pero no eliminable), seguido de cada board accesible (propios + compartidos donde tengo permisos), terminado por `+ Add board`. Boards personales muestran badge `PERSONAL` violeta. Boards compartidos sin badge. Cada board tiene icono `edit` en hover (visible si tengo permiso `edit` o soy owner; oculto si sólo tengo `use`).
 
 **Modal "Edit board".** Campos según diseño Pencil (`pencil-new.pen` mocks dark + light):
 - Nombre.
@@ -739,7 +739,7 @@ Sólo el owner puede eliminar el board, transferir ownership, o cambiar la visib
 - WIP limit aplica al count actual de tareas en esa columna (sólo cuenta las que pasan los filtros del board).
 - Drop a columna con WIP limit alcanzado se rechaza con toast `"WIP limit reached"`.
 - Eliminar un state usado en columnas de boards: el state queda referenciado, las columnas que lo usen se marcan como inválidas (rojo) en el modal hasta que el owner las arregle. No bloqueamos la eliminación pero alertamos.
-- Smart Kanban (Auto) no se puede borrar ni configurar — es siempre el comportamiento actual.
+- El **default board** ("Smart Kanban") se auto-crea con 4 columnas (Backlog / To Do / In Progress / Done) cada una mapeada a todos los estados de la categoría correspondiente. Es editable como cualquier otro board, pero **no se puede eliminar** (UI oculta el botón Delete cuando `is_default = true`). Constraint a nivel DB: como mucho 1 default por usuario (`vl_kanban_boards_one_default_per_owner` partial unique index).
 
 ### 5. Priority visuals (mejora paralela)
 Acompaña esta feature porque los boards muestran prioridad como chip y el visual hacía falta desde antes.
@@ -760,7 +760,7 @@ Acompaña esta feature porque los boards muestran prioridad como chip y el visua
 Confirmado por DBA Agent (2026-04-26) + restructurado en Fase H (2026-04-26).
 Migraciones: `supabase/migrations/20260426_vl_kanban_boards.sql` y `_v2.sql`.
 
-**`vl_kanban_boards`** — un row por tablero que crea un usuario. Guarda quién es el dueño (`owner_id`), el nombre, una descripción opcional, un icono opcional (Material Symbols), y la visibilidad (`personal` o `shared`). Cuando se borra un usuario, sus boards se borran en cascada. Lleva `created_at` y `updated_at` (este último actualizado por trigger).
+**`vl_kanban_boards`** — un row por tablero que crea un usuario. Guarda quién es el dueño (`owner_id`), el nombre, una descripción opcional, un icono opcional (Material Symbols), la visibilidad (`personal` o `shared`), y un flag `is_default` que marca el board auto-creado "Smart Kanban" (uno por usuario, partial unique index `vl_kanban_boards_one_default_per_owner`). Cuando se borra un usuario, sus boards se borran en cascada. Lleva `created_at` y `updated_at` (este último actualizado por trigger).
 
 **`vl_board_columns`** — un row por columna dentro de cada board. Guarda el `name` elegido por el usuario, el orden manual (`sort_order`) y un WIP limit opcional (entero ≥ 1, o vacío). El mapeo a estados vive en una tabla aparte (`vl_board_column_states`) — modelo Jira-style. Si se borra el board se borran sus columnas en cascada.
 

@@ -33,6 +33,7 @@ export class SupabaseBoardRepo implements IBoardRepo {
         description: draft.description,
         icon: draft.icon,
         visibility: draft.visibility,
+        is_default: draft.isDefault ?? false,
       })
       .select()
       .single();
@@ -63,6 +64,7 @@ export class SupabaseBoardRepo implements IBoardRepo {
       description: row.description ?? null,
       icon: row.icon ?? null,
       visibility: row.visibility,
+      isDefault: row.is_default ?? false,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };

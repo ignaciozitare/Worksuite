@@ -234,7 +234,9 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
   );
 
   const isOwner = isNew || (originalBoard?.ownerId === ownerId);
-  const canDelete = !isNew && isOwner;
+  const isDefaultBoard = !!originalBoard?.isDefault;
+  // The auto-created default board cannot be deleted; it is always present.
+  const canDelete = !isNew && isOwner && !isDefaultBoard;
 
   /** Users who are not the owner and not already a member. */
   const usedUserIds = useMemo(
@@ -336,6 +338,7 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
           description: null,
           icon: icon || null,
           visibility,
+          isDefault: false,
         });
       } else {
         await boardRepo.update(boardId!, {

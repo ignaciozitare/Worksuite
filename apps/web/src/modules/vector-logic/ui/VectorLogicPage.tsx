@@ -8,7 +8,7 @@ import { ChatView } from './views/ChatView';
 import { AIDetectionsView } from './views/AIDetectionsView';
 import { BacklogHistoryView } from './views/BacklogHistoryView';
 import { BoardConfigModal } from './components/BoardConfigModal';
-import { aiRepo, boardRepo, boardMemberRepo } from '../container';
+import { aiRepo, boardRepo, boardColumnRepo, boardMemberRepo, stateRepo } from '../container';
 import type { AIMode } from '../domain/entities/AI';
 import type { KanbanBoard } from '../domain/entities/KanbanBoard';
 import type { BoardPermission } from '../domain/entities/BoardMember';
@@ -70,17 +70,47 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
     }).catch(() => {});
   }, [currentUser.id]);
 
-  // Load accessible boards for the current user (RLS-filtered)
+  // Load accessible boards for the current user (RLS-filtered) and ensure
+  // the auto-created "Smart Kanban" default board exists.
   useEffect(() => {
-    boardRepo.findAccessible().then(setBoards).catch(() => setBoards([]));
+    let cancelled = false;
+    (async () => {
+      try {
+        let all = await boardRepo.findAccessible();
+        if (cancelled) return;
+        // Auto-create the default board on first load when missing.
+        const myDefault = all.find(b => b.isDefault && b.ownerId === currentUser.id);
+        if (!myDefault) {
+          const created = await ensureDefaultBoard(currentUser.id);
+          if (created) all = [created, ...all.filter(b => b.id !== created.id)];
+        }
+        if (!cancelled) setBoards(all);
+      } catch {
+        if (!cancelled) setBoards([]);
+      }
+    })();
     boardMemberRepo.findForUser(currentUser.id)
       .then((rows) => {
+        if (cancelled) return;
         const m = new Map<string, BoardPermission>();
         rows.forEach(r => m.set(r.boardId, r.permission));
         setMyPermissions(m);
       })
-      .catch(() => setMyPermissions(new Map()));
+      .catch(() => { if (!cancelled) setMyPermissions(new Map()); });
+    return () => { cancelled = true; };
   }, [currentUser.id]);
+
+  /** The user's Smart Kanban default board, or null while it is being
+   *  created on first visit. */
+  const defaultBoard = boards.find(b => b.isDefault && b.ownerId === currentUser.id) ?? null;
+
+  // Auto-route to the default board the first time it shows up.
+  useEffect(() => {
+    if (defaultBoard && view === 'kanban' && !selectedBoardId) {
+      setSelectedBoardId(defaultBoard.id);
+      setView('board');
+    }
+  }, [defaultBoard, view, selectedBoardId]);
 
   /** True if the current user can edit (configure) the given board. */
   const canEditBoard = (board: KanbanBoard) => {
@@ -176,16 +206,33 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
 
           {skExpanded && (
             <div style={{display:'flex',flexDirection:'column',gap:2,paddingTop:2}}>
-              <button
-                type="button"
-                className={`vl-board-item${view === 'kanban' ? ' active' : ''}`}
-                onClick={() => { setView('kanban'); setSelectedBoardId(null); }}
-              >
-                <span className="material-symbols-outlined" style={{fontSize:14}}>bolt</span>
-                <span style={{flex:1}}>{t('vectorLogic.smartKanbanAuto')}</span>
-              </button>
+              {/* Smart Kanban (default board) — auto-created, editable, not deletable. */}
+              {defaultBoard && (() => {
+                const active = view === 'board' && selectedBoardId === defaultBoard.id;
+                return (
+                  <button
+                    type="button"
+                    className={`vl-board-item${active ? ' active' : ''}`}
+                    onClick={() => handleSelectBoard(defaultBoard.id)}
+                  >
+                    <span className="material-symbols-outlined" style={{fontSize:14}}>{defaultBoard.icon || 'bolt'}</span>
+                    <span style={{flex:1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                      {defaultBoard.name}
+                    </span>
+                    <span
+                      className="vl-board-edit material-symbols-outlined"
+                      style={{fontSize:14}}
+                      onClick={(e) => handleEditBoard(e, defaultBoard.id)}
+                      role="button"
+                      aria-label={t('vectorLogic.editBoardTitle')}
+                    >
+                      edit
+                    </span>
+                  </button>
+                );
+              })()}
 
-              {boards.map(b => {
+              {boards.filter(b => !b.isDefault).map(b => {
                 const active = view === 'board' && selectedBoardId === b.id;
                 return (
                   <button
@@ -288,5 +335,48 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
       )}
     </div>
   );
+}
+
+/**
+ * Auto-create the "Smart Kanban" default board for a user on first visit.
+ * Seeds 4 columns (Backlog / To Do / In Progress / Done), each mapped to
+ * every state in the matching category. Idempotent at the DB level via the
+ * `vl_kanban_boards_one_default_per_owner` partial unique index.
+ */
+async function ensureDefaultBoard(ownerId: string): Promise<KanbanBoard | null> {
+  try {
+    const board = await boardRepo.create({
+      ownerId,
+      name: 'Smart Kanban',
+      description: null,
+      icon: 'bolt',
+      visibility: 'personal',
+      isDefault: true,
+    });
+    const states = await stateRepo.findAll();
+    const labels: Record<string, string> = {
+      BACKLOG: 'Backlog',
+      OPEN: 'To Do',
+      IN_PROGRESS: 'In Progress',
+      DONE: 'Done',
+    };
+    let order = 0;
+    for (const cat of ['BACKLOG', 'OPEN', 'IN_PROGRESS', 'DONE'] as const) {
+      const matches = states.filter(s => s.category === cat);
+      if (matches.length === 0) continue;
+      await boardColumnRepo.create({
+        boardId: board.id,
+        name: labels[cat],
+        sortOrder: order++,
+        wipLimit: null,
+        stateIds: matches.map(s => s.id),
+      });
+    }
+    return board;
+  } catch {
+    // Race condition (another tab created it first) — re-fetch and use that.
+    const all = await boardRepo.findAccessible().catch(() => []);
+    return all.find(b => b.isDefault && b.ownerId === ownerId) ?? null;
+  }
 }
 
