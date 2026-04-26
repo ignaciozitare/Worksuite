@@ -12,6 +12,7 @@ import type { BoardMember, BoardPermission } from '../../domain/entities/BoardMe
 import type { State, StateCategory } from '../../domain/entities/State';
 import type { TaskType } from '../../domain/entities/TaskType';
 import type { Priority } from '../../domain/entities/Priority';
+import { IconPicker } from './IconPicker';
 
 type DraftColumn = {
   /** Existing column id when editing, undefined when newly added in this session. */
@@ -132,6 +133,7 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
   const isNew = boardId === null;
 
   const [name, setName] = useState('');
+  const [icon, setIcon] = useState<string>('view_kanban');
   const [visibility, setVisibility] = useState<BoardVisibility>('personal');
   const [columns, setColumns] = useState<DraftColumn[]>([]);
   const [filters, setFilters] = useState<DraftFilters>(EMPTY_FILTERS);
@@ -188,6 +190,7 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
         }
         setOriginalBoard(board);
         setName(board.name);
+        setIcon(board.icon ?? 'view_kanban');
         setVisibility(board.visibility);
         const sorted = [...cols].sort((a, b) => a.sortOrder - b.sortOrder);
         setColumns(sorted.map<DraftColumn>(c => ({
@@ -331,15 +334,16 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
           ownerId,
           name: trimmedName,
           description: null,
-          icon: null,
+          icon: icon || null,
           visibility,
         });
       } else {
         await boardRepo.update(boardId!, {
           name: trimmedName,
+          icon: icon || null,
           visibility,
         });
-        board = { ...originalBoard!, name: trimmedName, visibility };
+        board = { ...originalBoard!, name: trimmedName, icon: icon || null, visibility };
       }
 
       // Diff columns: existing → update or remove; new → create.
@@ -468,17 +472,25 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                 </div>
               )}
 
-              {/* Name */}
+              {/* Name + icon */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label style={S.label}>{t('vectorLogic.boardName')}</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={t('vectorLogic.boardNamePlaceholder')}
-                  style={S.input}
-                  autoFocus
-                />
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <IconPicker
+                    value={icon}
+                    color="var(--ac-strong)"
+                    onChange={setIcon}
+                    size={24}
+                  />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={t('vectorLogic.boardNamePlaceholder')}
+                    style={{ ...S.input, flex: 1 }}
+                    autoFocus
+                  />
+                </div>
               </div>
 
               {/* Visibility */}

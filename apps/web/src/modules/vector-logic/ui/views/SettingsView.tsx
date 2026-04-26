@@ -9,6 +9,7 @@ import type { Priority } from '../../domain/entities/Priority';
 import type { GmailConnectionStatus } from '../../domain/entities/GmailConnection';
 import type { TaskType } from '../../domain/entities/TaskType';
 import { aiRepo, llmService, priorityRepo, gmailConnectionRepo, taskTypeRepo } from '../../container';
+import { IconPicker } from '../components/IconPicker';
 
 interface Props {
   currentUser: { id: string; [k: string]: unknown };
@@ -459,23 +460,16 @@ export function SettingsView({ currentUser }: Props) {
                 onChange={e => setPriorities(prev => prev.map(x => x.id === p.id ? { ...x, name: e.target.value } : x))}
                 onBlur={e => updatePriority(p.id, { name: e.target.value.trim() || p.name })}
                 style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--tx)', fontSize: 13, fontWeight: 600, outline: 'none', fontFamily: 'inherit' }} />
-              {/* Icon picker — Material Symbols Outlined name (e.g. priority_high). Empty = no icon. */}
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '4px 8px', background: 'var(--sf2)', borderRadius: 6,
-                border: '1px solid var(--bd)',
-              }}>
-                <span className="material-symbols-outlined"
-                      style={{ fontSize: 14, color: p.icon ? p.color : 'var(--tx3)' }}>
-                  {p.icon || 'label'}
-                </span>
-                <input value={p.icon ?? ''}
-                  onChange={e => setPriorities(prev => prev.map(x => x.id === p.id ? { ...x, icon: e.target.value } : x))}
-                  onBlur={e => updatePriority(p.id, { icon: e.target.value.trim() || null })}
-                  placeholder="icon"
-                  title={t('vectorLogic.priorityIconHint')}
-                  style={{ width: 110, background: 'transparent', border: 'none', color: 'var(--tx)', fontSize: 11, fontFamily: 'monospace', outline: 'none' }} />
-              </div>
+              {/* Icon picker — visual selector with curated Material Symbols. */}
+              <IconPicker
+                value={p.icon ?? ''}
+                color={p.color}
+                onChange={(icon) => {
+                  setPriorities(prev => prev.map(x => x.id === p.id ? { ...x, icon: icon || null } : x));
+                  updatePriority(p.id, { icon: icon || null });
+                }}
+                size={20}
+              />
               <span style={{ fontSize: 10, color: 'var(--tx3)', fontFamily: 'monospace' }}>{p.color}</span>
               <button onClick={() => removePriority(p.id)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', opacity: .6, display: 'flex', alignItems: 'center', padding: 4 }}

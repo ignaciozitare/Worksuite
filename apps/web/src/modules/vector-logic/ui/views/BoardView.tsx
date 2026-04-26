@@ -15,6 +15,7 @@ import type { Task } from '../../domain/entities/Task';
 import type { TaskType } from '../../domain/entities/TaskType';
 import type { Priority } from '../../domain/entities/Priority';
 import { TaskDetailModal } from './KanbanView';
+import { KanbanFilters, type KanbanSortBy } from '../components/KanbanFilters';
 
 const CAT_COLORS: Record<StateCategory, string> = {
   BACKLOG:     'var(--tx3)',
@@ -61,6 +62,12 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   /** Workflow states for the open task's task type (loaded on demand). */
   const [detailWfStates, setDetailWfStates] = useState<WorkflowState[]>([]);
+
+  // Runtime filter bar state (independent from the board's persisted filters).
+  const [search, setSearch] = useState('');
+  const [filterAssignee, setFilterAssignee] = useState<string>('all');
+  const [filterPriority, setFilterPriority] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<KanbanSortBy>('manual');
 
   /** Load everything needed to render the board. */
   useEffect(() => {
@@ -130,11 +137,12 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
     [columns],
   );
 
-  /** Tasks that pass every active filter (AND across dimensions). */
+  /** Tasks that pass every active filter (AND across dimensions). Combines:
+   *   - the board's persisted vl_board_filters (config-time scope)
+   *   - the runtime filter bar (assignee / priority / sort / search)
+   */
   const visibleTasks = useMemo(() => {
-    if (filters.length === 0) return tasks;
-    // Group filter rows by dimension (a single dimension only has one row by
-    // the modal's replaceAll logic, but be defensive).
+    // 1. Board-configured filters (from vl_board_filters).
     const byDim = new Map<string, BoardFilter[]>();
     for (const f of filters) {
       const arr = byDim.get(f.dimension) ?? [];
@@ -142,24 +150,63 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
       byDim.set(f.dimension, arr);
     }
     const taskTypeF = (byDim.get('task_type')?.[0]?.value ?? null) as string[] | null;
-    const assigneeF = (byDim.get('assignee')?.[0]?.value ?? null) as string[] | null;
-    const priorityF = (byDim.get('priority')?.[0]?.value ?? null) as string[] | null;
+    const assigneeCfgF = (byDim.get('assignee')?.[0]?.value ?? null) as string[] | null;
+    const priorityCfgF = (byDim.get('priority')?.[0]?.value ?? null) as string[] | null;
     const createdByF = (byDim.get('created_by')?.[0]?.value ?? null) as string[] | null;
     const dueFrom = (byDim.get('due_from')?.[0]?.value ?? null) as string | null;
     const dueTo   = (byDim.get('due_to')?.[0]?.value ?? null) as string | null;
+
+    // 2. Runtime filter bar narrows the result further.
+    const q = search.trim().toLowerCase();
+
     return tasks.filter(task => {
       if (taskTypeF?.length && !taskTypeF.includes(task.taskTypeId)) return false;
-      if (assigneeF?.length && (!task.assigneeId || !assigneeF.includes(task.assigneeId))) return false;
-      if (priorityF?.length) {
+      if (assigneeCfgF?.length && (!task.assigneeId || !assigneeCfgF.includes(task.assigneeId))) return false;
+      if (priorityCfgF?.length) {
         const p = (task.priority ?? '').toLowerCase();
-        if (!priorityF.map(x => x.toLowerCase()).includes(p)) return false;
+        if (!priorityCfgF.map(x => x.toLowerCase()).includes(p)) return false;
       }
       if (createdByF?.length && (!task.createdBy || !createdByF.includes(task.createdBy))) return false;
       if (dueFrom && (!task.dueDate || task.dueDate < dueFrom)) return false;
       if (dueTo   && (!task.dueDate || task.dueDate > dueTo))   return false;
+
+      // Runtime: assignee selector
+      if (filterAssignee !== 'all') {
+        if (filterAssignee === 'unassigned') {
+          if (task.assigneeId) return false;
+        } else if (task.assigneeId !== filterAssignee) {
+          return false;
+        }
+      }
+      // Runtime: priority selector
+      if (filterPriority !== 'all' && (task.priority ?? '').toLowerCase() !== filterPriority.toLowerCase()) {
+        return false;
+      }
+      // Runtime: search (matches title or task code)
+      if (q && !task.title.toLowerCase().includes(q) && !(task.code ?? '').toLowerCase().includes(q)) {
+        return false;
+      }
       return true;
     });
-  }, [filters, tasks]);
+  }, [filters, tasks, filterAssignee, filterPriority, search]);
+
+  /** Distinct assignees actually present on the board (so the runtime filter
+   *  bar's dropdown only lists relevant users). */
+  const assigneesInBoard = useMemo(() => {
+    const ids = new Set<string>();
+    tasks.forEach(t => { if (t.assigneeId) ids.add(t.assigneeId); });
+    return Array.from(ids)
+      .map(id => wsUsers.find(u => u.id === id))
+      .filter(Boolean) as WSUser[];
+  }, [tasks, wsUsers]);
+
+  /** Priority sort rank: respect priorities.sortOrder so urgent surfaces first. */
+  const priorityRankByName = useMemo(() => {
+    const map: Record<string, number> = {};
+    const sorted = [...priorities].sort((a, b) => b.sortOrder - a.sortOrder);
+    sorted.forEach((p, i) => { map[p.name.toLowerCase()] = i; });
+    return map;
+  }, [priorities]);
 
   /** Visible tasks grouped by column id. A task belongs to a column when
    *  its stateId is in the column's stateIds list. */
@@ -178,10 +225,24 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
       if (colId && map[colId]) map[colId].push(task);
     });
     Object.values(map).forEach(arr => {
-      arr.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+      if (sortBy === 'priority') {
+        arr.sort((a, b) => {
+          const ra = priorityRankByName[(a.priority ?? '').toLowerCase()] ?? -1;
+          const rb = priorityRankByName[(b.priority ?? '').toLowerCase()] ?? -1;
+          return rb - ra;
+        });
+      } else if (sortBy === 'assignee') {
+        arr.sort((a, b) => {
+          const na = wsUsers.find(u => u.id === a.assigneeId)?.name ?? '';
+          const nb = wsUsers.find(u => u.id === b.assigneeId)?.name ?? '';
+          return na.localeCompare(nb);
+        });
+      } else {
+        arr.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+      }
     });
     return map;
-  }, [sortedColumns, visibleTasks]);
+  }, [sortedColumns, visibleTasks, sortBy, priorityRankByName, wsUsers]);
 
   /** Auto-clear toast after 3s. */
   useEffect(() => {
@@ -354,6 +415,22 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
           <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add</span>
           {t('vectorLogic.newTask')}
         </button>
+      </div>
+
+      {/* Runtime filter bar (shared with Smart Kanban Auto) */}
+      <div style={{ flexShrink: 0 }}>
+        <KanbanFilters
+          search={search}
+          onSearchChange={setSearch}
+          filterAssignee={filterAssignee}
+          onFilterAssigneeChange={setFilterAssignee}
+          assignees={assigneesInBoard}
+          filterPriority={filterPriority}
+          onFilterPriorityChange={setFilterPriority}
+          priorities={priorities}
+          sortBy={sortBy}
+          onSortByChange={setSortBy}
+        />
       </div>
 
       {/* Columns */}

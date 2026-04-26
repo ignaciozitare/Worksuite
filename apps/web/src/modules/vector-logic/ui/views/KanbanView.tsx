@@ -317,7 +317,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
     return Array.from(ids).map(id => wsUsers.find(u => u.id === id)).filter(Boolean) as WSUser[];
   }, [tasks, wsUsers]);
 
-  const createTask = async (title: string, stateId: string, taskTypeId: string) => {
+  const createTask = async (title: string, stateId: string, taskTypeId: string, priority?: string | null) => {
     const tt = taskTypes.find(x => x.id === taskTypeId) ?? selectedType;
     const schema = (tt?.schema as any[]) ?? [];
     const initialData: Record<string, unknown> = {};
@@ -334,7 +334,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
       title,
       data: initialData,
       assigneeId: currentUser.id,
-      priority: defaultPriority,
+      priority: priority !== undefined ? priority : defaultPriority,
       sortOrder: 0,
       createdBy: currentUser.id,
     });
@@ -862,9 +862,10 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
       {showNew && selectedType && (
         <NewTaskModal
           taskTypes={taskTypes}
+          priorities={priorities}
           defaultTypeId={selectedType.id}
           onClose={() => setShowNew(false)}
-          onCreate={async (title, typeId) => {
+          onCreate={async (title, typeId, priority) => {
             // If the chosen type differs from the current one, load its workflow states
             // to find the initial OPEN state.
             let targetStates = wfStates;
@@ -877,7 +878,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
             const openState = targetStates.find(ws => ws.state?.category === 'OPEN');
             const initialState = openState ?? targetStates.find(ws => ws.isInitial) ?? targetStates[0];
             if (initialState) {
-              await createTask(title, initialState.stateId, typeId);
+              await createTask(title, initialState.stateId, typeId, priority);
               setShowNew(false);
             }
           }}
@@ -1152,19 +1153,25 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
 }
 
 /* ── New Task Modal ────────────────────────────────────────────────────── */
-function NewTaskModal({ taskTypes, defaultTypeId, onClose, onCreate }: {
+function NewTaskModal({ taskTypes, priorities, defaultTypeId, onClose, onCreate }: {
   taskTypes: TaskType[];
+  priorities: Priority[];
   defaultTypeId: string;
   onClose: () => void;
-  onCreate: (title: string, typeId: string) => Promise<void>;
+  onCreate: (title: string, typeId: string, priority: string | null) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [typeId, setTypeId] = useState(defaultTypeId);
+  // Default to "Medium" when present, else the first priority, else null.
+  const [priority, setPriority] = useState<string | null>(() => {
+    const med = priorities.find(p => p.name.toLowerCase() === 'medium');
+    return (med ?? priorities[0])?.name ?? null;
+  });
 
   const submit = async () => {
     if (!title.trim() || !typeId) return;
-    await onCreate(title.trim(), typeId);
+    await onCreate(title.trim(), typeId, priority);
   };
 
   return (
@@ -1205,6 +1212,36 @@ function NewTaskModal({ taskTypes, defaultTypeId, onClose, onCreate }: {
             onKeyDown={e => { if (e.key === 'Enter') submit(); }}
             style={inpStyle()} placeholder={t('vectorLogic.placeholderFixBug')} />
         </div>
+        {priorities.length > 0 && (
+          <div>
+            <label style={lblStyle}>{t('vectorLogic.priority')}</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {priorities.map(p => {
+                const active = priority === p.name;
+                return (
+                  <button key={p.id} type="button" onClick={() => setPriority(p.name)}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '6px 10px', borderRadius: 8,
+                      cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+                      letterSpacing: '.04em', textTransform: 'uppercase',
+                      background: active ? `${p.color}1A` : 'var(--sf2)',
+                      color: active ? p.color : 'var(--tx2)',
+                      border: `1px solid ${active ? p.color : 'var(--bd)'}`,
+                      transition: 'all .15s',
+                    }}>
+                    {p.icon && (
+                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                        {p.icon}
+                      </span>
+                    )}
+                    {p.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 8, borderTop: '1px solid var(--bd)' }}>
           <button style={btnStyle('ghost')} onClick={onClose}>{t('common.cancel')}</button>
           <button style={btnStyle('primary')} onClick={submit}>{t('common.create')}</button>

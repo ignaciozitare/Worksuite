@@ -30,8 +30,12 @@ const COLOR_SWATCHES: Array<{ value: string | null; varName: string; labelKey: s
  * popover grid and pick one.
  */
 const ICONS = [
+  // Priority
+  'priority_high', 'keyboard_double_arrow_up', 'keyboard_arrow_up',
+  'drag_handle', 'remove', 'keyboard_arrow_down', 'keyboard_double_arrow_down',
+  'bolt', 'whatshot', 'local_fire_department', 'crisis_alert', 'report',
   // Generic
-  'task_alt', 'check_circle', 'radio_button_unchecked', 'flag', 'priority_high',
+  'task_alt', 'check_circle', 'radio_button_unchecked', 'flag',
   'star', 'bookmark', 'label', 'category', 'inventory_2',
   // Bug / quality
   'bug_report', 'pest_control', 'warning', 'error', 'verified',
