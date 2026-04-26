@@ -1,10 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { useDialog } from '@worksuite/ui';
-import { boardRepo, boardColumnRepo, stateRepo } from '../../container';
+import {
+  boardRepo, boardColumnRepo, boardFilterRepo,
+  stateRepo, taskTypeRepo, priorityRepo,
+} from '../../container';
 import type { KanbanBoard, BoardVisibility } from '../../domain/entities/KanbanBoard';
 import type { BoardColumn } from '../../domain/entities/BoardColumn';
+import type { BoardFilter, BoardFilterDimension } from '../../domain/entities/BoardFilter';
 import type { State, StateCategory } from '../../domain/entities/State';
+import type { TaskType } from '../../domain/entities/TaskType';
+import type { Priority } from '../../domain/entities/Priority';
 
 type DraftColumn = {
   /** Existing column id when editing, undefined when newly added in this session. */
@@ -14,10 +20,36 @@ type DraftColumn = {
   wipLimit: number | null;
 };
 
+/** Local filter state. We keep all 7 dimensions in a single object — easier
+ *  to reason about than an array of {dimension, value}. We translate to/from
+ *  the BoardFilter[] shape on load and save. */
+type DraftFilters = {
+  task_type: string[];
+  assignee: string[];
+  priority: string[];
+  label: string[];
+  created_by: string[];
+  due_from: string | null;
+  due_to: string | null;
+};
+
+const EMPTY_FILTERS: DraftFilters = {
+  task_type: [], assignee: [], priority: [], label: [], created_by: [],
+  due_from: null, due_to: null,
+};
+
+interface WSUserLite {
+  id: string;
+  name?: string;
+  email: string;
+}
+
 interface Props {
   /** When null, the modal is in "create new board" mode. */
   boardId: string | null;
   ownerId: string;
+  /** Workspace users for assignee / created_by selectors. */
+  wsUsers?: WSUserLite[];
   onClose: () => void;
   onSaved: (board: KanbanBoard) => void;
   onDeleted: (boardId: string) => void;
@@ -39,7 +71,36 @@ function buildDefaultColumns(allStates: State[]): DraftColumn[] {
   return out;
 }
 
-export function BoardConfigModal({ boardId, ownerId, onClose, onSaved, onDeleted }: Props) {
+/** Translate the BoardFilter[] from the repo into the modal's DraftFilters. */
+function filtersFromBoardFilters(rows: BoardFilter[]): DraftFilters {
+  const out: DraftFilters = { ...EMPTY_FILTERS };
+  for (const r of rows) {
+    if (r.dimension === 'due_from' || r.dimension === 'due_to') {
+      out[r.dimension] = (typeof r.value === 'string' ? r.value : null) as any;
+    } else if (Array.isArray(r.value)) {
+      (out as any)[r.dimension] = r.value.filter((v): v is string => typeof v === 'string');
+    }
+  }
+  return out;
+}
+
+/** Translate the modal's DraftFilters into the BoardFilter[] for persistence.
+ *  Empty arrays / null dates produce no row. */
+function boardFiltersFromDraft(boardId: string, f: DraftFilters): Array<Omit<BoardFilter, 'id' | 'createdAt'>> {
+  const out: Array<Omit<BoardFilter, 'id' | 'createdAt'>> = [];
+  const multiDims: Array<keyof DraftFilters> = ['task_type', 'assignee', 'priority', 'label', 'created_by'];
+  for (const dim of multiDims) {
+    const v = f[dim] as string[];
+    if (Array.isArray(v) && v.length > 0) {
+      out.push({ boardId, dimension: dim as BoardFilterDimension, value: v });
+    }
+  }
+  if (f.due_from) out.push({ boardId, dimension: 'due_from', value: f.due_from });
+  if (f.due_to)   out.push({ boardId, dimension: 'due_to',   value: f.due_to });
+  return out;
+}
+
+export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSaved, onDeleted }: Props) {
   const { t } = useTranslation();
   const dialog = useDialog();
 
@@ -48,7 +109,10 @@ export function BoardConfigModal({ boardId, ownerId, onClose, onSaved, onDeleted
   const [name, setName] = useState('');
   const [visibility, setVisibility] = useState<BoardVisibility>('personal');
   const [columns, setColumns] = useState<DraftColumn[]>([]);
+  const [filters, setFilters] = useState<DraftFilters>(EMPTY_FILTERS);
   const [allStates, setAllStates] = useState<State[]>([]);
+  const [allTaskTypes, setAllTaskTypes] = useState<TaskType[]>([]);
+  const [allPriorities, setAllPriorities] = useState<Priority[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,15 +120,24 @@ export function BoardConfigModal({ boardId, ownerId, onClose, onSaved, onDeleted
   const [originalBoard, setOriginalBoard] = useState<KanbanBoard | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [stateMenuOpen, setStateMenuOpen] = useState(false);
+  /** Which filter dropdown is currently open (one at a time). */
+  const [openFilter, setOpenFilter] = useState<BoardFilterDimension | null>(null);
 
-  /** Initial load — fetch states + (if editing) the board itself + its columns. */
+  /** Initial load — fetch states + task types + priorities + (if editing)
+   *  the board itself, its columns, and its filters. */
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const states = await stateRepo.findAll();
+        const [states, types, prs] = await Promise.all([
+          stateRepo.findAll(),
+          taskTypeRepo.findAll(),
+          priorityRepo.ensureDefaults(ownerId),
+        ]);
         if (cancelled) return;
         setAllStates(states);
+        setAllTaskTypes(types);
+        setAllPriorities(prs);
 
         if (isNew) {
           setColumns(buildDefaultColumns(states));
@@ -72,9 +145,10 @@ export function BoardConfigModal({ boardId, ownerId, onClose, onSaved, onDeleted
           return;
         }
 
-        const [board, cols] = await Promise.all([
+        const [board, cols, savedFilters] = await Promise.all([
           boardRepo.findById(boardId!),
           boardColumnRepo.findByBoard(boardId!),
+          boardFilterRepo.findByBoard(boardId!),
         ]);
         if (cancelled) return;
         if (!board) {
@@ -93,6 +167,7 @@ export function BoardConfigModal({ boardId, ownerId, onClose, onSaved, onDeleted
           wipLimit: c.wipLimit,
         })));
         setOriginalColumnIds(new Set(sorted.map(c => c.id)));
+        setFilters(filtersFromBoardFilters(savedFilters));
         setLoading(false);
       } catch (err: any) {
         if (!cancelled) {
@@ -102,7 +177,7 @@ export function BoardConfigModal({ boardId, ownerId, onClose, onSaved, onDeleted
       }
     })();
     return () => { cancelled = true; };
-  }, [boardId, isNew, t]);
+  }, [boardId, isNew, ownerId, t]);
 
   const stateById = useMemo(() => {
     const m = new Map<string, State>();
@@ -216,6 +291,9 @@ export function BoardConfigModal({ boardId, ownerId, onClose, onSaved, onDeleted
           });
         }
       }
+
+      // Filters: replace all rows for this board atomically.
+      await boardFilterRepo.replaceAll(board.id, boardFiltersFromDraft(board.id, filters));
 
       onSaved(board);
       onClose();
@@ -439,6 +517,63 @@ export function BoardConfigModal({ boardId, ownerId, onClose, onSaved, onDeleted
                   })}
                 </div>
               </div>
+
+              {/* Filters */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={S.label}>{t('vectorLogic.boardFilters')}</label>
+                <p style={{ fontSize: 12, color: 'var(--tx3)', margin: 0 }}>
+                  {t('vectorLogic.boardFiltersHelp')}
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <FilterMultiRow
+                    dim="task_type"
+                    label={t('vectorLogic.boardFilterTaskType')}
+                    options={allTaskTypes.map(tt => ({ id: tt.id, label: tt.name }))}
+                    selected={filters.task_type}
+                    open={openFilter === 'task_type'}
+                    onToggleOpen={() => setOpenFilter(o => o === 'task_type' ? null : 'task_type')}
+                    onChange={(v) => setFilters(f => ({ ...f, task_type: v }))}
+                    emptyLabel={t('vectorLogic.boardFilterAny')}
+                  />
+                  <FilterMultiRow
+                    dim="assignee"
+                    label={t('vectorLogic.boardFilterAssignee')}
+                    options={wsUsers.map(u => ({ id: u.id, label: u.name || u.email }))}
+                    selected={filters.assignee}
+                    open={openFilter === 'assignee'}
+                    onToggleOpen={() => setOpenFilter(o => o === 'assignee' ? null : 'assignee')}
+                    onChange={(v) => setFilters(f => ({ ...f, assignee: v }))}
+                    emptyLabel={t('vectorLogic.boardFilterAnyone')}
+                  />
+                  <FilterMultiRow
+                    dim="priority"
+                    label={t('vectorLogic.boardFilterPriority')}
+                    options={allPriorities.map(p => ({ id: p.name, label: p.name }))}
+                    selected={filters.priority}
+                    open={openFilter === 'priority'}
+                    onToggleOpen={() => setOpenFilter(o => o === 'priority' ? null : 'priority')}
+                    onChange={(v) => setFilters(f => ({ ...f, priority: v }))}
+                    emptyLabel={t('vectorLogic.boardFilterAny')}
+                  />
+                  <FilterMultiRow
+                    dim="created_by"
+                    label={t('vectorLogic.boardFilterCreatedBy')}
+                    options={wsUsers.map(u => ({ id: u.id, label: u.name || u.email }))}
+                    selected={filters.created_by}
+                    open={openFilter === 'created_by'}
+                    onToggleOpen={() => setOpenFilter(o => o === 'created_by' ? null : 'created_by')}
+                    onChange={(v) => setFilters(f => ({ ...f, created_by: v }))}
+                    emptyLabel={t('vectorLogic.boardFilterAnyone')}
+                  />
+                  <FilterDateRow
+                    label={t('vectorLogic.boardFilterDueRange')}
+                    from={filters.due_from}
+                    to={filters.due_to}
+                    onChangeFrom={(v) => setFilters(f => ({ ...f, due_from: v }))}
+                    onChangeTo={(v) => setFilters(f => ({ ...f, due_to: v }))}
+                  />
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -481,6 +616,128 @@ export function BoardConfigModal({ boardId, ownerId, onClose, onSaved, onDeleted
             </button>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Filter row components ─────────────────────────────────────────────── */
+
+interface FilterOption { id: string; label: string }
+
+function FilterMultiRow({
+  dim, label, options, selected, open, onToggleOpen, onChange, emptyLabel,
+}: {
+  dim: BoardFilterDimension;
+  label: string;
+  options: FilterOption[];
+  selected: string[];
+  open: boolean;
+  onToggleOpen: () => void;
+  onChange: (values: string[]) => void;
+  emptyLabel: string;
+}) {
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        onToggleOpen();
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [open, onToggleOpen]);
+
+  const summary = selected.length === 0
+    ? emptyLabel
+    : selected
+        .map(id => options.find(o => o.id === id)?.label ?? id)
+        .join(' · ');
+
+  const toggle = (id: string) => {
+    if (selected.includes(id)) onChange(selected.filter(x => x !== id));
+    else onChange([...selected, id]);
+  };
+
+  return (
+    <div ref={wrapRef} style={S.filterRow}>
+      <span style={S.filterRowLabel}>{label}</span>
+      <button
+        type="button"
+        onClick={onToggleOpen}
+        style={S.filterRowButton}
+      >
+        <span style={{
+          flex: 1, color: selected.length === 0 ? 'var(--tx3)' : 'var(--tx)',
+          fontWeight: selected.length === 0 ? 400 : 500,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>
+          {summary}
+        </span>
+        <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>
+          keyboard_arrow_down
+        </span>
+      </button>
+      {open && (
+        <div style={S.filterDropdown}>
+          {options.length === 0 ? (
+            <div style={{ padding: 10, fontSize: 12, color: 'var(--tx3)' }}>—</div>
+          ) : (
+            options.map(o => {
+              const checked = selected.includes(o.id);
+              return (
+                <label
+                  key={o.id}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px',
+                    cursor: 'pointer', color: 'var(--tx)', fontSize: 13,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggle(o.id)}
+                    style={{ accentColor: 'var(--ac-strong)' }}
+                  />
+                  <span style={{ flex: 1 }}>{o.label}</span>
+                </label>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FilterDateRow({
+  label, from, to, onChangeFrom, onChangeTo,
+}: {
+  label: string;
+  from: string | null;
+  to: string | null;
+  onChangeFrom: (v: string | null) => void;
+  onChangeTo: (v: string | null) => void;
+}) {
+  return (
+    <div style={S.filterRow}>
+      <span style={S.filterRowLabel}>{label}</span>
+      <div style={{ flex: 1, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          type="date"
+          value={from ?? ''}
+          onChange={(e) => onChangeFrom(e.target.value || null)}
+          style={S.dateInput}
+        />
+        <span style={{ color: 'var(--tx3)', fontSize: 12 }}>→</span>
+        <input
+          type="date"
+          value={to ?? ''}
+          onChange={(e) => onChangeTo(e.target.value || null)}
+          style={S.dateInput}
+        />
       </div>
     </div>
   );
@@ -533,6 +790,30 @@ const S: Record<string, React.CSSProperties> = {
   columnRow: {
     display: 'flex', alignItems: 'center', gap: 12,
     background: 'var(--sf2)', borderRadius: 8, padding: '10px 14px',
+  },
+  filterRow: {
+    position: 'relative', display: 'flex', alignItems: 'center', gap: 10,
+    background: 'var(--sf2)', borderRadius: 8, padding: '10px 14px',
+  },
+  filterRowLabel: {
+    fontSize: 12, fontWeight: 500, color: 'var(--tx2)', width: 120, flexShrink: 0,
+  },
+  filterRowButton: {
+    flex: 1, display: 'flex', alignItems: 'center', gap: 10,
+    padding: '4px 8px', background: 'transparent', border: 'none',
+    cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
+    minWidth: 0,
+  },
+  filterDropdown: {
+    position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 20,
+    background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 8,
+    boxShadow: '0 12px 32px rgba(0,0,0,.4)', maxHeight: 240, overflowY: 'auto',
+    padding: '4px 0',
+  },
+  dateInput: {
+    flex: 1, padding: '6px 10px', background: 'var(--sf3)', border: '1px solid var(--bd)',
+    borderRadius: 6, color: 'var(--tx)', fontSize: 13, fontFamily: 'inherit',
+    outline: 'none', colorScheme: 'dark',
   },
   wipBox: {
     display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px',

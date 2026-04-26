@@ -3,11 +3,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { useDialog, UserAvatar } from '@worksuite/ui';
 import {
-  boardRepo, boardColumnRepo,
+  boardRepo, boardColumnRepo, boardFilterRepo,
   stateRepo, taskRepo, taskTypeRepo, priorityRepo,
 } from '../../container';
 import type { KanbanBoard } from '../../domain/entities/KanbanBoard';
 import type { BoardColumn } from '../../domain/entities/BoardColumn';
+import type { BoardFilter } from '../../domain/entities/BoardFilter';
 import type { State, StateCategory } from '../../domain/entities/State';
 import type { Task } from '../../domain/entities/Task';
 import type { TaskType } from '../../domain/entities/TaskType';
@@ -41,6 +42,7 @@ export function BoardView({ boardId, currentUser, wsUsers = [], onEditBoard }: P
 
   const [board, setBoard] = useState<KanbanBoard | null>(null);
   const [columns, setColumns] = useState<BoardColumn[]>([]);
+  const [filters, setFilters] = useState<BoardFilter[]>([]);
   const [allStates, setAllStates] = useState<State[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
@@ -49,6 +51,7 @@ export function BoardView({ boardId, currentUser, wsUsers = [], onEditBoard }: P
   const [error, setError] = useState<string | null>(null);
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
   const [dropColumnId, setDropColumnId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   /** Load everything needed to render the board. */
   useEffect(() => {
@@ -57,9 +60,10 @@ export function BoardView({ boardId, currentUser, wsUsers = [], onEditBoard }: P
     setError(null);
     (async () => {
       try {
-        const [b, cols, states, allTasks, types, prs] = await Promise.all([
+        const [b, cols, flts, states, allTasks, types, prs] = await Promise.all([
           boardRepo.findById(boardId),
           boardColumnRepo.findByBoard(boardId),
+          boardFilterRepo.findByBoard(boardId),
           stateRepo.findAll(),
           taskRepo.findAll(),
           taskTypeRepo.findAll(),
@@ -73,13 +77,13 @@ export function BoardView({ boardId, currentUser, wsUsers = [], onEditBoard }: P
         }
         setBoard(b);
         setColumns(cols);
+        setFilters(flts);
         setAllStates(states);
         setTaskTypes(types);
         setPriorities(prs);
 
-        // Tasks shown on this board: those whose current stateId matches one
-        // of the board's column states. Filters (task type, assignee, etc.)
-        // land in Fase E.
+        // Tasks whose current stateId matches one of the board's column states.
+        // Per-filter narrowing happens in `visibleTasks` below.
         const colStateIds = new Set(cols.map(c => c.stateId));
         setTasks(allTasks.filter(x => x.stateId && colStateIds.has(x.stateId)));
         setLoading(false);
@@ -116,11 +120,42 @@ export function BoardView({ boardId, currentUser, wsUsers = [], onEditBoard }: P
     [columns],
   );
 
-  /** tasks grouped by stateId (= column.stateId). */
+  /** Tasks that pass every active filter (AND across dimensions). */
+  const visibleTasks = useMemo(() => {
+    if (filters.length === 0) return tasks;
+    // Group filter rows by dimension (a single dimension only has one row by
+    // the modal's replaceAll logic, but be defensive).
+    const byDim = new Map<string, BoardFilter[]>();
+    for (const f of filters) {
+      const arr = byDim.get(f.dimension) ?? [];
+      arr.push(f);
+      byDim.set(f.dimension, arr);
+    }
+    const taskTypeF = (byDim.get('task_type')?.[0]?.value ?? null) as string[] | null;
+    const assigneeF = (byDim.get('assignee')?.[0]?.value ?? null) as string[] | null;
+    const priorityF = (byDim.get('priority')?.[0]?.value ?? null) as string[] | null;
+    const createdByF = (byDim.get('created_by')?.[0]?.value ?? null) as string[] | null;
+    const dueFrom = (byDim.get('due_from')?.[0]?.value ?? null) as string | null;
+    const dueTo   = (byDim.get('due_to')?.[0]?.value ?? null) as string | null;
+    return tasks.filter(task => {
+      if (taskTypeF?.length && !taskTypeF.includes(task.taskTypeId)) return false;
+      if (assigneeF?.length && (!task.assigneeId || !assigneeF.includes(task.assigneeId))) return false;
+      if (priorityF?.length) {
+        const p = (task.priority ?? '').toLowerCase();
+        if (!priorityF.map(x => x.toLowerCase()).includes(p)) return false;
+      }
+      if (createdByF?.length && (!task.createdBy || !createdByF.includes(task.createdBy))) return false;
+      if (dueFrom && (!task.dueDate || task.dueDate < dueFrom)) return false;
+      if (dueTo   && (!task.dueDate || task.dueDate > dueTo))   return false;
+      return true;
+    });
+  }, [filters, tasks]);
+
+  /** Visible tasks grouped by stateId (= column.stateId). */
   const tasksByState = useMemo(() => {
     const map: Record<string, Task[]> = {};
     sortedColumns.forEach(c => { map[c.stateId] = []; });
-    tasks.forEach(task => {
+    visibleTasks.forEach(task => {
       if (task.stateId && map[task.stateId] != null) map[task.stateId].push(task);
     });
     // Stable per-column order: by sort_order, then created_at.
@@ -128,10 +163,17 @@ export function BoardView({ boardId, currentUser, wsUsers = [], onEditBoard }: P
       arr.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     });
     return map;
-  }, [sortedColumns, tasks]);
+  }, [sortedColumns, visibleTasks]);
 
-  const totalActive = tasks.length;
-  const distinctTypeCount = new Set(tasks.map(t => t.taskTypeId)).size;
+  /** Auto-clear toast after 3s. */
+  useEffect(() => {
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(null), 3000);
+    return () => window.clearTimeout(id);
+  }, [toast]);
+
+  const totalActive = visibleTasks.length;
+  const distinctTypeCount = new Set(visibleTasks.map(t => t.taskTypeId)).size;
   const isOwner = board?.ownerId === currentUser.id;
 
   const onDragStart = (taskId: string) => (e: React.DragEvent) => {
@@ -161,6 +203,18 @@ export function BoardView({ boardId, currentUser, wsUsers = [], onEditBoard }: P
     setDropColumnId(null);
     const task = tasks.find(x => x.id === id);
     if (!task || task.stateId === colStateId) return;
+
+    // Enforce WIP limit: count tasks already in the destination column that
+    // pass the board's filters. Block drop and toast when the column is full.
+    const destCol = sortedColumns.find(c => c.stateId === colStateId);
+    if (destCol?.wipLimit != null) {
+      const currentCount = tasksByState[colStateId]?.length ?? 0;
+      if (currentCount >= destCol.wipLimit) {
+        setToast(t('vectorLogic.boardWipLimitReachedToast'));
+        return;
+      }
+    }
+
     // Optimistic update
     setTasks(prev => prev.map(x => x.id === id ? { ...x, stateId: colStateId } : x));
     try {
@@ -196,6 +250,19 @@ export function BoardView({ boardId, currentUser, wsUsers = [], onEditBoard }: P
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', gap: 18 }}>
+      {toast && (
+        <div role="status" style={{
+          position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+          padding: '10px 14px', borderRadius: 8,
+          background: 'var(--amber-dim)', color: 'var(--amber)',
+          fontSize: 13, fontWeight: 500,
+          display: 'flex', alignItems: 'center', gap: 8,
+          boxShadow: '0 8px 30px rgba(0,0,0,.4)', maxWidth: 360,
+        }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>warning</span>
+          <span>{toast}</span>
+        </div>
+      )}
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 4 }}>

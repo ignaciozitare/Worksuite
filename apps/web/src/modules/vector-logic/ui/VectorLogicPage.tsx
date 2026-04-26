@@ -263,6 +263,7 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
         <BoardConfigModal
           boardId={editingBoardId}
           ownerId={currentUser.id}
+          wsUsers={wsUsers}
           onClose={() => setEditingBoardId(undefined)}
           onSaved={handleBoardSaved}
           onDeleted={handleBoardDeleted}
