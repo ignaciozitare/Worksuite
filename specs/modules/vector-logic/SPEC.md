@@ -701,7 +701,7 @@ Permitir que el usuario cree, configure y comparta tableros Kanban con columnas 
 
 **Board.** Tiene nombre, icono opcional (default según category de columnas), descripción opcional. Pertenece a un owner (el usuario que lo creó). Visibilidad: `personal` (sólo el owner lo ve) o `shared` (visible a todos los miembros del workspace, sujeto a permisos).
 
-**Columnas del board.** Cada columna referencia un `vl_states` existente. Tiene orden manual (drag-reorder en el modal de config). Tiene WIP limit opcional (entero ≥ 1, o vacío = sin límite). Una misma `state` puede aparecer una sola vez por board.
+**Columnas del board.** Cada columna tiene un nombre elegido por el usuario (ej. "To Do", "Code Review") y mapea **N estados** de la librería `vl_states` (modelo Jira-style). Tiene orden manual (drag-reorder en el modal de config). Tiene WIP limit opcional (entero ≥ 1, o vacío = sin límite). Un mismo `state` no puede estar mapeado a dos columnas en el mismo board (la modal lo bloquea). Si una columna queda sin estados mapeados, no recibe drops y no muestra tareas — pero queda configurable.
 
 **Filtros del board.** Configurables, todos opcionales y combinables con AND:
 - Task types (multi-select).
@@ -757,11 +757,14 @@ Acompaña esta feature porque los boards muestran prioridad como chip y el visua
 
 ### 7. Modelo de datos
 
-Confirmado por DBA Agent (2026-04-26). Migración: `supabase/migrations/20260426_vl_kanban_boards.sql`.
+Confirmado por DBA Agent (2026-04-26) + restructurado en Fase H (2026-04-26).
+Migraciones: `supabase/migrations/20260426_vl_kanban_boards.sql` y `_v2.sql`.
 
 **`vl_kanban_boards`** — un row por tablero que crea un usuario. Guarda quién es el dueño (`owner_id`), el nombre, una descripción opcional, un icono opcional (Material Symbols), y la visibilidad (`personal` o `shared`). Cuando se borra un usuario, sus boards se borran en cascada. Lleva `created_at` y `updated_at` (este último actualizado por trigger).
 
-**`vl_board_columns`** — un row por columna dentro de cada board. Cada columna referencia un estado existente de la librería (`vl_states.id`) y guarda el orden manual (`sort_order`) y un WIP limit opcional (entero ≥ 1, o vacío). Constraint UNIQUE`(board_id, state_id)` impide que el mismo estado aparezca dos veces en un board. Si se borra el board se borran sus columnas; si se borra un estado usado por una columna, la operación se rechaza (`on delete restrict`) — el owner debe limpiar primero las referencias.
+**`vl_board_columns`** — un row por columna dentro de cada board. Guarda el `name` elegido por el usuario, el orden manual (`sort_order`) y un WIP limit opcional (entero ≥ 1, o vacío). El mapeo a estados vive en una tabla aparte (`vl_board_column_states`) — modelo Jira-style. Si se borra el board se borran sus columnas en cascada.
+
+**`vl_board_column_states`** — junction column ↔ state (muchos-a-muchos). Cada row mapea una columna a un estado de la librería. Constraint UNIQUE`(column_id, state_id)`. La aplicación garantiza que un estado no aparezca en dos columnas del mismo board (la modal deshabilita los estados ya usados). Si se borra una columna, sus mapeos se borran en cascada; si se borra un estado en uso, la operación se rechaza.
 
 **`vl_board_filters`** — un row por filtro activo en cada board. Cada fila tiene una `dimension` (uno de `task_type`, `assignee`, `priority`, `label`, `created_by`, `due_from`, `due_to`) y un `value` JSONB que contiene el valor o lista de valores aplicables. Una tarea aparece en el board sólo si pasa todos los filtros (AND).
 
@@ -770,7 +773,10 @@ Confirmado por DBA Agent (2026-04-26). Migración: `supabase/migrations/20260426
 **`vl_priorities`** — se agrega columna `icon` (text, nullable). Permite que cada prioridad lleve un icono Material Symbols. Los chips de prioridad en TaskCards y board view pintan background con `color` al 10% + texto color sólido + icono si está seteado.
 
 **Row Level Security.**
+- 3 helper functions con `SECURITY DEFINER` que rompen recursión circular:
+  `vl_can_view_board`, `vl_can_edit_board`, `vl_is_board_owner`.
 - `vl_kanban_boards`: SELECT si owner OR `visibility = 'shared'` OR member del board. INSERT requiere `owner_id = auth.uid()`. UPDATE/DELETE sólo owner.
-- `vl_board_columns` y `vl_board_filters`: SELECT a quien tenga acceso al board. CRUD a owner OR member con `permission = 'edit'`.
+- `vl_board_columns`, `vl_board_filters`: SELECT a quien tenga acceso al board. CRUD a owner OR member con `permission = 'edit'`.
+- `vl_board_column_states`: SELECT/CRUD se delegan a las policies del column padre.
 - `vl_board_members`: SELECT al owner y al propio user. INSERT/UPDATE/DELETE sólo el owner del board.
-- Todas las nuevas tablas tienen RLS habilitado.
+- Todas las tablas tienen RLS habilitado.
