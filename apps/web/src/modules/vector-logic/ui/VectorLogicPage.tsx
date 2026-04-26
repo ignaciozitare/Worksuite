@@ -8,9 +8,10 @@ import { ChatView } from './views/ChatView';
 import { AIDetectionsView } from './views/AIDetectionsView';
 import { BacklogHistoryView } from './views/BacklogHistoryView';
 import { BoardConfigModal } from './components/BoardConfigModal';
-import { aiRepo, boardRepo } from '../container';
+import { aiRepo, boardRepo, boardMemberRepo } from '../container';
 import type { AIMode } from '../domain/entities/AI';
 import type { KanbanBoard } from '../domain/entities/KanbanBoard';
+import type { BoardPermission } from '../domain/entities/BoardMember';
 
 /* ─── CSS (Stitch / Carbon Logic) ────────────────────────────────────────── */
 const CSS = `
@@ -55,6 +56,8 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
   const [view, setView] = useState<Tab>('kanban');
   const [mode, setMode] = useState<AIMode>('embedded');
   const [boards, setBoards] = useState<KanbanBoard[]>([]);
+  /** Map from boardId → my permission ('use' | 'edit'). Owner is implicit. */
+  const [myPermissions, setMyPermissions] = useState<Map<string, BoardPermission>>(new Map());
   const [skExpanded, setSkExpanded] = useState(true);
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
   /** When set, the BoardConfigModal is open. `null` means "create new". */
@@ -70,7 +73,20 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
   // Load accessible boards for the current user (RLS-filtered)
   useEffect(() => {
     boardRepo.findAccessible().then(setBoards).catch(() => setBoards([]));
+    boardMemberRepo.findForUser(currentUser.id)
+      .then((rows) => {
+        const m = new Map<string, BoardPermission>();
+        rows.forEach(r => m.set(r.boardId, r.permission));
+        setMyPermissions(m);
+      })
+      .catch(() => setMyPermissions(new Map()));
   }, [currentUser.id]);
+
+  /** True if the current user can edit (configure) the given board. */
+  const canEditBoard = (board: KanbanBoard) => {
+    if (board.ownerId === currentUser.id) return true;
+    return myPermissions.get(board.id) === 'edit';
+  };
 
   const handleAddBoard = () => {
     setEditingBoardId(null);
@@ -187,7 +203,7 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
                     {b.visibility === 'personal' && (
                       <span className="vl-board-badge">{t('vectorLogic.badgePersonal')}</span>
                     )}
-                    {b.ownerId === currentUser.id && (
+                    {canEditBoard(b) && (
                       <span
                         className="vl-board-edit material-symbols-outlined"
                         style={{fontSize:14}}
@@ -251,6 +267,7 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
             boardId={selectedBoardId}
             currentUser={currentUser}
             wsUsers={wsUsers}
+            myPermission={myPermissions.get(selectedBoardId) ?? null}
             onEditBoard={(id) => setEditingBoardId(id)}
           />
         )}

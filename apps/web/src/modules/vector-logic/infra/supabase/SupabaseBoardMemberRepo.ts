@@ -15,6 +15,15 @@ export class SupabaseBoardMemberRepo implements IBoardMemberRepo {
     return (data ?? []).map(this.toDomain);
   }
 
+  async findForUser(userId: string): Promise<BoardMember[]> {
+    const { data, error } = await this.sb
+      .from('vl_board_members')
+      .select('*')
+      .eq('user_id', userId);
+    if (error) throw error;
+    return (data ?? []).map(this.toDomain);
+  }
+
   async upsert(draft: Omit<BoardMember, 'id' | 'createdAt'>): Promise<BoardMember> {
     const { data, error } = await this.sb
       .from('vl_board_members')

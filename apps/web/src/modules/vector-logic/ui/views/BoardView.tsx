@@ -9,6 +9,7 @@ import {
 import type { KanbanBoard } from '../../domain/entities/KanbanBoard';
 import type { BoardColumn } from '../../domain/entities/BoardColumn';
 import type { BoardFilter } from '../../domain/entities/BoardFilter';
+import type { BoardPermission } from '../../domain/entities/BoardMember';
 import type { State, StateCategory } from '../../domain/entities/State';
 import type { Task } from '../../domain/entities/Task';
 import type { TaskType } from '../../domain/entities/TaskType';
@@ -33,10 +34,13 @@ interface Props {
   boardId: string;
   currentUser: { id: string; name?: string; email: string; [k: string]: unknown };
   wsUsers?: WSUser[];
+  /** The current user's permission on this board, or null if not a member.
+   *  Owner is implicit (not a row in vl_board_members). */
+  myPermission?: BoardPermission | null;
   onEditBoard: (boardId: string) => void;
 }
 
-export function BoardView({ boardId, currentUser, wsUsers = [], onEditBoard }: Props) {
+export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, onEditBoard }: Props) {
   const { t } = useTranslation();
   const dialog = useDialog();
 
@@ -175,6 +179,7 @@ export function BoardView({ boardId, currentUser, wsUsers = [], onEditBoard }: P
   const totalActive = visibleTasks.length;
   const distinctTypeCount = new Set(visibleTasks.map(t => t.taskTypeId)).size;
   const isOwner = board?.ownerId === currentUser.id;
+  const canEditConfig = isOwner || myPermission === 'edit';
 
   const onDragStart = (taskId: string) => (e: React.DragEvent) => {
     setDragTaskId(taskId);
@@ -284,7 +289,7 @@ export function BoardView({ boardId, currentUser, wsUsers = [], onEditBoard }: P
             {distinctTypeCount} {t('vectorLogic.taskTypesShort')} · {totalActive} {t('vectorLogic.tasks')}
           </span>
         </div>
-        {isOwner && (
+        {canEditConfig && (
           <button type="button" onClick={() => onEditBoard(board.id)} style={S.editButton}>
             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>edit</span>
             {t('vectorLogic.editBoardTitle')}

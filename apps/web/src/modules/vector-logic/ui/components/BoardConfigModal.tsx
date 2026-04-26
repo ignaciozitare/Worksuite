@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { useDialog } from '@worksuite/ui';
 import {
-  boardRepo, boardColumnRepo, boardFilterRepo,
+  boardRepo, boardColumnRepo, boardFilterRepo, boardMemberRepo,
   stateRepo, taskTypeRepo, priorityRepo,
 } from '../../container';
 import type { KanbanBoard, BoardVisibility } from '../../domain/entities/KanbanBoard';
 import type { BoardColumn } from '../../domain/entities/BoardColumn';
 import type { BoardFilter, BoardFilterDimension } from '../../domain/entities/BoardFilter';
+import type { BoardMember, BoardPermission } from '../../domain/entities/BoardMember';
 import type { State, StateCategory } from '../../domain/entities/State';
 import type { TaskType } from '../../domain/entities/TaskType';
 import type { Priority } from '../../domain/entities/Priority';
@@ -18,6 +19,13 @@ type DraftColumn = {
   stateId: string;
   sortOrder: number;
   wipLimit: number | null;
+};
+
+type DraftMember = {
+  /** Existing member id when editing; undefined for newly added in this session. */
+  id?: string;
+  userId: string;
+  permission: BoardPermission;
 };
 
 /** Local filter state. We keep all 7 dimensions in a single object — easier
@@ -122,6 +130,9 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
   const [stateMenuOpen, setStateMenuOpen] = useState(false);
   /** Which filter dropdown is currently open (one at a time). */
   const [openFilter, setOpenFilter] = useState<BoardFilterDimension | null>(null);
+  const [members, setMembers] = useState<DraftMember[]>([]);
+  const [originalMemberIds, setOriginalMemberIds] = useState<Set<string>>(new Set());
+  const [memberPickerOpen, setMemberPickerOpen] = useState(false);
 
   /** Initial load — fetch states + task types + priorities + (if editing)
    *  the board itself, its columns, and its filters. */
@@ -145,10 +156,11 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
           return;
         }
 
-        const [board, cols, savedFilters] = await Promise.all([
+        const [board, cols, savedFilters, savedMembers] = await Promise.all([
           boardRepo.findById(boardId!),
           boardColumnRepo.findByBoard(boardId!),
           boardFilterRepo.findByBoard(boardId!),
+          boardMemberRepo.findByBoard(boardId!),
         ]);
         if (cancelled) return;
         if (!board) {
@@ -168,6 +180,12 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
         })));
         setOriginalColumnIds(new Set(sorted.map(c => c.id)));
         setFilters(filtersFromBoardFilters(savedFilters));
+        setMembers(savedMembers.map<DraftMember>(m => ({
+          id: m.id,
+          userId: m.userId,
+          permission: m.permission,
+        })));
+        setOriginalMemberIds(new Set(savedMembers.map(m => m.id)));
         setLoading(false);
       } catch (err: any) {
         if (!cancelled) {
@@ -197,6 +215,27 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
 
   const isOwner = isNew || (originalBoard?.ownerId === ownerId);
   const canDelete = !isNew && isOwner;
+
+  /** Users who are not the owner and not already a member. */
+  const usedUserIds = useMemo(
+    () => new Set([ownerId, ...members.map(m => m.userId)]),
+    [ownerId, members],
+  );
+  const availableUsersForMember = useMemo(
+    () => wsUsers.filter(u => !usedUserIds.has(u.id)),
+    [wsUsers, usedUserIds],
+  );
+
+  const handleAddMember = (userId: string) => {
+    setMembers(prev => [...prev, { userId, permission: 'use' }]);
+    setMemberPickerOpen(false);
+  };
+  const handleRemoveMember = (idx: number) => {
+    setMembers(prev => prev.filter((_, i) => i !== idx));
+  };
+  const handleMemberPermissionChange = (idx: number, permission: BoardPermission) => {
+    setMembers(prev => prev.map((m, i) => i === idx ? { ...m, permission } : m));
+  };
 
   const handleAddColumn = (stateId: string) => {
     setColumns(prev => [
@@ -294,6 +333,23 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
 
       // Filters: replace all rows for this board atomically.
       await boardFilterRepo.replaceAll(board.id, boardFiltersFromDraft(board.id, filters));
+
+      // Members: only meaningful when visibility is 'shared'. If the board
+      // flipped (or stays) personal, drop all memberships per spec.
+      if (visibility === 'personal') {
+        await boardMemberRepo.removeAllByBoard(board.id);
+      } else {
+        const currentMemberIds = new Set(members.filter(m => m.id).map(m => m.id!));
+        const removed = [...originalMemberIds].filter(id => !currentMemberIds.has(id));
+        await Promise.all(removed.map(id => boardMemberRepo.remove(id)));
+        for (const m of members) {
+          await boardMemberRepo.upsert({
+            boardId: board.id,
+            userId: m.userId,
+            permission: m.permission,
+          });
+        }
+      }
 
       onSaved(board);
       onClose();
@@ -412,6 +468,98 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                   </button>
                 </div>
               </div>
+
+              {/* Permissions (only when shared) */}
+              {visibility === 'shared' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <label style={{ ...S.label, flex: 1 }}>{t('vectorLogic.boardPermissions')}</label>
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        type="button"
+                        onClick={() => setMemberPickerOpen(v => !v)}
+                        disabled={availableUsersForMember.length === 0}
+                        style={S.smallButton}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--ac-strong)' }}>add</span>
+                        {t('vectorLogic.boardAddMember')}
+                      </button>
+                      {memberPickerOpen && (
+                        <div style={S.statePickerPanel}>
+                          {availableUsersForMember.length === 0 ? (
+                            <div style={{ padding: 10, fontSize: 12, color: 'var(--tx3)' }}>
+                              {t('vectorLogic.boardNoMoreUsers')}
+                            </div>
+                          ) : (
+                            availableUsersForMember.map(u => (
+                              <button
+                                key={u.id}
+                                type="button"
+                                onClick={() => handleAddMember(u.id)}
+                                style={S.statePickerItem}
+                              >
+                                <span style={{ flex: 1 }}>{u.name || u.email}</span>
+                                <span style={{ fontSize: 11, color: 'var(--tx3)' }}>{u.email}</span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--tx3)', margin: 0 }}>
+                    {t('vectorLogic.boardPermissionsHelp')}
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {members.length === 0 && (
+                      <div style={{ padding: 12, fontSize: 12, color: 'var(--tx3)', background: 'var(--sf2)', borderRadius: 8 }}>
+                        {t('vectorLogic.boardNoMembers')}
+                      </div>
+                    )}
+                    {members.map((m, idx) => {
+                      const u = wsUsers.find(x => x.id === m.userId);
+                      return (
+                        <div key={m.id ?? `new-${idx}-${m.userId}`} style={S.memberRow}>
+                          <span style={{
+                            width: 28, height: 28, borderRadius: '50%',
+                            background: 'var(--ac-dim)', color: 'var(--ac-strong)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 11, fontWeight: 700,
+                          }}>
+                            {(u?.name || u?.email || '?').slice(0, 2).toUpperCase()}
+                          </span>
+                          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {u?.name || u?.email || m.userId}
+                            </span>
+                            {u?.name && (
+                              <span style={{ fontSize: 11, color: 'var(--tx3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {u.email}
+                              </span>
+                            )}
+                          </div>
+                          <select
+                            value={m.permission}
+                            onChange={(e) => handleMemberPermissionChange(idx, e.target.value as BoardPermission)}
+                            style={S.permissionSelect}
+                          >
+                            <option value="use">{t('vectorLogic.boardPermissionUse')}</option>
+                            <option value="edit">{t('vectorLogic.boardPermissionEdit')}</option>
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMember(idx)}
+                            aria-label={t('common.delete')}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', display: 'flex' }}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Columns */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -794,6 +942,15 @@ const S: Record<string, React.CSSProperties> = {
   filterRow: {
     position: 'relative', display: 'flex', alignItems: 'center', gap: 10,
     background: 'var(--sf2)', borderRadius: 8, padding: '10px 14px',
+  },
+  memberRow: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    background: 'var(--sf2)', borderRadius: 8, padding: '8px 12px',
+  },
+  permissionSelect: {
+    background: 'var(--sf3)', border: '1px solid var(--bd)', borderRadius: 6,
+    padding: '4px 8px', color: 'var(--tx)', fontSize: 12, fontWeight: 600,
+    fontFamily: 'inherit', cursor: 'pointer', outline: 'none',
   },
   filterRowLabel: {
     fontSize: 12, fontWeight: 500, color: 'var(--tx2)', width: 120, flexShrink: 0,
