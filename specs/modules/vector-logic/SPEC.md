@@ -660,3 +660,32 @@ No changes. Both fixes are pure UI.
 
 ### Data model
 No changes for fixes #1–#4. All UI.
+
+---
+
+## Multi-type Kanban drag (revisión 2026-04-26)
+
+### Problem
+When the Kanban is in aggregate mode (more than one task type selected, or "All"), columns are 4 synthetic universal categories (`OPEN`, `IN_PROGRESS`, `BLOCKED`, `DONE`) instead of states of a specific workflow. Drag-and-drop is currently disabled in this mode (`onDragEnd={isAggregate ? undefined : onTaskDragEnd}` in `KanbanView.tsx`), so users cannot move tasks between columns.
+
+### Behaviour
+Drag is enabled in aggregate mode. When a task is dropped on column `__cat_X` (X ∈ OPEN / IN_PROGRESS / BLOCKED / DONE):
+
+1. Resolve the dragged task's `taskTypeId` → its `workflowId`.
+2. Look up the workflow's states (`vl_workflow_states`) and find the one whose `state.category === X`.
+3. If exactly one match → call `moveTask(taskId, matchedStateId)`.
+4. If multiple matches in the same workflow → pick the one with the lowest `sortOrder`.
+5. If no state of category X exists in that workflow → no-op + toast `"This task type has no {category} state"`.
+6. If the task's current state already has category X → no-op (no visual change, no API call).
+
+### Visuals
+- The destination-column glow (already present in single-type) fires in aggregate mode too while a task is dragged over a column the task can move to.
+- If the task cannot be moved (rule 5), no glow.
+
+### Out of scope
+- No modal/selector for picking a specific state — fully automatic mapping.
+- No reordering inside aggregate columns (synthetic, not real workflow states).
+- No changes to the 4 universal categories.
+
+### Data model
+No changes — purely UI logic that derives `toStateId` from `category` + the task's own workflow before calling the existing `moveTask` use case.

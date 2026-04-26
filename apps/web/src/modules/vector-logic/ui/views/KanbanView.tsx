@@ -48,6 +48,11 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   const [wfStates, setWfStates] = useState<WorkflowState[]>([]);
   /** Map from any state id to its category — populated on mount, used for aggregate grouping. */
   const [allStatesMap, setAllStatesMap] = useState<Map<string, StateCategory>>(new Map());
+  /** All workflow_states across every workflow. Used in aggregate mode to resolve a target state
+   *  inside the task's OWN workflow when the user drops on a synthetic category column. */
+  const [allWorkflowStates, setAllWorkflowStates] = useState<WorkflowState[]>([]);
+  /** Inline toast for aggregate-drop failures (no matching state in the task's workflow). */
+  const [aggToast, setAggToast] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [priorities, setPriorities] = useState<Priority[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,10 +77,11 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
 
   useEffect(() => {
     (async () => {
-      const [tts, prs, allStates] = await Promise.all([
+      const [tts, prs, allStates, allWfs] = await Promise.all([
         taskTypeRepo.findAll(),
         priorityRepo.ensureDefaults(currentUser.id),
         stateRepo.findAll(),
+        stateRepo.findAllWorkflowStates(),
       ]);
       const assigned = tts.filter(tt => tt.workflowId);
       setTaskTypes(assigned);
@@ -83,6 +89,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
       const m = new Map<string, StateCategory>();
       allStates.forEach(s => m.set(s.id, s.category));
       setAllStatesMap(m);
+      setAllWorkflowStates(allWfs);
       if (assigned.length > 0) {
         // Default the filter to the first type (preserves the v1 single-workflow
         // experience). The user can clear/expand the filter from the dropdown.
@@ -208,6 +215,32 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
       return { ...task, stateId: `__cat_${cat}` };
     });
   }, [isAggregate, tasks, allStatesMap]);
+
+  /**
+   * Index for aggregate-mode drag resolution.
+   * Map<workflowId, Map<category, stateId>> — picks the lowest sortOrder when
+   * a workflow has several states sharing the same category.
+   */
+  const categoryToStateByWorkflow = useMemo(() => {
+    const out = new Map<string, Map<StateCategory, string>>();
+    [...allWorkflowStates]
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+      .forEach(ws => {
+        const cat = ws.state?.category;
+        if (!cat || !ws.workflowId) return;
+        let inner = out.get(ws.workflowId);
+        if (!inner) { inner = new Map(); out.set(ws.workflowId, inner); }
+        if (!inner.has(cat)) inner.set(cat, ws.stateId);
+      });
+    return out;
+  }, [allWorkflowStates]);
+
+  /** Auto-clear the aggregate-drop toast after 3 seconds. */
+  useEffect(() => {
+    if (!aggToast) return;
+    const id = window.setTimeout(() => setAggToast(null), 3000);
+    return () => window.clearTimeout(id);
+  }, [aggToast]);
 
   const loadType = async (tt: TaskType, opts?: { runAutoArchive?: boolean }) => {
     setSelectedType(tt);
@@ -370,10 +403,36 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
 
   const onDropCol = (stateId: string) => async (e: React.DragEvent) => {
     e.preventDefault();
-    if (dragTaskId) {
-      await moveTask(dragTaskId, stateId);
-      setDragTaskId(null);
+    if (!dragTaskId) return;
+    const id = dragTaskId;
+    setDragTaskId(null);
+
+    // Aggregate mode: stateId is a synthetic `__cat_X`. Resolve to a real state
+    // inside the dragged task's own workflow whose category matches X.
+    if (stateId.startsWith('__cat_')) {
+      const targetCat = stateId.replace('__cat_', '') as StateCategory;
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+      // Already in a state of the same category — no-op (would be visually identical).
+      const currentCat = task.stateId ? allStatesMap.get(task.stateId) : undefined;
+      if (currentCat === targetCat) return;
+      const tt = taskTypes.find(x => x.id === task.taskTypeId);
+      const wfId = tt?.workflowId;
+      const resolved = wfId ? categoryToStateByWorkflow.get(wfId)?.get(targetCat) : undefined;
+      if (!resolved) {
+        const typeName = tt?.name ?? '—';
+        const catName = t(`vectorLogic.cat${targetCat}`);
+        setAggToast(t('vectorLogic.dragNoCategoryState')
+          .replace('{type}', typeName)
+          .replace('{category}', catName));
+        return;
+      }
+      await moveTask(id, resolved);
+      return;
     }
+
+    // Single-mode: stateId is a real workflow_state id. Move directly.
+    await moveTask(id, stateId);
   };
 
   // ── Column reorder ───────────────────────────────────────────────
@@ -443,6 +502,23 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
+      {aggToast && (
+        <div
+          role="status"
+          style={{
+            position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+            padding: '10px 14px', borderRadius: 8,
+            background: 'var(--red-dim)', color: 'var(--red)',
+            fontSize: 13, fontWeight: 500,
+            display: 'flex', alignItems: 'center', gap: 8,
+            boxShadow: '0 8px 30px rgba(0,0,0,.4)',
+            maxWidth: 360,
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>error</span>
+          <span>{aggToast}</span>
+        </div>
+      )}
       {/* Header */}
       <div style={{ padding: '0 4px 14px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
@@ -725,8 +801,8 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                             assignee={wsUsers.find(u => u.id === task.assigneeId) ?? null}
                             wsUsers={wsUsers}
                             onClick={() => setDetailTask(task)}
-                            onDragStart={isAggregate ? undefined : onDragStart(task.id)}
-                            onDragEnd={isAggregate ? undefined : onTaskDragEnd}
+                            onDragStart={onDragStart(task.id)}
+                            onDragEnd={onTaskDragEnd}
                             isDragging={dragTaskId === task.id} />
                         </div>
                       );
