@@ -1275,6 +1275,7 @@
     "boardFilterAny":     "Any",
     "boardFilterAnyone":  "Anyone",
     "boardWipLimitReachedToast": "WIP limit reached for this column",
+    "priorityIconHint":   "Material Symbols icon name (e.g. priority_high, keyboard_arrow_up). Empty for none.",
     "boardPermissions":   "Permissions",
     "boardPermissionsHelp": "Members get read access by default. Grant edit to let them change the board's columns, filters, and members.",
     "boardAddMember":     "Add member",

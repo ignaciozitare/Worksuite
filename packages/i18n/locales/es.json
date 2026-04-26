@@ -1275,6 +1275,7 @@
     "boardFilterAny":     "Cualquiera",
     "boardFilterAnyone":  "Cualquiera",
     "boardWipLimitReachedToast": "Límite WIP alcanzado en esta columna",
+    "priorityIconHint":   "Nombre del icono de Material Symbols (ej. priority_high, keyboard_arrow_up). Vacío = sin icono.",
     "boardPermissions":   "Permisos",
     "boardPermissionsHelp": "Los miembros tienen acceso de lectura por defecto. Concede edición para que puedan cambiar columnas, filtros y miembros del tablero.",
     "boardAddMember":     "Añadir miembro",

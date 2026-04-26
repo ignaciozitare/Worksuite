@@ -10,10 +10,11 @@ import type { KanbanBoard } from '../../domain/entities/KanbanBoard';
 import type { BoardColumn } from '../../domain/entities/BoardColumn';
 import type { BoardFilter } from '../../domain/entities/BoardFilter';
 import type { BoardPermission } from '../../domain/entities/BoardMember';
-import type { State, StateCategory } from '../../domain/entities/State';
+import type { State, StateCategory, WorkflowState } from '../../domain/entities/State';
 import type { Task } from '../../domain/entities/Task';
 import type { TaskType } from '../../domain/entities/TaskType';
 import type { Priority } from '../../domain/entities/Priority';
+import { TaskDetailModal } from './KanbanView';
 
 const CAT_COLORS: Record<StateCategory, string> = {
   BACKLOG:     'var(--tx3)',
@@ -56,6 +57,10 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
   const [dropColumnId, setDropColumnId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  /** When set, the TaskDetailModal is rendered for this task. */
+  const [detailTask, setDetailTask] = useState<Task | null>(null);
+  /** Workflow states for the open task's task type (loaded on demand). */
+  const [detailWfStates, setDetailWfStates] = useState<WorkflowState[]>([]);
 
   /** Load everything needed to render the board. */
   useEffect(() => {
@@ -249,6 +254,37 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
     }
   };
 
+  /** Open the TaskDetailModal. Loads workflow states for the task's own
+   *  workflow on demand so the modal's state dropdown lists every legal
+   *  destination (independent of which states the board exposes). */
+  const openTaskDetail = async (task: Task) => {
+    const tt = taskTypeById.get(task.taskTypeId);
+    const wfId = tt?.workflowId;
+    if (wfId) {
+      try {
+        const ws = await stateRepo.findByWorkflow(wfId);
+        setDetailWfStates(ws);
+      } catch {
+        setDetailWfStates([]);
+      }
+    } else {
+      setDetailWfStates([]);
+    }
+    setDetailTask(task);
+  };
+
+  const handleTaskUpdate = async (taskId: string, patch: Partial<Task>) => {
+    await taskRepo.update(taskId, patch);
+    setTasks(prev => prev.map(x => x.id === taskId ? { ...x, ...patch } : x));
+    setDetailTask(prev => prev && prev.id === taskId ? { ...prev, ...patch } : prev);
+  };
+
+  const handleTaskDelete = async (taskId: string) => {
+    await taskRepo.remove(taskId);
+    setTasks(prev => prev.filter(x => x.id !== taskId));
+    setDetailTask(null);
+  };
+
   const handleNewTask = async () => {
     await dialog.alert(t('vectorLogic.boardNewTaskComingSoon'), {
       title: t('vectorLogic.newTask'),
@@ -414,6 +450,7 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
                       taskType={taskTypeById.get(task.taskTypeId) ?? null}
                       assignee={wsUsers.find(u => u.id === task.assigneeId) ?? null}
                       priority={task.priority ? priorityByName.get(task.priority.toLowerCase()) ?? null : null}
+                      onClick={() => openTaskDetail(task)}
                       onDragStart={onDragStart(task.id)}
                       onDragEnd={onDragEnd}
                       isDragging={dragTaskId === task.id}
@@ -437,28 +474,49 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
           })}
         </div>
       )}
+
+      {detailTask && (
+        <TaskDetailModal
+          task={detailTask}
+          taskType={taskTypeById.get(detailTask.taskTypeId) ?? taskTypes[0] ?? null as any}
+          taskTypes={taskTypes}
+          wfStates={detailWfStates}
+          wsUsers={wsUsers as any}
+          priorities={priorities}
+          currentUser={currentUser}
+          onClose={() => setDetailTask(null)}
+          onUpdate={(patch) => handleTaskUpdate(detailTask.id, patch)}
+          onDelete={() => handleTaskDelete(detailTask.id)}
+          onOpenTask={(t) => openTaskDetail(t)}
+        />
+      )}
     </div>
   );
 }
 
 /* ── Task card ─────────────────────────────────────────────────────────── */
-function BoardTaskCard({ task, taskType, assignee, priority, onDragStart, onDragEnd, isDragging }: {
+function BoardTaskCard({ task, taskType, assignee, priority, onClick, onDragStart, onDragEnd, isDragging }: {
   task: Task;
   taskType: TaskType | null;
   assignee: WSUser | null;
   priority: Priority | null;
+  onClick: () => void;
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   isDragging?: boolean;
 }) {
   return (
     <div
+      role="button"
+      tabIndex={0}
       draggable
+      onClick={(e) => { if (!isDragging) onClick(); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       style={{
         background: 'var(--sf3)', borderRadius: 10, padding: '10px 12px',
-        cursor: isDragging ? 'grabbing' : 'grab',
+        cursor: isDragging ? 'grabbing' : 'pointer',
         opacity: isDragging ? 0.4 : 1,
         display: 'flex', flexDirection: 'column', gap: 6,
         transition: 'opacity .15s, transform .15s',
