@@ -48,7 +48,11 @@
     "signingIn":     "Signing in…",
     "orContinueWith":"or continue with",
     "noAccount":     "Don't have an account?",
-    "employeeAdmin": "Employee admin"
+    "contactAdmin":  "Contact admin",
+    "errorRequired": "Email and password are required",
+    "errorNetwork":  "Could not connect. Try again.",
+    "showPassword":  "Show password",
+    "hidePassword":  "Hide password"
   },
   "nav": {
     "jiraTracker":   "Jira Tracker",
