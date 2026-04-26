@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from '@worksuite/i18n';
 import { useDialog } from '@worksuite/ui';
 import { KanbanView } from './views/KanbanView';
+import { BoardView } from './views/BoardView';
 import { ChatView } from './views/ChatView';
 import { AIDetectionsView } from './views/AIDetectionsView';
 import { BacklogHistoryView } from './views/BacklogHistoryView';
@@ -244,7 +245,15 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
         padding: view === 'chat' ? 0 : '28px 32px',
       }}>
         {view === 'kanban'         && <KanbanView         currentUser={currentUser} wsUsers={wsUsers} />}
-        {view === 'board'          && <BoardPlaceholder boardId={selectedBoardId} boards={boards} t={t} />}
+        {view === 'board' && selectedBoardId && (
+          <BoardView
+            key={selectedBoardId}
+            boardId={selectedBoardId}
+            currentUser={currentUser}
+            wsUsers={wsUsers}
+            onEditBoard={(id) => setEditingBoardId(id)}
+          />
+        )}
         {view === 'backlogHistory' && <BacklogHistoryView currentUser={currentUser} />}
         {view === 'chat'           && mode === 'embedded' && <ChatView currentUser={currentUser} />}
         {view === 'detections'     && <AIDetectionsView   currentUser={currentUser} />}
@@ -263,24 +272,3 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
   );
 }
 
-function BoardPlaceholder({ boardId, boards, t }: {
-  boardId: string | null;
-  boards: KanbanBoard[];
-  t: (k: string) => string;
-}) {
-  const board = boards.find(b => b.id === boardId);
-  return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      gap: 12, padding: '60px 24px', color: 'var(--tx3)', textAlign: 'center',
-    }}>
-      <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: 0.4 }}>view_kanban</span>
-      <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--tx)' }}>
-        {board?.name ?? t('vectorLogic.boardComingSoon')}
-      </div>
-      <div style={{ fontSize: 13, maxWidth: 440 }}>
-        {t('vectorLogic.boardComingSoon')}
-      </div>
-    </div>
-  );
-}
