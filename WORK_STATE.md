@@ -6,7 +6,12 @@ _Ultima actualizacion: 2026-04-26_
 
 ## Tarea en curso
 
-**Ninguna.** Avatares verificados visualmente en producción.
+**Login screen redesign (Carbon Logic / Pencil)** — pipeline Spec → DBA → Scaffold → Dev → Review → QA en curso.
+
+- Spec: [specs/core/login/SPEC.md](specs/core/login/SPEC.md)
+- DBA: N/A (UI-only).
+- Cambios: `apps/web/src/modules/auth/LoginPage.tsx` (rewrite cosmético, comportamiento de auth/remember/required preservado), `apps/web/src/WorkSuiteApp.css` (3 vars hero), `packages/i18n/locales/{en,es}.json` (rename `employeeAdmin`→`contactAdmin`, 4 keys nuevas, ES mirrors EN).
+- Pendiente: verificación visual light/dark del usuario, merge a main, deploy.
 
 ## Sesión 2026-04-26 — resumen
 

@@ -23,6 +23,7 @@ This index is updated automatically by the Spec Agent when a new spec is created
 |---|---|---|
 | Concurrency Control | [specs/core/concurrency/SPEC.md](core/concurrency/SPEC.md) | Confirmed — implemented for HotDesk, Deploy Planner, Environments |
 | Component Migration | [specs/core/component-migration/SPEC.md](core/component-migration/SPEC.md) | Confirmed — migrating modules to @worksuite/ui |
+| Login Screen Redesign | [specs/core/login/SPEC.md](core/login/SPEC.md) | Spec confirmed 2026-04-26 · DBA n/a (UI-only) · pending Scaffold |
 
 ---
 

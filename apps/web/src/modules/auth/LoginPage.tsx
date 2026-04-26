@@ -3,6 +3,7 @@ import { useTranslation } from '@worksuite/i18n';
 import { authRepository } from './container';
 
 const REDIRECT_URL = `${window.location.origin}/`;
+const HERO_BREAKPOINT = 1024;
 
 export function LoginPage() {
   const { t } = useTranslation();
@@ -16,6 +17,9 @@ export function LoginPage() {
   const [ssoReady,    setSsoReady]    = useState(false);
   const [googleOn,    setGoogleOn]    = useState(false);
   const [microsoftOn, setMicrosoftOn] = useState(false);
+  const [isWide, setIsWide] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= HERO_BREAKPOINT : true,
+  );
 
   useEffect(() => {
     authRepository
@@ -26,9 +30,20 @@ export function LoginPage() {
       .finally(() => setSsoReady(true));
   }, []);
 
+  useEffect(() => {
+    const onResize = () => setIsWide(window.innerWidth >= HERO_BREAKPOINT);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(''); setLoading(true);
+    setError('');
+    if (!email.trim() || !pwd) {
+      setError(t('auth.errorRequired'));
+      return;
+    }
+    setLoading(true);
     try {
       if (remember) { localStorage.setItem('ws_email', email); localStorage.setItem('ws_remember', '1'); }
       else { localStorage.removeItem('ws_email'); localStorage.removeItem('ws_remember'); }
@@ -38,6 +53,8 @@ export function LoginPage() {
       } else if (result.user) {
         setTimeout(() => { window.location.href = '/'; }, 100);
       }
+    } catch {
+      setError(t('auth.errorNetwork'));
     } finally { setLoading(false); }
   };
 
@@ -55,97 +72,91 @@ export function LoginPage() {
     if (err) { setError(err); setSsoLoading(null); }
   };
 
+  const showSso = ssoReady && (googleOn || microsoftOn);
+
   return (
     <div style={S.root}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes glowPulse{0%,100%{opacity:.3}50%{opacity:.6}}
-        .ws-input:focus{border-color:var(--ac) !important;box-shadow:0 0 0 3px var(--ac-dim) !important}
+        .ws-input:focus{box-shadow:0 0 0 3px var(--ac-dim) !important}
         .ws-submit:hover:not(:disabled){box-shadow:0 6px 28px var(--ac-dim) !important;transform:translateY(-1px)}
         .ws-submit:active:not(:disabled){transform:scale(0.99)}
-        .ws-sso:hover:not(:disabled){border-color:var(--bd2) !important;background:var(--sf2) !important}
+        .ws-sso:hover:not(:disabled){background:var(--sf3) !important}
       `}</style>
 
-      {/* ═══ Left panel — branding ═══ */}
-      <div style={S.leftPanel}>
-        {/* Ambient glow */}
-        {/* Deep blue ambient glow */}
-        <div style={{
-          position: 'absolute', top: '20%', left: '30%', width: 500, height: 500,
-          background: 'radial-gradient(circle, rgba(30,60,140,.35) 0%, rgba(15,30,80,.15) 40%, transparent 70%)',
-          filter: 'blur(60px)', pointerEvents: 'none',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: '10%', right: '20%', width: 300, height: 300,
-          background: 'radial-gradient(circle, rgba(77,142,255,.12) 0%, transparent 60%)',
-          filter: 'blur(80px)', pointerEvents: 'none',
-        }} />
-
-        <div style={{ position: 'relative', zIndex: 1, animation: 'fadeUp .6s ease forwards' }}>
-          {/* Tag */}
+      {isWide && (
+        <div style={S.leftPanel}>
           <div style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase',
-            color: 'var(--ac2)', marginBottom: 16,
-          }}>
-            WORKSUITE
+            position: 'absolute', top: '20%', left: '30%', width: 500, height: 500,
+            background: 'var(--login-hero-glow-1)',
+            filter: 'blur(60px)', pointerEvents: 'none',
+          }} />
+          <div style={{
+            position: 'absolute', bottom: '10%', right: '20%', width: 300, height: 300,
+            background: 'var(--login-hero-glow-2)',
+            filter: 'blur(80px)', pointerEvents: 'none',
+          }} />
+
+          <div style={S.heroInner}>
+            <div style={S.eyebrow}>{t('app.name').toUpperCase()}</div>
+            <h1 style={S.headline}>{t('auth.tagline')}</h1>
+            <p style={S.tagline}>{t('auth.taglineDesc')}</p>
+          </div>
+        </div>
+      )}
+
+      <div style={isWide ? S.rightPanelWide : S.rightPanelFull}>
+        <div style={S.formContainer}>
+          <div style={S.headerBlock}>
+            <h2 style={S.title}>{t('auth.welcomeBack')}</h2>
+            <p style={S.subtitle}>{t('auth.signInSubtitle')}</p>
           </div>
 
-          {/* Headline */}
-          <h1 style={{
-            fontSize: 42, fontWeight: 700, color: 'var(--tx)', lineHeight: 1.15,
-            letterSpacing: '-0.03em', margin: 0,
-          }}>
-            {t('auth.tagline')}
-          </h1>
+          <form onSubmit={handleLogin} style={S.form}>
+            {error && (
+              <div role="alert" style={S.errorBanner}>
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>error</span>
+                <span>{error}</span>
+              </div>
+            )}
 
-          {/* Subtitle */}
-          <p style={{
-            fontSize: 14, color: 'var(--tx3)', lineHeight: 1.7, marginTop: 20, maxWidth: 380,
-          }}>
-            {t('auth.taglineDesc')}
-          </p>
-        </div>
-      </div>
-
-      {/* ═══ Right panel — form ═══ */}
-      <div style={S.rightPanel}>
-        <div style={{ width: '100%', maxWidth: 380, animation: 'fadeUp .5s ease forwards' }}>
-          {/* Title */}
-          <h2 style={{
-            fontSize: 24, fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.02em',
-            marginBottom: 4,
-          }}>
-            {t('auth.welcomeBack')}
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--tx3)', marginBottom: 28 }}>
-            {t('auth.signInSubtitle')}
-          </p>
-
-          {/* Form */}
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div style={S.field}>
-              <label style={S.lbl}>{t('auth.email')}</label>
-              <input className="ws-input" style={S.input} type="email" autoComplete="email"
-                placeholder="you@company.com" value={email}
-                onChange={e => setEmail(e.target.value)} required />
+              <label htmlFor="login-email" style={S.lbl}>{t('auth.email')}</label>
+              <input
+                id="login-email"
+                className="ws-input"
+                style={S.input}
+                type="email"
+                autoComplete="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
 
             <div style={S.field}>
-              <label style={S.lbl}>{t('auth.password')}</label>
+              <label htmlFor="login-pwd" style={S.lbl}>{t('auth.password')}</label>
               <div style={{ position: 'relative' }}>
-                <input className="ws-input" style={{ ...S.input, paddingRight: 40 }}
-                  type={showPwd ? 'text' : 'password'} autoComplete="current-password"
-                  placeholder="••••••••" value={pwd}
-                  onChange={e => setPwd(e.target.value)} required />
-                <button type="button" onClick={() => setShowPwd(s => !s)}
-                  style={{
-                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', cursor: 'pointer', padding: 4,
-                    color: 'var(--tx3)', display: 'flex', borderRadius: 4,
-                  }}>
+                <input
+                  id="login-pwd"
+                  className="ws-input"
+                  style={{ ...S.input, paddingRight: 44 }}
+                  type={showPwd ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={pwd}
+                  onChange={(e) => setPwd(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPwd((s) => !s)}
+                  aria-label={showPwd ? t('auth.hidePassword') : t('auth.showPassword')}
+                  style={S.pwdToggle}
+                >
                   <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
                     {showPwd ? 'visibility_off' : 'visibility'}
                   </span>
@@ -153,18 +164,12 @@ export function LoginPage() {
               </div>
             </div>
 
-            {error && (
-              <div style={{
-                padding: '10px 14px', background: 'var(--red-dim)',
-                border: '1px solid var(--red)', borderRadius: 8, color: 'var(--red)',
-                fontSize: 12, display: 'flex', alignItems: 'center', gap: 8,
-              }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>error</span>
-                {error}
-              </div>
-            )}
-
-            <button type="submit" className="ws-submit" style={S.submit} disabled={loading || !!ssoLoading}>
+            <button
+              type="submit"
+              className="ws-submit"
+              style={S.submit}
+              disabled={loading || !!ssoLoading}
+            >
               {loading ? (
                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   <SpinIcon /> {t('auth.signingIn')}
@@ -173,38 +178,45 @@ export function LoginPage() {
             </button>
           </form>
 
-          {/* SSO */}
-          {ssoReady && (googleOn || microsoftOn) && (
-            <>
+          {showSso && (
+            <div style={S.ssoBlock}>
               <div style={S.divider}>
-                <div style={S.divLine} /><span style={S.divTxt}>{t('auth.orContinueWith')}</span><div style={S.divLine} />
+                <div style={S.divLine} />
+                <span style={S.divTxt}>{t('auth.orContinueWith')}</span>
+                <div style={S.divLine} />
               </div>
-
               <div style={{ display: 'flex', gap: 10 }}>
                 {microsoftOn && (
-                  <button className="ws-sso" onClick={handleMicrosoft}
-                    disabled={!!ssoLoading || loading} style={S.ssoBtn}>
+                  <button
+                    type="button"
+                    className="ws-sso"
+                    onClick={handleMicrosoft}
+                    disabled={!!ssoLoading || loading}
+                    style={S.ssoBtn}
+                  >
                     {ssoLoading === 'microsoft' ? <SpinIcon /> : <MsIcon />}
                     Microsoft
                   </button>
                 )}
                 {googleOn && (
-                  <button className="ws-sso" onClick={handleGoogle}
-                    disabled={!!ssoLoading || loading} style={S.ssoBtn}>
+                  <button
+                    type="button"
+                    className="ws-sso"
+                    onClick={handleGoogle}
+                    disabled={!!ssoLoading || loading}
+                    style={S.ssoBtn}
+                  >
                     {ssoLoading === 'google' ? <SpinIcon /> : <GgIcon />}
                     Google
                   </button>
                 )}
               </div>
-            </>
+            </div>
           )}
 
-          {/* Footer link */}
-          <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: 'var(--tx3)' }}>
+          <div style={S.footer}>
             {t('auth.noAccount')}{' '}
-            <span style={{ color: 'var(--ac2)', cursor: 'pointer', fontWeight: 600 }}>
-              {t('auth.employeeAdmin')}
-            </span>
+            <span style={S.footerAccent}>{t('auth.contactAdmin')}</span>
           </div>
         </div>
       </div>
@@ -212,7 +224,6 @@ export function LoginPage() {
   );
 }
 
-/* ── Icons ──────────────────────────────────────────────────────── */
 function GgIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
@@ -245,53 +256,213 @@ function SpinIcon() {
   );
 }
 
-/* ── Styles ──────────────────────────────────────────────────────── */
 const S: Record<string, React.CSSProperties> = {
   root: {
-    minHeight: '100vh', display: 'flex',
+    minHeight: '100vh',
+    display: 'flex',
     fontFamily: "'Inter', system-ui, sans-serif",
+    background: 'var(--bg)',
   },
   leftPanel: {
-    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: '60px 40px', position: 'relative', overflow: 'hidden',
-    background: 'linear-gradient(135deg, #0a0a14 0%, #0d1528 40%, #111d3a 70%, #0a1225 100%)',
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 48,
+    position: 'relative',
+    overflow: 'hidden',
+    background: 'var(--login-hero-gradient)',
   },
-  rightPanel: {
-    width: 480, minWidth: 480, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: '60px 50px', background: '#10111a',
-    borderLeft: '1px solid rgba(255,255,255,.06)',
+  heroInner: {
+    position: 'relative',
+    zIndex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 24,
+    maxWidth: 480,
+    animation: 'fadeUp .6s ease forwards',
+    textAlign: 'center',
   },
-  field: { display: 'flex', flexDirection: 'column', gap: 6 },
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: '0.1em',
+    color: 'var(--ac-strong)',
+  },
+  headline: {
+    fontSize: 48,
+    fontWeight: 600,
+    color: 'var(--tx)',
+    lineHeight: 1.1,
+    letterSpacing: '-0.02em',
+    margin: 0,
+    whiteSpace: 'pre-line',
+  },
+  tagline: {
+    fontSize: 16,
+    fontWeight: 400,
+    color: 'var(--tx2)',
+    lineHeight: 1.6,
+    margin: 0,
+    maxWidth: 400,
+  },
+  rightPanelWide: {
+    width: 480,
+    minWidth: 480,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 48,
+    background: 'var(--sf-lowest)',
+  },
+  rightPanelFull: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '48px 24px',
+    background: 'var(--sf-lowest)',
+  },
+  formContainer: {
+    width: '100%',
+    maxWidth: 384,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 32,
+    animation: 'fadeUp .5s ease forwards',
+  },
+  headerBlock: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 600,
+    color: 'var(--tx)',
+    letterSpacing: '-0.02em',
+    margin: 0,
+  },
+  subtitle: {
+    fontSize: 14,
+    fontWeight: 400,
+    color: 'var(--tx2)',
+    margin: 0,
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 20,
+  },
+  errorBanner: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '10px 14px',
+    background: 'var(--red-dim)',
+    color: 'var(--red)',
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: 500,
+    border: 'none',
+  },
+  field: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
   lbl: {
-    fontSize: 11, fontWeight: 600, letterSpacing: '.06em', textTransform: 'uppercase',
-    color: 'var(--tx3)',
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    color: 'var(--tx2)',
   },
   input: {
-    width: '100%', background: 'var(--sf2)', border: '1px solid var(--bd)',
-    borderRadius: 8, padding: '11px 14px', color: 'var(--tx)', fontSize: 13,
-    fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
-    transition: 'border-color 0.15s, box-shadow 0.15s',
+    width: '100%',
+    background: 'var(--sf)',
+    border: 'none',
+    outline: 'none',
+    borderRadius: 8,
+    padding: '10px 14px',
+    color: 'var(--tx)',
+    fontSize: 14,
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+    transition: 'box-shadow 0.15s',
+  },
+  pwdToggle: {
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: 4,
+    color: 'var(--tx3)',
+    display: 'flex',
+    borderRadius: 4,
   },
   submit: {
-    width: '100%', padding: '12px 0',
-    background: 'linear-gradient(135deg, var(--ac2), var(--ac-strong))',
-    border: 'none', borderRadius: 8, color: 'var(--ac-on)', fontSize: 14, fontWeight: 600,
-    cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s ease',
-    boxShadow: '0 4px 20px var(--ac-dim)',
+    width: '100%',
+    padding: '10px 20px',
+    background: 'linear-gradient(135deg, var(--ac), var(--ac-strong))',
+    border: 'none',
+    borderRadius: 12,
+    color: 'var(--ac-on)',
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    transition: 'all 0.2s ease',
+    boxShadow: '0 4px 12px var(--ac-dim)',
+  },
+  ssoBlock: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
   },
   divider: {
-    display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
   },
   divLine: { flex: 1, height: 1, background: 'var(--bd)' },
   divTxt: {
-    color: 'var(--tx3)', fontSize: 11, whiteSpace: 'nowrap', fontWeight: 500,
-    letterSpacing: '.04em', textTransform: 'uppercase',
+    color: 'var(--tx3)',
+    fontSize: 11,
+    whiteSpace: 'nowrap',
+    fontWeight: 600,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
   },
   ssoBtn: {
-    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-    padding: '10px 14px', background: 'var(--sf2)', border: '1px solid var(--bd)',
-    borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'var(--tx)',
-    fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.15s',
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: '10px 14px',
+    background: 'var(--sf2)',
+    border: 'none',
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: 500,
+    color: 'var(--tx)',
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+    transition: 'background 0.15s',
+  },
+  footer: {
+    textAlign: 'center',
+    fontSize: 13,
+    color: 'var(--tx3)',
+  },
+  footerAccent: {
+    color: 'var(--ac-strong)',
+    fontWeight: 500,
   },
 };
 
