@@ -11,6 +11,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from '@worksuite/i18n';
 import { StateManagerView } from '../../modules/vector-logic/ui/views/StateManagerView';
 import { CanvasDesignerView } from '../../modules/vector-logic/ui/views/CanvasDesignerView';
@@ -38,7 +39,21 @@ interface Props {
 
 export function AdminVectorLogic({ currentUser, wsUsers = [] }: Props) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<Tab>('settings');
+  // `tab` and `typeId` come from the URL when the user lands here via a deep
+  // link (e.g. the "Configure" kebab item on a task card). Falls back to
+  // 'settings' when no `tab` param is present.
+  const [search, setSearch] = useSearchParams();
+  const urlTab = (search.get('tab') ?? 'settings') as Tab;
+  const targetTypeId = search.get('typeId');
+  const [tab, setTabState] = useState<Tab>(urlTab);
+  const setTab = (next: Tab) => {
+    setTabState(next);
+    const sp = new URLSearchParams(search);
+    sp.set('tab', next);
+    // Drop the typeId hint once the user navigates away from Schema.
+    if (next !== 'schema') sp.delete('typeId');
+    setSearch(sp, { replace: false });
+  };
 
   const TABS: Array<{ id: Tab; label: string; icon: string }> = [
     { id: 'settings',    label: t('vectorLogic.settings'),          icon: 'settings' },
@@ -102,7 +117,7 @@ export function AdminVectorLogic({ currentUser, wsUsers = [] }: Props) {
         {tab === 'settings'    && <SettingsView         currentUser={currentUser} />}
         {tab === 'workflows'   && <CanvasDesignerView   currentUser={currentUser} />}
         {tab === 'states'      && <StateManagerView     currentUser={currentUser} />}
-        {tab === 'schema'      && <SchemaBuilderView    currentUser={currentUser} wsUsers={wsUsers} />}
+        {tab === 'schema'      && <SchemaBuilderView    currentUser={currentUser} wsUsers={wsUsers} targetTypeId={targetTypeId} />}
         {tab === 'assignment'  && <AssignmentManagerView />}
         {tab === 'email-rules' && <EmailRulesView       currentUser={currentUser} />}
         {tab === 'ai-rules'    && <AIRulesView          currentUser={currentUser} />}

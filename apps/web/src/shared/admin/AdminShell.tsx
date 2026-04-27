@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from '@worksuite/i18n';
 import { AdminSettings, PersonalJiraToken } from './AdminSettings';
 import { AdminUsers } from './AdminUsers';
@@ -22,7 +23,21 @@ interface AdminShellProps {
 function AdminShell({ users, setUsers, hd, setHd, currentUser, theme="dark" }: AdminShellProps) {
   const { t } = useTranslation();
   const isAdmin = currentUser.role === 'admin';
-  const [mod, setMod] = useState("settings");
+  // `mod` is URL-synced via the `?mod=` query string. This lets deep links
+  // from elsewhere in the app (e.g. the kebab "Configure" item on a Vector
+  // Logic task card) land on a specific admin section without losing the
+  // surrounding query state (e.g. `?mod=vectorlogic&tab=schema&typeId=...`).
+  const [search, setSearch] = useSearchParams();
+  const mod = search.get('mod') ?? 'settings';
+  const setMod = (next: string) => {
+    const sp = new URLSearchParams(search);
+    sp.set('mod', next);
+    if (next !== 'vectorlogic') {
+      sp.delete('tab');
+      sp.delete('typeId');
+    }
+    setSearch(sp, { replace: false });
+  };
 
   // Usuario no-admin solo ve su token personal
   if (!isAdmin) {

@@ -10,7 +10,7 @@ This index is updated automatically by the Spec Agent when a new spec is created
 
 | Module | Spec | Status |
 |---|---|---|
-| Vector Logic | [specs/modules/vector-logic/SPEC.md](modules/vector-logic/SPEC.md) | Phases 1–4 shipped · Phase 5 (Smart Kanban v2) shipped · Multi-type Kanban drag shipped 2026-04-26 · Multi-Board Kanban + Priority visuals — DBA done 2026-04-26, pending Dev |
+| Vector Logic | [specs/modules/vector-logic/SPEC.md](modules/vector-logic/SPEC.md) | Phases 1–4 shipped · Phase 5 (Smart Kanban v2) shipped · Multi-type Kanban drag shipped 2026-04-26 · Multi-Board Kanban + Priority visuals — shipped 2026-04-26 · TaskCard ToDo + Card Menu — spec confirmed 2026-04-27, pending DBA |
 | HotDesk | [specs/modules/hotdesk/SPEC.md](modules/hotdesk/SPEC.md) | Booking confirmation + delegation shipped |
 | Deploy Planner | [specs/modules/deploy-planner/SPEC.md](modules/deploy-planner/SPEC.md) | Task sidebar DRAFT |
 | Profile | [specs/modules/profile/SPEC.md](modules/profile/SPEC.md) | Avatar / photo picker — spec confirmed 2026-04-25, pending DBA |

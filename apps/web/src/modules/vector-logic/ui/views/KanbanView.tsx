@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '@worksuite/i18n';
 import { useDialog, UserAvatar } from '@worksuite/ui';
@@ -9,12 +10,19 @@ import type { WorkflowState, StateCategory } from '../../domain/entities/State';
 import type { SchemaField } from '../../domain/entities/FieldType';
 import type { Priority } from '../../domain/entities/Priority';
 import { FIELD_TYPES } from '../../domain/entities/FieldType';
-import { taskRepo, taskTypeRepo, stateRepo, priorityRepo, taskAlarmRepo, userSettingsRepo } from '../../container';
+import {
+  taskRepo, taskTypeRepo, stateRepo, priorityRepo, taskAlarmRepo, userSettingsRepo,
+  cloneTaskUseCase, deleteTaskCascadeUseCase,
+} from '../../container';
 import type { TaskAlarm } from '../../domain/entities/TaskAlarm';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { UserPicker } from '../components/UserPicker';
 import { TaskTypeSwitcher } from '../components/TaskTypeSwitcher';
 import { TaskAlarmPicker } from '../components/TaskAlarmPicker';
+import { CardMenu } from '../components/CardMenu';
+import { CardProgressBars, MiniProgressBar } from '../components/CardProgressBars';
+import { CloneTaskModal } from '../components/CloneTaskModal';
+import type { CloneTaskOptions } from '../../application/CloneTask';
 
 const CAT_COLORS: Record<StateCategory, { color: string; bg: string }> = {
   BACKLOG:     { color: 'var(--tx3)',   bg: 'rgba(140,144,159,.08)' },
@@ -32,7 +40,7 @@ interface WSUser {
 }
 
 interface Props {
-  currentUser: { id: string; name?: string; email: string; [k: string]: unknown };
+  currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown };
   wsUsers?: WSUser[];
 }
 
@@ -40,6 +48,9 @@ const CATEGORIES: StateCategory[] = ['BACKLOG', 'OPEN', 'IN_PROGRESS', 'DONE'];
 
 export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   const { t } = useTranslation();
+  const dialog = useDialog();
+  const navigate = useNavigate();
+  const isAdmin = currentUser.role === 'admin';
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
   const [selectedType, setSelectedType] = useState<TaskType | null>(null);
   /** Multi-select task type filter. Empty = all types. Size 1 = single-workflow mode. */
@@ -69,6 +80,10 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'manual' | 'priority' | 'assignee'>('manual');
   const [search, setSearch] = useState('');
+  /** Source task being cloned via the kebab menu — when set, the modal is open. */
+  const [cloningTask, setCloningTask] = useState<Task | null>(null);
+  /** Inline toast for clone success / configure-link feedback. */
+  const [cardToast, setCardToast] = useState<string | null>(null);
 
   /** True when the filter has 0 or 2+ types selected. In that case the kanban
    *  collapses into 4 fixed category columns (BACKLOG/OPEN/IN_PROGRESS/DONE)
@@ -386,9 +401,92 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   };
 
   const removeTask = async (taskId: string) => {
-    await taskRepo.remove(taskId);
-    setTasks(prev => prev.filter(t => t.id !== taskId));
+    // Defensive: any subtree under `taskId` is removed leaves-first by the
+    // use case (FK is ON DELETE SET NULL — without this we'd orphan grandchildren).
+    await deleteTaskCascadeUseCase.execute(taskId);
+    setTasks(prev => {
+      // Drop the task and any descendants we may already be rendering.
+      const dropIds = new Set<string>([taskId]);
+      let added = true;
+      while (added) {
+        added = false;
+        for (const t of prev) {
+          if (t.parentTaskId && dropIds.has(t.parentTaskId) && !dropIds.has(t.id)) {
+            dropIds.add(t.id);
+            added = true;
+          }
+        }
+      }
+      return prev.filter(t => !dropIds.has(t.id));
+    });
     setDetailTask(null);
+  };
+
+  /** Map taskTypeId → first OPEN state of its workflow. Used by clone. */
+  const openStateByTaskType = useMemo(() => {
+    const out = new Map<string, string>();
+    const byWorkflow = new Map<string, string>();
+    [...allWorkflowStates]
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+      .forEach(ws => {
+        if (!ws.workflowId || !ws.state) return;
+        if (ws.state.category !== 'OPEN') return;
+        if (!byWorkflow.has(ws.workflowId)) byWorkflow.set(ws.workflowId, ws.stateId);
+      });
+    taskTypes.forEach(tt => {
+      if (tt.workflowId && byWorkflow.has(tt.workflowId)) {
+        out.set(tt.id, byWorkflow.get(tt.workflowId)!);
+      }
+    });
+    return out;
+  }, [allWorkflowStates, taskTypes]);
+
+  /** Children grouped by parent id, computed from the currently loaded
+   *  tasks. Cross-type subtasks filtered out by the active type filter
+   *  won't appear here — switch to "All" to see full progress. */
+  const subtasksByParent = useMemo(() => {
+    const out = new Map<string, Task[]>();
+    tasks.forEach(t => {
+      if (!t.parentTaskId) return;
+      const arr = out.get(t.parentTaskId) ?? [];
+      arr.push(t);
+      out.set(t.parentTaskId, arr);
+    });
+    return out;
+  }, [tasks]);
+
+  const handleClone = async (opts: CloneTaskOptions) => {
+    if (!cloningTask) return;
+    try {
+      const created = await cloneTaskUseCase.execute(
+        cloningTask.id,
+        opts,
+        currentUser.id,
+        (taskTypeId) => openStateByTaskType.get(taskTypeId) ?? null,
+      );
+      setTasks(prev => [...prev, created]);
+      setCloningTask(null);
+      setCardToast(t('vectorLogic.cloneModalToast'));
+      setTimeout(() => setCardToast(null), 2500);
+    } catch (err) {
+      console.error('[clone task]', err);
+    }
+  };
+
+  const handleConfigureType = (taskTypeId: string) => {
+    // Deep link to AdminShell → Vector Logic → Schema Builder, with the
+    // type pre-selected via query string. AdminShell + AdminVectorLogic
+    // pick up `mod`, `tab` and `typeId` from the URL on mount.
+    navigate(`/admin?mod=vectorlogic&tab=schema&typeId=${encodeURIComponent(taskTypeId)}`);
+  };
+
+  const handleDeleteFromCard = async (task: Task) => {
+    const children = subtasksByParent.get(task.id) ?? [];
+    const msg = children.length > 0
+      ? t('vectorLogic.deleteTaskCascadeConfirm', { count: children.length })
+      : t('vectorLogic.deleteTaskConfirm');
+    if (!(await dialog.confirm(msg, { danger: true }))) return;
+    await removeTask(task.id);
   };
 
   const onDragStart = (taskId: string) => (e: React.DragEvent) => {
@@ -808,7 +906,13 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                             priorityIcon={priorityByName[(task.priority ?? '').toLowerCase()]?.icon ?? null}
                             assignee={wsUsers.find(u => u.id === task.assigneeId) ?? null}
                             wsUsers={wsUsers}
+                            subtasks={subtasksByParent.get(task.id) ?? []}
+                            stateCategoryById={allStatesMap}
+                            isAdmin={isAdmin}
                             onClick={() => setDetailTask(task)}
+                            onClone={() => setCloningTask(task)}
+                            onDelete={() => handleDeleteFromCard(task)}
+                            onConfigure={() => handleConfigureType(task.taskTypeId)}
                             onDragStart={onDragStart(task.id)}
                             onDragEnd={onTaskDragEnd}
                             isDragging={dragTaskId === task.id} />
@@ -896,14 +1000,41 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
           wsUsers={wsUsers}
           priorities={priorities}
           currentUser={currentUser}
+          isAdmin={isAdmin}
           onClose={() => setDetailTask(null)}
           onUpdate={(patch) => updateTask(detailTask.id, patch)}
           onDelete={() => removeTask(detailTask.id)}
+          onClone={() => { setCloningTask(detailTask); setDetailTask(null); }}
+          onConfigure={() => { handleConfigureType(detailTask.taskTypeId); setDetailTask(null); }}
           onOpenTask={async (id) => {
             const found = await taskRepo.findById(id);
             if (found) setDetailTask(found);
           }}
         />
+      )}
+
+      {/* Clone task modal — opens from the kebab menu */}
+      {cloningTask && (
+        <CloneTaskModal
+          sourceTitle={cloningTask.title}
+          hasSubtasks={(subtasksByParent.get(cloningTask.id) ?? []).length > 0}
+          onClose={() => setCloningTask(null)}
+          onConfirm={handleClone}
+        />
+      )}
+
+      {/* Card-action toast (clone success, etc.) */}
+      {cardToast && (
+        <div style={{
+          position: 'fixed', bottom: 20, right: 20, zIndex: 1000,
+          padding: '10px 16px', borderRadius: 8,
+          background: 'var(--sf3)', color: 'var(--tx)',
+          fontSize: 'var(--fs-xs)', fontWeight: 600,
+          boxShadow: '0 6px 20px rgba(0,0,0,.32)',
+          border: '1px solid var(--bd)',
+        }}>
+          {cardToast}
+        </div>
       )}
     </div>
   );
@@ -939,7 +1070,7 @@ function formatCardValue(field: SchemaField, v: unknown): string | null {
     return `${d.getMonth() + 1}/${d.getDate()}`;
   }
   if (field.fieldType === 'checkbox') return v ? '✓' : null;
-  if (field.fieldType === 'checklist' && Array.isArray(v)) {
+  if ((field.fieldType === 'checklist' || field.fieldType === 'todo') && Array.isArray(v)) {
     const total = v.length;
     if (total === 0) return null;
     const done = (v as Array<{ checked?: boolean }>).filter(x => x?.checked).length;
@@ -949,23 +1080,40 @@ function formatCardValue(field: SchemaField, v: unknown): string | null {
   return String(v).slice(0, 24);
 }
 
-function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUsers, onClick, onDragStart, onDragEnd, isDragging }: {
+function TaskCard({
+  task, taskType, priorityColor, priorityIcon, assignee, wsUsers,
+  subtasks = [], stateCategoryById,
+  isAdmin = false,
+  onClick, onClone, onDelete, onConfigure,
+  onDragStart, onDragEnd, isDragging,
+}: {
   task: Task;
   taskType: TaskType | null;
   wsUsers: WSUser[];
   priorityColor: string;
   priorityIcon?: string | null;
   assignee: WSUser | null;
+  /** Direct children of this task — used by the bottom progress stack. */
+  subtasks?: Task[];
+  /** Map state.id → state.category — used to mark a subtask segment as DONE. */
+  stateCategoryById?: Map<string, string>;
+  /** Whether the current user is admin — controls visibility of the "Configure" menu item. */
+  isAdmin?: boolean;
   onClick: () => void;
+  onClone?: () => void;
+  onDelete?: () => void;
+  onConfigure?: () => void;
   /** Omit to render the card non-draggable (used in aggregate kanban mode). */
   onDragStart?: (e: React.DragEvent) => void;
   onDragEnd?: () => void;
   isDragging?: boolean;
 }) {
+  const { t } = useTranslation();
   const isDraggable = typeof onDragStart === 'function';
   const initials = assignee ? (assignee.name || assignee.email).trim().split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase() : '';
   const now = new Date();
   const daysInColumn = daysBetween(task.stateEnteredAt, now);
+  const [hovered, setHovered] = useState(false);
 
   // User-configured card chips (up to 4). Assignee + user_picker are rendered
   // as avatars in the footer, never as text chips — filter them out here.
@@ -1010,6 +1158,14 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
     dueLabel = `${d.getMonth() + 1}/${d.getDate()}`;
   }
 
+  // Has any progress bar at the bottom — used to grow the card's bottom
+  // padding so chips never sit on top of the bar stack.
+  const todoFieldsWithItems = ((taskType?.schema as SchemaField[]) || [])
+    .filter(f => f.fieldType === 'todo' && Array.isArray((task.data ?? {})[f.id]) && ((task.data ?? {})[f.id] as unknown[]).length > 0).length;
+  const hasBars = todoFieldsWithItems > 0 || subtasks.length > 0;
+  const barCount = todoFieldsWithItems + (subtasks.length > 0 ? 1 : 0);
+  const bottomPad = hasBars ? 10 + barCount * 4 : 10;
+
   return (
     <div
       className="vl-card"
@@ -1018,7 +1174,9 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
       onDragEnd={onDragEnd}
       onClick={onClick}
       style={{
-        background: 'var(--sf3)', borderRadius: 10, padding: '10px 12px',
+        position: 'relative',
+        background: 'var(--sf3)', borderRadius: 10,
+        padding: `10px 12px ${bottomPad}px 12px`,
         cursor: !isDraggable ? 'pointer' : isDragging ? 'grabbing' : 'grab',
         transition: 'all .15s',
         borderLeft: `3px solid ${priorityColor}`,
@@ -1029,15 +1187,38 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
         e.currentTarget.style.background = 'var(--ac-dim)';
         e.currentTarget.style.transform = 'translateY(-1px)';
         e.currentTarget.style.boxShadow = '0 4px 14px var(--ac-dim)';
+        setHovered(true);
       }}
       onMouseLeave={e => {
         e.currentTarget.style.background = 'var(--sf3)';
         e.currentTarget.style.transform = 'translateY(0)';
         e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,.2)';
+        setHovered(false);
       }}>
+      {/* Kebab menu — top-right, hover-revealed on desktop, always-visible on touch */}
+      {(onClone || onDelete || onConfigure) && (
+        <CardMenu
+          showButton={hovered}
+          items={[
+            ...(onClone ? [{
+              id: 'clone', labelKey: 'vectorLogic.cardMenuClone', icon: 'content_copy',
+              onClick: () => onClone(),
+            }] : []),
+            ...(onDelete ? [{
+              id: 'delete', labelKey: 'vectorLogic.cardMenuDelete', icon: 'delete', danger: true,
+              onClick: () => onDelete(),
+            }] : []),
+            ...(onConfigure && isAdmin ? [{
+              id: 'configure', labelKey: 'vectorLogic.cardMenuConfigure', icon: 'settings',
+              separated: true,
+              onClick: () => onConfigure(),
+            }] : []),
+          ]}
+        />
+      )}
       {/* Top row: type icon + code */}
       {(taskType || task.code) && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, paddingRight: 22 }}>
           {taskType?.icon && (
             <span className="material-symbols-outlined" style={{
               fontSize: 'var(--fs-xs)',
@@ -1056,7 +1237,7 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
           )}
         </div>
       )}
-      <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)', lineHeight: 1.35 }}>{task.title}</div>
+      <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)', lineHeight: 1.35, paddingRight: (taskType || task.code) ? 0 : 22 }}>{task.title}</div>
       <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
         {hasCardFields ? (
           // Configured chips (up to 4) — drive what the user wants to see at-a-glance.
@@ -1065,6 +1246,7 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
             const value = formatCardValue(field, raw);
             if (!value) return null;
             const isDue = field.fieldType === 'due_date';
+            const isProgress = (field.fieldType === 'checklist' || field.fieldType === 'todo') && Array.isArray(raw);
             return (
               <span key={field.id} style={{
                 fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3,
@@ -1075,6 +1257,11 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
                 maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {value}
+                {isProgress && (
+                  <MiniProgressBar
+                    segments={(raw as Array<{ checked?: boolean }>).map(it => !!it?.checked)}
+                  />
+                )}
               </span>
             );
           })
@@ -1095,15 +1282,6 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
                 {task.priority}
               </span>
             )}
-            {daysInColumn > 0 && (
-              <span style={{
-                fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3,
-                background: 'var(--sf2)', color: 'var(--tx3)',
-                fontWeight: 700, letterSpacing: '.04em',
-              }}>
-                {daysInColumn}d
-              </span>
-            )}
             {dueLabel && (
               <span style={{
                 fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3,
@@ -1116,6 +1294,17 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
               </span>
             )}
           </>
+        )}
+        {/* Days-in-column chip — always rendered (was previously hidden when
+            the task type had configured card fields, a regression we restore here). */}
+        {daysInColumn > 0 && (
+          <span style={{
+            fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3,
+            background: 'var(--sf2)', color: 'var(--tx3)',
+            fontWeight: 700, letterSpacing: '.04em',
+          }}>
+            {daysInColumn}d
+          </span>
         )}
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -1148,6 +1337,12 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
           )}
         </div>
       </div>
+      <CardProgressBars
+        task={task}
+        schema={(taskType?.schema as SchemaField[]) || []}
+        subtasks={subtasks}
+        stateCategoryById={stateCategoryById}
+      />
     </div>
   );
 }
@@ -1252,13 +1447,20 @@ function NewTaskModal({ taskTypes, priorities, defaultTypeId, onClose, onCreate 
 }
 
 /* ── Task Detail Modal ─────────────────────────────────────────────────── */
-export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorities, currentUser, onClose, onUpdate, onDelete, onOpenTask }: {
+export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorities, currentUser, onClose, onUpdate, onDelete, onOpenTask, onClone, onConfigure, isAdmin = false }: {
   task: Task; taskType: TaskType; taskTypes: TaskType[]; wfStates: WorkflowState[];
   wsUsers: WSUser[];
   priorities: Priority[];
-  currentUser: { id: string; [k: string]: unknown };
+  currentUser: { id: string; role?: string; [k: string]: unknown };
   onClose: () => void; onUpdate: (patch: Partial<Task>) => void; onDelete: () => void;
   onOpenTask?: (taskId: string) => void | Promise<void>;
+  /** Open the Clone modal for this task. Provided by the parent (Kanban /
+   *  Board view) so the same kebab menu the card has is available inside. */
+  onClone?: () => void;
+  /** Navigate to Schema Builder with this task's type pre-selected. */
+  onConfigure?: () => void;
+  /** Whether the current user is admin — gates the "Configure" item. */
+  isAdmin?: boolean;
 }) {
   const { t } = useTranslation();
   const dialog = useDialog();
@@ -1445,12 +1647,41 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
     autoSave({ taskTypeId: next.id, data: nextData });
   };
 
+  // Same Clone / Delete / Configure menu the cards have, also reachable from
+  // the modal header. Delete uses the cascade-aware confirm built from the
+  // subtasks list already loaded into the modal.
+  const headerKebabItems = [
+    ...(onClone ? [{
+      id: 'clone', labelKey: 'vectorLogic.cardMenuClone', icon: 'content_copy',
+      onClick: () => onClone(),
+    }] : []),
+    {
+      id: 'delete', labelKey: 'vectorLogic.cardMenuDelete', icon: 'delete', danger: true,
+      onClick: async () => {
+        const msg = subtasks.length > 0
+          ? t('vectorLogic.deleteTaskCascadeConfirm', { count: subtasks.length })
+          : t('vectorLogic.deleteTaskConfirm');
+        if (await dialog.confirm(msg, { danger: true })) onDelete();
+      },
+    },
+    ...(onConfigure && isAdmin ? [{
+      id: 'configure', labelKey: 'vectorLogic.cardMenuConfigure', icon: 'settings',
+      separated: true,
+      onClick: () => onConfigure(),
+    }] : []),
+  ];
+
   return (
     <Modal
       title={task.code ? `${task.code} · ${currentType.name}` : currentType.name}
       onClose={onClose}
       width={1120}
-      titleAccessory={<SavedIndicator savedAt={savedAt} />}
+      titleAccessory={
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <SavedIndicator savedAt={savedAt} />
+          <CardMenu mode="inline" items={headerKebabItems} />
+        </div>
+      }
     >
       <style>{`
         .vl-tdm-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 20px; }
@@ -1831,18 +2062,9 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
       </div>
 
       <div style={{
-        display: 'flex', justifyContent: 'space-between', gap: 8,
+        display: 'flex', justifyContent: 'flex-end', gap: 8,
         paddingTop: 16, marginTop: 16, borderTop: '1px solid var(--bd)',
       }}>
-        <button
-          style={btnStyle('danger')}
-          onClick={async () => {
-            if (await dialog.confirm(t('vectorLogic.deleteTaskConfirm'), { danger: true })) onDelete();
-          }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>delete</span>
-          {t('common.delete')}
-        </button>
         <button style={btnStyle('ghost')} onClick={onClose}>{t('common.close')}</button>
       </div>
 
@@ -1948,6 +2170,7 @@ function DynamicFieldRenderer({ field, value, onChange, wsUsers }: { field: Sche
         return <input type="checkbox" checked={!!value} onChange={e => onChange(e.target.checked)}
           style={{ width: 18, height: 18, cursor: 'pointer' }} />;
       case 'checklist':
+      case 'todo':
         return <ChecklistField value={value} onChange={onChange} />;
       case 'assignee':
       case 'user_picker':
