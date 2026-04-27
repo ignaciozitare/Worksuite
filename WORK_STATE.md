@@ -6,6 +6,52 @@ _Ultima actualizacion: 2026-04-27_
 
 ## Tarea en curso
 
+**Pendiente smoke test del usuario en prod** del barrido completo de tipografía + theme tokens (5 commits en main, ver "Sesión typography" más abajo). Todos los builds pasaron localmente, pero ~2200 fontSize literales y ~370 var() fallbacks reescritos en una sola tanda — alta probabilidad de pequeños desajustes visuales (especialmente íconos de empty state que colapsaron de 48px → 28px).
+
+## Sesión 2026-04-27 (cont.) — Typography + Theme tokens
+
+Five commits en main (último: `9b181a5`). El propósito: fuente única de verdad para tipografía y color, eliminando literales hardcodeados.
+
+### Tokens nuevos en `WorkSuiteApp.css`
+- Tipografía: `--fs-2xs … --fs-display` (8 escalones), `--icon-xs … --icon-lg`, `--lh-tight/normal/loose`. Body usa `--fs-body` y `--lh-normal`.
+- Theme: `--ac-grad` (gradient canónico de CTA), `--ac-soft` (variante clara del accent).
+
+### Cambios mecánicos aplicados
+- 2200+ `fontSize: <px>` → `'var(--fs-*)'` o `'var(--icon-*)'`.
+- 370+ `var(--x,#hex)` (forbidden por design system) → `var(--x)` (sin fallback).
+- 14 archivos con hex inline (`#4d8eff`, `#8c909f`, `#22c55e`, etc.) → CSS vars equivalentes.
+- 4 ocurrencias de `linear-gradient(135deg,#adc6ff,#4d8eff)` → `var(--ac-grad)`.
+
+### Mapeo px → token (referencia)
+- 8/9/10/11 → `--fs-2xs` (11)
+- 12/13 → `--fs-xs` (13)
+- 14/15 → `--fs-sm` (15)
+- 16/17 → `--fs-body` (17)
+- 18/19 → `--fs-md` (19)
+- 20-22 → `--fs-lg` (22)
+- 23-32 → `--fs-xl` (28)
+- 33+ → `--fs-display` (36)
+- Material Symbols icon literals → `--icon-xs/sm/md/lg` (14/16/20/28)
+
+### Decisiones de scope
+- AppSwitcher color por app (`#4d8eff` para JT) preservado — branding intencional por app.
+- Definiciones de CSS variables en `WorkSuiteApp.css`, `DeployPlanner.tsx`, `packages/ui/tokens/index.css` y swatches del UIKit no se tocaron (son los lugares donde el hex es legítimo).
+- `OfficeSVG.tsx` palette object intacto — necesita refactor mayor para usar vars en SVG attrs.
+- `SupabasePriorityRepo` colors hex preservados — son seed data persistido a DB.
+
+### Riesgos visuales conocidos
+- Empty-state icons que tenían `fontSize:48` mapean a `--icon-lg` (28). KanbanView vacío y otros muestran ícono 42% más chico.
+- Numeritos decorativos `fontSize:24/36` colapsan al token más cercano (`--fs-xl`/`--fs-display`).
+- Fix correcto si molesta: ampliar el rango de tokens (`--icon-xl`, `--fs-hero`) en `WorkSuiteApp.css`. NO revertir literales.
+
+### TODO carryover de typography
+- ~250+ hex hardcoded fuera del subset que el Review Agent grep verifica (e.g. `#22c55e`, `#f59e0b`, `#ef4444`). Violación de CLAUDE.md pero no bloquea el commit. Sweep posterior si el usuario lo pide.
+- `// @ts-nocheck` en `apps/web/src/modules/jira-tracker/ui/ExportConfigModal.tsx` — hack pre-existente, contradice la regla "no hacks". Pendiente de eliminar (necesita arreglar tipos antes).
+
+---
+
+## Tarea pendiente anterior
+
 **Pendiente review del usuario:** branch `fix/canvas-designer-transitions` con el fix de transiciones duplicadas. Migración ya aplicada a prod (cleanup + UNIQUE + CHECK no-self-loop). Frontend con manejo defensivo de errores.
 
 ### Investigación 2026-04-27 — bug "todo conectado con todo" en Canvas Designer
