@@ -1,12 +1,33 @@
 # WORK_STATE
 
-_Ultima actualizacion: 2026-04-26_
+_Ultima actualizacion: 2026-04-27_
 
 ---
 
 ## Tarea en curso
 
-**Ninguna pendiente.** Multi-Board Kanban mergeado a main, prod construyendo.
+**Pendiente review del usuario:** branch `fix/canvas-designer-transitions` con el fix de transiciones duplicadas. Migración ya aplicada a prod (cleanup + UNIQUE + CHECK no-self-loop). Frontend con manejo defensivo de errores.
+
+### Investigación 2026-04-27 — bug "todo conectado con todo" en Canvas Designer
+
+**Síntoma reportado:** al configurar transiciones en el Canvas Designer del Workflow Engine, salir y volver, aparecen muchas más transiciones de las que el usuario dibujó.
+
+**Causa raíz confirmada en DB:**
+- `vl_transitions` no tenía UNIQUE en `(workflow_id, from_state_id, to_state_id)`. El check de "ya existe" del frontend dependía de estado React local, propenso a stale en re-renders y race conditions.
+- Resultado: filas duplicadas acumuladas. Snapshot mostró:
+  - workflow "Accionable": 6 pares con duplicados (ej. `Review → Close` x3, `In progress → Review` x2).
+  - workflow "solucion": `Close → Close` self-loop x2 (a pesar del guard `connection.source === connection.target`).
+- **Bug secundario (no resuelto):** dos estados con el mismo nombre "Review" en `vl_states` con ids distintos. El admin debe limpiarlos manualmente.
+
+**Fix aplicado a prod (DB) + commiteado en fix branch:**
+- Migración `20260427_vl_transitions_dedupe.sql`:
+  - DELETE de filas con `from_state_id = to_state_id`.
+  - DELETE de duplicados conservando id mínimo por `(workflow, from, to)`.
+  - ADD CONSTRAINT `vl_transitions_unique_pair UNIQUE (workflow_id, from_state_id, to_state_id)`.
+  - ADD CONSTRAINT `vl_transitions_no_self_loop CHECK (from_state_id <> to_state_id)`.
+- `CanvasDesignerView.tsx onConnect`: try/catch con códigos Postgres `23505` (unique violation) y `23514` (check violation) → silencia el caso "ya existe" y resincroniza con `transitionRepo.findByWorkflow` + `buildGraph`.
+
+**Próximo paso:** mergear a main cuando el usuario revise. Branch lista en GitHub.
 
 ## Sesión 2026-04-26 — resumen
 

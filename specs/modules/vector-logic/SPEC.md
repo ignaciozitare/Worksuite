@@ -780,3 +780,38 @@ Migraciones: `supabase/migrations/20260426_vl_kanban_boards.sql` y `_v2.sql`.
 - `vl_board_column_states`: SELECT/CRUD se delegan a las policies del column padre.
 - `vl_board_members`: SELECT al owner y al propio user. INSERT/UPDATE/DELETE sólo el owner del board.
 - Todas las tablas tienen RLS habilitado.
+
+---
+
+## Canvas Designer — duplicate transitions fix (revisión 2026-04-27)
+
+### Problema reportado
+El usuario configura transiciones entre estados en el Canvas Designer del Workflow Engine, sale de la página y vuelve, y el grafo aparece con muchas más transiciones de las que dibujó — efecto "todo conectado con todo".
+
+### Investigación
+Snapshot de prod (2026-04-27) confirmó **transiciones duplicadas en `vl_transitions`**:
+- Workflow "Accionable": 6 pares duplicados (e.g. `In progress → Review` x2, `Review → Close` x3, `Open → ToDo` x2, `ToDo → In progress` x2, `caca → todo` x2, `todo → caca` x2).
+- Workflow "solucion": `Close → Close` self-loop persistido x2 (a pesar de que `onConnect` rechaza self-loops vía `if (connection.source === connection.target) return`).
+
+### Causa raíz
+1. **No hay UNIQUE constraint** en `vl_transitions(workflow_id, from_state_id, to_state_id)`. El frontend depende de un check sobre el estado local de React (`transitions.some(t => ...)`); si el estado está stale (entre re-renders, race conditions, o después de un load), inserts duplicados pasan.
+2. **No hay CHECK constraint** que prohíba self-loops. La guarda de frontend puede ser bypaseada (e.g., insertar directo por SQL, o un edge case de React Flow).
+3. **Estados con nombres duplicados** en `vl_states` ("Review" tiene 2 ids distintos). Si ambos terminan en el mismo workflow, se ven como nodos duplicados — esto NO es bug del Canvas pero contribuye a la confusión visual.
+
+### Fix
+1. **Migración DB** (`20260427_vl_transitions_dedupe.sql`):
+   - Dedupe existente: por cada `(workflow_id, from_state_id, to_state_id)` con copies > 1, conservar el id mínimo, borrar los demás.
+   - `ALTER TABLE vl_transitions ADD CONSTRAINT vl_transitions_unique_pair UNIQUE (workflow_id, from_state_id, to_state_id)`.
+   - `ALTER TABLE vl_transitions ADD CONSTRAINT vl_transitions_no_self_loop CHECK (from_state_id <> to_state_id)`.
+2. **Frontend defensa**:
+   - En `onConnect`, atrapar errores de la inserción (incluyendo violación de unique constraint) y silenciar el caso "ya existe" — re-fetchear transitions y rebuilder el grafo para resincronizar.
+   - En `loadWorkflow`, deduplicar in-memory antes de buildear el grafo (defensa contra cualquier dato sucio que aún quede).
+
+### Fuera de alcance (followups)
+- Limpiar nombres duplicados en `vl_states` (e.g. dos "Review" rows). El admin puede mergear vía SQL o desde Settings; no se hace en este fix.
+- Los `position_y` negativos de algunos workflow_states (estados arrastrados off-canvas). React Flow `fitView` ya re-encuadra al cargar; no se persiste corrección.
+
+### Modelo de datos
+Sin tablas nuevas. Sólo dos constraints añadidos a `vl_transitions`:
+- `UNIQUE (workflow_id, from_state_id, to_state_id)` — previene duplicados.
+- `CHECK (from_state_id <> to_state_id)` — previene self-loops.

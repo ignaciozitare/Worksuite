@@ -155,29 +155,46 @@ function CanvasDesignerInner({ currentUser }: Props) {
     const toWs = wfStates.find(ws => ws.id === connection.target);
     if (!fromWs || !toWs) return;
 
+    // Local cheap check first.
     const alreadyExists = transitions.some(
       t => t.fromStateId === fromWs.stateId && t.toStateId === toWs.stateId,
     );
     if (alreadyExists) return;
 
-    const tr = await transitionRepo.create({
-      workflowId: selected.id,
-      fromStateId: fromWs.stateId,
-      toStateId: toWs.stateId,
-      isGlobal: false,
-      label: null,
-    });
-    setTransitions(prev => [...prev, tr]);
-    setEdges(eds => addEdge({
-      source: connection.source,
-      target: connection.target,
-      sourceHandle: connection.sourceHandle ?? 'b-source',
-      targetHandle: connection.targetHandle ?? 't-target',
-      id: tr.id,
-      animated: false,
-      markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: '#4f6ef7' },
-      style: { stroke: '#4f6ef7', strokeWidth: 2 },
-    }, eds));
+    try {
+      const tr = await transitionRepo.create({
+        workflowId: selected.id,
+        fromStateId: fromWs.stateId,
+        toStateId: toWs.stateId,
+        isGlobal: false,
+        label: null,
+      });
+      setTransitions(prev => [...prev, tr]);
+      setEdges(eds => addEdge({
+        source: connection.source,
+        target: connection.target,
+        sourceHandle: connection.sourceHandle ?? 'b-source',
+        targetHandle: connection.targetHandle ?? 't-target',
+        id: tr.id,
+        animated: false,
+        markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: '#4f6ef7' },
+        style: { stroke: '#4f6ef7', strokeWidth: 2 },
+      }, eds));
+    } catch (err: any) {
+      // The DB now enforces UNIQUE(workflow_id, from_state_id, to_state_id) and
+      // CHECK(from_state_id <> to_state_id). If the local check missed a
+      // duplicate (stale React state), Postgres rejects with code 23505.
+      // Self-loops slipping past the source!==target guard hit 23514.
+      // In both cases just re-sync from the DB and ignore.
+      const code = err?.code ?? '';
+      if (code === '23505' || code === '23514') {
+        const fresh = await transitionRepo.findByWorkflow(selected.id);
+        setTransitions(fresh);
+        buildGraph(wfStates, fresh);
+        return;
+      }
+      console.error('[CanvasDesigner] onConnect failed', err);
+    }
   }, [selected, wfStates, transitions]);
 
   // Handle node drag end — save position
