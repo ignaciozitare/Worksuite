@@ -189,7 +189,7 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
         <button onClick={next} style={navBtnStyle}><Icon name="chevron_right" size={18} style={{ color: 'var(--tx2)' }} /></button>
 
         {/* Title */}
-        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.01em' }}>
+        <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.01em' }}>
           {isWeek ? weekLabel : `${MONTHS[mo]} ${yr}`}
         </span>
 
@@ -201,7 +201,7 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
           {(['month', 'week'] as ViewMode[]).map(vm => (
             <button key={vm} onClick={() => { setViewMode(vm); if (vm === 'week') setWeekAnchor(sel || TODAY); }}
               style={{
-                padding: '4px 14px', fontSize: 11, borderRadius: 4, border: 'none', cursor: 'pointer',
+                padding: '4px 14px', fontSize: 'var(--fs-2xs)', borderRadius: 4, border: 'none', cursor: 'pointer',
                 background: viewMode === vm ? 'var(--ac)' : 'transparent',
                 color: viewMode === vm ? 'var(--ac-on)' : 'var(--tx3)',
                 fontWeight: viewMode === vm ? 600 : 400, fontFamily: 'inherit',
@@ -215,7 +215,7 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
         {/* Today button */}
         <button onClick={goToday} style={{
           padding: '5px 14px', borderRadius: 6, border: '1px solid var(--bd)',
-          background: 'var(--sf2)', color: 'var(--tx2)', fontSize: 11, fontWeight: 500,
+          background: 'var(--sf2)', color: 'var(--tx2)', fontSize: 'var(--fs-2xs)', fontWeight: 500,
           cursor: 'pointer', fontFamily: 'inherit',
         }}>
           {t('jiraTracker.today')}
@@ -224,7 +224,7 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
         {/* Log Hours button */}
         <button onClick={() => onOpenLog({})} style={{
           padding: '5px 14px', borderRadius: 6, border: 'none',
-          background: 'var(--ac)', color: 'var(--ac-on)', fontSize: 11, fontWeight: 600,
+          background: 'var(--ac)', color: 'var(--ac-on)', fontSize: 'var(--fs-2xs)', fontWeight: 600,
           cursor: 'pointer', fontFamily: 'inherit',
         }}>
           {t('jiraTracker.logHours')}
@@ -246,7 +246,7 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
             {DAYS.map(d => (
               <div key={d} style={{
-                textAlign: 'center', fontSize: 9, fontWeight: 700, color: 'var(--tx3)',
+                textAlign: 'center', fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
                 letterSpacing: '0.05em', textTransform: 'uppercase', padding: '4px 0',
               }}>{d}</div>
             ))}
@@ -289,13 +289,13 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
                   {/* Top: day number + add button */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{
-                      fontSize: 16, fontWeight: isToday ? 700 : 500,
+                      fontSize: 'var(--fs-body)', fontWeight: isToday ? 700 : 500,
                       color: isToday ? 'var(--ac)' : 'var(--tx)',
                     }}>{c.day}</span>
                     <div
                       onClick={e => { e.stopPropagation(); onOpenLog({ date: c.date }); }}
                       style={{
-                        width: 22, height: 22, borderRadius: 4, fontSize: 16,
+                        width: 22, height: 22, borderRadius: 4, fontSize: 'var(--fs-body)',
                         color: 'var(--tx3)', display: 'flex', alignItems: 'center',
                         justifyContent: 'center', cursor: 'pointer', opacity: 0.5,
                       }}
@@ -306,8 +306,8 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
 
                   {/* Hours */}
                   {hrs > 0 && (
-                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--green)', lineHeight: 1 }}>
-                      {hrs.toFixed(1)}<span style={{ fontSize: 12, fontWeight: 500 }}>h</span>
+                    <div style={{ fontSize: 'var(--fs-md)', fontWeight: 700, color: 'var(--green)', lineHeight: 1 }}>
+                      {hrs.toFixed(1)}<span style={{ fontSize: 'var(--fs-xs)', fontWeight: 500 }}>h</span>
                     </div>
                   )}
 
@@ -316,13 +316,13 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 1, marginTop: 'auto' }}>
                       {top.map(k => (
                         <div key={k} style={{
-                          fontSize: 11, color: 'var(--ac2)', fontWeight: 600,
+                          fontSize: 'var(--fs-2xs)', color: 'var(--ac2)', fontWeight: 600,
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           fontFamily: 'var(--mono)',
                         }}>{k}</div>
                       ))}
                       {[...new Set(dw.map((w: any) => w.issue))].length > 2 && (
-                        <span style={{ fontSize: 10, color: 'var(--tx3)' }}>
+                        <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>
                           +{[...new Set(dw.map((w: any) => w.issue))].length - 2} {t('jiraTracker.more')}
                         </span>
                       )}
@@ -371,16 +371,16 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
                 {/* Day header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                   <div>
-                    <div style={{ fontSize: 9, color: 'var(--tx3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                       {DAYS_FULL[i]}
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 700, color: c.isToday ? 'var(--ac)' : 'var(--tx)', lineHeight: 1.2 }}>
+                    <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: c.isToday ? 'var(--ac)' : 'var(--tx)', lineHeight: 'var(--lh-tight)' }}>
                       {c.day}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     {hrs > 0 && (
-                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--green)', fontFamily: 'var(--mono)' }}>
+                      <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--green)', fontFamily: 'var(--mono)' }}>
                         {hrs.toFixed(1)}h
                       </span>
                     )}
@@ -389,7 +389,7 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
                       style={{
                         width: 24, height: 24, borderRadius: 4,
                         background: 'var(--sf2)', display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', fontSize: 14, color: 'var(--tx3)', cursor: 'pointer',
+                        justifyContent: 'center', fontSize: 'var(--fs-sm)', color: 'var(--tx3)', cursor: 'pointer',
                       }}
                     >+</div>
                   </div>
@@ -403,19 +403,19 @@ export function CalendarView({ filters, worklogs, onDayClick, onOpenLog }: Calen
                       borderRadius: 4, padding: '6px 8px',
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 4 }}>
-                        <span style={{ color: 'var(--ac2)', fontWeight: 700, fontSize: 10, fontFamily: 'var(--mono)' }}>{iss.key}</span>
-                        <span style={{ color: 'var(--green)', fontSize: 10, fontWeight: 600, fontFamily: 'var(--mono)' }}>
+                        <span style={{ color: 'var(--ac2)', fontWeight: 700, fontSize: 'var(--fs-2xs)', fontFamily: 'var(--mono)' }}>{iss.key}</span>
+                        <span style={{ color: 'var(--green)', fontSize: 'var(--fs-2xs)', fontWeight: 600, fontFamily: 'var(--mono)' }}>
                           {TimeParser.toHours(iss.seconds).toFixed(1)}h
                         </span>
                       </div>
                       <div style={{
-                        color: 'var(--tx2)', fontSize: 10, marginTop: 2,
+                        color: 'var(--tx2)', fontSize: 'var(--fs-2xs)', marginTop: 2,
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>{iss.summary}</div>
                     </div>
                   ))}
                   {issues.length === 0 && (
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx3)', fontSize: 10, opacity: 0.5 }}>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx3)', fontSize: 'var(--fs-2xs)', opacity: 0.5 }}>
                       —
                     </div>
                   )}
@@ -440,12 +440,12 @@ function StatCard({ label, value, color, icon }: { label: string; value: string 
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <Icon name={icon} size={14} weight={300} style={{ color, opacity: 0.7 }} />
         <span style={{
-          fontSize: 9, fontWeight: 700, color: 'var(--tx3)',
+          fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
           letterSpacing: '0.05em', textTransform: 'uppercase',
         }}>{label}</span>
       </div>
       <div style={{
-        fontSize: 24, fontWeight: 600, color, letterSpacing: '-0.02em', lineHeight: 1,
+        fontSize: 'var(--fs-xl)', fontWeight: 600, color, letterSpacing: '-0.02em', lineHeight: 1,
       }}>{value}</div>
     </div>
   );

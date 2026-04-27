@@ -52,20 +52,20 @@ export function JTFilterSidebar({ filters, onApply, onExport, mobileOpen, onMobi
       </div>
       <div className="sb-s">
         <div className="sb-lbl">{t("jiraTracker.spaces")}{l.spaceKeys.length>0&&<span className="sb-cnt">({l.spaceKeys.length})</span>}</div>
-        <input className="fi" placeholder={t("jiraTracker.searchSpaces")} value={spaceQ} onChange={e=>setSpaceQ(e.target.value)} style={{fontSize:11}}/>
+        <input className="fi" placeholder={t("jiraTracker.searchSpaces")} value={spaceQ} onChange={e=>setSpaceQ(e.target.value)} style={{fontSize:'var(--fs-2xs)'}}/>
         <div className="pick-l" style={{maxHeight:200,overflowY:"auto"}}>
           {filteredProjects.map(p=>{const on=l.spaceKeys.includes(p.key);return(
             <div key={p.key} className={`pick-i ${on?"on":""}`} onClick={()=>ts(p.key)}>
               <div className="cb">{on&&"✓"}</div><span className="kb">{p.key}</span><span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</span>
             </div>
           );})}
-          {filteredProjects.length===0&&<div style={{fontSize:11,color:"var(--tx3)",padding:"6px 8px"}}>Sin resultados</div>}
+          {filteredProjects.length===0&&<div style={{fontSize:'var(--fs-2xs)',color:"var(--tx3)",padding:"6px 8px"}}>Sin resultados</div>}
         </div>
         {l.spaceKeys.length>0&&<button className="btn-g" onClick={()=>sL({...l,spaceKeys:[]})}>{t("jiraTracker.clearSelection")}</button>}
       </div>
       <button className="btn-p" onClick={()=>onApply(l)}>{t("jiraTracker.applyFilters")}</button>
       <button className="btn-exp" onClick={()=>onExport(l)}>{t("jiraTracker.exportCsv")}</button>
-      <div style={{fontSize:10,color:"var(--tx3)",textAlign:"center",lineHeight:1.5,marginTop:-8}}>{t("jiraTracker.exportHint")}</div>
+      <div style={{fontSize:'var(--fs-2xs)',color:"var(--tx3)",textAlign:"center",lineHeight:'var(--lh-loose)',marginTop:-8}}>{t("jiraTracker.exportHint")}</div>
     </aside>
   );
 }

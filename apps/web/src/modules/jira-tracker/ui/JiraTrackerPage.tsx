@@ -56,7 +56,7 @@ const JT_CSS = `
   display:flex;align-items:center;gap:10px;
   padding:8px 12px;border-radius:8px;
   cursor:pointer;transition:all .15s ease;
-  font:500 13px/1 'Inter',sans-serif;
+  font:500 var(--fs-xs)/1 'Inter',sans-serif;
   color:var(--tx);opacity:.6;
   border:none;background:none;width:100%;text-align:left;
 }
@@ -73,7 +73,7 @@ const JT_CSS = `
 .jt-gbtn{
   display:flex;align-items:center;justify-content:center;gap:8px;
   padding:10px 0;border-radius:8px;border:none;width:100%;
-  font:600 12px/1 'Inter',sans-serif;cursor:pointer;
+  font:600 var(--fs-xs)/1 'Inter',sans-serif;cursor:pointer;
   transition:box-shadow .2s ease,transform .15s ease;
 }
 .jt-gbtn:active{transform:scale(.97)}
@@ -125,7 +125,7 @@ const JT_CSS = `
 .jt-input{
   width:100%;padding:8px 10px;border-radius:8px;
   background:var(--sf-lowest);border:1px solid var(--bd);
-  color:var(--tx);font:500 11px/1.4 'Inter',sans-serif;
+  color:var(--tx);font:500 var(--fs-2xs)/var(--lh-normal) 'Inter',sans-serif;
   outline:none;transition:border-color .15s ease;
   appearance:none;-webkit-appearance:none;
 }
@@ -141,7 +141,7 @@ select.jt-input{
 .jt-pchip{
   display:inline-flex;align-items:center;gap:5px;
   padding:5px 12px;border-radius:6px;
-  font:600 11px/1 'Inter',sans-serif;
+  font:600 var(--fs-2xs)/1 'Inter',sans-serif;
   cursor:pointer;transition:all .15s ease;
   border:none;background:var(--sf2);color:var(--tx2);opacity:.5;
 }
@@ -172,7 +172,7 @@ function Icon({ name, size = 20, weight = 300, fill = false, style }: {
 function SectionLabel({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <div style={{
-      fontSize: 9, fontWeight: 700, color: 'var(--tx3)',
+      fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
       letterSpacing: '0.12em', textTransform: 'uppercase' as const,
       padding: '10px 0 6px', ...style,
     }}>
@@ -287,10 +287,10 @@ function LeftSidebar({
             <Icon name="timer" size={20} weight={300} style={{ color: 'var(--ac2)' }} />
           </div>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.01em' }}>
+            <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.01em' }}>
               Jira Tracker
             </div>
-            <div style={{ fontSize: 9, color: 'var(--tx3)', letterSpacing: '0.1em', opacity: 0.5 }}>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', letterSpacing: '0.1em', opacity: 0.5 }}>
               WORKLOGS
             </div>
           </div>
@@ -350,7 +350,7 @@ function LeftSidebar({
         {local.spaceKeys.length > 0 && (
           <span style={{
             background: 'var(--ac)', color: 'var(--ac-on)',
-            fontSize: 9, fontWeight: 700, padding: '1px 6px',
+            fontSize: 'var(--fs-2xs)', fontWeight: 700, padding: '1px 6px',
             borderRadius: 9999, minWidth: 16, textAlign: 'center' as const,
           }}>
             {local.spaceKeys.length}
@@ -385,7 +385,7 @@ function LeftSidebar({
           onClick={() => setLocal({ ...local, spaceKeys: [] })}
           style={{
             background: 'none', border: 'none', color: 'var(--tx3)',
-            fontSize: 10, cursor: 'pointer', padding: '2px 0', marginBottom: 4,
+            fontSize: 'var(--fs-2xs)', cursor: 'pointer', padding: '2px 0', marginBottom: 4,
             textDecoration: 'underline' as const, fontFamily: 'inherit',
           }}
         >
@@ -394,7 +394,7 @@ function LeftSidebar({
       )}
 
       {/* ── Hint ───────────────────────────────────────────────── */}
-      <div style={{ fontSize: 10, color: 'var(--tx3)', lineHeight: 1.5, marginBottom: 4, opacity: 0.5 }}>
+      <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', lineHeight: 'var(--lh-loose)', marginBottom: 4, opacity: 0.5 }}>
         Shift + Click = {t('jiraTracker.exportHint')}
       </div>
 
@@ -476,13 +476,13 @@ function RightSidebar({ worklogs, jiraIssues, onOpenLog }: RightSidebarProps) {
           <>
             <Icon name="task_alt" size={18} style={{ color: 'var(--ac2)' }} />
             <span style={{
-              fontSize: 12, fontWeight: 700, color: 'var(--tx)',
+              fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--tx)',
               letterSpacing: '0.08em', flex: 1,
             }}>
               {t('jiraTracker.recentTasks')}
             </span>
             <span style={{
-              fontSize: 10, fontWeight: 700, padding: '2px 8px',
+              fontSize: 'var(--fs-2xs)', fontWeight: 700, padding: '2px 8px',
               borderRadius: 9999, background: 'var(--ac-dim)', color: 'var(--ac2)',
             }}>
               {recentTasks.length}
@@ -519,14 +519,14 @@ function RightSidebar({ worklogs, jiraIssues, onOpenLog }: RightSidebarProps) {
                 onChange={e => setSearch(e.target.value)}
                 style={{
                   background: 'none', border: 'none', outline: 'none',
-                  color: 'var(--tx)', fontSize: 11, fontFamily: 'inherit',
+                  color: 'var(--tx)', fontSize: 'var(--fs-2xs)', fontFamily: 'inherit',
                   width: '100%',
                 }}
               />
               {search && (
                 <button onClick={() => setSearch('')} style={{
                   background: 'none', border: 'none', color: 'var(--tx3)',
-                  cursor: 'pointer', padding: 0, fontSize: 14, lineHeight: 1,
+                  cursor: 'pointer', padding: 0, fontSize: 'var(--icon-xs)', lineHeight: 1,
                 }}>×</button>
               )}
             </div>
@@ -546,13 +546,13 @@ function RightSidebar({ worklogs, jiraIssues, onOpenLog }: RightSidebarProps) {
                 onClick={() => onOpenLog({ issueKey: rt.issue })}
               >
                 <div style={{
-                  fontSize: 11, fontWeight: 700, color: 'var(--ac2)',
+                  fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac2)',
                   fontFamily: 'var(--mono)', position: 'relative',
                 }}>
                   {rt.issue}
                 </div>
                 <div style={{
-                  fontSize: 11, color: 'var(--tx2)', marginTop: 3,
+                  fontSize: 'var(--fs-2xs)', color: 'var(--tx2)', marginTop: 3,
                   overflow: 'hidden', textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap', position: 'relative',
                 }}>
@@ -562,7 +562,7 @@ function RightSidebar({ worklogs, jiraIssues, onOpenLog }: RightSidebarProps) {
             ))}
             {displayed.length === 0 && (
               <div style={{
-                fontSize: 11, color: 'var(--tx3)', textAlign: 'center',
+                fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', textAlign: 'center',
                 padding: '24px 0', opacity: 0.7,
               }}>
                 {search ? t('jiraTracker.noResults', 'No results') : t('jiraTracker.noWorklogs2')}

@@ -90,11 +90,11 @@ export function LogWorklogModal({ initialDate, initialIssueKey, editWorklog, onC
         {ok ? <div className="mbody"><div className="ok-fl">✓ {t("jiraTracker.savedFlash")} — {tp} · {ik} · {dt}</div></div> : showWarn ? (
           <div className="mbody">
             <div style={{textAlign:"center",padding:"20px 0"}}>
-              <div style={{fontSize:28,marginBottom:12}}>⚠️</div>
-              <div style={{fontWeight:700,fontSize:14,color:"var(--amber)",marginBottom:8}}>
+              <div style={{fontSize:'var(--fs-xl)',marginBottom:12}}>⚠️</div>
+              <div style={{fontWeight:700,fontSize:'var(--fs-sm)',color:"var(--amber)",marginBottom:8}}>
                 {t("jiraTracker.timeWarn", {h: (ps/3600).toFixed(1)})}
               </div>
-              <div style={{fontSize:12,color:"var(--tx3)",marginBottom:20}}>
+              <div style={{fontSize:'var(--fs-xs)',color:"var(--tx3)",marginBottom:20}}>
                 {TimeParser.format(ps)} · {ik}
               </div>
               <div style={{display:"flex",gap:10,justifyContent:"center"}}>
@@ -118,7 +118,7 @@ export function LogWorklogModal({ initialDate, initialIssueKey, editWorklog, onC
                     autoComplete="off"
                     onChange={e => { setQuery(e.target.value); setIk(""); setOpen(true); setEr((v: any)=>({...v,ik:null})); }}
                     onFocus={() => setOpen(true)}
-                    style={{fontFamily:"var(--mono)",fontSize:12}}
+                    style={{fontFamily:"var(--mono)",fontSize:'var(--fs-xs)'}}
                   />
                   {open && filtered.length > 0 && (
                     <div className="cb-drop">
@@ -134,15 +134,15 @@ export function LogWorklogModal({ initialDate, initialIssueKey, editWorklog, onC
                   )}
                   {open && filtered.length === 0 && (
                     <div className="cb-drop">
-                      <div style={{padding:"10px 12px",color:"var(--tx3)",fontSize:12}}>No results for "{query}"</div>
+                      <div style={{padding:"10px 12px",color:"var(--tx3)",fontSize:'var(--fs-xs)'}}>No results for "{query}"</div>
                     </div>
                   )}
                 </div>
                 {er.ik&&<span className="em">{er.ik}</span>}
                 {si && <div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap",alignItems:"center"}}>
                   <span className="t-pill">{si.type}</span>
-                  <span className="er" style={{fontSize:10}}>{si.epic} · {si.epicName}</span>
-                  <span style={{fontSize:10,color:"var(--tx3)",marginLeft:"auto"}}>{si.summary}</span>
+                  <span className="er" style={{fontSize:'var(--fs-2xs)'}}>{si.epic} · {si.epicName}</span>
+                  <span style={{fontSize:'var(--fs-2xs)',color:"var(--tx3)",marginLeft:"auto"}}>{si.summary}</span>
                 </div>}
               </div>
               <div className="fr2">
@@ -158,7 +158,7 @@ export function LogWorklogModal({ initialDate, initialIssueKey, editWorklog, onC
               </div>
               <div className="fr">
                 <label className="fl">{t("jiraTracker.descField")} <span style={{color:"var(--tx3)",textTransform:"none",letterSpacing:0}}>{t("jiraTracker.descOptional")}</span></label>
-                <textarea className="mi" style={{minHeight:56,resize:"vertical",fontFamily:"var(--body)",fontSize:12}} placeholder={t("jiraTracker.descPlaceholder")} value={dc} onChange={e=>setDc(e.target.value)}/>
+                <textarea className="mi" style={{minHeight:56,resize:"vertical",fontFamily:"var(--body)",fontSize:'var(--fs-xs)'}} placeholder={t("jiraTracker.descPlaceholder")} value={dc} onChange={e=>setDc(e.target.value)}/>
               </div>
             </div>
             <div className="mf">

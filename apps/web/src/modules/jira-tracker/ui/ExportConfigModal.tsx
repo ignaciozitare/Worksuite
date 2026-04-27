@@ -128,20 +128,20 @@ export function ExportConfigModal({ onClose, onExport, currentUserId, initialPre
 
   // Styles
   const panelStyle = {
-    flex: 1, minWidth: 0, background: 'var(--sf2,#1b1b22)', borderRadius: 8,
-    border: '1px solid var(--bd,#2a2a38)', display: 'flex', flexDirection: 'column',
+    flex: 1, minWidth: 0, background: 'var(--sf2)', borderRadius: 8,
+    border: '1px solid var(--bd)', display: 'flex', flexDirection: 'column',
     maxHeight: 340, overflow: 'hidden',
   };
   const headerStyle = {
-    padding: '8px 10px', borderBottom: '1px solid var(--bd,#2a2a38)',
-    fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6,
+    padding: '8px 10px', borderBottom: '1px solid var(--bd)',
+    fontSize: 'var(--fs-2xs)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6,
   };
   const itemStyle = (active = false) => ({
     display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px',
-    borderRadius: 6, fontSize: 12, cursor: 'grab', transition: 'background .1s',
+    borderRadius: 6, fontSize: 'var(--fs-xs)', cursor: 'grab', transition: 'background .1s',
     fontFamily: 'inherit', border: 'none', width: '100%', textAlign: 'left',
     background: active ? 'rgba(79,110,247,.08)' : 'transparent',
-    color: 'var(--tx,#e4e4ef)',
+    color: 'var(--tx)',
   });
 
   return (
@@ -149,49 +149,49 @@ export function ExportConfigModal({ onClose, onExport, currentUserId, initialPre
         <div style={{ overflowY: 'auto', flex: 1, padding: '16px 20px' }}>
           {/* Presets bar */}
           <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--tx3,#50506a)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Presets:</span>
+            <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Presets:</span>
             {presets.map(p => (
               <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <button onClick={() => loadPreset(p)} style={{
-                  padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                  fontFamily: 'inherit', border: `1px solid ${activePresetId === p.id ? '#4f6ef7' : 'var(--bd,#2a2a38)'}`,
+                  padding: '3px 10px', borderRadius: 12, fontSize: 'var(--fs-2xs)', fontWeight: 600, cursor: 'pointer',
+                  fontFamily: 'inherit', border: `1px solid ${activePresetId === p.id ? 'var(--ac)' : 'var(--bd)'}`,
                   background: activePresetId === p.id ? 'rgba(79,110,247,.12)' : 'transparent',
-                  color: activePresetId === p.id ? '#4f6ef7' : 'var(--tx3,#50506a)',
+                  color: activePresetId === p.id ? 'var(--ac)' : 'var(--tx3)',
                 }}>{p.name}</button>
                 <button onClick={() => deletePreset(p.id)} style={{
-                  background: 'none', border: 'none', color: 'var(--red,#e05252)', cursor: 'pointer',
-                  fontSize: 11, padding: '0 2px', fontFamily: 'inherit',
+                  background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer',
+                  fontSize: 'var(--fs-2xs)', padding: '0 2px', fontFamily: 'inherit',
                 }}>×</button>
               </div>
             ))}
-            {presets.length === 0 && <span style={{ fontSize: 11, color: 'var(--tx3,#50506a)' }}>Sin presets guardados</span>}
+            {presets.length === 0 && <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>Sin presets guardados</span>}
           </div>
 
           {/* Dual panel */}
           <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
             {/* Available fields */}
             <div style={panelStyle}>
-              <div style={{ ...headerStyle, color: 'var(--tx3,#50506a)' }}>
+              <div style={{ ...headerStyle, color: 'var(--tx3)' }}>
                 <span>Campos disponibles ({available.length})</span>
               </div>
-              <div style={{ padding: '4px 6px', borderBottom: '1px solid var(--bd,#2a2a38)' }}>
+              <div style={{ padding: '4px 6px', borderBottom: '1px solid var(--bd)' }}>
                 <input placeholder="Buscar campo…" value={search} onChange={e => setSearch(e.target.value)}
-                  style={{ width: '100%', padding: '4px 8px', fontSize: 11, fontFamily: 'inherit',
-                    background: 'var(--sf,#141418)', border: '1px solid var(--bd,#2a2a38)',
-                    borderRadius: 4, color: 'var(--tx,#e4e4ef)', outline: 'none' }} />
+                  style={{ width: '100%', padding: '4px 8px', fontSize: 'var(--fs-2xs)', fontFamily: 'inherit',
+                    background: 'var(--sf)', border: '1px solid var(--bd)',
+                    borderRadius: 4, color: 'var(--tx)', outline: 'none' }} />
               </div>
               <div style={{ flex: 1, overflowY: 'auto', padding: 4 }}>
                 {available.map(f => (
                   <div key={f.id} onClick={() => addColumn(f.id)} style={itemStyle()}
                     onMouseEnter={e => (e.currentTarget.style.background = 'rgba(79,110,247,.08)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                    <span style={{ fontSize: 10, color: 'var(--tx3,#50506a)' }}>+</span>
+                    <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>+</span>
                     <span style={{ flex: 1 }}>{f.label}</span>
-                    <span style={{ fontSize: 9, color: 'var(--tx3,#50506a)', fontFamily: 'var(--mono)' }}>{f.id}</span>
+                    <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', fontFamily: 'var(--mono)' }}>{f.id}</span>
                   </div>
                 ))}
                 {available.length === 0 && (
-                  <div style={{ fontSize: 11, color: 'var(--tx3,#50506a)', textAlign: 'center', padding: 12 }}>
+                  <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', textAlign: 'center', padding: 12 }}>
                     Todos seleccionados
                   </div>
                 )}
@@ -199,8 +199,8 @@ export function ExportConfigModal({ onClose, onExport, currentUserId, initialPre
             </div>
 
             {/* Selected fields (reorderable) */}
-            <div style={{ ...panelStyle, borderColor: '#4f6ef7' }}>
-              <div style={{ ...headerStyle, color: '#4f6ef7' }}>
+            <div style={{ ...panelStyle, borderColor: 'var(--ac)' }}>
+              <div style={{ ...headerStyle, color: 'var(--ac)' }}>
                 <span>Columnas del export ({columns.length})</span>
               </div>
               <div style={{ flex: 1, overflowY: 'auto', padding: 4 }}>
@@ -213,21 +213,21 @@ export function ExportConfigModal({ onClose, onExport, currentUserId, initialPre
                     style={{
                       ...itemStyle(true),
                       background: dragOver === i ? 'rgba(79,110,247,.2)' : 'rgba(79,110,247,.06)',
-                      borderBottom: dragOver === i ? '2px solid #4f6ef7' : 'none',
+                      borderBottom: dragOver === i ? '2px solid var(--ac)' : 'none',
                     }}
                     onMouseEnter={e => { if (dragging === null) e.currentTarget.style.background = 'rgba(239,68,68,.06)'; }}
                     onMouseLeave={e => { if (dragging === null) e.currentTarget.style.background = 'rgba(79,110,247,.06)'; }}>
-                    <span style={{ fontSize: 10, color: 'var(--tx3,#50506a)', cursor: 'grab' }}>⠿</span>
+                    <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', cursor: 'grab' }}>⠿</span>
                     <span style={{ flex: 1 }}>{f.label}</span>
-                    <span style={{ fontSize: 9, color: 'var(--tx3,#50506a)', fontFamily: 'var(--mono)' }}>{f.id}</span>
+                    <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', fontFamily: 'var(--mono)' }}>{f.id}</span>
                     <button onClick={e => { e.stopPropagation(); removeColumn(f.id); }} style={{
-                      background: 'none', border: 'none', color: 'var(--red,#e05252)',
-                      cursor: 'pointer', fontSize: 12, padding: '0 4px',
+                      background: 'none', border: 'none', color: 'var(--red)',
+                      cursor: 'pointer', fontSize: 'var(--fs-xs)', padding: '0 4px',
                     }}>×</button>
                   </div>
                 ))}
                 {columns.length === 0 && (
-                  <div style={{ fontSize: 11, color: 'var(--tx3,#50506a)', textAlign: 'center', padding: 12 }}>
+                  <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', textAlign: 'center', padding: 12 }}>
                     Añade campos de la izquierda
                   </div>
                 )}
@@ -238,20 +238,20 @@ export function ExportConfigModal({ onClose, onExport, currentUserId, initialPre
           {/* Preview row */}
           {columns.length > 0 && (
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--tx3,#50506a)', textTransform: 'uppercase',
+              <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase',
                 letterSpacing: '.05em', marginBottom: 6 }}>Vista previa de columnas</div>
-              <div style={{ overflowX: 'auto', borderRadius: 6, border: '1px solid var(--bd,#2a2a38)' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
+              <div style={{ overflowX: 'auto', borderRadius: 6, border: '1px solid var(--bd)' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-2xs)' }}>
                   <thead><tr>
                     {selectedFields.map(f => (
-                      <th key={f.id} style={{ padding: '6px 8px', background: 'var(--sf2,#1b1b22)',
-                        color: 'var(--tx3,#50506a)', fontWeight: 700, textAlign: 'left',
-                        borderBottom: '1px solid var(--bd,#2a2a38)', whiteSpace: 'nowrap' }}>{f.label}</th>
+                      <th key={f.id} style={{ padding: '6px 8px', background: 'var(--sf2)',
+                        color: 'var(--tx3)', fontWeight: 700, textAlign: 'left',
+                        borderBottom: '1px solid var(--bd)', whiteSpace: 'nowrap' }}>{f.label}</th>
                     ))}
                   </tr></thead>
                   <tbody><tr>
                     {selectedFields.map(f => (
-                      <td key={f.id} style={{ padding: '4px 8px', color: 'var(--tx3,#50506a)',
+                      <td key={f.id} style={{ padding: '4px 8px', color: 'var(--tx3)',
                         fontStyle: 'italic', whiteSpace: 'nowrap' }}>ejemplo</td>
                     ))}
                   </tr></tbody>
@@ -262,15 +262,15 @@ export function ExportConfigModal({ onClose, onExport, currentUserId, initialPre
 
           {/* Filename */}
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--tx3,#50506a)', textTransform: 'uppercase',
+            <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase',
               letterSpacing: '.05em', marginBottom: 6 }}>Nombre del archivo</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <input value={filename} onChange={e => setFilename(e.target.value)}
                 placeholder="worklogs"
-                style={{ flex: 1, padding: '7px 10px', fontSize: 13, fontFamily: 'inherit',
-                  background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)',
-                  borderRadius: 6, color: 'var(--tx,#e4e4ef)', outline: 'none' }} />
-              <span style={{ fontSize: 11, color: 'var(--tx3,#50506a)', whiteSpace: 'nowrap' }}>
+                style={{ flex: 1, padding: '7px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
+                  background: 'var(--sf2)', border: '1px solid var(--bd)',
+                  borderRadius: 6, color: 'var(--tx)', outline: 'none' }} />
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', whiteSpace: 'nowrap' }}>
                 _{dateFrom}_{dateTo}.csv
               </span>
             </div>
@@ -280,20 +280,20 @@ export function ExportConfigModal({ onClose, onExport, currentUserId, initialPre
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <input value={presetName} onChange={e => setPresetName(e.target.value)}
               placeholder="Nombre del preset…"
-              style={{ flex: 1, minWidth: 140, padding: '6px 10px', fontSize: 12, fontFamily: 'inherit',
-                background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)',
-                borderRadius: 6, color: 'var(--tx,#e4e4ef)', outline: 'none' }}
+              style={{ flex: 1, minWidth: 140, padding: '6px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
+                background: 'var(--sf2)', border: '1px solid var(--bd)',
+                borderRadius: 6, color: 'var(--tx)', outline: 'none' }}
               onKeyDown={e => { if (e.key === 'Enter') saveAsNew(); }} />
             <button onClick={saveAsNew} disabled={saving} style={{
-              background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)',
-              borderRadius: 6, padding: '6px 12px', fontSize: 11, fontWeight: 600,
-              color: 'var(--tx3,#50506a)', cursor: 'pointer', fontFamily: 'inherit',
+              background: 'var(--sf2)', border: '1px solid var(--bd)',
+              borderRadius: 6, padding: '6px 12px', fontSize: 'var(--fs-2xs)', fontWeight: 600,
+              color: 'var(--tx3)', cursor: 'pointer', fontFamily: 'inherit',
             }}>+ Guardar como nuevo</button>
             {activePresetId && (
               <button onClick={updateCurrent} disabled={saving} style={{
                 background: 'rgba(79,110,247,.1)', border: '1px solid rgba(79,110,247,.3)',
-                borderRadius: 6, padding: '6px 12px', fontSize: 11, fontWeight: 600,
-                color: '#4f6ef7', cursor: 'pointer', fontFamily: 'inherit',
+                borderRadius: 6, padding: '6px 12px', fontSize: 'var(--fs-2xs)', fontWeight: 600,
+                color: 'var(--ac)', cursor: 'pointer', fontFamily: 'inherit',
               }}>Actualizar "{presets.find(p => p.id === activePresetId)?.name}"</button>
             )}
           </div>
@@ -304,12 +304,12 @@ export function ExportConfigModal({ onClose, onExport, currentUserId, initialPre
           display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <button onClick={onClose} style={{
             background: 'var(--sf2)', border: '1px solid var(--bd)',
-            borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 600,
+            borderRadius: 8, padding: '8px 16px', fontSize: 'var(--fs-xs)', fontWeight: 600,
             color: 'var(--tx3)', cursor: 'pointer', fontFamily: 'inherit',
           }}>Cancelar</button>
           <button onClick={() => onExport(columns, `${filename.trim() || 'worklogs'}_${dateFrom}_${dateTo}`)} disabled={columns.length === 0} style={{
-            background: 'var(--ac)', color: '#fff', border: 'none',
-            borderRadius: 8, padding: '8px 20px', fontSize: 12, fontWeight: 700,
+            background: 'var(--ac)', color: 'var(--ac-on)', border: 'none',
+            borderRadius: 8, padding: '8px 20px', fontSize: 'var(--fs-xs)', fontWeight: 700,
             cursor: columns.length ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
             opacity: columns.length ? 1 : 0.5,
           }}>↓ Exportar CSV</button>

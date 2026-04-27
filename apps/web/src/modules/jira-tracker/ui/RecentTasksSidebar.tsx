@@ -39,7 +39,7 @@ export function RecentTasksSidebar({ worklogs, onOpenLog }: RecentTasksSidebarPr
       <button onClick={() => setOpen(v => !v)} style={{
         background: 'none', border: 'none', borderBottom: '1px solid var(--bd)',
         cursor: 'pointer', padding: '10px 8px', color: 'var(--tx3)',
-        fontSize: 11, fontWeight: 700, fontFamily: 'inherit', textAlign: 'center',
+        fontSize: 'var(--fs-2xs)', fontWeight: 700, fontFamily: 'inherit', textAlign: 'center',
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
       }}>
         {open ? '›' : '‹'}
@@ -58,17 +58,17 @@ export function RecentTasksSidebar({ worklogs, onOpenLog }: RecentTasksSidebarPr
               style={{
                 padding: '8px 8px', borderRadius: 6, cursor: 'grab',
                 marginBottom: 4, transition: 'background .1s',
-                borderLeft: '2px solid var(--ac,#4f6ef7)',
+                borderLeft: '2px solid var(--ac)',
               }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--sf2)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--ac2,#7c9aff)', fontFamily: 'var(--mono)' }}>{rt.issue}</div>
-              <div style={{ fontSize: 10, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>{rt.summary}</div>
-              <div style={{ fontSize: 9, color: 'var(--tx3)', marginTop: 2, opacity: 0.7 }}>{rt.date}</div>
+              <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac2)', fontFamily: 'var(--mono)' }}>{rt.issue}</div>
+              <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>{rt.summary}</div>
+              <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 2, opacity: 0.7 }}>{rt.date}</div>
             </div>
           ))}
           {recentTasks.length === 0 && (
-            <div style={{ fontSize: 10, color: 'var(--tx3)', textAlign: 'center', padding: '16px 0' }}>{t('jiraTracker.noWorklogs2')}</div>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', textAlign: 'center', padding: '16px 0' }}>{t('jiraTracker.noWorklogs2')}</div>
           )}
         </div>
       )}

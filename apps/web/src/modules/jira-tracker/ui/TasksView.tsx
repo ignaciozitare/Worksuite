@@ -24,7 +24,7 @@ const TASKS_CSS = `
 .tv-row:hover{background:var(--sf2)}
 .tv-pill-filter{
   padding:4px 10px;border-radius:9999px;border:none;
-  font:500 11px/1 'Inter',sans-serif;cursor:pointer;
+  font:500 var(--fs-2xs)/1 'Inter',sans-serif;cursor:pointer;
   transition:all .15s ease;
 }
 .tv-pill-filter.on{background:var(--glow);border:1px solid rgba(79,110,247,.28);color:var(--ac2)}
@@ -136,18 +136,18 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues }: TasksVie
 
       {/* ── Header ─────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--tx)' }}>
+        <span style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--tx)' }}>
           {t('nav.tasks')}
         </span>
         <span style={{
-          fontSize: 11, fontWeight: 700, padding: '2px 10px',
+          fontSize: 'var(--fs-2xs)', fontWeight: 700, padding: '2px 10px',
           borderRadius: 9999, background: 'var(--ac)', color: 'var(--ac-on)',
         }}>
           {filteredIssues.length}
         </span>
         <button onClick={() => onOpenLog({})} style={{
           marginLeft: 'auto', padding: '6px 16px', borderRadius: 6, border: 'none',
-          background: 'var(--ac)', color: 'var(--ac-on)', fontSize: 11,
+          background: 'var(--ac)', color: 'var(--ac-on)', fontSize: 'var(--fs-2xs)',
           fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
         }}>
           {t('jiraTracker.logHours')}
@@ -177,7 +177,7 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues }: TasksVie
             onChange={e => ssr(e.target.value)}
             style={{
               background: 'none', border: 'none', outline: 'none',
-              color: 'var(--tx)', fontSize: 11, fontFamily: 'inherit', width: 140,
+              color: 'var(--tx)', fontSize: 'var(--fs-2xs)', fontFamily: 'inherit', width: 140,
             }}
           />
         </div>
@@ -208,14 +208,14 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues }: TasksVie
           color: 'var(--tx3)', opacity: 0.7,
         }}>
           <Icon name="search_off" size={36} weight={200} style={{ color: 'var(--tx3)' }} />
-          <span style={{ fontSize: 13 }}>{t('common.noResults')}</span>
+          <span style={{ fontSize: 'var(--fs-xs)' }}>{t('common.noResults')}</span>
         </div>
       )}
 
       {/* ── Table ──────────────────────────────────────────────────── */}
       {filteredIssues.length > 0 && (
         <div style={{ flex: 1, overflowX: 'auto', overflowY: 'auto', minHeight: 0 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, tableLayout: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-xs)', tableLayout: 'auto' }}>
             <thead>
               <tr>
                 {columns.map(col => (
@@ -230,7 +230,7 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues }: TasksVie
                   >
                     {col.label(t)}
                     {col.sortable && (
-                      <span style={{ marginLeft: 4, fontSize: 9, color: so.key === col.key ? 'var(--ac2)' : 'var(--tx3)' }}>
+                      <span style={{ marginLeft: 4, fontSize: 'var(--fs-2xs)', color: so.key === col.key ? 'var(--ac2)' : 'var(--tx3)' }}>
                         {so.key === col.key ? (so.dir === 'asc' ? '↑' : '↓') : '⇅'}
                       </span>
                     )}
@@ -245,36 +245,36 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues }: TasksVie
                 return (
                   <tr key={i.key || idx} className="tv-row">
                     <td style={tdStyle}>
-                      <span style={{ color: 'var(--ac2)', fontSize: 10, fontWeight: 600, fontFamily: 'var(--mono)' }}>{i.key}</span>
+                      <span style={{ color: 'var(--ac2)', fontSize: 'var(--fs-2xs)', fontWeight: 600, fontFamily: 'var(--mono)' }}>{i.key}</span>
                     </td>
                     <td style={tdStyle}>
-                      <div style={{ color: 'var(--tx2)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 300 }}>
+                      <div style={{ color: 'var(--tx2)', fontSize: 'var(--fs-xs)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 300 }}>
                         {i.summary}
                       </div>
                     </td>
                     <td style={tdStyle}>
                       <span style={{
-                        fontSize: 10, padding: '2px 6px', borderRadius: 4,
+                        fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 4,
                         border: '1px solid var(--bd2)', color: 'var(--tx2)',
                       }}>{i.type}</span>
                     </td>
                     <td style={tdStyle}>
                       <span style={{
-                        fontSize: 10, fontWeight: 600, padding: '2px 8px',
+                        fontSize: 'var(--fs-2xs)', fontWeight: 600, padding: '2px 8px',
                         borderRadius: 9999, background: sc.bg, color: sc.color,
                       }}>{i.status}</span>
                     </td>
                     <td style={tdStyle}>
                       <span style={{
-                        fontSize: 10, fontWeight: 600, padding: '2px 8px',
+                        fontSize: 'var(--fs-2xs)', fontWeight: 600, padding: '2px 8px',
                         borderRadius: 9999, background: pri.bg, color: pri.color,
                       }}>{i.priority}</span>
                     </td>
                     <td style={tdStyle}>
-                      <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--tx3)' }}>{i.project}</span>
+                      <span style={{ fontFamily: 'var(--mono)', fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>{i.project}</span>
                     </td>
                     <td style={tdStyle}>
-                      <span style={{ fontSize: 10, color: 'var(--purple)', fontWeight: 500 }}>{i.epicName || i.epic || '—'}</span>
+                      <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--purple)', fontWeight: 500 }}>{i.epicName || i.epic || '—'}</span>
                     </td>
                     <td style={{ ...tdStyle, color: 'var(--green)', fontWeight: 500 }}>
                       {TimeParser.format(hoursByIssue[i.key] || 0)}
@@ -283,14 +283,14 @@ export function TasksView({ filters, onOpenLog, worklogs, jiraIssues }: TasksVie
                       <button onClick={() => onOpenLog({ issueKey: i.key })} style={{
                         padding: '3px 10px', borderRadius: 5, border: 'none',
                         background: 'var(--ac)', color: 'var(--ac-on)',
-                        fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                        fontSize: 'var(--fs-2xs)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
                         marginRight: 6,
                       }}>
                         {t('jiraTracker.btnHours')}
                       </button>
                       <button onClick={() => onOpenLog({ issueKey: i.key, editWorklog: { id: '', issue: i.key, seconds: hoursByIssue[i.key] || 0, started: '09:00', description: '' } })} style={{
                         background: 'none', border: 'none', cursor: 'pointer',
-                        fontSize: 14, color: 'var(--tx)', padding: '2px 4px',
+                        fontSize: 'var(--icon-xs)', color: 'var(--tx)', padding: '2px 4px',
                       }} title={t('common.edit', 'Edit')}>✎</button>
                     </td>
                   </tr>
@@ -315,12 +315,12 @@ function StatCard({ label, value, color, icon }: { label: string; value: string 
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <Icon name={icon} size={14} weight={300} style={{ color, opacity: 0.7 }} />
         <span style={{
-          fontSize: 9, fontWeight: 700, color: 'var(--tx3)',
+          fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
           letterSpacing: '0.05em', textTransform: 'uppercase',
         }}>{label}</span>
       </div>
       <div style={{
-        fontSize: 24, fontWeight: 600, color, letterSpacing: '-0.02em', lineHeight: 1,
+        fontSize: 'var(--fs-xl)', fontWeight: 600, color, letterSpacing: '-0.02em', lineHeight: 1,
       }}>{value}</div>
     </div>
   );
@@ -344,7 +344,7 @@ const columns = [
 
 const thStyle: React.CSSProperties = {
   padding: '8px 10px', textAlign: 'left',
-  fontSize: 9, fontWeight: 700, color: 'var(--tx3)',
+  fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
   letterSpacing: '0.05em', textTransform: 'uppercase',
   background: 'var(--sf)', borderBottom: '1px solid var(--bd)',
   whiteSpace: 'nowrap',
