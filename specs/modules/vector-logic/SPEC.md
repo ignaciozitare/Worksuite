@@ -808,8 +808,15 @@ Snapshot de prod (2026-04-27) confirmó **transiciones duplicadas en `vl_transit
    - En `loadWorkflow`, deduplicar in-memory antes de buildear el grafo (defensa contra cualquier dato sucio que aún quede).
 
 ### Fuera de alcance (followups)
-- Limpiar nombres duplicados en `vl_states` (e.g. dos "Review" rows). El admin puede mergear vía SQL o desde Settings; no se hace en este fix.
 - Los `position_y` negativos de algunos workflow_states (estados arrastrados off-canvas). React Flow `fitView` ya re-encuadra al cargar; no se persiste corrección.
+
+### Cleanup adicional aplicado el mismo día — dedupe de `vl_states`
+Migración `20260427_vl_states_dedupe_unique_name.sql` (separada del fix de transitions):
+
+- Había dos rows en `vl_states` con name="Review", category=IN_PROGRESS, color=#dff43e — orphan id `9fc5851c…` y canonical `78614163…`.
+- Mergeo: las referencias del orphan en `vl_workflow_states`, `vl_transitions`, `vl_tasks` y `vl_board_column_states` se repuntaron a la canonical. Donde los UNIQUE constraints habrían bloqueado el UPDATE (porque ambas ids ya coexistían en el mismo workflow / column), se borró la fila orphan en lugar de updatear.
+- DELETE del row orphan en `vl_states`.
+- ADD CONSTRAINT `vl_states_name_unique UNIQUE (name)` — la librería de estados es global (sin scoping por user/workflow), así que dos estados con el mismo nombre siempre fue un error de UX.
 
 ### Modelo de datos
 Sin tablas nuevas. Sólo dos constraints añadidos a `vl_transitions`:

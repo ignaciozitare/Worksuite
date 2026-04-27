@@ -17,7 +17,7 @@ _Ultima actualizacion: 2026-04-27_
 - Resultado: filas duplicadas acumuladas. Snapshot mostró:
   - workflow "Accionable": 6 pares con duplicados (ej. `Review → Close` x3, `In progress → Review` x2).
   - workflow "solucion": `Close → Close` self-loop x2 (a pesar del guard `connection.source === connection.target`).
-- **Bug secundario (no resuelto):** dos estados con el mismo nombre "Review" en `vl_states` con ids distintos. El admin debe limpiarlos manualmente.
+- ~~Bug secundario:~~ dos estados con el mismo nombre "Review" en `vl_states` — RESUELTO en `20260427_vl_states_dedupe_unique_name.sql`: orphan `9fc5851c…` mergeado a canonical `78614163…`, references actualizadas, ADD CONSTRAINT `vl_states_name_unique UNIQUE(name)`.
 
 **Fix aplicado a prod (DB) + commiteado en fix branch:**
 - Migración `20260427_vl_transitions_dedupe.sql`:
