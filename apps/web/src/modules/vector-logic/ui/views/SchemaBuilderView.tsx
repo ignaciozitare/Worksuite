@@ -16,9 +16,12 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 interface Props {
   currentUser: { id: string; [k: string]: unknown };
   wsUsers?: Array<{ id: string; name?: string; email: string }>;
+  /** When provided (e.g. from a deep link via the card kebab "Configure"
+   *  item), pre-select this task type instead of the first one in the list. */
+  targetTypeId?: string | null;
 }
 
-export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
+export function SchemaBuilderView({ currentUser, wsUsers = [], targetTypeId = null }: Props) {
   const { t } = useTranslation();
   const dialog = useDialog();
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
@@ -48,10 +51,14 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
   useEffect(() => {
     taskTypeRepo.findAll().then(tts => {
       setTaskTypes(tts);
-      if (tts.length > 0) selectTaskType(tts[0]);
+      if (tts.length > 0) {
+        // Honor the deep-link hint when present; fall back to the first type.
+        const target = targetTypeId ? tts.find(x => x.id === targetTypeId) : null;
+        selectTaskType(target ?? tts[0]);
+      }
       setLoading(false);
     });
-  }, []);
+  }, [targetTypeId]);
 
   const selectTaskType = (tt: TaskType) => {
     setSelected(tt);

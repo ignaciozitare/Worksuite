@@ -1,12 +1,39 @@
 # WORK_STATE
 
-_Ultima actualizacion: 2026-04-27_
+_Ultima actualizacion: 2026-04-27 (cont. — TaskCard ToDo + Card Menu)_
 
 ---
 
 ## Tarea en curso
 
-**Pendiente smoke test del usuario en prod** del barrido completo de tipografía + theme tokens (5 commits en main, ver "Sesión typography" más abajo). Todos los builds pasaron localmente, pero ~2200 fontSize literales y ~370 var() fallbacks reescritos en una sola tanda — alta probabilidad de pequeños desajustes visuales (especialmente íconos de empty state que colapsaron de 48px → 28px).
+**Pendiente merge a main + preview deploy** del feature **Vector Logic — TaskCard ToDo + Card Menu** (sección nueva en `specs/modules/vector-logic/SPEC.md` "Phase 5 — TaskCard ToDo + Card Menu (revisión 2026-04-27)").
+
+### Lo que se construyó
+- Nuevo `fieldType: 'todo'` (mismo render que `checklist`, sin migración).
+- Componentes nuevos en `apps/web/src/modules/vector-logic/ui/components/`: `CardMenu` (modos `corner` + `inline`), `CardProgressBars` (barras apiladas al pie), `CloneTaskModal` (título + 6 checkboxes).
+- Use cases en `application/CloneTask.ts`: `CloneTask` (clona en estado OPEN, opt-in subtareas recursivo) y `DeleteTaskCascade` (BFS leaves-first).
+- KanbanView TaskCard + BoardView BoardTaskCard: kebab `⋮`, barras apiladas al pie, mini-bar dentro del chip `4/4`, chip de días-en-columna restaurado (siempre visible, antes oculto detrás de `!hasCardFields`).
+- TaskDetailModal: kebab inline en titleAccessory + footer Delete eliminado por redundancia.
+- AdminShell + AdminVectorLogic: sincronizados con URL via `useSearchParams` (`?mod=vectorlogic&tab=schema&typeId=...`). SchemaBuilderView acepta `targetTypeId`.
+- 11 keys i18n nuevas en es+en (cardMenuClone/Delete/Configure/Aria, cloneModal*, todoDone/AddItem, deleteTaskCascadeConfirm).
+
+### Estado al cerrar la sesión
+- Build vite local: ✅
+- Review Agent: ✅ (con fix de aria-label i18n)
+- QA Agent: ✅ con 2 warns (permission-gating de Delete pendiente como follow-up; modal kebab agregado mid-session, ya reflejado en el spec).
+- Smoke test del user: ✅ confirmado en `localhost:5173`.
+- Branch: trabajado directo en `main` — para mergear hay que crear feature branch + Vercel preview (regla CLAUDE.md).
+
+### Follow-ups conocidos (out of scope esta entrega)
+- Item Borrar deshabilitado con tooltip cuando un user tiene `permission='use'` en un board compartido.
+- Subtareas cross-type: la barra de progreso solo cuenta los hijos cargados en `tasks` (filtros activos los pueden esconder).
+- Alarmas y comentarios en el modal de Clonar son toggles inertes (la opción está en la UI pero el use case los ignora — reservados para v2).
+
+---
+
+## Sesión 2026-04-27 — Typography + Theme tokens (anterior — ya en prod)
+
+**Pendiente smoke test del usuario en prod** del barrido completo de tipografía + theme tokens (5 commits en main). Todos los builds pasaron localmente, pero ~2200 fontSize literales y ~370 var() fallbacks reescritos en una sola tanda — alta probabilidad de pequeños desajustes visuales (especialmente íconos de empty state que colapsaron de 48px → 28px).
 
 ## Sesión 2026-04-27 (cont.) — Typography + Theme tokens
 

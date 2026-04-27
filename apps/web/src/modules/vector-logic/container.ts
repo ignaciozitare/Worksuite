@@ -22,6 +22,7 @@ import { SupabaseBoardFilterRepo } from './infra/supabase/SupabaseBoardFilterRep
 import { SupabaseBoardMemberRepo } from './infra/supabase/SupabaseBoardMemberRepo';
 import { LLMService } from './infra/LLMService';
 import { GmailConnectionApi, EmailRuleApi, EmailDetectionApi } from './infra/EmailIntelApi';
+import { CloneTask, DeleteTaskCascade } from './application/CloneTask';
 
 export const workflowRepo = new SupabaseWorkflowRepo(supabase);
 export const stateRepo = new SupabaseStateRepo(supabase);
@@ -42,6 +43,10 @@ export const llmService = new LLMService();
 export const gmailConnectionRepo = new GmailConnectionApi();
 export const emailRuleRepo = new EmailRuleApi();
 export const emailDetectionRepo = new EmailDetectionApi();
+
+/** Use cases composed over the repos — UI imports these directly. */
+export const cloneTaskUseCase = new CloneTask(taskRepo);
+export const deleteTaskCascadeUseCase = new DeleteTaskCascade(taskRepo);
 
 /** Auth helper — keeps supabase out of UI files */
 export async function getSessionToken(): Promise<string | null> {

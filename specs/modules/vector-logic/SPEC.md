@@ -822,3 +822,89 @@ Migración `20260427_vl_states_dedupe_unique_name.sql` (separada del fix de tran
 Sin tablas nuevas. Sólo dos constraints añadidos a `vl_transitions`:
 - `UNIQUE (workflow_id, from_state_id, to_state_id)` — previene duplicados.
 - `CHECK (from_state_id <> to_state_id)` — previene self-loops.
+
+---
+
+## Phase 5 — TaskCard ToDo + Card Menu (revisión 2026-04-27)
+
+### Propósito
+Enriquecer la TaskCard del Kanban / BoardView con visibilidad de progreso (ToDo + subtareas) y un menú de acciones rápidas, sin agregar fricción visual ni romper la fila de meta-chips existente.
+
+### Cambios
+
+**1. Campo nuevo "ToDo".**
+Nuevo `fieldType: 'todo'` en el Schema Builder. Estructura idéntica a `checklist`: array de items `{text, checked}` editable desde TaskDetailModal. Convive con `checklist` legacy en el mismo task type. Cero cambios de base de datos — es un valor nuevo aceptado por el JSONB `schema` de `vl_task_types` y por `task.data[fieldId]`.
+
+**2. Barras de progreso apiladas en el borde inferior de la card.**
+Pegadas al borde inferior, ~3px de alto, full width. Stack ordenado de arriba a abajo (gap 1px entre barras):
+- **Una barra por cada campo ToDo** del task type que tenga al menos 1 item. N segmentos = N items. Verde (`var(--green)`) para `checked`, gris (`var(--sf2)`) para pendiente.
+- **Una barra de subtareas** si la task tiene subtareas (otras `vl_tasks` con `parent_task_id = esta`). N segmentos = N subtareas. Verde si la subtarea está en un estado de `category=DONE`, gris si no.
+- Total de barras visibles: 0 (sin ToDos ni subtasks) hasta N+1. Si no hay nada, la card no muestra barra al pie.
+- Animación: 150ms de transición de color cuando un segmento cambia.
+
+**3. Mini-barra de progreso dentro del chip `done/total`.**
+El chip que `formatCardValue` renderiza para `checklist` (y para `todo`) sigue mostrando `4/4`. Al lado del texto se agrega una mini-barra segmentada (~3px alto, ~5px por segmento). Mismos colores que la barra del borde inferior. **El texto numérico no se quita.**
+
+**4. Restaurar chip "días en columna".**
+El badge `Nd` vuelve a renderizarse **siempre** en la fila de meta-chips de la card, no solo cuando el task type carece de campos `showOnCard`. Hoy queda oculto en `KanbanView.tsx:1098` cuando hay chips configurados — fue una regresión al introducir `cardFields`. Posición: a continuación de los chips configurados.
+
+**5. Menú kebab `⋮` en la card y en el modal de detalle.**
+Esquina superior derecha de la card. Botón ghost con backdrop blur, ícono Material Symbols `more_vert`. Click abre un dropdown glass + blur sobre `surface-container-high`, con tres items:
+
+- **Clonar** (todos los usuarios). Abre modal "Clonar tarea".
+- **Borrar** (todos los usuarios). Modal de confirmación estándar. Si la task tiene subtareas, el modal lo aclara — el borrado es en cascada.
+- **Configurar** (solo si rol admin). Navega a Settings → SchemaBuilderView con el task type del card pre-seleccionado.
+
+El menú se cierra con click fuera, `Esc`, o al elegir un item. Click en el kebab no propaga al click handler de la card.
+
+**Visibilidad del kebab en card:** en desktop solo aparece en hover; en touch siempre visible con baja opacidad cuando no hay hover/touch.
+
+**Misma kebab dentro del TaskDetailModal** (revisión post-merge 2026-04-27): el componente `CardMenu` también se renderiza en `mode="inline"` dentro del header del modal de detalle, junto al indicador "Auto-saved". Mismos tres items con la misma lógica. El botón "Delete" rojo del footer del modal queda eliminado — el kebab pasa a ser la fuente única de las acciones destructivas / de configuración. La opción Borrar dentro del modal usa el confirm con conteo de subtareas (`subtasks.length` ya cargado por el modal).
+
+**6. Modal "Clonar tarea".**
+Se abre desde el item Clonar del menú. Layout:
+- **Título** (input): default `"clon - {título original}"`. Editable.
+- **Qué copiar** (checkboxes; ver defaults):
+  - `[ ]` Subtareas (recursivo)
+  - `[x]` Datos de los campos del schema (incluye ToDos y checklists)
+  - `[x]` Prioridad
+  - `[x]` Asignado
+  - `[ ]` Alarmas
+  - `[ ]` Comentarios / actividad
+- **Estado inicial:** la copia arranca siempre en el estado OPEN del workflow (no se copia el estado actual del original — evitamos confusión de dos tasks en IN_PROGRESS sin haber arrancado).
+- Footer: `Cancelar` · `Clonar` (gradient).
+- Al confirmar: se genera un `code` nuevo, la task se inserta en OPEN, modal se cierra, toast `"Tarea clonada"` con link a la nueva.
+
+### Reglas
+- En boards compartidos con permission `use`, el item Borrar se muestra deshabilitado con tooltip. **NO implementado en v1** — actualmente Borrar está habilitado para todos los miembros del board. RLS de `vl_tasks` es la red de seguridad real. Follow-up pendiente.
+- Si el rol no es admin, el item Configurar no se renderiza (no visible).
+- La barra inferior no se renderiza si la card no tiene ningún ToDo con items ni subtareas.
+- El chip de días-en-columna sigue requiriendo `daysInColumn > 0` (no muestra `0d`).
+- Subtareas de un task type filtrado fuera del Kanban no aparecen en la barra de progreso (la card solo cuenta los hijos cargados en `tasks`). Para ver progreso completo en hierarchies cross-type, switchear a "All types".
+
+### Out of scope
+- Edición inline del ToDo desde la card (solo desde TaskDetailModal).
+- Right-click → menú contextual del browser.
+- Bulk select para clonar/borrar varias tasks.
+- Templates de clonado guardados.
+
+### Modelo de datos
+**Sin cambios.** `fieldType: 'todo'` se persiste en el JSONB `schema` de `vl_task_types` (extensible). Items del ToDo en `task.data[fieldId]` como array `[{text, checked}]`, idéntico al checklist actual. Subtareas ya existen via `vl_tasks.parent_task_id`. El rol admin se lee del estado de auth global.
+
+**Cascade de borrado.** El FK self-referencial `vl_tasks_parent_task_id_fkey` está hoy como `ON DELETE SET NULL` (verificado en prod 2026-04-27, definido en `supabase/migrations/20260423_vl_smart_kanban_v2.sql:32`). Lo mantenemos así — preserva subtareas si un padre se borra por una vía no controlada. El borrado en cascada que pide la UX (modal "tiene N subtareas, también se borrarán") se implementa en el use case `DeleteTask`: BFS por `parent_task_id` (cap natural a 5 niveles por la regla de Phase 5) y borrado de hojas-a-raíz dentro de la misma transacción.
+
+**DBA verdict (2026-04-27):** no migration — pass-through verificado.
+
+### Files afectados (preview)
+- `apps/web/src/modules/vector-logic/ui/views/KanbanView.tsx` — TaskCard: kebab, barras inferiores, mini-bar en chip, restaurar chip días.
+- `apps/web/src/modules/vector-logic/ui/views/BoardView.tsx` — mismo TaskCard, simétrico.
+- `apps/web/src/modules/vector-logic/ui/components/CloneTaskModal.tsx` — nuevo.
+- `apps/web/src/modules/vector-logic/ui/components/CardMenu.tsx` — nuevo, dropdown kebab reutilizable.
+- `apps/web/src/modules/vector-logic/ui/components/CardProgressBars.tsx` — nuevo, barras apiladas.
+- `apps/web/src/modules/vector-logic/application/CloneTask.ts` — nuevo use case.
+- `apps/web/src/modules/vector-logic/container.ts` — wire de nuevos use cases.
+- `apps/web/src/modules/vector-logic/ui/views/SchemaBuilderView.tsx` — agregar `todo` al picker de field types.
+- `packages/i18n/locales/es.json` + `en.json` — claves `vectorLogic.card.clone/delete/configure`, `vectorLogic.cloneModal.*`.
+
+### UI Reference
+Pencil — frame `VectorLogic/Kanban` actualizado con: card con kebab visible, menú abierto, barras de progreso al pie (ToDo + subtasks), mini-bar dentro del chip `4/4`, modal Clonar.

@@ -1,11 +1,18 @@
 // @ts-nocheck
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@worksuite/i18n';
 import { useDialog, UserAvatar } from '@worksuite/ui';
 import {
   boardRepo, boardColumnRepo, boardFilterRepo,
   stateRepo, taskRepo, taskTypeRepo, priorityRepo,
+  cloneTaskUseCase, deleteTaskCascadeUseCase,
 } from '../../container';
+import { CardMenu } from '../components/CardMenu';
+import { CardProgressBars } from '../components/CardProgressBars';
+import { CloneTaskModal } from '../components/CloneTaskModal';
+import type { CloneTaskOptions } from '../../application/CloneTask';
+import type { SchemaField } from '../../domain/entities/FieldType';
 import type { KanbanBoard } from '../../domain/entities/KanbanBoard';
 import type { BoardColumn } from '../../domain/entities/BoardColumn';
 import type { BoardFilter } from '../../domain/entities/BoardFilter';
@@ -34,7 +41,7 @@ interface WSUser {
 
 interface Props {
   boardId: string;
-  currentUser: { id: string; name?: string; email: string; [k: string]: unknown };
+  currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown };
   wsUsers?: WSUser[];
   /** The current user's permission on this board, or null if not a member.
    *  Owner is implicit (not a row in vl_board_members). */
@@ -45,11 +52,15 @@ interface Props {
 export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, onEditBoard }: Props) {
   const { t } = useTranslation();
   const dialog = useDialog();
+  const navigate = useNavigate();
+  const isAdmin = currentUser.role === 'admin';
 
   const [board, setBoard] = useState<KanbanBoard | null>(null);
   const [columns, setColumns] = useState<BoardColumn[]>([]);
   const [filters, setFilters] = useState<BoardFilter[]>([]);
   const [allStates, setAllStates] = useState<State[]>([]);
+  /** All vl_workflow_states across every workflow — used to resolve OPEN state for clone. */
+  const [allWorkflowStates, setAllWorkflowStates] = useState<WorkflowState[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
   const [priorities, setPriorities] = useState<Priority[]>([]);
@@ -58,6 +69,8 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
   const [dropColumnId, setDropColumnId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  /** Source task being cloned via the kebab menu — when set, the modal is open. */
+  const [cloningTask, setCloningTask] = useState<Task | null>(null);
   /** When set, the TaskDetailModal is rendered for this task. */
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   /** Workflow states for the open task's task type (loaded on demand). */
@@ -76,11 +89,12 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
     setError(null);
     (async () => {
       try {
-        const [b, cols, flts, states, allTasks, types, prs] = await Promise.all([
+        const [b, cols, flts, states, allWfs, allTasks, types, prs] = await Promise.all([
           boardRepo.findById(boardId),
           boardColumnRepo.findByBoard(boardId),
           boardFilterRepo.findByBoard(boardId),
           stateRepo.findAll(),
+          stateRepo.findAllWorkflowStates(),
           taskRepo.findAll(),
           taskTypeRepo.findAll(),
           priorityRepo.ensureDefaults(currentUser.id),
@@ -95,6 +109,7 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
         setColumns(cols);
         setFilters(flts);
         setAllStates(states);
+        setAllWorkflowStates(allWfs);
         setTaskTypes(types);
         setPriorities(prs);
 
@@ -341,9 +356,92 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
   };
 
   const handleTaskDelete = async (taskId: string) => {
-    await taskRepo.remove(taskId);
-    setTasks(prev => prev.filter(x => x.id !== taskId));
+    // Cascade: drop subtree leaves-first via the use case (FK is ON DELETE SET NULL).
+    await deleteTaskCascadeUseCase.execute(taskId);
+    setTasks(prev => {
+      const dropIds = new Set<string>([taskId]);
+      let added = true;
+      while (added) {
+        added = false;
+        for (const t of prev) {
+          if (t.parentTaskId && dropIds.has(t.parentTaskId) && !dropIds.has(t.id)) {
+            dropIds.add(t.id);
+            added = true;
+          }
+        }
+      }
+      return prev.filter(t => !dropIds.has(t.id));
+    });
     setDetailTask(null);
+  };
+
+  /** Map taskTypeId → first OPEN state of its workflow (used by clone). */
+  const openStateByTaskType = useMemo(() => {
+    const out = new Map<string, string>();
+    const byWorkflow = new Map<string, string>();
+    [...allWorkflowStates]
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+      .forEach(ws => {
+        if (!ws.workflowId || !ws.state) return;
+        if (ws.state.category !== 'OPEN') return;
+        if (!byWorkflow.has(ws.workflowId)) byWorkflow.set(ws.workflowId, ws.stateId);
+      });
+    taskTypes.forEach(tt => {
+      if (tt.workflowId && byWorkflow.has(tt.workflowId)) {
+        out.set(tt.id, byWorkflow.get(tt.workflowId)!);
+      }
+    });
+    return out;
+  }, [allWorkflowStates, taskTypes]);
+
+  /** Children grouped by parent id, computed from the loaded board tasks. */
+  const subtasksByParent = useMemo(() => {
+    const out = new Map<string, Task[]>();
+    tasks.forEach(t => {
+      if (!t.parentTaskId) return;
+      const arr = out.get(t.parentTaskId) ?? [];
+      arr.push(t);
+      out.set(t.parentTaskId, arr);
+    });
+    return out;
+  }, [tasks]);
+
+  /** stateId → category — used by the bottom progress stack to mark DONE subtasks. */
+  const stateCategoryById = useMemo(() => {
+    const m = new Map<string, string>();
+    allStates.forEach(s => m.set(s.id, s.category));
+    return m;
+  }, [allStates]);
+
+  const handleClone = async (opts: CloneTaskOptions) => {
+    if (!cloningTask) return;
+    try {
+      const created = await cloneTaskUseCase.execute(
+        cloningTask.id,
+        opts,
+        currentUser.id,
+        (taskTypeId) => openStateByTaskType.get(taskTypeId) ?? null,
+      );
+      setTasks(prev => [...prev, created]);
+      setCloningTask(null);
+      setToast(t('vectorLogic.cloneModalToast'));
+      setTimeout(() => setToast(null), 2500);
+    } catch (err) {
+      console.error('[clone task]', err);
+    }
+  };
+
+  const handleConfigureType = (taskTypeId: string) => {
+    navigate(`/admin?mod=vectorlogic&tab=schema&typeId=${encodeURIComponent(taskTypeId)}`);
+  };
+
+  const handleDeleteFromCard = async (task: Task) => {
+    const children = subtasksByParent.get(task.id) ?? [];
+    const msg = children.length > 0
+      ? t('vectorLogic.deleteTaskCascadeConfirm', { count: children.length })
+      : t('vectorLogic.deleteTaskConfirm');
+    if (!(await dialog.confirm(msg, { danger: true }))) return;
+    await handleTaskDelete(task.id);
   };
 
   const handleNewTask = async () => {
@@ -527,7 +625,13 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
                       taskType={taskTypeById.get(task.taskTypeId) ?? null}
                       assignee={wsUsers.find(u => u.id === task.assigneeId) ?? null}
                       priority={task.priority ? priorityByName.get(task.priority.toLowerCase()) ?? null : null}
+                      subtasks={subtasksByParent.get(task.id) ?? []}
+                      stateCategoryById={stateCategoryById}
+                      isAdmin={isAdmin}
                       onClick={() => openTaskDetail(task)}
+                      onClone={() => setCloningTask(task)}
+                      onDelete={() => handleDeleteFromCard(task)}
+                      onConfigure={() => handleConfigureType(task.taskTypeId)}
                       onDragStart={onDragStart(task.id)}
                       onDragEnd={onDragEnd}
                       isDragging={dragTaskId === task.id}
@@ -561,10 +665,23 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
           wsUsers={wsUsers as any}
           priorities={priorities}
           currentUser={currentUser}
+          isAdmin={isAdmin}
           onClose={() => setDetailTask(null)}
           onUpdate={(patch) => handleTaskUpdate(detailTask.id, patch)}
           onDelete={() => handleTaskDelete(detailTask.id)}
+          onClone={() => { setCloningTask(detailTask); setDetailTask(null); }}
+          onConfigure={() => { handleConfigureType(detailTask.taskTypeId); setDetailTask(null); }}
           onOpenTask={(t) => openTaskDetail(t)}
+        />
+      )}
+
+      {/* Clone task modal — opens from the kebab menu on a card. */}
+      {cloningTask && (
+        <CloneTaskModal
+          sourceTitle={cloningTask.title}
+          hasSubtasks={(subtasksByParent.get(cloningTask.id) ?? []).length > 0}
+          onClose={() => setCloningTask(null)}
+          onConfirm={handleClone}
         />
       )}
     </div>
@@ -572,16 +689,44 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
 }
 
 /* ── Task card ─────────────────────────────────────────────────────────── */
-function BoardTaskCard({ task, taskType, assignee, priority, onClick, onDragStart, onDragEnd, isDragging }: {
+function BoardTaskCard({
+  task, taskType, assignee, priority,
+  subtasks = [], stateCategoryById,
+  isAdmin = false,
+  onClick, onClone, onDelete, onConfigure,
+  onDragStart, onDragEnd, isDragging,
+}: {
   task: Task;
   taskType: TaskType | null;
   assignee: WSUser | null;
   priority: Priority | null;
+  subtasks?: Task[];
+  stateCategoryById?: Map<string, string>;
+  isAdmin?: boolean;
   onClick: () => void;
+  onClone?: () => void;
+  onDelete?: () => void;
+  onConfigure?: () => void;
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   isDragging?: boolean;
 }) {
+  const [hovered, setHovered] = useState(false);
+  const daysInColumn = (() => {
+    const a = new Date(task.stateEnteredAt);
+    const aMid = new Date(a.getFullYear(), a.getMonth(), a.getDate()).getTime();
+    const now = new Date();
+    const nMid = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    return Math.round((nMid - aMid) / 86_400_000);
+  })();
+
+  // Has any progress bar at the bottom — used to grow the bottom padding
+  // so chips never sit on top of the bar stack.
+  const todoFieldsWithItems = ((taskType?.schema as SchemaField[]) || [])
+    .filter(f => f.fieldType === 'todo' && Array.isArray((task.data ?? {})[f.id]) && ((task.data ?? {})[f.id] as unknown[]).length > 0).length;
+  const barCount = todoFieldsWithItems + (subtasks.length > 0 ? 1 : 0);
+  const bottomBarsPad = barCount > 0 ? barCount * 4 + 4 : 0;
+
   return (
     <div
       role="button"
@@ -591,15 +736,39 @@ function BoardTaskCard({ task, taskType, assignee, priority, onClick, onDragStar
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        background: 'var(--sf3)', borderRadius: 14, padding: '18px 22px',
+        position: 'relative',
+        background: 'var(--sf3)', borderRadius: 14,
+        padding: `18px 22px ${18 + bottomBarsPad}px 22px`,
         cursor: isDragging ? 'grabbing' : 'pointer',
         opacity: isDragging ? 0.4 : 1,
         display: 'flex', flexDirection: 'column', gap: 11,
         transition: 'opacity .15s, transform .15s',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+      {(onClone || onDelete || onConfigure) && (
+        <CardMenu
+          showButton={hovered}
+          items={[
+            ...(onClone ? [{
+              id: 'clone', labelKey: 'vectorLogic.cardMenuClone', icon: 'content_copy',
+              onClick: () => onClone(),
+            }] : []),
+            ...(onDelete ? [{
+              id: 'delete', labelKey: 'vectorLogic.cardMenuDelete', icon: 'delete', danger: true,
+              onClick: () => onDelete(),
+            }] : []),
+            ...(onConfigure && isAdmin ? [{
+              id: 'configure', labelKey: 'vectorLogic.cardMenuConfigure', icon: 'settings',
+              separated: true,
+              onClick: () => onConfigure(),
+            }] : []),
+          ]}
+        />
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11, paddingRight: 24 }}>
         {taskType?.icon && (
           <span className="material-symbols-outlined"
                 style={{ fontSize: 'var(--icon-sm)', color: taskType.iconColor || 'var(--tx3)' }}>
@@ -611,6 +780,16 @@ function BoardTaskCard({ task, taskType, assignee, priority, onClick, onDragStar
         }}>
           {task.code ?? taskType?.name ?? ''}
         </span>
+        {daysInColumn > 0 && (
+          <span style={{
+            marginLeft: 'auto',
+            fontSize: 'var(--fs-2xs)', padding: '2px 7px', borderRadius: 4,
+            background: 'var(--sf2)', color: 'var(--tx3)',
+            fontWeight: 700, letterSpacing: '.04em',
+          }}>
+            {daysInColumn}d
+          </span>
+        )}
       </div>
       <div style={{
         fontSize: 'var(--fs-body)', fontWeight: 500, color: 'var(--tx)', lineHeight: 'var(--lh-normal)',
@@ -645,6 +824,12 @@ function BoardTaskCard({ task, taskType, assignee, priority, onClick, onDragStar
           />
         )}
       </div>
+      <CardProgressBars
+        task={task}
+        schema={(taskType?.schema as SchemaField[]) || []}
+        subtasks={subtasks}
+        stateCategoryById={stateCategoryById}
+      />
     </div>
   );
 }
