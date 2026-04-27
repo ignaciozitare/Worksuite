@@ -176,6 +176,11 @@ export function GanttTimeline({
   }).filter(Boolean) as (GanttGroup & { firstIdx: number; lastIdx: number; count: number })[];
 
   const ROW_H = 76;
+  /* Vertical breathing room between the sticky date header and the first
+   * row, so group-frame badges (positioned at top:-10 of the frame, like a
+   * chip on a fieldset) don't get clipped by the header's sticky layer. */
+  const CHART_TOP_PADDING = 14;
+  const HEADER_H = zoom === 'days' ? 44 : 36;
 
   return (
     <div style={style}>
@@ -218,15 +223,18 @@ export function GanttTimeline({
             </div>
           </div>
 
+          {/* Spacer so the first group's badge has room above row 0 */}
+          <div style={{ height: CHART_TOP_PADDING }} />
+
           {/* Group frames (behind rows) */}
           {groupFrames.map(g => (
             <div key={g.id} style={{
-              position: 'absolute', left: 0, top: (zoom === 'days' ? 44 : 36) + g.firstIdx * ROW_H - 2,
+              position: 'absolute', left: 0, top: HEADER_H + CHART_TOP_PADDING + g.firstIdx * ROW_H - 2,
               width: '100%', height: (g.lastIdx - g.firstIdx + 1) * ROW_H + 4,
               border: `2px solid ${g.color}`, borderRadius: 6,
               background: `${g.color}08`, pointerEvents: 'none', zIndex: 1,
             }}>
-              <span style={{ position: 'absolute', top: -10, left: 14, fontSize: 'var(--fs-2xs)', fontWeight: 700, color: g.color, background: 'var(--dp-sf, var(--sf))', padding: '0 4px', letterSpacing: '.05em', textTransform: 'uppercase' as const }}>{g.label}</span>
+              <span style={{ position: 'absolute', top: -10, left: 14, fontSize: 'var(--fs-2xs)', fontWeight: 700, color: g.color, background: 'var(--dp-sf, var(--sf))', padding: '0 6px', letterSpacing: '.05em', textTransform: 'uppercase' as const, zIndex: 3 }}>{g.label}</span>
             </div>
           ))}
 
