@@ -245,6 +245,23 @@ function CanvasDesignerInner({ currentUser }: Props) {
     }
   }, []);
 
+  /** Delete node(s) when the user presses Delete with a node selected.
+   *  Without this handler, React Flow removes the node visually but the
+   *  row in vl_workflow_states stays — so on reload the node comes back
+   *  without its relations (the connected edges DO get cleaned up by
+   *  onEdgesDelete). */
+  const onNodesDelete = useCallback(async (deletedNodes: Node[]) => {
+    for (const n of deletedNodes) {
+      try {
+        await stateRepo.removeFromWorkflow(n.id);
+      } catch (err) {
+        console.error('[CanvasDesigner] removeFromWorkflow failed', err);
+      }
+    }
+    const deletedIds = new Set(deletedNodes.map(n => n.id));
+    setWfStates(prev => prev.filter(ws => !deletedIds.has(ws.id)));
+  }, []);
+
   // Add state from library at a specific position (or random if not provided)
   const addStateToCanvas = async (state: State, dropPosition?: { x: number; y: number }) => {
     if (!selected) return;
@@ -351,6 +368,7 @@ function CanvasDesignerInner({ currentUser }: Props) {
           onConnect={onConnect}
           onNodeDragStop={onNodeDragStop}
           onEdgesDelete={onEdgesDelete}
+          onNodesDelete={onNodesDelete}
           nodeTypes={nodeTypes}
           fitView
           snapToGrid
