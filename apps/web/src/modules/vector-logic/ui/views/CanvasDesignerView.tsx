@@ -25,10 +25,10 @@ import { workflowRepo, stateRepo, transitionRepo } from '../../container';
 const nodeTypes = { stateNode: StateNode };
 
 const MINIMAP_HEX: Record<StateCategory, string> = {
-  BACKLOG: '#8c909f',
-  OPEN: '#f5a623',
-  IN_PROGRESS: '#4f6ef7',
-  DONE: '#3ecf8e',
+  BACKLOG: 'var(--tx3)',
+  OPEN: 'var(--amber)',
+  IN_PROGRESS: 'var(--ac)',
+  DONE: 'var(--green)',
 };
 
 /** Local, in-memory representation of a workflow_states row while the user
@@ -214,10 +214,10 @@ function CanvasDesignerInner({ currentUser }: Props) {
     pathOptions: { borderRadius: 12, offset: 16 },
     label: e.label ?? '',
     animated: e.isGlobal,
-    markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: '#4f6ef7' },
-    style: { stroke: '#4f6ef7', strokeWidth: 2 },
-    labelStyle: { fontSize: 'var(--fs-2xs)', fontWeight: 600, fill: '#8c909f' },
-    labelBgStyle: { fill: '#1c1b1b', fillOpacity: 0.9 },
+    markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: 'var(--ac)' },
+    style: { stroke: 'var(--ac)', strokeWidth: 2 },
+    labelStyle: { fontSize: 'var(--fs-2xs)', fontWeight: 600, fill: 'var(--tx3)' },
+    labelBgStyle: { fill: 'var(--sf-low)', fillOpacity: 0.9 },
   })), [visibleEdges]);
 
   // ── Mutations on the draft only — no DB calls until Save ────────────────
@@ -605,7 +605,7 @@ function CanvasDesignerInner({ currentUser }: Props) {
             style={{ background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 8 }}
           />
           <MiniMap
-            nodeColor={(n) => MINIMAP_HEX[n.data?.category] ?? '#8c909f'}
+            nodeColor={(n) => MINIMAP_HEX[n.data?.category] ?? 'var(--tx3)'}
             style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 8 }}
           />
         </ReactFlow>

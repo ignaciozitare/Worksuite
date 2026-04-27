@@ -111,7 +111,7 @@ export function VersionPicker({ versionCfg, allReleaseNumbers, onSelect, onClose
       <div style={{ display: 'flex', gap: 6 }}>
         <button
           onClick={() => onSelect(previewStr)}
-          style={{ flex: 1, background: 'linear-gradient(135deg,#adc6ff,#4d8eff)', border: 'none', borderRadius: 8, padding: '7px', fontSize: 'var(--fs-2xs)', fontWeight: 700, color: '#00285d', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 0 12px rgba(77,142,255,.3)' }}
+          style={{ flex: 1, background: 'var(--ac-grad)', border: 'none', borderRadius: 8, padding: '7px', fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac-on)', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 0 12px rgba(77,142,255,.3)' }}
         >
           Usar {previewStr}
         </button>

@@ -23,33 +23,33 @@ function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser, blueprint, the
   const ownerName = isFixed ? hd.fixed[seatId] : res?.userName;
 
   let statusLabel = t("hotdesk.free");
-  let statusColor = '#22c55e';
-  let statusBg = 'rgba(34,197,94,.12)';
+  let statusColor = 'var(--green)';
+  let statusBg = 'var(--green-dim)';
 
   if (isBlocked) {
     statusLabel = t("hotdesk.blocked");
-    statusColor = '#8c909f';
+    statusColor = 'var(--tx3)';
     statusBg = 'rgba(140,144,159,.12)';
   } else if (isMine && isPending) {
     statusLabel = t("hotdesk.pending");
-    statusColor = '#f59e0b';
-    statusBg = 'rgba(245,158,11,.12)';
+    statusColor = 'var(--amber)';
+    statusBg = 'var(--amber-dim)';
   } else if (isMine) {
     statusLabel = t("hotdesk.mine");
-    statusColor = '#f59e0b';
-    statusBg = 'rgba(245,158,11,.12)';
+    statusColor = 'var(--amber)';
+    statusBg = 'var(--amber-dim)';
   } else if (isDelegated) {
     statusLabel = t("hotdesk.delegated");
-    statusColor = '#b76dff';
-    statusBg = 'rgba(183,109,255,.12)';
+    statusColor = 'var(--purple-strong)';
+    statusBg = 'var(--purple-dim)';
   } else if (isFixed) {
     statusLabel = t("hotdesk.fixed");
-    statusColor = '#ef4444';
-    statusBg = 'rgba(239,68,68,.12)';
+    statusColor = 'var(--danger-strong)';
+    statusBg = 'var(--red-dim)';
   } else if (res) {
     statusLabel = isPending ? t("hotdesk.pending") : t("hotdesk.occupied");
-    statusColor = isPending ? '#f59e0b' : '#3b82f6';
-    statusBg = isPending ? 'rgba(245,158,11,.12)' : 'rgba(59,130,246,.12)';
+    statusColor = isPending ? 'var(--amber)' : 'var(--ac)';
+    statusBg = isPending ? 'var(--amber-dim)' : 'var(--ac-dim)';
   }
 
   useEffect(() => {

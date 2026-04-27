@@ -851,7 +851,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
           <div style={{width:40,height:40,borderRadius:8,background:'rgba(77,142,255,.2)',
             display:'flex',alignItems:'center',justifyContent:'center',
             border:'1px solid rgba(77,142,255,.3)'}}>
-            <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-lg)',color:'#4d8eff'}}>hub</span>
+            <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-lg)',color:'var(--ac-strong)'}}>hub</span>
           </div>
           <div>
             <h1 style={{fontSize: 'var(--fs-body)',fontWeight:700,color:'var(--tx)',letterSpacing:'-0.01em',lineHeight:1,margin:0}}>{t('admin.envTracker')}</h1>
@@ -1068,9 +1068,9 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
           <span style={{fontSize: 'var(--fs-2xs)',fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:'.05em'}}>{t('admin.envSidebarTitle')}</span>
           <button onClick={()=>setSidebarAvailOnly(v=>!v)}
             style={{fontSize: 'var(--fs-2xs)',padding:'2px 8px',borderRadius:10,cursor:'pointer',fontFamily:'inherit',fontWeight:600,
-              border:`1px solid ${sidebarAvailOnly?'#22c55e':'rgba(66,71,83,.15)'}`,
-              background:sidebarAvailOnly?'rgba(34,197,94,.12)':'transparent',
-              color:sidebarAvailOnly?'#22c55e':'#8c909f',transition:'all .12s'}}>
+              border:`1px solid ${sidebarAvailOnly?'var(--green)':'rgba(66,71,83,.15)'}`,
+              background:sidebarAvailOnly?'var(--green-dim)':'transparent',
+              color:sidebarAvailOnly?'var(--green)':'var(--tx3)',transition:'all .12s'}}>
             {sidebarAvailOnly?`✓ ${t('admin.envSidebarFreeOnly')}`:t('admin.envSidebarAll')}
           </button>
         </div>

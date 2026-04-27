@@ -299,7 +299,7 @@ const btnPrimary = {
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px',
   borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-xs)', cursor: 'pointer', border: 'none',
   fontFamily: 'inherit', transition: 'all .2s',
-  background: 'linear-gradient(135deg, #adc6ff, #4d8eff)',
+  background: 'var(--ac-grad)',
   color: '#fff',
   boxShadow: '0 2px 12px rgba(77,142,255,.3)',
 } as const;

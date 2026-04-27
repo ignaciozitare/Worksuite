@@ -135,7 +135,7 @@ function ChronoAdminPage({ currentUser }: Props) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             border: '1px solid rgba(77,142,255,.3)',
           }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', color: '#4d8eff' }}>group</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', color: 'var(--ac-strong)' }}>group</span>
           </div>
           <div>
             <h1 style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.01em', lineHeight: 1, margin: 0 }}>

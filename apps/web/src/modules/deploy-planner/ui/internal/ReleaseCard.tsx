@@ -247,7 +247,7 @@ export function ReleaseCard({
       {/* Tickets */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
         {relTickets.map(t => {
-          const pColor = PRIORITY_COLOR[t.priority] ?? '#8c909f';
+          const pColor = PRIORITY_COLOR[t.priority] ?? 'var(--dp-tx3)';
           const noRepo = !t.repos || t.repos.length === 0;
           return (
             <div

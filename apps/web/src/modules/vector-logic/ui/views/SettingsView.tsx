@@ -579,7 +579,7 @@ const btnStyle = (variant = 'primary', extra = {}) => ({
   borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-xs)', cursor: 'pointer', border: 'none',
   fontFamily: 'inherit', transition: 'all .2s',
   ...(variant === 'primary' && {
-    background: 'linear-gradient(135deg, #adc6ff, #4d8eff)',
+    background: 'var(--ac-grad)',
     color: '#fff',
     boxShadow: '0 2px 12px rgba(77,142,255,.3)',
   }),

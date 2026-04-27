@@ -25,7 +25,7 @@ export const DeployPlannerIcon = ({ size = 40 }: DeployPlannerIconProps) => (
   >
     <span
       className="material-symbols-outlined"
-      style={{ fontSize: size * 0.5, color: '#4d8eff' }}
+      style={{ fontSize: size * 0.5, color: 'var(--ac-strong)' }}
     >
       hub
     </span>

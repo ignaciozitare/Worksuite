@@ -258,7 +258,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
                   fontFamily: 'inherit',
                   background: dialog.danger
                     ? 'linear-gradient(135deg, #ef4444, #dc2626)'
-                    : 'linear-gradient(135deg, #adc6ff, #4d8eff)',
+                    : 'var(--ac-grad)',
                   border: 'none',
                   borderRadius: 8,
                   color: dialog.danger ? '#fff' : '#0a0a0a',

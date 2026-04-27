@@ -159,12 +159,12 @@ export function ReleaseDetail({
           </div>
           {/* Global progress */}
           <div style={{ background: 'var(--dp-sf)', border: '1px solid var(--dp-bd)', borderRadius: 8, padding: '12px 16px', minWidth: 150, textAlign: 'center' }}>
-            <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: allReady ? '#34d399' : 'var(--dp-tx)', lineHeight: 1 }}>
+            <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: allReady ? 'var(--dp-secondary)' : 'var(--dp-tx)', lineHeight: 1 }}>
               {readyCount}<span style={{ fontSize: 'var(--fs-xs)', color: 'var(--dp-tx3)' }}>/{relTickets.length}</span>
             </div>
             <SLabel style={{ marginTop: 4 }}>Tickets listos</SLabel>
             <div style={{ height: 3, background: 'var(--dp-bd)', borderRadius: 2, overflow: 'hidden', marginTop: 7 }}>
-              <div style={{ width: `${relTickets.length ? readyCount / relTickets.length * 100 : 0}%`, height: '100%', background: allReady ? '#34d399' : '#3b82f6', borderRadius: 2, transition: 'width .4s ease' }} />
+              <div style={{ width: `${relTickets.length ? readyCount / relTickets.length * 100 : 0}%`, height: '100%', background: allReady ? 'var(--dp-secondary)' : '#3b82f6', borderRadius: 2, transition: 'width .4s ease' }} />
             </div>
           </div>
         </div>
@@ -182,7 +182,7 @@ export function ReleaseDetail({
                   display: 'flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 20,
                   background: ok ? 'rgba(52,211,153,.08)' : 'var(--dp-sf2,rgba(77,142,255,.06))',
                   border: `1px solid ${ok ? 'rgba(52,211,153,.3)' : 'var(--dp-bd)'}`,
-                  fontSize: 'var(--fs-2xs)', color: ok ? '#34d399' : 'var(--dp-tx3)',
+                  fontSize: 'var(--fs-2xs)', color: ok ? 'var(--dp-secondary)' : 'var(--dp-tx3)',
                 }}
               >
                 {ok ? '✓' : '○'} {repo} <span style={{ color: 'var(--dp-tx3)', fontSize: 'var(--fs-2xs)' }}>{ready}/{rTickets.length}</span>
@@ -231,21 +231,21 @@ export function ReleaseDetail({
           const ready = rTickets.filter(t => MERGE_READY.includes(getStatus(t.key))).length;
           const allOk = ready === rTickets.length;
           const someOk = ready > 0;
-          const borderColor = allOk ? '#34d399' : someOk ? '#f59e0b' : 'var(--dp-bd)';
-          const topColor = allOk ? '#34d399' : someOk ? '#f59e0b' : 'var(--dp-tx3)';
+          const borderColor = allOk ? 'var(--dp-secondary)' : someOk ? '#f59e0b' : 'var(--dp-bd)';
+          const topColor = allOk ? 'var(--dp-secondary)' : someOk ? '#f59e0b' : 'var(--dp-tx3)';
           return (
             <div key={repo} className="anim-in" style={{ width: 300, background: 'var(--dp-sf)', border: `1px solid ${borderColor}`, borderTop: `2px solid ${topColor}`, borderRadius: 8, flexShrink: 0, transition: 'border-color .3s' }}>
               {/* Repo header */}
               <div style={{ padding: '11px 14px', borderBottom: '1px solid var(--dp-bd)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 24, height: 24, borderRadius: 5, background: allOk ? 'rgba(52,211,153,.15)' : 'rgba(77,142,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-2xs)', color: allOk ? '#34d399' : 'var(--dp-primary)' }}>{allOk ? '✓' : '⬡'}</div>
+                <div style={{ width: 24, height: 24, borderRadius: 5, background: allOk ? 'rgba(52,211,153,.15)' : 'rgba(77,142,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-2xs)', color: allOk ? 'var(--dp-secondary)' : 'var(--dp-primary)' }}>{allOk ? '✓' : '⬡'}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--dp-tx)' }}>{repo}</div>
                   <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)', marginTop: 1 }}>{ready}/{rTickets.length} listos</div>
                 </div>
                 <div style={{ width: 44, height: 4, background: 'var(--dp-bd)', borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{ width: `${rTickets.length ? ready / rTickets.length * 100 : 0}%`, height: '100%', background: allOk ? '#34d399' : someOk ? '#f59e0b' : '#8c909f', borderRadius: 2, transition: 'width .4s' }} />
+                  <div style={{ width: `${rTickets.length ? ready / rTickets.length * 100 : 0}%`, height: '100%', background: allOk ? 'var(--dp-secondary)' : someOk ? 'var(--dp-warning)' : 'var(--dp-tx3)', borderRadius: 2, transition: 'width .4s' }} />
                 </div>
-                {allOk && <span style={{ fontSize: 'var(--fs-2xs)', color: '#34d399', fontWeight: 700 }}>LISTO</span>}
+                {allOk && <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-secondary)', fontWeight: 700 }}>LISTO</span>}
               </div>
 
               {/* Tickets */}
