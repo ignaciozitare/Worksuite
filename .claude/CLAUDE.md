@@ -157,6 +157,20 @@ The UI feels carved from solid carbon, light-emitting, and hyper-precise. We rej
 - **Body:** Regular 400, tracking 0.01em
 - **Labels:** Bold 700, tracking 0.05em, ALL-CAPS
 
+### Typography Scale Tokens (Mandatory)
+- **NEVER write raw `fontSize: 13` (or any pixel literal) in components.** Pick one of the tokens defined in `apps/web/src/WorkSuiteApp.css`:
+  - `var(--fs-2xs)` — 11px, ALL-CAPS labels, tiny badges
+  - `var(--fs-xs)` — 13px, meta, code badges, captions
+  - `var(--fs-sm)` — 15px, secondary body
+  - `var(--fs-body)` — 17px, default body, task titles, inputs
+  - `var(--fs-md)` — 19px, emphasized body
+  - `var(--fs-lg)` — 22px, section title
+  - `var(--fs-xl)` — 28px, large title
+  - `var(--fs-display)` — 36px, hero
+- Material Symbols icons use the icon scale: `var(--icon-xs|sm|md|lg)` (14/16/20/28).
+- Line heights: `var(--lh-tight|normal|loose)` (1.2/1.4/1.6).
+- The whole app's typography scales by editing those tokens in one file. Components must consume them — adding raw px literals is technical debt.
+
 ### Elevation
 - **Recessed:** `surface-container-lowest` — inputs, wells
 - **Canvas:** `surface` — page background

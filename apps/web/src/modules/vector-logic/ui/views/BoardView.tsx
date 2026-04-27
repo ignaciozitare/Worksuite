@@ -602,18 +602,18 @@ function BoardTaskCard({ task, taskType, assignee, priority, onClick, onDragStar
       <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
         {taskType?.icon && (
           <span className="material-symbols-outlined"
-                style={{ fontSize: 16, color: taskType.iconColor || 'var(--tx3)' }}>
+                style={{ fontSize: 'var(--icon-sm)', color: taskType.iconColor || 'var(--tx3)' }}>
             {taskType.icon}
           </span>
         )}
         <span style={{
-          fontSize: 13, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--tx3)',
+          fontSize: 'var(--fs-xs)', fontWeight: 700, letterSpacing: '0.05em', color: 'var(--tx3)',
         }}>
           {task.code ?? taskType?.name ?? ''}
         </span>
       </div>
       <div style={{
-        fontSize: 17, fontWeight: 500, color: 'var(--tx)', lineHeight: 1.35,
+        fontSize: 'var(--fs-body)', fontWeight: 500, color: 'var(--tx)', lineHeight: 'var(--lh-normal)',
       }}>
         {task.title}
       </div>
@@ -623,11 +623,11 @@ function BoardTaskCard({ task, taskType, assignee, priority, onClick, onDragStar
             display: 'inline-flex', alignItems: 'center', gap: 5,
             padding: '4px 12px', borderRadius: 6,
             background: `${priority.color}1A`, color: priority.color,
-            fontSize: 12, fontWeight: 700, letterSpacing: '0.04em',
+            fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '0.04em',
             textTransform: 'uppercase',
           }}>
             {priority.icon && (
-              <span className="material-symbols-outlined" style={{ fontSize: 13 }}>{priority.icon}</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>{priority.icon}</span>
             )}
             {priority.name}
           </span>
