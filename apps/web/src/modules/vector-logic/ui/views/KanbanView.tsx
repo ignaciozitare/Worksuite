@@ -500,9 +500,9 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
   if (taskTypes.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--tx3)' }}>
-        <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: .2, display: 'block', marginBottom: 12 }}>view_kanban</span>
-        <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>{t('vectorLogic.noTaskTypesAssigned')}</div>
-        <div style={{ fontSize: 11 }}>{t('vectorLogic.goToAssignmentManager')}</div>
+        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', opacity: .2, display: 'block', marginBottom: 12 }}>view_kanban</span>
+        <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500, marginBottom: 4 }}>{t('vectorLogic.noTaskTypesAssigned')}</div>
+        <div style={{ fontSize: 'var(--fs-2xs)' }}>{t('vectorLogic.goToAssignmentManager')}</div>
       </div>
     );
   }
@@ -516,19 +516,19 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
             position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
             padding: '10px 14px', borderRadius: 8,
             background: 'var(--red-dim)', color: 'var(--red)',
-            fontSize: 13, fontWeight: 500,
+            fontSize: 'var(--fs-xs)', fontWeight: 500,
             display: 'flex', alignItems: 'center', gap: 8,
             boxShadow: '0 8px 30px rgba(0,0,0,.4)',
             maxWidth: 360,
           }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>error</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>error</span>
           <span>{aggToast}</span>
         </div>
       )}
       {/* Header */}
       <div style={{ padding: '0 4px 14px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
+        <h2 style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
           {t('vectorLogic.smartKanban')}
         </h2>
         {taskTypes.length > 0 && (
@@ -539,10 +539,10 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 padding: '6px 12px', borderRadius: 8, fontFamily: 'inherit',
                 background: 'var(--sf2)', border: '1px solid var(--bd)',
-                color: 'var(--tx)', cursor: 'pointer', fontSize: 12,
+                color: 'var(--tx)', cursor: 'pointer', fontSize: 'var(--fs-xs)',
               }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--ac)' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--ac)' }}>
                 filter_list
               </span>
               <span style={{ fontWeight: 600 }}>
@@ -552,7 +552,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                     ? (taskTypes.find(x => selectedTypeIds.has(x.id))?.name ?? '')
                     : `${selectedTypeIds.size} ${t('vectorLogic.typesSelected')}`}
               </span>
-              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>
                 keyboard_arrow_down
               </span>
             </button>
@@ -572,12 +572,12 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                       display: 'flex', alignItems: 'center', gap: 8,
                       padding: '8px 10px', borderRadius: 6,
                       background: selectedTypeIds.size === 0 ? 'var(--ac-dim)' : 'transparent',
-                      border: 'none', fontFamily: 'inherit', fontSize: 12,
+                      border: 'none', fontFamily: 'inherit', fontSize: 'var(--fs-xs)',
                       color: 'var(--tx)', cursor: 'pointer', textAlign: 'left',
                     }}
                   >
                     <span className="material-symbols-outlined" style={{
-                      fontSize: 14, color: selectedTypeIds.size === 0 ? 'var(--ac)' : 'var(--tx3)',
+                      fontSize: 'var(--fs-sm)', color: selectedTypeIds.size === 0 ? 'var(--ac)' : 'var(--tx3)',
                     }}>
                       {selectedTypeIds.size === 0 ? 'check_circle' : 'radio_button_unchecked'}
                     </span>
@@ -603,17 +603,17 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                           display: 'flex', alignItems: 'center', gap: 8,
                           padding: '8px 10px', borderRadius: 6,
                           background: checked ? 'var(--ac-dim)' : 'transparent',
-                          border: 'none', fontFamily: 'inherit', fontSize: 12,
+                          border: 'none', fontFamily: 'inherit', fontSize: 'var(--fs-xs)',
                           color: 'var(--tx)', cursor: 'pointer', textAlign: 'left',
                         }}
                       >
                         <span className="material-symbols-outlined" style={{
-                          fontSize: 14, color: checked ? 'var(--ac)' : 'var(--tx3)',
+                          fontSize: 'var(--fs-sm)', color: checked ? 'var(--ac)' : 'var(--tx3)',
                         }}>
                           {checked ? 'check_box' : 'check_box_outline_blank'}
                         </span>
                         <span className="material-symbols-outlined" style={{
-                          fontSize: 14, color: tt.iconColor || 'var(--tx2)',
+                          fontSize: 'var(--fs-sm)', color: tt.iconColor || 'var(--tx2)',
                         }}>
                           {tt.icon || 'task_alt'}
                         </span>
@@ -660,14 +660,14 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
             display: 'flex', alignItems: 'center', gap: 6, background: 'var(--sf2)',
             border: '1px solid var(--bd)', borderRadius: 8, padding: '6px 10px', width: 200,
           }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>search</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>search</span>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('vectorLogic.searchKanban')}
               style={{
                 flex: 1, border: 'none', outline: 'none', background: 'transparent',
-                color: 'var(--tx)', fontSize: 11, fontFamily: 'inherit',
+                color: 'var(--tx)', fontSize: 'var(--fs-2xs)', fontFamily: 'inherit',
               }}
             />
             {search && (
@@ -676,15 +676,15 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                 title={t('common.clear')}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', padding: 0, display: 'flex' }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>close</span>
               </button>
             )}
           </div>
-          <span style={{ fontSize: 11, color: 'var(--tx3)', alignSelf: 'center' }}>
+          <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', alignSelf: 'center' }}>
             {tasks.length} {t('vectorLogic.tasks')}
           </span>
           <button onClick={() => setShowNew(true)} style={btnStyle('primary')}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>add</span>
             {t('vectorLogic.newTask')}
           </button>
         </div>
@@ -693,8 +693,8 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
       {/* Columns */}
       {effectiveWfStates.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--tx3)' }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: .2, display: 'block', marginBottom: 12 }}>account_tree</span>
-          <div style={{ fontSize: 13 }}>{t('vectorLogic.workflowHasNoStates')}</div>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', opacity: .2, display: 'block', marginBottom: 12 }}>account_tree</span>
+          <div style={{ fontSize: 'var(--fs-xs)' }}>{t('vectorLogic.workflowHasNoStates')}</div>
         </div>
       ) : (
         <div style={{
@@ -757,14 +757,14 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                     onMouseDown={e => (e.currentTarget.style.cursor = 'grabbing')}
                     onMouseUp={e => (e.currentTarget.style.cursor = 'grab')}>
                     <span className="material-symbols-outlined"
-                      style={{ fontSize: 14, color: 'var(--tx3)', opacity: .5 }}>
+                      style={{ fontSize: 'var(--fs-sm)', color: 'var(--tx3)', opacity: .5 }}>
                       drag_indicator
                     </span>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: ws.state?.color || cc.color }} />
-                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tx)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                    <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--tx)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
                       {ws.state?.name}
                     </span>
-                    <span style={{ fontSize: 10, color: 'var(--tx3)', fontWeight: 600, marginLeft: 'auto' }}>
+                    <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', fontWeight: 600, marginLeft: 'auto' }}>
                       {colTasks.length}
                     </span>
                   </div>
@@ -847,7 +847,7 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
                       />
                     )}
                     {colTasks.length === 0 && (
-                      <div style={{ fontSize: 10, color: 'var(--tx3)', textAlign: 'center', padding: '20px 0', opacity: .4 }}>
+                      <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', textAlign: 'center', padding: '20px 0', opacity: .4 }}>
                         {t('vectorLogic.noneYet')}
                       </div>
                     )}
@@ -1040,7 +1040,7 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
           {taskType?.icon && (
             <span className="material-symbols-outlined" style={{
-              fontSize: 13,
+              fontSize: 'var(--fs-xs)',
               color: taskType.iconColor || 'var(--tx3)',
             }}>
               {taskType.icon}
@@ -1048,7 +1048,7 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
           )}
           {task.code && (
             <span style={{
-              fontSize: 9, fontWeight: 700, color: 'var(--ac)',
+              fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)',
               fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '.04em',
             }}>
               {task.code}
@@ -1056,7 +1056,7 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
           )}
         </div>
       )}
-      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.35 }}>{task.title}</div>
+      <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)', lineHeight: 1.35 }}>{task.title}</div>
       <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
         {hasCardFields ? (
           // Configured chips (up to 4) — drive what the user wants to see at-a-glance.
@@ -1067,7 +1067,7 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
             const isDue = field.fieldType === 'due_date';
             return (
               <span key={field.id} style={{
-                fontSize: 9, padding: '2px 6px', borderRadius: 3,
+                fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3,
                 background: isDue ? dueBg : 'var(--sf2)',
                 color: isDue ? dueColor : 'var(--tx2)',
                 fontWeight: 700, letterSpacing: '.04em',
@@ -1083,12 +1083,12 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
             {task.priority && (
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: 3,
-                fontSize: 9, padding: '2px 6px', borderRadius: 3,
+                fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3,
                 background: `${priorityColor}1A`, color: priorityColor,
                 fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase',
               }}>
                 {priorityIcon && (
-                  <span className="material-symbols-outlined" style={{ fontSize: 10 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>
                     {priorityIcon}
                   </span>
                 )}
@@ -1097,7 +1097,7 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
             )}
             {daysInColumn > 0 && (
               <span style={{
-                fontSize: 9, padding: '2px 6px', borderRadius: 3,
+                fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3,
                 background: 'var(--sf2)', color: 'var(--tx3)',
                 fontWeight: 700, letterSpacing: '.04em',
               }}>
@@ -1106,12 +1106,12 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
             )}
             {dueLabel && (
               <span style={{
-                fontSize: 9, padding: '2px 6px', borderRadius: 3,
+                fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3,
                 background: dueBg, color: dueColor,
                 fontWeight: 700, letterSpacing: '.04em',
                 display: 'inline-flex', alignItems: 'center', gap: 3,
               }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 11 }}>event</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>event</span>
                 {dueLabel}
               </span>
             )}
@@ -1139,7 +1139,7 @@ function TaskCard({ task, taskType, priorityColor, priorityIcon, assignee, wsUse
                 height: 22, padding: '0 6px', borderRadius: 11,
                 background: 'var(--sf2)', color: 'var(--tx2)',
                 display: 'inline-flex', alignItems: 'center',
-                fontSize: 9, fontWeight: 700,
+                fontSize: 'var(--fs-2xs)', fontWeight: 700,
                 border: '1px solid var(--bd)',
               }}>
                 +{overflowExtras}
@@ -1187,14 +1187,14 @@ function NewTaskModal({ taskTypes, priorities, defaultTypeId, onClose, onCreate 
                   <button key={tt.id} onClick={() => setTypeId(tt.id)}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px',
-                      borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 600,
+                      borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'var(--fs-xs)', fontWeight: 600,
                       background: active ? 'rgba(79,110,247,.12)' : 'var(--sf2)',
                       color: active ? 'var(--ac)' : 'var(--tx)',
                       border: `1px solid ${active ? 'var(--ac)' : 'var(--bd)'}`,
                       transition: 'all .15s',
                     }}>
                     <span className="material-symbols-outlined" style={{
-                      fontSize: 16,
+                      fontSize: 'var(--fs-body)',
                       color: tt.iconColor || (active ? 'var(--ac)' : 'var(--tx2)'),
                     }}>
                       {tt.icon || 'task_alt'}
@@ -1223,7 +1223,7 @@ function NewTaskModal({ taskTypes, priorities, defaultTypeId, onClose, onCreate 
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: 6,
                       padding: '6px 10px', borderRadius: 8,
-                      cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+                      cursor: 'pointer', fontFamily: 'inherit', fontSize: 'var(--fs-xs)', fontWeight: 700,
                       letterSpacing: '.04em', textTransform: 'uppercase',
                       background: active ? `${p.color}1A` : 'var(--sf2)',
                       color: active ? p.color : 'var(--tx2)',
@@ -1231,7 +1231,7 @@ function NewTaskModal({ taskTypes, priorities, defaultTypeId, onClose, onCreate 
                       transition: 'all .15s',
                     }}>
                     {p.icon && (
-                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>
                         {p.icon}
                       </span>
                     )}
@@ -1466,7 +1466,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
           border: '1px solid var(--bd)',
         }}>
           <span style={{
-            fontSize: 9, fontWeight: 700, color: 'var(--ac)',
+            fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)',
             textTransform: 'uppercase', letterSpacing: '.08em',
           }}>
             {t('vectorLogic.parentLabel')}
@@ -1482,7 +1482,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
                   cursor: onOpenTask ? 'pointer' : 'default',
                   padding: '2px 6px', borderRadius: 4, fontFamily: 'inherit',
                   display: 'inline-flex', alignItems: 'center', gap: 6,
-                  color: 'var(--tx)', fontSize: 12,
+                  color: 'var(--tx)', fontSize: 'var(--fs-xs)',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--sf2)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -1490,7 +1490,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
                 {a.code && (
                   <span style={{
                     fontWeight: 700, color: 'var(--ac)',
-                    fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '.04em', fontSize: 11,
+                    fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '.04em', fontSize: 'var(--fs-2xs)',
                   }}>{a.code}</span>
                 )}
                 <span style={{
@@ -1512,7 +1512,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
               onBlur={() => autoSave({ title })}
               placeholder={t('vectorLogic.taskTitle')}
               style={{
-                width: '100%', padding: '4px 0', fontSize: 22,
+                width: '100%', padding: '4px 0', fontSize: 'var(--fs-lg)',
                 fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
                 background: 'transparent', border: 'none', borderBottom: '1px solid transparent',
                 color: 'var(--tx)', outline: 'none', transition: 'border-color .15s',
@@ -1542,7 +1542,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
           )}
 
           {detailFields.length === 0 && (
-            <div style={{ color: 'var(--tx3)', fontSize: 11, padding: '20px 0', textAlign: 'center' }}>
+            <div style={{ color: 'var(--tx3)', fontSize: 'var(--fs-2xs)', padding: '20px 0', textAlign: 'center' }}>
               {t('vectorLogic.noDetailFields')}
             </div>
           )}
@@ -1552,16 +1552,16 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
             }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--ac)' }}>account_tree</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)', color: 'var(--ac)' }}>account_tree</span>
               <span style={{
-                fontSize: 11, fontWeight: 700, color: 'var(--tx)',
+                fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx)',
                 letterSpacing: '.05em', textTransform: 'uppercase',
               }}>
                 {t('vectorLogic.subtasks')}
               </span>
               {subtasks.length > 0 && (
                 <span style={{
-                  fontSize: 10, fontWeight: 600, color: 'var(--tx3)',
+                  fontSize: 'var(--fs-2xs)', fontWeight: 600, color: 'var(--tx3)',
                   padding: '2px 8px', background: 'var(--sf2)', borderRadius: 10,
                 }}>
                   {subtaskStats.done}/{subtaskStats.total}
@@ -1569,7 +1569,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
               )}
             </div>
             {subtasks.length === 0 ? (
-              <div style={{ fontSize: 11, color: 'var(--tx3)', padding: '6px 0 10px' }}>
+              <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', padding: '6px 0 10px' }}>
                 {t('vectorLogic.noSubtasks')}
               </div>
             ) : (
@@ -1603,7 +1603,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
                         padding: '8px 10px', borderRadius: 8,
                         background: isDragOver ? 'var(--ac-dim)' : 'var(--sf2)',
                         border: isDragOver ? '1px dashed var(--ac)' : '1px solid transparent',
-                        fontSize: 12,
+                        fontSize: 'var(--fs-xs)',
                         cursor: onOpenTask ? 'pointer' : 'default',
                         opacity: isDragging ? 0.4 : 1,
                         transition: 'background .12s, border-color .12s',
@@ -1613,7 +1613,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
                     >
                       <span
                         className="material-symbols-outlined"
-                        style={{ fontSize: 16, color: done ? 'var(--green)' : 'var(--tx3)', cursor: 'pointer' }}
+                        style={{ fontSize: 'var(--fs-body)', color: done ? 'var(--green)' : 'var(--tx3)', cursor: 'pointer' }}
                         onClick={(e) => { e.stopPropagation(); toggleSubtaskDone(s); }}
                         title={done ? t('vectorLogic.markAsOpen') : t('vectorLogic.markAsDone')}
                       >
@@ -1621,7 +1621,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
                       </span>
                       {s.code && (
                         <span style={{
-                          fontSize: 10, fontWeight: 700, color: 'var(--ac)',
+                          fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)',
                           fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '.04em',
                         }}>{s.code}</span>
                       )}
@@ -1643,7 +1643,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
                 <select
                   value={subtaskTypeId}
                   onChange={e => setSubtaskTypeId(e.target.value)}
-                  style={{ ...sideInp, width: 160, fontSize: 12 }}
+                  style={{ ...sideInp, width: 160, fontSize: 'var(--fs-xs)' }}
                 >
                   {taskTypes.filter(tt => tt.workflowId).map(tt => (
                     <option key={tt.id} value={tt.id}>{tt.name}</option>
@@ -1658,7 +1658,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
                     else if (e.key === 'Escape') { setShowSubtaskForm(false); setSubtaskTitle(''); }
                   }}
                   placeholder={t('vectorLogic.taskTitle')}
-                  style={{ ...sideInp, flex: 1, fontSize: 12 }}
+                  style={{ ...sideInp, flex: 1, fontSize: 'var(--fs-xs)' }}
                 />
                 <button
                   onClick={handleCreateSubtask}
@@ -1667,7 +1667,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
                     padding: '7px 14px', borderRadius: 8,
                     background: !subtaskTitle.trim() || creatingSub ? 'var(--sf3)' : 'var(--ac)',
                     color: !subtaskTitle.trim() || creatingSub ? 'var(--tx3)' : 'var(--ac-on)',
-                    border: 'none', fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
+                    border: 'none', fontFamily: 'inherit', fontSize: 'var(--fs-2xs)', fontWeight: 600,
                     cursor: !subtaskTitle.trim() || creatingSub ? 'not-allowed' : 'pointer',
                   }}
                 >
@@ -1678,7 +1678,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
                   style={{
                     padding: '7px 10px', borderRadius: 8, background: 'transparent',
                     color: 'var(--tx2)', border: '1px solid var(--bd)',
-                    fontFamily: 'inherit', fontSize: 11, cursor: 'pointer',
+                    fontFamily: 'inherit', fontSize: 'var(--fs-2xs)', cursor: 'pointer',
                   }}
                 >
                   {t('common.cancel')}
@@ -1690,11 +1690,11 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
                 style={{
                   marginTop: 8, padding: '7px 12px', borderRadius: 8,
                   background: 'var(--ac-dim)', color: 'var(--ac)', border: 'none',
-                  fontFamily: 'inherit', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                  fontFamily: 'inherit', fontSize: 'var(--fs-2xs)', fontWeight: 600, cursor: 'pointer',
                   display: 'inline-flex', alignItems: 'center', gap: 6,
                 }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>add</span>
                 {t('vectorLogic.addSubtask')}
               </button>
             )}
@@ -1763,11 +1763,11 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
           {/* Alarms */}
           <div>
             <div style={{ ...sideLbl, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--amber)' }}>alarm</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--amber)' }}>alarm</span>
               {t('vectorLogic.alarms')}
             </div>
             {alarms.length === 0 ? (
-              <div style={{ fontSize: 10, color: 'var(--tx3)', padding: '4px 0' }}>
+              <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', padding: '4px 0' }}>
                 {t('vectorLogic.noAlarms')}
               </div>
             ) : (
@@ -1776,9 +1776,9 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
                   <div key={a.id} style={{
                     display: 'flex', alignItems: 'center', gap: 6,
                     padding: '5px 8px', borderRadius: 6, background: 'var(--sf)',
-                    fontSize: 11,
+                    fontSize: 'var(--fs-2xs)',
                   }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--amber)' }}>alarm</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--amber)' }}>alarm</span>
                     <span style={{ flex: 1, color: 'var(--tx)' }}>
                       {new Date(a.triggerAt).toLocaleString()}
                     </span>
@@ -1787,7 +1787,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
                       title={t('common.delete')}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', padding: 0, display: 'flex' }}
                     >
-                      <span className="material-symbols-outlined" style={{ fontSize: 12 }}>close</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>close</span>
                     </button>
                   </div>
                 ))}
@@ -1798,11 +1798,11 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
               style={{
                 marginTop: 6, width: '100%', padding: '6px 10px', borderRadius: 6,
                 background: 'var(--ac-dim)', color: 'var(--ac)', border: 'none',
-                fontFamily: 'inherit', fontSize: 10, fontWeight: 600, cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: 'var(--fs-2xs)', fontWeight: 600, cursor: 'pointer',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
               }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 12 }}>add</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>add</span>
               {t('vectorLogic.addAlarm')}
             </button>
           </div>
@@ -1840,7 +1840,7 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
             if (await dialog.confirm(t('vectorLogic.deleteTaskConfirm'), { danger: true })) onDelete();
           }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>delete</span>
           {t('common.delete')}
         </button>
         <button style={btnStyle('ghost')} onClick={onClose}>{t('common.close')}</button>
@@ -1871,10 +1871,10 @@ function SavedIndicator({ savedAt }: { savedAt: number | null }) {
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 5,
-      fontSize: 10, fontWeight: 600, color: 'var(--green)',
+      fontSize: 'var(--fs-2xs)', fontWeight: 600, color: 'var(--green)',
       opacity: visible ? 1 : 0, transition: 'opacity .25s',
     }}>
-      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>cloud_done</span>
+      <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>cloud_done</span>
       {t('vectorLogic.autoSaved')}
     </span>
   );
@@ -1882,8 +1882,8 @@ function SavedIndicator({ savedAt }: { savedAt: number | null }) {
 
 function MetaRow({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10 }}>
-      <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>{icon}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-2xs)' }}>
+      <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>{icon}</span>
       <span style={{ color: 'var(--tx3)', flex: 1, letterSpacing: '.04em', textTransform: 'uppercase', fontWeight: 600 }}>{label}</span>
       <span style={{ color: 'var(--tx)', fontWeight: 600, fontFamily: "'Space Grotesk',sans-serif" }}>{value}</span>
     </div>
@@ -1891,11 +1891,11 @@ function MetaRow({ icon, label, value }: { icon: string; label: string; value: s
 }
 
 const sideLbl = {
-  fontSize: 9, fontWeight: 700, color: 'var(--tx3)',
+  fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
   letterSpacing: '.1em', textTransform: 'uppercase' as const, marginBottom: 6,
 };
 const sideInp = {
-  width: '100%', padding: '7px 10px', fontSize: 12, fontFamily: 'inherit',
+  width: '100%', padding: '7px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
   background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 6,
   color: 'var(--tx)', outline: 'none',
 };
@@ -1910,7 +1910,7 @@ function DynamicFieldRenderer({ field, value, onChange, wsUsers }: { field: Sche
       <input value={(value as string) || ''} onChange={e => onChange(e.target.value)}
         placeholder={field.label || t('vectorLogic.untitledChat')}
         style={{
-          width: '100%', padding: '6px 0', fontSize: 22, fontFamily: "'Space Grotesk',sans-serif",
+          width: '100%', padding: '6px 0', fontSize: 'var(--fs-lg)', fontFamily: "'Space Grotesk',sans-serif",
           fontWeight: 700, background: 'transparent', border: 'none', borderBottom: '1px solid transparent',
           color: 'var(--tx)', outline: 'none', transition: 'border-color .15s',
         }}
@@ -1970,7 +1970,7 @@ function DynamicFieldRenderer({ field, value, onChange, wsUsers }: { field: Sche
                 onChange(arr.includes(opt) ? arr.filter((x: string) => x !== opt) : [...arr, opt]);
               }}
                 style={{
-                  fontSize: 11, padding: '3px 10px', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
+                  fontSize: 'var(--fs-2xs)', padding: '3px 10px', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
                   background: arr.includes(opt) ? 'rgba(79,110,247,.15)' : 'var(--sf2)',
                   color: arr.includes(opt) ? 'var(--ac)' : 'var(--tx3)',
                   border: `1px solid ${arr.includes(opt) ? 'var(--ac)' : 'var(--bd)'}`,
@@ -1982,14 +1982,14 @@ function DynamicFieldRenderer({ field, value, onChange, wsUsers }: { field: Sche
         );
       }
       default:
-        return <div style={{ fontSize: 11, color: 'var(--tx3)', fontStyle: 'italic' }}>Unsupported: {field.fieldType}</div>;
+        return <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', fontStyle: 'italic' }}>Unsupported: {field.fieldType}</div>;
     }
   };
 
   return (
     <div>
       <label style={{ ...lblStyle, display: 'flex', alignItems: 'center', gap: 6 }}>
-        {def && <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--ac)' }}>{def.icon}</span>}
+        {def && <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--ac)' }}>{def.icon}</span>}
         {field.label}
         {field.required && <span style={{ color: 'var(--red)' }}>*</span>}
       </label>
@@ -2027,7 +2027,7 @@ function ChecklistField({ value, onChange }: { value: unknown; onChange: (v: unk
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {items.length > 0 && (
-        <div style={{ fontSize: 10, color: 'var(--tx3)', letterSpacing: '.04em' }}>
+        <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', letterSpacing: '.04em' }}>
           {doneCount}/{items.length} {t('vectorLogic.checklistDone')}
         </div>
       )}
@@ -2047,7 +2047,7 @@ function ChecklistField({ value, onChange }: { value: unknown; onChange: (v: unk
             onChange={e => setLabel(it.id, e.target.value)}
             style={{
               flex: 1, border: 'none', outline: 'none', background: 'transparent',
-              color: 'var(--tx)', fontSize: 12, fontFamily: 'inherit',
+              color: 'var(--tx)', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
               textDecoration: it.checked ? 'line-through' : 'none',
               opacity: it.checked ? 0.7 : 1,
             }}
@@ -2057,12 +2057,12 @@ function ChecklistField({ value, onChange }: { value: unknown; onChange: (v: unk
             title={t('common.delete')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', padding: 0, display: 'flex' }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>close</span>
           </button>
         </div>
       ))}
       <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}>
-        <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--tx3)' }}>add</span>
+        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)', color: 'var(--tx3)' }}>add</span>
         <input
           value={draft}
           onChange={e => setDraft(e.target.value)}
@@ -2072,7 +2072,7 @@ function ChecklistField({ value, onChange }: { value: unknown; onChange: (v: unk
           placeholder={t('vectorLogic.checklistAddItem')}
           style={{
             flex: 1, border: '1px dashed var(--bd)', outline: 'none',
-            background: 'transparent', color: 'var(--tx)', fontSize: 12,
+            background: 'transparent', color: 'var(--tx)', fontSize: 'var(--fs-xs)',
             padding: '6px 10px', borderRadius: 6, fontFamily: 'inherit',
           }}
         />
@@ -2080,7 +2080,7 @@ function ChecklistField({ value, onChange }: { value: unknown; onChange: (v: unk
           onClick={addDraft}
           disabled={!draft.trim()}
           style={{
-            padding: '6px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+            padding: '6px 10px', borderRadius: 6, fontSize: 'var(--fs-2xs)', fontWeight: 600,
             background: draft.trim() ? 'var(--ac-dim)' : 'var(--sf3)',
             color: draft.trim() ? 'var(--ac)' : 'var(--tx3)',
             border: 'none', fontFamily: 'inherit',
@@ -2102,7 +2102,7 @@ function catOrder(cat?: StateCategory) {
 
 const btnStyle = (variant = 'primary', extra = {}) => ({
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-  borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer', border: 'none',
+  borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-xs)', cursor: 'pointer', border: 'none',
   fontFamily: 'inherit', transition: 'all .2s',
   ...(variant === 'primary' && {
     background: 'linear-gradient(135deg, var(--ac2), var(--ac))',
@@ -2124,19 +2124,19 @@ const btnStyle = (variant = 'primary', extra = {}) => ({
 });
 
 const inpStyle = (extra = {}) => ({
-  width: '100%', padding: '8px 10px', fontSize: 13, fontFamily: 'inherit',
+  width: '100%', padding: '8px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
   background: 'var(--sf2)', border: '1px solid var(--bd)',
   borderRadius: 8, color: 'var(--tx)', outline: 'none', ...extra,
 });
 
 const selectStyle: React.CSSProperties = {
-  padding: '5px 10px', fontSize: 11, fontFamily: 'inherit', fontWeight: 500,
+  padding: '5px 10px', fontSize: 'var(--fs-2xs)', fontFamily: 'inherit', fontWeight: 500,
   background: 'var(--sf2)', border: '1px solid var(--bd)',
   borderRadius: 6, color: 'var(--tx)', outline: 'none', cursor: 'pointer',
 };
 
 const lblStyle = {
-  fontSize: 11, fontWeight: 700, color: 'var(--tx3)',
+  fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
   textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 5,
 };
 
@@ -2160,11 +2160,11 @@ function Modal({ title, onClose, children, width = 480, titleAccessory }: {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</h3>
+            <h3 style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--tx)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</h3>
             {titleAccessory}
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>close</span>
           </button>
         </div>
         <div style={{ padding: '18px 20px', overflowY: 'auto', flex: 1 }}>{children}</div>
@@ -2194,7 +2194,7 @@ function Tooltip({ label, children }: { label: string; children: React.ReactNode
         <div style={{
           position: 'fixed', left: pos.x, top: pos.y, transform: 'translate(-50%, -100%)',
           background: 'var(--sf3)', color: 'var(--tx)', border: '1px solid var(--bd)',
-          borderRadius: 6, padding: '4px 8px', fontSize: 11, fontWeight: 500,
+          borderRadius: 6, padding: '4px 8px', fontSize: 'var(--fs-2xs)', fontWeight: 500,
           lineHeight: 1.3, whiteSpace: 'nowrap', pointerEvents: 'none',
           boxShadow: '0 6px 16px rgba(0,0,0,.4)', zIndex: 9999,
           fontFamily: 'inherit',
