@@ -50,12 +50,19 @@ type DraftState = {
 };
 
 /** Local representation of a transition row. Edges reference DraftState
- *  by tempId (because new states have no dbId until save). */
+ *  by tempId (because new states have no dbId until save). The handle ids
+ *  remember which side of each node the user actually clicked (so the line
+ *  goes where they wanted it, not always bottom→top). They are not
+ *  persisted in vl_transitions today, but we recompute reasonable
+ *  defaults at load time based on relative node positions. */
+type HandleSide = 't' | 'b' | 'l' | 'r';
 type DraftEdge = {
   dbId: string | null;
   tempId: string;
   fromTempId: string;
   toTempId: string;
+  sourceHandle: string;       // e.g. "r-source"
+  targetHandle: string;       // e.g. "l-target"
   label: string | null;
   isGlobal: boolean;
   deleted: boolean;
@@ -138,11 +145,16 @@ function CanvasDesignerInner({ currentUser }: Props) {
         const fromTemp = stateToTemp.get(e.fromStateId);
         const toTemp   = stateToTemp.get(e.toStateId);
         if (!fromTemp || !toTemp) return null;
+        const fromState = dStates.find(s => s.tempId === fromTemp)!;
+        const toState   = dStates.find(s => s.tempId === toTemp)!;
+        const { source, target } = pickDefaultHandles(fromState, toState);
         return {
           dbId: e.id,
           tempId: e.id,
           fromTempId: fromTemp,
           toTempId: toTemp,
+          sourceHandle: source,
+          targetHandle: target,
           label: e.label,
           isGlobal: e.isGlobal,
           deleted: false,
@@ -196,8 +208,10 @@ function CanvasDesignerInner({ currentUser }: Props) {
     id: e.tempId,
     source: e.fromTempId,
     target: e.toTempId,
-    sourceHandle: 'b-source',
-    targetHandle: 't-target',
+    sourceHandle: e.sourceHandle,
+    targetHandle: e.targetHandle,
+    type: 'smoothstep',
+    pathOptions: { borderRadius: 12, offset: 16 },
     label: e.label ?? '',
     animated: e.isGlobal,
     markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: '#4f6ef7' },
@@ -220,6 +234,10 @@ function CanvasDesignerInner({ currentUser }: Props) {
         tempId: genId(),
         fromTempId: connection.source!,
         toTempId: connection.target!,
+        // Honour the side of the node the user actually clicked. Default to
+        // bottom→top when the connection drop didn't carry a handle id.
+        sourceHandle: connection.sourceHandle ?? 'b-source',
+        targetHandle: connection.targetHandle ?? 't-target',
         label: null,
         isGlobal: false,
         deleted: false,
@@ -255,13 +273,25 @@ function CanvasDesignerInner({ currentUser }: Props) {
     }
   };
 
-  const requestDeleteState = (tempId: string) => {
+  const requestDeleteState = async (tempId: string) => {
+    const target = draftStates.find(s => s.tempId === tempId);
+    if (!target) return;
+    const connectedEdges = draftEdges.filter(e =>
+      !e.deleted && (e.fromTempId === tempId || e.toTempId === tempId));
+    // If the node has incoming/outgoing transitions, ask the user before
+    // the cascade — deleting a state cascades all its connections.
+    if (connectedEdges.length > 0) {
+      const ok = await dialog.confirm(
+        t('vectorLogic.canvasDeleteStateConfirm').replace('{count}', String(connectedEdges.length)),
+        { title: t('vectorLogic.canvasDeleteState'), danger: true, confirmLabel: t('common.delete') },
+      );
+      if (!ok) return;
+    }
     setDraftStates(prev => {
       // Mark state as deleted; if it was new (no dbId), drop it entirely.
-      const next = prev.map(s => s.tempId === tempId
+      return prev.map(s => s.tempId === tempId
         ? { ...s, deleted: true } as DraftState
         : s).filter(s => !(s.deleted && !s.dbId));
-      return next;
     });
     // Cascade: drop edges referencing this state.
     setDraftEdges(prev => prev
@@ -751,4 +781,27 @@ function genId(): string {
     return (crypto as any).randomUUID();
   }
   return 'tmp_' + Math.random().toString(36).slice(2);
+}
+
+/** Pick reasonable default source/target handles for an edge based on the
+ *  relative position of the two nodes. Used when loading transitions from
+ *  vl_transitions (which doesn't store handles). The user can still drag
+ *  from a different handle; that choice persists in the draft as long as
+ *  it's not saved + reloaded.
+ *
+ *  - Target above the source → source bottom-out, target top-in (default).
+ *  - Target below           → source top-out, target bottom-in.
+ *  - Target right           → source right-out, target left-in.
+ *  - Target left            → source left-out, target right-in. */
+function pickDefaultHandles(from: DraftState, to: DraftState): { source: string; target: string } {
+  const dx = to.positionX - from.positionX;
+  const dy = to.positionY - from.positionY;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    return dx > 0
+      ? { source: 'r-source', target: 'l-target' }
+      : { source: 'l-source', target: 'r-target' };
+  }
+  return dy > 0
+    ? { source: 'b-source', target: 't-target' }
+    : { source: 't-source', target: 'b-target' };
 }

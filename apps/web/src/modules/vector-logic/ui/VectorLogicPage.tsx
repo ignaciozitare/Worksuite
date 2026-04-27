@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '@worksuite/i18n';
 import { useDialog } from '@worksuite/ui';
 import { KanbanView } from './views/KanbanView';
@@ -53,15 +54,33 @@ interface Props {
 export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
   const { t } = useTranslation();
   const dialog = useDialog();
-  const [view, setView] = useState<Tab>('kanban');
+  const navigate = useNavigate();
+  const location = useLocation();
   const [mode, setMode] = useState<AIMode>('embedded');
   const [boards, setBoards] = useState<KanbanBoard[]>([]);
   /** Map from boardId → my permission ('use' | 'edit'). Owner is implicit. */
   const [myPermissions, setMyPermissions] = useState<Map<string, BoardPermission>>(new Map());
   const [skExpanded, setSkExpanded] = useState(true);
-  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
   /** When set, the BoardConfigModal is open. `null` means "create new". */
   const [editingBoardId, setEditingBoardId] = useState<string | null | undefined>(undefined);
+
+  /** Derive the current view + selected board from the URL so reloading the
+   *  page keeps the user where they were. URL shape:
+   *    /vector-logic                           → routes to default board
+   *    /vector-logic/board/:boardId            → BoardView
+   *    /vector-logic/backlog | detections | chat
+   */
+  const { view, selectedBoardId } = parseRoute(location.pathname);
+  const setView = (next: Tab) => {
+    if (next === 'kanban')          navigate('/vector-logic');
+    else if (next === 'backlogHistory') navigate('/vector-logic/backlog');
+    else if (next === 'detections') navigate('/vector-logic/detections');
+    else if (next === 'chat')       navigate('/vector-logic/chat');
+  };
+  const setSelectedBoardId = (id: string | null) => {
+    if (id) navigate(`/vector-logic/board/${id}`);
+    else navigate('/vector-logic');
+  };
 
   // Load mode once so we know whether to show the Chat tab
   useEffect(() => {
@@ -104,13 +123,13 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
    *  created on first visit. */
   const defaultBoard = boards.find(b => b.isDefault && b.ownerId === currentUser.id) ?? null;
 
-  // Auto-route to the default board the first time it shows up.
+  // When the URL is the root /vector-logic and the user has a default
+  // board, redirect there so the kanban auto experience is what they get.
   useEffect(() => {
-    if (defaultBoard && view === 'kanban' && !selectedBoardId) {
-      setSelectedBoardId(defaultBoard.id);
-      setView('board');
+    if (defaultBoard && location.pathname === '/vector-logic') {
+      navigate(`/vector-logic/board/${defaultBoard.id}`, { replace: true });
     }
-  }, [defaultBoard, view, selectedBoardId]);
+  }, [defaultBoard, location.pathname, navigate]);
 
   /** True if the current user can edit (configure) the given board. */
   const canEditBoard = (board: KanbanBoard) => {
@@ -143,7 +162,6 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
       return [...prev, saved];
     });
     setSelectedBoardId(saved.id);
-    setView('board');
     setEditingBoardId(undefined);
   };
 
@@ -151,7 +169,6 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
     setBoards(prev => prev.filter(b => b.id !== deletedId));
     if (selectedBoardId === deletedId) {
       setSelectedBoardId(null);
-      setView('kanban');
     }
     setEditingBoardId(undefined);
   };
@@ -378,5 +395,17 @@ async function ensureDefaultBoard(ownerId: string): Promise<KanbanBoard | null> 
     const all = await boardRepo.findAccessible().catch(() => []);
     return all.find(b => b.isDefault && b.ownerId === ownerId) ?? null;
   }
+}
+
+/** Map a URL path under /vector-logic to the active view + board id. */
+function parseRoute(pathname: string): { view: Tab; selectedBoardId: string | null } {
+  // /vector-logic/board/:id
+  const boardMatch = pathname.match(/^\/vector-logic\/board\/([^/]+)/);
+  if (boardMatch) return { view: 'board', selectedBoardId: boardMatch[1] };
+  if (pathname.startsWith('/vector-logic/backlog'))    return { view: 'backlogHistory', selectedBoardId: null };
+  if (pathname.startsWith('/vector-logic/detections')) return { view: 'detections',     selectedBoardId: null };
+  if (pathname.startsWith('/vector-logic/chat'))       return { view: 'chat',           selectedBoardId: null };
+  // Root /vector-logic — useEffect redirects to default board when ready.
+  return { view: 'kanban', selectedBoardId: null };
 }
 

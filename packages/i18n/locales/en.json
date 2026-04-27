@@ -1264,6 +1264,8 @@
     "canvasUnsavedConfirm": "You have unsaved changes. Switch workflow anyway? Your draft will be lost.",
     "canvasDiscardConfirm": "Throw away every change made since the last save?",
     "canvasSaveFailed":   "Could not save the canvas. Try again.",
+    "canvasDeleteState":  "Delete state?",
+    "canvasDeleteStateConfirm": "This state has {count} transition(s) connected. Removing it from the workflow will also remove those transitions. Continue?",
     "transitionLabel":    "Label",
     "transitionLabelPlaceholder": "e.g. approved",
     "transitionGlobal":   "Global — any state can transition to the target",

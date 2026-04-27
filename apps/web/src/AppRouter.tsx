@@ -47,8 +47,13 @@ export function AppRouter(): JSX.Element {
         <Route path="/chrono" element={<Protected />} />
         <Route path="/chrono-admin" element={<Protected />} />
 
-        {/* Vector Logic */}
-        <Route path="/vector-logic" element={<Protected />} />
+        {/* Vector Logic — sub-paths persist the active view across reloads:
+            /vector-logic/board/:boardId  → BoardView for that board
+            /vector-logic/backlog         → BacklogHistory
+            /vector-logic/detections      → AI Detections
+            /vector-logic/chat            → Chat
+            (root)                        → routes to the user's default board */}
+        <Route path="/vector-logic/*" element={<Protected />} />
 
         {/* Profile */}
         <Route path="/profile" element={<Protected />} />

@@ -1264,6 +1264,8 @@
     "canvasUnsavedConfirm": "Hay cambios sin guardar. ¿Cambiar de flujo igual? El borrador se perderá.",
     "canvasDiscardConfirm": "¿Descartar todos los cambios hechos desde el último guardado?",
     "canvasSaveFailed":   "No se pudo guardar el canvas. Intentalo de nuevo.",
+    "canvasDeleteState":  "¿Eliminar estado?",
+    "canvasDeleteStateConfirm": "Este estado tiene {count} transición/es conectadas. Quitarlo del flujo también las elimina. ¿Continuar?",
     "transitionLabel":    "Etiqueta",
     "transitionLabelPlaceholder": "p.ej. aprobado",
     "transitionGlobal":   "Global — cualquier estado puede transicionar al destino",
