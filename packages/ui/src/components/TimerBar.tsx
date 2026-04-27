@@ -57,7 +57,7 @@ export function TimerBar({
 
         {/* Timer display */}
         <div style={{
-          fontSize:    22,
+          fontSize: 'var(--fs-lg)',
           fontFamily:  'var(--ws-font-heading)',
           fontWeight:  700,
           color:       timerColor,
@@ -90,7 +90,7 @@ export function TimerBar({
 
             {isMod && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginLeft: 'auto' }}>
-                <span style={{ fontSize: 11, color: 'var(--ws-text-3)' }}>Duration:</span>
+                <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--ws-text-3)' }}>Duration:</span>
                 {editing ? (
                   <input
                     autoFocus
@@ -108,7 +108,7 @@ export function TimerBar({
                       borderRadius: 'var(--ws-radius-sm)',
                       padding:      '2px 5px',
                       color:        'var(--ws-text)',
-                      fontSize:     11,
+                      fontSize: 'var(--fs-2xs)',
                       textAlign:    'center',
                       outline:      'none',
                       fontFamily:   'inherit',
@@ -123,7 +123,7 @@ export function TimerBar({
                       borderRadius: 'var(--ws-radius-sm)',
                       padding:      '2px 7px',
                       color:        'var(--ws-text-3)',
-                      fontSize:     11,
+                      fontSize: 'var(--fs-2xs)',
                       cursor:       'pointer',
                       fontFamily:   'inherit',
                     }}

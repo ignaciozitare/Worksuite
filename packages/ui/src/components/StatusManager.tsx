@@ -136,12 +136,12 @@ export function StatusManager({
   return (
     <div>
       {labels.title && (
-        <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--tx,#e4e4ef)', marginBottom: 6 }}>
+        <div style={{ fontWeight: 700, fontSize: 'var(--fs-sm)', color: 'var(--tx)', marginBottom: 6 }}>
           {labels.title}
         </div>
       )}
       {labels.hint && (
-        <div style={{ fontSize: 11, color: 'var(--tx3,#50506a)', marginBottom: 14 }}>
+        <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginBottom: 14 }}>
           {labels.hint}
         </div>
       )}
@@ -156,12 +156,12 @@ export function StatusManager({
             onDragEnd={onDragEnd}
             style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px',
-              background: dragOver === i ? 'var(--glow,rgba(79,110,247,.12))' : 'var(--sf2,#1b1b22)',
+              background: dragOver === i ? 'var(--glow,rgba(79,110,247,.12))' : 'var(--sf2)',
               borderRadius: 8,
-              border: `1px solid ${dragOver === i ? 'var(--ac,#4f6ef7)' : 'var(--bd,#2a2a38)'}`,
+              border: `1px solid ${dragOver === i ? 'var(--ac)' : 'var(--bd)'}`,
               cursor: 'grab', transition: 'background .1s',
             }}>
-            <span style={{ color: 'var(--tx3,#50506a)', fontSize: 12, cursor: 'grab' }}>⠿</span>
+            <span style={{ color: 'var(--tx3)', fontSize: 'var(--fs-xs)', cursor: 'grab' }}>⠿</span>
             <div style={{
               width: 14, height: 14, borderRadius: 3, background: st.color, flexShrink: 0,
               border: `1px solid ${st.color}66`,
@@ -173,8 +173,8 @@ export function StatusManager({
                   value={editing.name}
                   onChange={e => setEditing(v => v ? { ...v, name: e.target.value } : v)}
                   style={{
-                    flex: 1, background: 'var(--sf,#141418)', border: '1px solid var(--ac,#4f6ef7)',
-                    borderRadius: 4, padding: '3px 7px', fontSize: 12, color: 'var(--tx,#e4e4ef)',
+                    flex: 1, background: 'var(--sf)', border: '1px solid var(--ac)',
+                    borderRadius: 4, padding: '3px 7px', fontSize: 'var(--fs-xs)', color: 'var(--tx)',
                     fontFamily: 'inherit', outline: 'none',
                   }}
                 />
@@ -188,36 +188,36 @@ export function StatusManager({
                   value={editing.status_category}
                   onChange={e => setEditing(v => v ? { ...v, status_category: e.target.value } : v)}
                   style={{
-                    background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)', borderRadius: 4,
-                    padding: '2px 6px', fontSize: 10, color: 'var(--tx,#e4e4ef)', fontFamily: 'inherit',
+                    background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 4,
+                    padding: '2px 6px', fontSize: 'var(--fs-2xs)', color: 'var(--tx)', fontFamily: 'inherit',
                   }}>
                   {categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
                 <button onClick={() => save(editing)}
                   style={{
-                    background: 'var(--ac,#4f6ef7)', color: '#fff', border: 'none', borderRadius: 4,
-                    padding: '3px 10px', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
+                    background: 'var(--ac)', color: '#fff', border: 'none', borderRadius: 4,
+                    padding: '3px 10px', fontSize: 'var(--fs-2xs)', cursor: 'pointer', fontFamily: 'inherit',
                   }}>✓</button>
                 <button onClick={() => setEditing(null)}
-                  style={{ background: 'none', border: 'none', color: 'var(--tx3,#50506a)', cursor: 'pointer', fontSize: 13 }}>×</button>
+                  style={{ background: 'none', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 'var(--fs-xs)' }}>×</button>
               </>
             ) : (
               <>
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--tx,#e4e4ef)' }}>{st.name}</span>
+                <span style={{ flex: 1, fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)' }}>{st.name}</span>
                 <span style={{
-                  fontSize: 10, padding: '2px 8px', borderRadius: 20,
+                  fontSize: 'var(--fs-2xs)', padding: '2px 8px', borderRadius: 20,
                   background: st.bg_color, color: st.color, border: `1px solid ${st.border}`, flexShrink: 0,
                 }}>{st.name}</span>
                 <span style={{
-                  fontSize: 9, color: 'var(--tx3,#50506a)', background: 'var(--sf,#141418)',
-                  border: '1px solid var(--bd,#2a2a38)', borderRadius: 10, padding: '1px 6px', flexShrink: 0,
+                  fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', background: 'var(--sf)',
+                  border: '1px solid var(--bd)', borderRadius: 10, padding: '1px 6px', flexShrink: 0,
                 }}>{st.status_category}</span>
                 <button onClick={() => setEditing({ ...st })} title="Editar"
-                  style={{ background: 'var(--sf,#141418)', border: '1px solid var(--bd,#2a2a38)', borderRadius: 5,
-                    color: 'var(--tx3,#50506a)', cursor: 'pointer', fontSize: 12, padding: '3px 8px', fontFamily: 'inherit' }}>✏️</button>
+                  style={{ background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 5,
+                    color: 'var(--tx3)', cursor: 'pointer', fontSize: 'var(--fs-xs)', padding: '3px 8px', fontFamily: 'inherit' }}>✏️</button>
                 <button onClick={() => { if (confirm('¿Eliminar este estado?')) del(st.id); }} title="Eliminar"
                   style={{ background: 'rgba(224,82,82,.1)', border: '1px solid rgba(224,82,82,.25)', borderRadius: 5,
-                    color: 'var(--red,#e05252)', cursor: 'pointer', fontSize: 12, padding: '3px 8px', fontFamily: 'inherit' }}>🗑</button>
+                    color: 'var(--red)', cursor: 'pointer', fontSize: 'var(--fs-xs)', padding: '3px 8px', fontFamily: 'inherit' }}>🗑</button>
               </>
             )}
           </div>
@@ -225,9 +225,9 @@ export function StatusManager({
       </div>
 
       {/* New status row */}
-      <div style={{ padding: '12px 14px', background: 'var(--sf2,#1b1b22)', borderRadius: 8, border: '1px dashed var(--bd,#2a2a38)' }}>
+      <div style={{ padding: '12px 14px', background: 'var(--sf2)', borderRadius: 8, border: '1px dashed var(--bd)' }}>
         <div style={{
-          fontSize: 10, fontWeight: 700, color: 'var(--tx3,#50506a)', marginBottom: 8,
+          fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', marginBottom: 8,
           textTransform: 'uppercase', letterSpacing: '.08em',
         }}>{labels.newStatus ?? 'New status'}</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -236,13 +236,13 @@ export function StatusManager({
             onChange={e => setNewName(e.target.value)}
             placeholder={labels.placeholder ?? 'Status name'}
             style={{
-              flex: 2, minWidth: 130, background: 'var(--sf,#141418)', border: '1px solid var(--bd,#2a2a38)',
-              borderRadius: 5, padding: '6px 10px', color: 'var(--tx,#e4e4ef)', fontSize: 12,
+              flex: 2, minWidth: 130, background: 'var(--sf)', border: '1px solid var(--bd)',
+              borderRadius: 5, padding: '6px 10px', color: 'var(--tx)', fontSize: 'var(--fs-xs)',
               fontFamily: 'inherit', outline: 'none',
             }}
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <label style={{ fontSize: 11, color: 'var(--tx3,#50506a)' }}>{labels.color ?? 'Color'}</label>
+            <label style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>{labels.color ?? 'Color'}</label>
             <input type="color" value={newColor}
               onChange={e => setNewColor(e.target.value)}
               style={{ width: 32, height: 28, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }}
@@ -250,15 +250,15 @@ export function StatusManager({
           </div>
           <select value={newCat} onChange={e => setNewCat(e.target.value)}
             style={{
-              background: 'var(--sf,#141418)', border: '1px solid var(--bd,#2a2a38)', borderRadius: 4,
-              padding: '4px 8px', fontSize: 10, color: 'var(--tx,#e4e4ef)', fontFamily: 'inherit',
+              background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 4,
+              padding: '4px 8px', fontSize: 'var(--fs-2xs)', color: 'var(--tx)', fontFamily: 'inherit',
             }}>
             {categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
           <button onClick={add}
             style={{
-              background: 'var(--ac,#4f6ef7)', color: '#fff', border: 'none', borderRadius: 5,
-              padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              background: 'var(--ac)', color: '#fff', border: 'none', borderRadius: 5,
+              padding: '7px 14px', fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
             }}>
             + {labels.add ?? 'Add'}
           </button>

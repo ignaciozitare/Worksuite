@@ -46,9 +46,9 @@ const VARIANT_STYLES: Record<BtnVariant, CSSProperties> = {
 };
 
 const SIZE_STYLES: Record<BtnSize, CSSProperties> = {
-  sm: { fontSize: 11, padding: '4px 11px' },
-  md: { fontSize: 13, padding: '8px 16px' },
-  lg: { fontSize: 14, padding: '10px 20px' },
+  sm: { fontSize: 'var(--fs-2xs)', padding: '4px 11px' },
+  md: { fontSize: 'var(--fs-xs)', padding: '8px 16px' },
+  lg: { fontSize: 'var(--fs-sm)', padding: '10px 20px' },
 };
 
 export function Btn({

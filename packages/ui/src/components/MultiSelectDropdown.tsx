@@ -84,22 +84,22 @@ export function MultiSelectDropdown({
           display: 'inline-flex', alignItems: 'center', gap: 8,
           padding: '6px 12px', borderRadius: 8, fontFamily: 'inherit',
           background: 'var(--sf2)', border: '1px solid var(--bd)',
-          color: 'var(--tx)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+          color: 'var(--tx)', cursor: 'pointer', fontSize: 'var(--fs-xs)', fontWeight: 600,
           ...buttonStyle,
         }}
       >
         {triggerIcon && (
           <span className="material-symbols-outlined" style={{
-            fontSize: 14, color: triggerIconColor || 'var(--ac)',
+            fontSize: 'var(--fs-sm)', color: triggerIconColor || 'var(--ac)',
           }}>{triggerIcon}</span>
         )}
         <span>{triggerLabel}</span>
         <span style={{
-          fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+          fontSize: 'var(--fs-2xs)', fontWeight: 700, padding: '2px 6px', borderRadius: 4,
           background: 'var(--sf3)', color: 'var(--tx2)',
           fontFamily: "'Space Grotesk',sans-serif",
         }}>{counter}</span>
-        <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>
           keyboard_arrow_down
         </span>
       </button>
@@ -126,7 +126,7 @@ export function MultiSelectDropdown({
                 padding: '6px 8px', background: 'var(--sf2)',
                 borderRadius: 6, marginBottom: 2,
               }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>search</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>search</span>
                 <input
                   ref={searchRef}
                   value={query}
@@ -134,7 +134,7 @@ export function MultiSelectDropdown({
                   placeholder={searchPlaceholder}
                   style={{
                     flex: 1, background: 'transparent', border: 'none', outline: 'none',
-                    color: 'var(--tx)', fontSize: 12, fontFamily: 'inherit',
+                    color: 'var(--tx)', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
                   }}
                 />
               </div>
@@ -160,20 +160,20 @@ export function MultiSelectDropdown({
                         display: 'flex', alignItems: 'center', gap: 8,
                         padding: '8px 10px', borderRadius: 6,
                         background: checked ? 'var(--ac-dim)' : 'transparent',
-                        border: 'none', fontFamily: 'inherit', fontSize: 12,
+                        border: 'none', fontFamily: 'inherit', fontSize: 'var(--fs-xs)',
                         color: 'var(--tx)', textAlign: 'left',
                         cursor: disabled ? 'not-allowed' : 'pointer',
                         opacity: disabled ? 0.4 : 1,
                       }}
                     >
                       <span className="material-symbols-outlined" style={{
-                        fontSize: 14, color: checked ? 'var(--ac)' : 'var(--tx3)',
+                        fontSize: 'var(--fs-sm)', color: checked ? 'var(--ac)' : 'var(--tx3)',
                       }}>
                         {checked ? 'check_box' : 'check_box_outline_blank'}
                       </span>
                       {it.icon && (
                         <span className="material-symbols-outlined" style={{
-                          fontSize: 14, color: it.iconColor || 'var(--tx2)',
+                          fontSize: 'var(--fs-sm)', color: it.iconColor || 'var(--tx2)',
                         }}>{it.icon}</span>
                       )}
                       <span style={{ flex: 1, fontWeight: checked ? 600 : 400 }}>{it.label}</span>
@@ -193,7 +193,7 @@ function EmptyRow({ text }: { text?: ReactNode }) {
   if (!text) return null;
   return (
     <div style={{
-      padding: '10px 12px', fontSize: 11, color: 'var(--tx3)', textAlign: 'center',
+      padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', textAlign: 'center',
     }}>{text}</div>
   );
 }

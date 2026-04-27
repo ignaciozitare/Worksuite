@@ -120,9 +120,9 @@ export function JiraTicketSearch({
 
   const inputWrapStyle: React.CSSProperties = {
     display: 'flex', flexWrap: 'wrap', gap: 4, minHeight: 40, cursor: 'text',
-    width: 'auto', padding: '6px 10px', fontSize: 13, fontFamily: 'inherit',
-    background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)',
-    borderRadius: 8, color: 'var(--tx,#e4e4ef)', outline: 'none',
+    width: 'auto', padding: '6px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
+    background: 'var(--sf2)', border: '1px solid var(--bd)',
+    borderRadius: 8, color: 'var(--tx)', outline: 'none',
   };
 
   return (
@@ -133,12 +133,12 @@ export function JiraTicketSearch({
           <span key={k} style={{
             display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px',
             background: 'rgba(124,58,237,.15)', color: '#a78bfa', borderRadius: 6,
-            fontSize: 12, fontFamily: 'monospace', maxWidth: 260, overflow: 'hidden',
+            fontSize: 'var(--fs-xs)', fontFamily: 'monospace', maxWidth: 260, overflow: 'hidden',
           }}>
             <strong>{k}</strong>
             {getSummary(k) && (
               <span style={{
-                fontSize: 11, opacity: .8, overflow: 'hidden',
+                fontSize: 'var(--fs-2xs)', opacity: .8, overflow: 'hidden',
                 textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160,
               }}>{getSummary(k)}</span>
             )}
@@ -152,18 +152,18 @@ export function JiraTicketSearch({
           onFocus={() => { if (results.length) setShowDrop(true); }}
           placeholder={value.length ? placeholderMore : placeholder}
           style={{
-            background: 'transparent', border: 'none', outline: 'none', fontSize: 12,
-            color: 'var(--tx,#e4e4ef)', fontFamily: 'inherit', flex: 1, minWidth: 140,
+            background: 'transparent', border: 'none', outline: 'none', fontSize: 'var(--fs-xs)',
+            color: 'var(--tx)', fontFamily: 'inherit', flex: 1, minWidth: 140,
           }}
         />
-        {loading && <span style={{ fontSize: 11, color: 'var(--tx3,#50506a)' }}>…</span>}
+        {loading && <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>…</span>}
       </div>
 
       {/* Results dropdown */}
       {showDrop && results.length > 0 && (
         <div style={{
           position: 'absolute', left: 0, right: 0, top: '100%', marginTop: 4, zIndex: 50,
-          background: 'var(--sf,#141418)', border: '1px solid var(--bd,#2a2a38)',
+          background: 'var(--sf)', border: '1px solid var(--bd)',
           borderRadius: 8, maxHeight: 240, overflowY: 'auto',
           boxShadow: '0 8px 24px rgba(0,0,0,.5)',
         }}>
@@ -178,24 +178,24 @@ export function JiraTicketSearch({
                 style={{
                   padding: '8px 12px',
                   cursor: alreadySelected ? 'default' : 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 8, fontSize: 12,
-                  borderBottom: '1px solid var(--bd,#2a2a38)',
+                  display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-xs)',
+                  borderBottom: '1px solid var(--bd)',
                   opacity: alreadySelected ? .5 : 1,
                   background: alreadySelected ? 'rgba(124,58,237,.05)' : 'transparent',
                 }}>
                 <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#a78bfa', flexShrink: 0 }}>{key}</span>
                 {type && (
                   <span style={{
-                    fontSize: 10, padding: '1px 6px', borderRadius: 4,
-                    background: 'var(--sf2,#1b1b22)', color: 'var(--tx3,#50506a)', flexShrink: 0,
+                    fontSize: 'var(--fs-2xs)', padding: '1px 6px', borderRadius: 4,
+                    background: 'var(--sf2)', color: 'var(--tx3)', flexShrink: 0,
                   }}>{type}</span>
                 )}
                 <span style={{
-                  color: 'var(--tx,#e4e4ef)', overflow: 'hidden',
+                  color: 'var(--tx)', overflow: 'hidden',
                   textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>{summary}</span>
                 {alreadySelected && (
-                  <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--tx3,#50506a)' }}>Added</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>Added</span>
                 )}
               </div>
             );

@@ -95,19 +95,19 @@ export function JiraTicketPicker({
       {selectedTickets.length > 0 && (
         <div style={{
           display: 'flex', flexWrap: 'wrap', gap: 4, padding: 6,
-          background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)',
+          background: 'var(--sf2)', border: '1px solid var(--bd)',
           borderRadius: 6,
         }}>
           {selectedTickets.map(t => (
             <span key={t.key} style={{
               display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px',
               background: 'rgba(124,58,237,.15)', color: '#a78bfa', borderRadius: 6,
-              fontSize: 11, fontFamily: 'monospace', maxWidth: 260, overflow: 'hidden',
+              fontSize: 'var(--fs-2xs)', fontFamily: 'monospace', maxWidth: 260, overflow: 'hidden',
             }}>
               <strong>{t.key}</strong>
               {t.summary && (
                 <span style={{
-                  fontSize: 10, opacity: .8, overflow: 'hidden',
+                  fontSize: 'var(--fs-2xs)', opacity: .8, overflow: 'hidden',
                   textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150,
                 }}>{t.summary}</span>
               )}
@@ -126,24 +126,24 @@ export function JiraTicketPicker({
         onChange={e => setQuery(e.target.value)}
         placeholder={labels.searchPlaceholder ?? 'Search…'}
         style={{
-          width: '100%', padding: '7px 10px', fontSize: 12, fontFamily: 'inherit',
-          background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)',
-          borderRadius: 6, color: 'var(--tx,#e4e4ef)', outline: 'none',
+          width: '100%', padding: '7px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
+          background: 'var(--sf2)', border: '1px solid var(--bd)',
+          borderRadius: 6, color: 'var(--tx)', outline: 'none',
         }}
       />
 
       {/* List */}
       <div style={{
         maxHeight: 240, overflowY: 'auto',
-        background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)',
+        background: 'var(--sf2)', border: '1px solid var(--bd)',
         borderRadius: 6,
       }}>
         {loading ? (
-          <div style={{ padding: 16, textAlign: 'center', fontSize: 12, color: 'var(--tx3,#50506a)' }}>
+          <div style={{ padding: 16, textAlign: 'center', fontSize: 'var(--fs-xs)', color: 'var(--tx3)' }}>
             {labels.loading ?? 'Loading…'}
           </div>
         ) : visible.length === 0 ? (
-          <div style={{ padding: 16, textAlign: 'center', fontSize: 12, color: 'var(--tx3,#50506a)' }}>
+          <div style={{ padding: 16, textAlign: 'center', fontSize: 'var(--fs-xs)', color: 'var(--tx3)' }}>
             {query.trim()
               ? (labels.noMatches ?? 'No matches')
               : (labels.empty ?? 'No tickets available')}
@@ -156,8 +156,8 @@ export function JiraTicketPicker({
               onClick={() => toggle(t)}
               style={{
                 padding: '8px 12px', cursor: 'pointer', display: 'flex',
-                alignItems: 'center', gap: 8, fontSize: 12,
-                borderBottom: '1px solid var(--bd,#2a2a38)',
+                alignItems: 'center', gap: 8, fontSize: 'var(--fs-xs)',
+                borderBottom: '1px solid var(--bd)',
                 background: isSelected ? 'rgba(124,58,237,.08)' : 'transparent',
                 transition: 'background .1s',
               }}
@@ -173,18 +173,18 @@ export function JiraTicketPicker({
               <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#a78bfa', flexShrink: 0 }}>{t.key}</span>
               {t.issueType && (
                 <span style={{
-                  fontSize: 9, padding: '1px 6px', borderRadius: 4,
-                  background: 'var(--sf,#141418)', color: 'var(--tx3,#50506a)', flexShrink: 0,
+                  fontSize: 'var(--fs-2xs)', padding: '1px 6px', borderRadius: 4,
+                  background: 'var(--sf)', color: 'var(--tx3)', flexShrink: 0,
                 }}>{t.issueType}</span>
               )}
               {t.status && (
                 <span style={{
-                  fontSize: 9, padding: '1px 6px', borderRadius: 4,
+                  fontSize: 'var(--fs-2xs)', padding: '1px 6px', borderRadius: 4,
                   background: 'rgba(34,197,94,.1)', color: '#22c55e', flexShrink: 0,
                 }}>{t.status}</span>
               )}
               <span style={{
-                color: 'var(--tx,#e4e4ef)', overflow: 'hidden',
+                color: 'var(--tx)', overflow: 'hidden',
                 textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
               }}>{t.summary ?? ''}</span>
             </div>
@@ -192,7 +192,7 @@ export function JiraTicketPicker({
         })}
         {filtered.length > maxVisible && (
           <div style={{
-            padding: '6px 12px', fontSize: 10, color: 'var(--tx3,#50506a)',
+            padding: '6px 12px', fontSize: 'var(--fs-2xs)', color: 'var(--tx3)',
             textAlign: 'center', fontStyle: 'italic',
           }}>
             +{filtered.length - maxVisible} more… refine search
@@ -202,7 +202,7 @@ export function JiraTicketPicker({
 
       {/* Selected counter */}
       {selected.size > 0 && (
-        <div style={{ fontSize: 10, color: 'var(--tx3,#50506a)' }}>
+        <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>
           {labels.selected ?? 'Selected'}: {selected.size}
         </div>
       )}

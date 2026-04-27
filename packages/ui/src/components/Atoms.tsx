@@ -50,8 +50,8 @@ const BADGE_VARS: Record<BadgeColor, [string, string]> = {
 };
 
 const BADGE_VARIANT: Record<BadgeVariant, CSSProperties> = {
-  pill:    { padding: '2px 9px', borderRadius: 20, fontSize: 10 },
-  compact: { padding: '1px 6px', borderRadius: 4,  fontSize: 9  },
+  pill:    { padding: '2px 9px', borderRadius: 20, fontSize: 'var(--fs-2xs)' },
+  compact: { padding: '1px 6px', borderRadius: 4,  fontSize: 'var(--fs-2xs)'  },
 };
 
 export function Badge({ children, color = 'gray', variant = 'pill', style: styleProp }: BadgeProps) {
@@ -91,11 +91,11 @@ export function StatBox({ label, value, color = 'var(--ac)', icon, style: styleP
       '--accent':   color,
       ...styleProp,
     } as CSSProperties}>
-      {icon && <div style={{ fontSize: 18, marginBottom: 6 }}>{icon}</div>}
-      <div style={{ fontSize: 26, fontWeight: 700, color }}>
+      {icon && <div style={{ fontSize: 'var(--fs-md)', marginBottom: 6 }}>{icon}</div>}
+      <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color }}>
         {value}
       </div>
-      <div style={{ fontSize: 10, color: 'var(--tx3)', marginTop: 3 }}>
+      <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 3 }}>
         {label}
       </div>
     </div>
@@ -130,7 +130,7 @@ export function Chip({ children, active = false, onClick, style: styleProp }: {
         gap:          4,
         padding:      '3px 10px',
         borderRadius: 20,
-        fontSize:     10,
+        fontSize: 'var(--fs-2xs)',
         fontWeight:   600,
         background:   active ? 'var(--glow)' : 'var(--sf2)',
         color:        active ? 'var(--ac2)' : 'var(--tx3)',

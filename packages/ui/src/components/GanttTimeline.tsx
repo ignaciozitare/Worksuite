@@ -181,11 +181,11 @@ export function GanttTimeline({
     <div style={style}>
       {/* Zoom selector */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
-        <h2 style={{ fontSize: 14, color: 'var(--dp-tx, var(--tx, #e6edf3))', fontWeight: 700 }}>Timeline</h2>
-        <div style={{ display: 'flex', background: 'var(--dp-sf, var(--sf, #0b0f18))', border: '1px solid var(--dp-bd, var(--bd, #1e293b))', borderRadius: 6, overflow: 'hidden', marginLeft: 8 }}>
+        <h2 style={{ fontSize: 'var(--fs-sm)', color: 'var(--dp-tx, var(--tx))', fontWeight: 700 }}>Timeline</h2>
+        <div style={{ display: 'flex', background: 'var(--dp-sf, var(--sf))', border: '1px solid var(--dp-bd, var(--bd))', borderRadius: 6, overflow: 'hidden', marginLeft: 8 }}>
           {(['days', 'weeks', 'months'] as GanttZoom[]).map((z, i) => (
             <button key={z} onClick={() => setZoom(z)}
-              style={{ background: zoom === z ? '#1d4ed8' : 'transparent', color: zoom === z ? '#fff' : 'var(--dp-tx3, var(--tx3, #64748b))', border: 'none', padding: '5px 12px', fontSize: 10, cursor: 'pointer', fontFamily: 'inherit', fontWeight: zoom === z ? 700 : 400, transition: 'all .15s' }}>
+              style={{ background: zoom === z ? '#1d4ed8' : 'transparent', color: zoom === z ? '#fff' : 'var(--dp-tx3, var(--tx3))', border: 'none', padding: '5px 12px', fontSize: 'var(--fs-2xs)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: zoom === z ? 700 : 400, transition: 'all .15s' }}>
               {zoomLabels[i]}
             </button>
           ))}
@@ -193,13 +193,13 @@ export function GanttTimeline({
       </div>
 
       {/* Gantt chart */}
-      <div style={{ overflowX: 'auto', border: '1px solid var(--dp-bd, var(--bd, #1e293b))', borderRadius: 8 }}>
-        <div style={{ width: Math.max(totalW, 600), minWidth: '100%', position: 'relative', background: 'var(--dp-sf, var(--sf, #07090f))' }}>
+      <div style={{ overflowX: 'auto', border: '1px solid var(--dp-bd, var(--bd))', borderRadius: 8 }}>
+        <div style={{ width: Math.max(totalW, 600), minWidth: '100%', position: 'relative', background: 'var(--dp-sf, var(--sf))' }}>
 
           {/* Date header */}
-          <div style={{ display: 'flex', height: zoom === 'days' ? 44 : 36, borderBottom: '1px solid var(--dp-bd, var(--bd, #0e1520))', position: 'sticky', top: 0, zIndex: 5, background: 'var(--dp-sf, var(--sf, #07090f))' }}>
-            <div style={{ width: LABEL_W, flexShrink: 0, borderRight: '1px solid var(--dp-bd, var(--bd, #0e1520))', display: 'flex', alignItems: 'center', paddingLeft: 14 }}>
-              <span style={{ fontSize: 9, fontWeight: 600, color: 'var(--dp-tx3, var(--tx3, #334155))', letterSpacing: '.06em', textTransform: 'uppercase' as const }}>
+          <div style={{ display: 'flex', height: zoom === 'days' ? 44 : 36, borderBottom: '1px solid var(--dp-bd, var(--bd))', position: 'sticky', top: 0, zIndex: 5, background: 'var(--dp-sf, var(--sf))' }}>
+            <div style={{ width: LABEL_W, flexShrink: 0, borderRight: '1px solid var(--dp-bd, var(--bd))', display: 'flex', alignItems: 'center', paddingLeft: 14 }}>
+              <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, color: 'var(--dp-tx3, var(--tx3))', letterSpacing: '.06em', textTransform: 'uppercase' as const }}>
                 {zoom === 'days' ? 'Día' : zoom === 'weeks' ? 'Semana' : 'Mes'}
               </span>
             </div>
@@ -208,9 +208,9 @@ export function GanttTimeline({
                 const x = dateToX(m.date) - LABEL_W;
                 const isTodayMark = zoom === 'days' ? m.date === fmt(today) : zoom === 'weeks' ? m.date <= fmt(today) && addD(m.date, 7) > fmt(today) : m.date.slice(0, 7) === fmt(today).slice(0, 7);
                 return (
-                  <div key={m.date} style={{ position: 'absolute', left: x, top: 0, height: '100%', borderLeft: `1px solid ${isTodayMark ? '#f59e0b' : 'var(--dp-bd, var(--bd, #0e1520))'}`, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingLeft: 4, justifyContent: 'center', minWidth: 1 }}>
-                    <span style={{ fontSize: zoom === 'days' ? 10 : 9, color: isTodayMark ? '#f59e0b' : 'var(--dp-tx3, var(--tx3, #334155))', fontWeight: isTodayMark ? 700 : 400, whiteSpace: 'nowrap', lineHeight: 1.3 }}>{m.label}</span>
-                    {zoom === 'days' && <span style={{ fontSize: 11, fontWeight: 700, color: isTodayMark ? '#f59e0b' : m.isWeekend ? 'var(--dp-tx3, var(--tx3, #475569))' : 'var(--dp-tx2, var(--tx2, #94a3b8))', lineHeight: 1 }}>{m.sub}</span>}
+                  <div key={m.date} style={{ position: 'absolute', left: x, top: 0, height: '100%', borderLeft: `1px solid ${isTodayMark ? '#f59e0b' : 'var(--dp-bd, var(--bd))'}`, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingLeft: 4, justifyContent: 'center', minWidth: 1 }}>
+                    <span style={{ fontSize: zoom === 'days' ? 10 : 9, color: isTodayMark ? '#f59e0b' : 'var(--dp-tx3, var(--tx3))', fontWeight: isTodayMark ? 700 : 400, whiteSpace: 'nowrap', lineHeight: 1.3 }}>{m.label}</span>
+                    {zoom === 'days' && <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: isTodayMark ? '#f59e0b' : m.isWeekend ? 'var(--dp-tx3, var(--tx3))' : 'var(--dp-tx2, var(--tx2))', lineHeight: 1 }}>{m.sub}</span>}
                   </div>
                 );
               })}
@@ -226,7 +226,7 @@ export function GanttTimeline({
               border: `2px solid ${g.color}`, borderRadius: 6,
               background: `${g.color}08`, pointerEvents: 'none', zIndex: 1,
             }}>
-              <span style={{ position: 'absolute', top: -10, left: 14, fontSize: 8, fontWeight: 700, color: g.color, background: 'var(--dp-sf, var(--sf, #07090f))', padding: '0 4px', letterSpacing: '.05em', textTransform: 'uppercase' as const }}>{g.label}</span>
+              <span style={{ position: 'absolute', top: -10, left: 14, fontSize: 'var(--fs-2xs)', fontWeight: 700, color: g.color, background: 'var(--dp-sf, var(--sf))', padding: '0 4px', letterSpacing: '.05em', textTransform: 'uppercase' as const }}>{g.label}</span>
             </div>
           ))}
 
@@ -238,14 +238,14 @@ export function GanttTimeline({
             const barW = Math.max(x2 - x1, 50);
 
             return (
-              <div key={bar.id} style={{ display: 'flex', height: ROW_H, borderBottom: '1px solid var(--dp-bd, var(--bd, #0e1520))', alignItems: 'center', position: 'relative', zIndex: 2 }}>
+              <div key={bar.id} style={{ display: 'flex', height: ROW_H, borderBottom: '1px solid var(--dp-bd, var(--bd))', alignItems: 'center', position: 'relative', zIndex: 2 }}>
                 {/* Label */}
-                <div style={{ width: LABEL_W, flexShrink: 0, borderRight: '1px solid var(--dp-bd, var(--bd, #0e1520))', padding: '0 14px', cursor: onBarClick ? 'pointer' : 'default' }}
+                <div style={{ width: LABEL_W, flexShrink: 0, borderRight: '1px solid var(--dp-bd, var(--bd))', padding: '0 14px', cursor: onBarClick ? 'pointer' : 'default' }}
                   onClick={() => onBarClick?.(bar.id)}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--dp-tx, var(--tx, #e6edf3))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bar.label}</div>
-                  <div style={{ fontSize: 9, marginTop: 2, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--dp-tx, var(--tx))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bar.label}</div>
+                  <div style={{ fontSize: 'var(--fs-2xs)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 5 }}>
                     <span style={{ color: bar.color, fontWeight: 600 }}>{bar.status || ''}</span>
-                    {bar.meta && <span style={{ color: 'var(--dp-tx3, var(--tx3, #475569))' }}>{bar.meta}</span>}
+                    {bar.meta && <span style={{ color: 'var(--dp-tx3, var(--tx3))' }}>{bar.meta}</span>}
                   </div>
                 </div>
 
@@ -266,7 +266,7 @@ export function GanttTimeline({
                       <div style={{ width: 5, height: '100%', cursor: 'col-resize', flexShrink: 0, background: `${bar.color}40` }}
                         onMouseDown={e => { e.stopPropagation(); handleMD(e, bar.id, 'left'); }} />
                       {/* Label */}
-                      <div style={{ flex: 1, padding: '0 5px', fontSize: 9, color: bar.color, fontWeight: 600, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                      <div style={{ flex: 1, padding: '0 5px', fontSize: 'var(--fs-2xs)', color: bar.color, fontWeight: 600, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                         {bar.startDate} → {bar.endDate}
                       </div>
                       {/* Right resize handle */}
@@ -281,7 +281,7 @@ export function GanttTimeline({
         </div>
       </div>
 
-      <div style={{ fontSize: 9, color: 'var(--dp-tx3, var(--tx3, #334155))', marginTop: 8, display: 'flex', gap: 12 }}>
+      <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3, var(--tx3))', marginTop: 8, display: 'flex', gap: 12 }}>
         <span>⟺ Arrastra para mover</span><span>·</span><span>Extremos para redimensionar</span><span>·</span><span>Clic para abrir detalle</span>
       </div>
     </div>

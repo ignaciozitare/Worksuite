@@ -55,7 +55,7 @@ export function Modal({ title, onClose, children, width = 520, noPadding = false
             background:    'var(--sf)',
           }}>
             <h3 style={{
-              fontSize:   14,
+              fontSize: 'var(--fs-sm)',
               fontWeight: 700,
               letterSpacing: '-0.1px',
               color:      'var(--tx)',
@@ -72,7 +72,7 @@ export function Modal({ title, onClose, children, width = 520, noPadding = false
                 border:        'none',
                 color:         'var(--tx3)',
                 cursor:        'pointer',
-                fontSize:      18,
+                fontSize: 'var(--fs-md)',
                 lineHeight:    1,
                 padding:       '2px 6px',
                 borderRadius:  '3px',
@@ -118,7 +118,7 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   return (
     <Modal title="Confirmar" onClose={onCancel} width={380}>
-      <p style={{ fontSize: 14, color: 'var(--tx)', marginBottom: 20, lineHeight: 1.6 }}>
+      <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--tx)', marginBottom: 20, lineHeight: 1.6 }}>
         {message}
       </p>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
@@ -131,7 +131,7 @@ export function ConfirmModal({
             padding:      '8px 14px',
             color:        'var(--tx2)',
             cursor:       'pointer',
-            fontSize:     12,
+            fontSize: 'var(--fs-xs)',
             fontWeight:   500,
             fontFamily:   'inherit',
             transition:   'var(--ease)',
@@ -148,7 +148,7 @@ export function ConfirmModal({
             padding:      '8px 18px',
             color:        '#fff',
             cursor:       'pointer',
-            fontSize:     12,
+            fontSize: 'var(--fs-xs)',
             fontWeight:   600,
             fontFamily:   'inherit',
             transition:   'var(--ease)',

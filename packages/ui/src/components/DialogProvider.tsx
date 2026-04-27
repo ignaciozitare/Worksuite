@@ -147,7 +147,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
                 <span
                   className="material-symbols-outlined"
                   style={{
-                    fontSize: 24,
+                    fontSize: 'var(--fs-xl)',
                     color: iconColor,
                     fontVariationSettings: "'wght' 400, 'FILL' 1",
                   }}
@@ -158,7 +158,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
 
               {dialog.title && (
                 <h3 style={{
-                  fontSize: 15,
+                  fontSize: 'var(--fs-sm)',
                   fontWeight: 700,
                   color: 'var(--tx)',
                   margin: 0,
@@ -176,7 +176,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
               textAlign: 'center',
             }}>
               <p style={{
-                fontSize: 13,
+                fontSize: 'var(--fs-xs)',
                 color: 'var(--tx2)',
                 margin: 0,
                 lineHeight: 1.6,
@@ -198,7 +198,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
                   style={{
                     width: '100%',
                     padding: '10px 14px',
-                    fontSize: 13,
+                    fontSize: 'var(--fs-xs)',
                     background: 'var(--sf2)',
                     border: '1px solid var(--bd)',
                     borderRadius: 8,
@@ -227,7 +227,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
                   style={{
                     flex: 1,
                     padding: '10px 16px',
-                    fontSize: 13,
+                    fontSize: 'var(--fs-xs)',
                     fontWeight: 500,
                     fontFamily: 'inherit',
                     background: 'var(--sf3)',
@@ -253,7 +253,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
                 style={{
                   flex: 1,
                   padding: '10px 16px',
-                  fontSize: 13,
+                  fontSize: 'var(--fs-xs)',
                   fontWeight: 600,
                   fontFamily: 'inherit',
                   background: dialog.danger

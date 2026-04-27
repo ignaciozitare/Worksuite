@@ -151,25 +151,25 @@ export function DateRangePicker({
     flex: 1, padding: showTime ? '7px 10px' : '5px 8px',
     fontSize: showTime ? 13 : 10,
     fontFamily: 'inherit', cursor: 'pointer',
-    background: 'var(--sf2,var(--dp-sf2,#1b1b22))',
+    background: 'var(--sf2,var(--dp-sf2))',
     border: `1px solid ${GOLD_DIM}`,
     borderRadius: showTime ? 8 : 4,
-    color: 'var(--tx,var(--dp-tx2,#e4e4ef))',
+    color: 'var(--tx,var(--dp-tx2))',
     outline: 'none', textAlign: 'left',
   };
   const labelStyle: React.CSSProperties = {
     fontSize: showTime ? 11 : 9, fontWeight: 700,
-    color: 'var(--tx3,var(--dp-tx3,#50506a))',
+    color: 'var(--tx3,var(--dp-tx3))',
     textTransform: 'uppercase', letterSpacing: '.05em',
     display: 'block', marginBottom: showTime ? 5 : 3,
   };
   const navBtn: React.CSSProperties = {
-    background: 'none', border: 'none', cursor: 'pointer', fontSize: 16,
-    color: 'var(--tx3,#50506a)', padding: '4px 8px', borderRadius: 4, fontFamily: 'inherit',
+    background: 'none', border: 'none', cursor: 'pointer', fontSize: 'var(--fs-body)',
+    color: 'var(--tx3)', padding: '4px 8px', borderRadius: 4, fontFamily: 'inherit',
   };
   const dayBase: React.CSSProperties = {
     width: 32, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 11, cursor: 'pointer', transition: 'all .1s',
+    fontSize: 'var(--fs-2xs)', cursor: 'pointer', transition: 'all .1s',
     fontFamily: 'inherit', border: 'none', background: 'transparent', padding: 0,
   };
 
@@ -184,7 +184,7 @@ export function DateRangePicker({
             borderColor: open && phase === 'start' ? GOLD : GOLD_DIM,
           }}>
             {startDate ? fmtShort(startDate) : '—'}
-            {showTime && startDate && <span style={{ color: 'var(--tx3,#50506a)', marginLeft: 6, fontSize: 11 }}>{startTime}</span>}
+            {showTime && startDate && <span style={{ color: 'var(--tx3)', marginLeft: 6, fontSize: 'var(--fs-2xs)' }}>{startTime}</span>}
           </div>
         </div>
         <div>
@@ -195,7 +195,7 @@ export function DateRangePicker({
             opacity: startDate ? 1 : 0.5,
           }}>
             {endDate ? fmtShort(endDate) : '—'}
-            {showTime && endDate && <span style={{ color: 'var(--tx3,#50506a)', marginLeft: 6, fontSize: 11 }}>{endTime}</span>}
+            {showTime && endDate && <span style={{ color: 'var(--tx3)', marginLeft: 6, fontSize: 'var(--fs-2xs)' }}>{endTime}</span>}
           </div>
         </div>
       </div>
@@ -204,20 +204,20 @@ export function DateRangePicker({
       {open && (
         <div style={{
           position: 'absolute', top: '100%', left: 0, marginTop: 6, zIndex: 100,
-          background: 'var(--sf,var(--dp-sf,#141418))',
+          background: 'var(--sf,var(--dp-sf))',
           border: `1px solid ${GOLD_DIM}`,
           borderRadius: 12, padding: 14, minWidth: 280,
           boxShadow: '0 12px 40px rgba(0,0,0,.5)',
         }}>
           {/* Phase hint */}
-          <div style={{ fontSize: 10, fontWeight: 700, color: GOLD, marginBottom: 8, textAlign: 'center' }}>
+          <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: GOLD, marginBottom: 8, textAlign: 'center' }}>
             {phase === 'start' ? `Selecciona ${(labels.start ?? 'inicio').toLowerCase()}` : `Selecciona ${(labels.end ?? 'fin').toLowerCase()}`}
           </div>
 
           {/* Month nav */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <button onClick={prevMonth} style={navBtn}>‹</button>
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--tx,#e4e4ef)' }}>
+            <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--tx)' }}>
               {MONTHS_ES[viewMonth]} {viewYear}
             </span>
             <button onClick={nextMonth} style={navBtn}>›</button>
@@ -226,7 +226,7 @@ export function DateRangePicker({
           {/* Day headers */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, marginBottom: 2 }}>
             {DAYS_ES.map(d => (
-              <div key={d} style={{ textAlign: 'center', fontSize: 9, fontWeight: 700, color: 'var(--tx3,#50506a)', padding: '2px 0' }}>{d}</div>
+              <div key={d} style={{ textAlign: 'center', fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', padding: '2px 0' }}>{d}</div>
             ))}
           </div>
 
@@ -243,14 +243,14 @@ export function DateRangePicker({
               const isToday = iso === today;
 
               let bg = 'transparent';
-              let color = 'var(--tx,#e4e4ef)';
+              let color = 'var(--tx)';
               let border = 'none';
               let fontWeight = 400;
 
-              if (disabled) { color = 'var(--tx3,#3a3a4a)'; }
+              if (disabled) { color = 'var(--tx3)'; }
               else if (isStart || isEnd) { bg = '#4f6ef7'; color = '#fff'; fontWeight = 700; }
               else if (inRange) { bg = 'rgba(79,110,247,.15)'; color = '#93b4ff'; }
-              if (isToday && !isStart && !isEnd) { border = '1px solid var(--tx3,#50506a)'; }
+              if (isToday && !isStart && !isEnd) { border = '1px solid var(--tx3)'; }
 
               return (
                 <button key={day}
@@ -272,27 +272,27 @@ export function DateRangePicker({
 
           {/* Max duration hint */}
           {maxDurationHours > 0 && startDate && (
-            <div style={{ fontSize: 9, color: 'var(--tx3,#50506a)', textAlign: 'center', marginTop: 6 }}>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', textAlign: 'center', marginTop: 6 }}>
               Máx. {maxDurationHours}h{maxEndDate ? ` (hasta ${fmtShort(maxEndDate)})` : ''}
             </div>
           )}
 
           {/* Time selectors inside popover */}
           {showTime && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--bd,#2a2a38)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--bd)' }}>
               <div>
-                <label style={{ fontSize: 9, fontWeight: 700, color: 'var(--tx3,#50506a)', textTransform: 'uppercase', display: 'block', marginBottom: 3 }}>
+                <label style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', display: 'block', marginBottom: 3 }}>
                   Hora {(labels.start ?? 'inicio').toLowerCase()}
                 </label>
                 <input type="time" value={startTime} onChange={e => handleTimeChange('start', e.target.value)}
-                  style={{ width: '100%', background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)', borderRadius: 6, padding: '5px 8px', fontSize: 12, color: 'var(--tx,#e4e4ef)', fontFamily: 'inherit', outline: 'none' }} />
+                  style={{ width: '100%', background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6, padding: '5px 8px', fontSize: 'var(--fs-xs)', color: 'var(--tx)', fontFamily: 'inherit', outline: 'none' }} />
               </div>
               <div>
-                <label style={{ fontSize: 9, fontWeight: 700, color: 'var(--tx3,#50506a)', textTransform: 'uppercase', display: 'block', marginBottom: 3 }}>
+                <label style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', display: 'block', marginBottom: 3 }}>
                   Hora {(labels.end ?? 'fin').toLowerCase()}
                 </label>
                 <input type="time" value={endTime} onChange={e => handleTimeChange('end', e.target.value)}
-                  style={{ width: '100%', background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)', borderRadius: 6, padding: '5px 8px', fontSize: 12, color: 'var(--tx,#e4e4ef)', fontFamily: 'inherit', outline: 'none' }} />
+                  style={{ width: '100%', background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6, padding: '5px 8px', fontSize: 'var(--fs-xs)', color: 'var(--tx)', fontFamily: 'inherit', outline: 'none' }} />
               </div>
             </div>
           )}
