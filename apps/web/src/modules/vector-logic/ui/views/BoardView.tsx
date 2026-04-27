@@ -444,7 +444,7 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
       ) : (
         <div style={{
           flex: 1, display: 'grid',
-          gridTemplateColumns: `repeat(${sortedColumns.length}, minmax(220px, 1fr))`,
+          gridTemplateColumns: `repeat(${sortedColumns.length}, minmax(280px, 1fr))`,
           gap: 12, overflowX: 'auto', overflowY: 'hidden',
         }}>
           {sortedColumns.map(col => {
@@ -517,8 +517,8 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
 
                 {/* Cards */}
                 <div style={{
-                  flex: 1, overflowY: 'auto', padding: '0 10px 12px',
-                  display: 'flex', flexDirection: 'column', gap: 8,
+                  flex: 1, overflowY: 'auto', padding: '0 14px 16px',
+                  display: 'flex', flexDirection: 'column', gap: 12,
                 }}>
                   {colTasks.map(task => (
                     <BoardTaskCard
@@ -592,42 +592,42 @@ function BoardTaskCard({ task, taskType, assignee, priority, onClick, onDragStar
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       style={{
-        background: 'var(--sf3)', borderRadius: 10, padding: '10px 12px',
+        background: 'var(--sf3)', borderRadius: 14, padding: '18px 22px',
         cursor: isDragging ? 'grabbing' : 'pointer',
         opacity: isDragging ? 0.4 : 1,
-        display: 'flex', flexDirection: 'column', gap: 6,
+        display: 'flex', flexDirection: 'column', gap: 11,
         transition: 'opacity .15s, transform .15s',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
         {taskType?.icon && (
           <span className="material-symbols-outlined"
-                style={{ fontSize: 12, color: taskType.iconColor || 'var(--tx3)' }}>
+                style={{ fontSize: 16, color: taskType.iconColor || 'var(--tx3)' }}>
             {taskType.icon}
           </span>
         )}
         <span style={{
-          fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--tx3)',
+          fontSize: 13, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--tx3)',
         }}>
           {task.code ?? taskType?.name ?? ''}
         </span>
       </div>
       <div style={{
-        fontSize: 13, fontWeight: 500, color: 'var(--tx)', lineHeight: 1.35,
+        fontSize: 17, fontWeight: 500, color: 'var(--tx)', lineHeight: 1.35,
       }}>
         {task.title}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 4 }}>
         {priority && (
           <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            padding: '2px 7px', borderRadius: 4,
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '4px 12px', borderRadius: 6,
             background: `${priority.color}1A`, color: priority.color,
-            fontSize: 9, fontWeight: 700, letterSpacing: '0.04em',
+            fontSize: 12, fontWeight: 700, letterSpacing: '0.04em',
             textTransform: 'uppercase',
           }}>
             {priority.icon && (
-              <span className="material-symbols-outlined" style={{ fontSize: 10 }}>{priority.icon}</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 13 }}>{priority.icon}</span>
             )}
             {priority.name}
           </span>
@@ -641,7 +641,7 @@ function BoardTaskCard({ task, taskType, assignee, priority, onClick, onDragStar
               email: assignee.email,
               avatarUrl: assignee.avatarUrl ?? null,
             }}
-            size={20}
+            size={36}
           />
         )}
       </div>
