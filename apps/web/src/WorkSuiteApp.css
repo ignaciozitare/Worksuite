@@ -11,19 +11,22 @@
  * Theme-independent: declared once at :root.
  * ========================================================================= */
 :root{
-  --fs-2xs:     11px;   /* uppercase labels, tiny badges */
-  --fs-xs:      13px;   /* meta, code badges, captions */
-  --fs-sm:      15px;   /* secondary body */
-  --fs-body:    17px;   /* default body, task titles, inputs */
-  --fs-md:      19px;   /* emphasized body */
-  --fs-lg:      22px;   /* section title */
-  --fs-xl:      28px;   /* large title */
-  --fs-display: 36px;   /* hero / display */
+  /* +30% scale-up (2026-04-27, per user request: "30% más grande en todo
+   * WorkSuite"). Bumping these values is the single edit that scales every
+   * screen. Keep increments roughly proportional. */
+  --fs-2xs:     14px;   /* uppercase labels, tiny badges */
+  --fs-xs:      17px;   /* meta, code badges, captions */
+  --fs-sm:      19px;   /* secondary body */
+  --fs-body:    22px;   /* default body, task titles, inputs */
+  --fs-md:      25px;   /* emphasized body */
+  --fs-lg:      29px;   /* section title */
+  --fs-xl:      36px;   /* large title */
+  --fs-display: 47px;   /* hero / display */
 
-  --icon-xs: 14px;
-  --icon-sm: 16px;
-  --icon-md: 20px;
-  --icon-lg: 28px;
+  --icon-xs: 18px;
+  --icon-sm: 21px;
+  --icon-md: 26px;
+  --icon-lg: 36px;
 
   --lh-tight:  1.2;
   --lh-normal: 1.4;
