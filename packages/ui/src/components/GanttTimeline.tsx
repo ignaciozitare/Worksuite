@@ -175,7 +175,7 @@ export function GanttTimeline({
     return { ...g, firstIdx, lastIdx, count: memberBars.length };
   }).filter(Boolean) as (GanttGroup & { firstIdx: number; lastIdx: number; count: number })[];
 
-  const ROW_H = 56;
+  const ROW_H = 76;
 
   return (
     <div style={style}>
@@ -243,9 +243,9 @@ export function GanttTimeline({
                 <div style={{ width: LABEL_W, flexShrink: 0, borderRight: '1px solid var(--dp-bd, var(--bd))', padding: '0 14px', cursor: onBarClick ? 'pointer' : 'default' }}
                   onClick={() => onBarClick?.(bar.id)}>
                   <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--dp-tx, var(--tx))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bar.label}</div>
-                  <div style={{ fontSize: 'var(--fs-2xs)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span style={{ color: bar.color, fontWeight: 600 }}>{bar.status || ''}</span>
-                    {bar.meta && <span style={{ color: 'var(--dp-tx3, var(--tx3))' }}>{bar.meta}</span>}
+                  <div style={{ fontSize: 'var(--fs-2xs)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <span style={{ color: bar.color, fontWeight: 600, whiteSpace: 'nowrap' }}>{bar.status || ''}</span>
+                    {bar.meta && <span style={{ color: 'var(--dp-tx3, var(--tx3))', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bar.meta}</span>}
                   </div>
                 </div>
 
