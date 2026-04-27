@@ -70,7 +70,7 @@ const CSS = `
 /* Sidebar */
 /* Sidebar — sits inside the module container, not fixed to viewport */
 .dp .dp-sidebar{position:sticky;top:0;width:240px;min-width:240px;height:100%;min-height:calc(100vh - 52px);align-self:stretch;background:var(--dp-bg,var(--bg));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid var(--dp-bd,var(--bd));display:flex;flex-direction:column;padding:16px;gap:4px;z-index:30;overflow-y:auto;}
-.dp .dp-sidebar-nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:500;letter-spacing:.02em;cursor:pointer;border:none;background:transparent;color:var(--dp-tx);opacity:.6;transition:all .2s;text-align:left;width:100%;font-family:inherit;}
+.dp .dp-sidebar-nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;font-size:var(--fs-sm);font-weight:500;letter-spacing:.02em;cursor:pointer;border:none;background:transparent;color:var(--dp-tx);opacity:.6;transition:all .2s;text-align:left;width:100%;font-family:inherit;}
 .dp .dp-sidebar-nav-item:hover{opacity:1;background:var(--dp-sf);transform:translateX(2px);}
 .dp .dp-sidebar-nav-item.active{opacity:1;color:var(--dp-primary-strong,var(--ac));background:var(--dp-primary-dim,var(--ac-dim));font-weight:600;box-shadow:0 0 20px var(--dp-primary-dim,var(--ac-dim));}
 .dp .dp-main{flex:1;min-width:0;height:100%;overflow:auto;}

@@ -28,7 +28,7 @@ const CSS = `
 @keyframes hdFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes hdPulse{0%{box-shadow:0 0 0 0 rgba(74,225,118,.5)}70%{box-shadow:0 0 0 16px rgba(74,225,118,0)}100%{box-shadow:0 0 0 0 rgba(74,225,118,0)}}
 .hd .pulse-green{animation:hdPulse 2s cubic-bezier(.215,.61,.355,1) infinite;}
-.hd .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:${T.radius.md};cursor:pointer;font-size:13px;font-weight:500;color:${C.txDim};transition:background .15s,color .15s,box-shadow .15s;border:1px solid transparent;letter-spacing:.01em;width:100%;background:transparent;font-family:inherit;text-align:left;}
+.hd .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:${T.radius.md};cursor:pointer;font-size:var(--fs-sm);font-weight:500;color:${C.txDim};transition:background .15s,color .15s,box-shadow .15s;border:1px solid transparent;letter-spacing:.01em;width:100%;background:transparent;font-family:inherit;text-align:left;}
 .hd .nav-item:hover{background:${C.sfLow};color:${C.txMuted};}
 .hd .nav-item.active{background:${C.sfHigh};color:${C.primary};box-shadow:0 0 10px ${C.primaryDim};}
 .hd .hd-card{background:${C.sf};border:1px solid ${C.sfHigh};border-radius:${T.radius.lg};padding:20px;position:relative;overflow:hidden;}

@@ -56,7 +56,7 @@ const JT_CSS = `
   display:flex;align-items:center;gap:10px;
   padding:8px 12px;border-radius:8px;
   cursor:pointer;transition:all .15s ease;
-  font:500 var(--fs-xs)/1 'Inter',sans-serif;
+  font:500 var(--fs-sm)/1 'Inter',sans-serif;
   color:var(--tx);opacity:.6;
   border:none;background:none;width:100%;text-align:left;
 }

@@ -818,7 +818,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
 .ev ::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px;}
 /* Nav sidebar */
 .ev .ev-sidebar{position:sticky;top:0;width:240px;min-width:240px;height:100%;min-height:calc(100vh - 52px);align-self:stretch;background:var(--sf);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid var(--bd);display:flex;flex-direction:column;padding:16px;gap:4px;z-index:30;overflow-y:auto;}
-.ev .ev-nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:500;letter-spacing:.02em;cursor:pointer;border:none;background:transparent;color:var(--tx);opacity:.6;transition:all .2s;text-align:left;width:100%;font-family:inherit;}
+.ev .ev-nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;font-size:var(--fs-sm);font-weight:500;letter-spacing:.02em;cursor:pointer;border:none;background:transparent;color:var(--tx);opacity:.6;transition:all .2s;text-align:left;width:100%;font-family:inherit;}
 .ev .ev-nav-item:hover{opacity:1;background:var(--sf2);transform:translateX(2px);}
 .ev .ev-nav-item.active{opacity:1;color:var(--ac);background:rgba(79,110,247,.1);font-weight:600;box-shadow:0 0 20px rgba(79,110,247,.1);}
 /* Right sidebar */

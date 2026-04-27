@@ -95,7 +95,7 @@ export function GanttTimeline({
   onZoomChange,
   onBarMove,
   onBarClick,
-  labelWidth = 200,
+  labelWidth = 260,
   style = {},
   zoomLabels = ['Días', 'Semanas', 'Meses'],
 }: GanttTimelineProps) {

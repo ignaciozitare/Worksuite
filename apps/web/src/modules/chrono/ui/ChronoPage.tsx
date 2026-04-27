@@ -45,7 +45,7 @@ const CSS = `
 .ch .pulse-green{animation:chPulseG 2s cubic-bezier(.215,.61,.355,1) infinite;}
 @keyframes chPulseG{0%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}70%{box-shadow:0 0 0 12px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
 /* Nav items — Stitch look: surface-high when active, subtle primary glow */
-.ch .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:${T.radius.md};cursor:pointer;font-size:13px;font-weight:500;color:${T.color.textDim};transition:background .15s, color .15s, box-shadow .15s;border:1px solid transparent;letter-spacing:.01em;}
+.ch .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:${T.radius.md};cursor:pointer;font-size:var(--fs-sm);font-weight:500;color:${T.color.textDim};transition:background .15s, color .15s, box-shadow .15s;border:1px solid transparent;letter-spacing:.01em;}
 .ch .nav-item:hover{background:${T.color.surfaceLow};color:${T.color.textMuted};}
 .ch .nav-item.active{background:${T.color.surfaceHigh};color:${T.color.primary};box-shadow:0 0 10px ${T.color.primaryDim};}
 .ch .ch-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;text-transform:uppercase;}

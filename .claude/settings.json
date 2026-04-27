@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n *)",
+      "Bash(node -e ' *)",
+      "Read(//Users/ignaciozitare/Documents/Trabajo/Desarrollo/Worksuite-1/=== Step 3 \\(Architecture\\): domain importing infra/**)",
+      "Read(//Users/ignaciozitare/Documents/Trabajo/Desarrollo/Worksuite-1/**)"
+    ]
+  }
+}
