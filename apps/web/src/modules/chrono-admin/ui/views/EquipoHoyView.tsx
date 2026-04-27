@@ -78,8 +78,8 @@ export function EquipoHoyView({ fichajeRepo }: Props) {
       {/* ── Title + reload ─── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{t('chronoAdmin.equipoHoy')}</div>
-          <div style={{ fontSize: 12, color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.resumenEquipo')}</div>
+          <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700 }}>{t('chronoAdmin.equipoHoy')}</div>
+          <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.resumenEquipo')}</div>
         </div>
         <button className="ch-btn ch-btn-ghost" onClick={load}>
           ↻ {t('chronoAdmin.recargar')}
@@ -87,7 +87,7 @@ export function EquipoHoyView({ fichajeRepo }: Props) {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 'var(--fs-xs)' }}>
           {t('chronoAdmin.cargando')}
         </div>
       ) : (
@@ -96,10 +96,10 @@ export function EquipoHoyView({ fichajeRepo }: Props) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 28 }}>
             {stats.map(s => (
               <div key={s.label} className="ch-stat" style={{ '--accent': s.accent }}>
-                <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+                <div className="mono" style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
                   {s.label}
                 </div>
-                <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: s.accent, marginTop: 6 }}>
+                <div className="mono" style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: s.accent, marginTop: 6 }}>
                   {s.value}
                 </div>
               </div>
@@ -124,7 +124,7 @@ export function EquipoHoyView({ fichajeRepo }: Props) {
                         width: 42, height: 42, borderRadius: '50%',
                         background: `linear-gradient(135deg,${C.amberDim},#78350f)`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontWeight: 700, color: C.amber, fontFamily: "'IBM Plex Mono',monospace", fontSize: 15,
+                        fontWeight: 700, color: C.amber, fontFamily: "'IBM Plex Mono',monospace", fontSize: 'var(--fs-sm)',
                       }}>
                         {emp.nombre.charAt(0).toUpperCase()}
                       </div>
@@ -136,11 +136,11 @@ export function EquipoHoyView({ fichajeRepo }: Props) {
 
                     {/* Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {emp.nombre}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                        <span className="ch-badge" style={{ background: badge.bg, color: badge.color, fontSize: 10, padding: '2px 6px' }}>
+                        <span className="ch-badge" style={{ background: badge.bg, color: badge.color, fontSize: 'var(--fs-2xs)', padding: '2px 6px' }}>
                           {t(STATUS_I18N[emp.estadoHoy] ?? 'chronoAdmin.sinFicharLabel')}
                         </span>
                       </div>
@@ -148,10 +148,10 @@ export function EquipoHoyView({ fichajeRepo }: Props) {
 
                     {/* Hours */}
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div className="mono" style={{ fontSize: 15, fontWeight: 600, color: C.amber }}>
+                      <div className="mono" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: C.amber }}>
                         {fmtHours(emp.minutosHoy)}
                       </div>
-                      <div className="mono" style={{ fontSize: 10, color: C.txMuted, marginTop: 2 }}>
+                      <div className="mono" style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, marginTop: 2 }}>
                         {emp.minutosHoy != null ? t('chronoAdmin.entrada') : '--:--'}
                       </div>
                     </div>

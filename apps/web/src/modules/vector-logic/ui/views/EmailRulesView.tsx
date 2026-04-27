@@ -81,24 +81,24 @@ export function EmailRulesView({ currentUser }: Props) {
     <div style={{ maxWidth: 900 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
+          <h2 style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
             {t('vectorLogic.emailRules')}
           </h2>
-          <p style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 4 }}>
+          <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)', marginTop: 4 }}>
             {t('vectorLogic.emailRulesDesc')}
           </p>
         </div>
         <button onClick={openNew} style={btnPrimary}>
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>add</span>
           {t('vectorLogic.newRule')}
         </button>
       </div>
 
       {rules.length === 0 && (
         <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--tx3)', background: 'var(--sf2)', borderRadius: 12 }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: .25, display: 'block', marginBottom: 12 }}>inbox</span>
-          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>{t('vectorLogic.noEmailRules')}</div>
-          <div style={{ fontSize: 11, opacity: .7 }}>{t('vectorLogic.noEmailRulesHint')}</div>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', opacity: .25, display: 'block', marginBottom: 12 }}>inbox</span>
+          <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 500, marginBottom: 4 }}>{t('vectorLogic.noEmailRules')}</div>
+          <div style={{ fontSize: 'var(--fs-2xs)', opacity: .7 }}>{t('vectorLogic.noEmailRulesHint')}</div>
         </div>
       )}
 
@@ -127,13 +127,13 @@ export function EmailRulesView({ currentUser }: Props) {
                 }} />
               </button>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)' }}>{r.name}</div>
-                <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--tx)' }}>{r.name}</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {r.filters.length === 0 && <span>{t('vectorLogic.noFilters')}</span>}
                   {r.filters.map((f, i) => (
                     <span key={i} style={{
                       padding: '2px 8px', borderRadius: 10, background: 'var(--sf3)',
-                      fontFamily: 'monospace', fontSize: 10,
+                      fontFamily: 'monospace', fontSize: 'var(--fs-2xs)',
                     }}>
                       {f.type === 'all' ? t('vectorLogic.filterDisplayAll') : `${t(`vectorLogic.filterType_${f.type}`)}: ${f.value}`}
                     </span>
@@ -153,10 +153,10 @@ export function EmailRulesView({ currentUser }: Props) {
                 </div>
               </div>
               <button onClick={() => openEdit(r)} style={btnGhost}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>edit</span>
               </button>
               <button onClick={() => remove(r)} style={btnDanger}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>delete</span>
               </button>
             </div>
           );
@@ -217,11 +217,11 @@ function RuleForm({ rule, taskTypes, priorities, onSave, onClose }: {
     <div style={modalBackdrop} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{ ...modalContainer, maxWidth: 560 }}>
         <div style={modalHeader}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', margin: 0 }}>
+          <h3 style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--tx)', margin: 0 }}>
             {rule ? t('vectorLogic.editRule') : t('vectorLogic.newRule')}
           </h3>
           <button onClick={onClose} style={iconBtn}>
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>close</span>
           </button>
         </div>
         <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '70vh', overflowY: 'auto' }}>
@@ -248,13 +248,13 @@ function RuleForm({ rule, taskTypes, priorities, onSave, onClose }: {
                     style={inpStyle()}
                   />
                   <button onClick={() => removeFilter(i)} style={iconBtn} title={t('common.delete')}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>delete</span>
                   </button>
                 </div>
               ))}
               <button onClick={addFilter} style={{
                 background: 'none', border: '1px dashed var(--bd)', borderRadius: 6,
-                padding: '6px 10px', fontSize: 11, color: 'var(--tx3)', cursor: 'pointer',
+                padding: '6px 10px', fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', cursor: 'pointer',
                 fontFamily: 'inherit',
               }}>+ {t('vectorLogic.addFilter')}</button>
             </div>
@@ -272,17 +272,17 @@ function RuleForm({ rule, taskTypes, priorities, onSave, onClose }: {
                 {priorities.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
               </select>
             </div>
-            <p style={{ fontSize: 10, color: 'var(--tx3)', marginTop: 6, lineHeight: 1.4 }}>
+            <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 6, lineHeight: 1.4 }}>
               {t('vectorLogic.optionalActionsHint')}
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <input type="checkbox" id="isActive" checked={isActive} onChange={e => setIsActive(e.target.checked)} />
-            <label htmlFor="isActive" style={{ fontSize: 12, color: 'var(--tx)' }}>{t('vectorLogic.ruleActive')}</label>
+            <label htmlFor="isActive" style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx)' }}>{t('vectorLogic.ruleActive')}</label>
           </div>
 
-          {error && <div style={{ fontSize: 12, color: 'var(--red)', padding: '6px 10px', background: 'rgba(224,82,82,.08)', borderRadius: 6 }}>{error}</div>}
+          {error && <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--red)', padding: '6px 10px', background: 'rgba(224,82,82,.08)', borderRadius: 6 }}>{error}</div>}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 8, borderTop: '1px solid var(--bd)' }}>
             <button style={btnGhost} onClick={onClose}>{t('common.cancel')}</button>
@@ -297,7 +297,7 @@ function RuleForm({ rule, taskTypes, priorities, onSave, onClose }: {
 /* ── styles ─────────────────────────────────────────────────────────────── */
 const btnPrimary = {
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-  borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer', border: 'none',
+  borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-xs)', cursor: 'pointer', border: 'none',
   fontFamily: 'inherit', transition: 'all .2s',
   background: 'linear-gradient(135deg, #adc6ff, #4d8eff)',
   color: '#fff',
@@ -306,7 +306,7 @@ const btnPrimary = {
 
 const btnGhost = {
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px',
-  borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer',
+  borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-xs)', cursor: 'pointer',
   fontFamily: 'inherit', transition: 'all .2s',
   background: 'rgba(42,42,42,.8)',
   backdropFilter: 'blur(12px)',
@@ -315,7 +315,7 @@ const btnGhost = {
 
 const btnDanger = {
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px',
-  borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer',
+  borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-xs)', cursor: 'pointer',
   fontFamily: 'inherit', transition: 'all .2s',
   background: 'linear-gradient(135deg, rgba(239,68,68,.15), rgba(239,68,68,.08))',
   color: 'var(--red)', border: '1px solid rgba(224,82,82,.2)',
@@ -327,13 +327,13 @@ const iconBtn = {
 } as const;
 
 const inpStyle = (extra = {}) => ({
-  width: '100%', padding: '7px 10px', fontSize: 12, fontFamily: 'inherit',
+  width: '100%', padding: '7px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
   background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6,
   color: 'var(--tx)', outline: 'none', ...extra,
 } as const);
 
 const lblStyle = {
-  fontSize: 10, fontWeight: 700, color: 'var(--tx3)',
+  fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
   textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 5,
 } as const;
 

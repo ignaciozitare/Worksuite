@@ -240,11 +240,11 @@ export function ChatView({ currentUser }: Props) {
         <div style={{ padding: '14px 12px' }}>
           <button onClick={newConversation} style={{
             width: '100%', background: 'var(--ac)', color: '#fff', border: 'none',
-            borderRadius: 8, padding: '8px 12px', fontSize: 12, fontWeight: 600,
+            borderRadius: 8, padding: '8px 12px', fontSize: 'var(--fs-xs)', fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit', display: 'flex',
             alignItems: 'center', justifyContent: 'center', gap: 6,
           }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>add</span>
             {t('vectorLogic.newChat')}
           </button>
         </div>
@@ -260,18 +260,18 @@ export function ChatView({ currentUser }: Props) {
               }}
               onMouseEnter={e => { if (activeConv?.id !== c.id) e.currentTarget.style.background = 'var(--sf2)'; }}
               onMouseLeave={e => { if (activeConv?.id !== c.id) e.currentTarget.style.background = 'transparent'; }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>chat</span>
-              <span style={{ fontSize: 12, color: 'var(--tx)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>chat</span>
+              <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {c.title || t('vectorLogic.untitledChat')}
               </span>
               <button onClick={e => { e.stopPropagation(); deleteConversation(c.id); }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', opacity: .4, fontFamily: 'inherit' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>close</span>
               </button>
             </div>
           ))}
           {conversations.length === 0 && (
-            <div style={{ fontSize: 11, color: 'var(--tx3)', textAlign: 'center', padding: '16px 0', opacity: .5 }}>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', textAlign: 'center', padding: '16px 0', opacity: .5 }}>
               {t('vectorLogic.noConversations')}
             </div>
           )}
@@ -285,12 +285,12 @@ export function ChatView({ currentUser }: Props) {
           padding: '14px 20px', borderBottom: '1px solid var(--bd)',
           display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
         }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--ac)' }}>smart_toy</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)', color: 'var(--ac)' }}>smart_toy</span>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>
+            <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)' }}>
               {providerName(settings?.provider)} · {settings?.model ?? '—'}
             </div>
-            <div style={{ fontSize: 10, color: 'var(--tx3)' }}>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>
               {settings?.apiKey ? t('vectorLogic.connected') : t('vectorLogic.notConfigured')}
             </div>
           </div>
@@ -300,9 +300,9 @@ export function ChatView({ currentUser }: Props) {
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
           {messages.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--tx3)' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: .2, display: 'block', marginBottom: 12 }}>smart_toy</span>
-              <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>{t('vectorLogic.startChat')}</div>
-              <div style={{ fontSize: 11, maxWidth: 420, margin: '0 auto', lineHeight: 1.5 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', opacity: .2, display: 'block', marginBottom: 12 }}>smart_toy</span>
+              <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500, marginBottom: 4 }}>{t('vectorLogic.startChat')}</div>
+              <div style={{ fontSize: 'var(--fs-2xs)', maxWidth: 420, margin: '0 auto', lineHeight: 1.5 }}>
                 {t('vectorLogic.chatHint')}
               </div>
             </div>
@@ -316,7 +316,7 @@ export function ChatView({ currentUser }: Props) {
         {error && (
           <div style={{
             padding: '10px 16px', margin: '0 20px 10px', background: 'rgba(224,82,82,.1)',
-            border: '1px solid rgba(224,82,82,.3)', borderRadius: 8, fontSize: 12, color: 'var(--red)',
+            border: '1px solid rgba(224,82,82,.3)', borderRadius: 8, fontSize: 'var(--fs-xs)', color: 'var(--red)',
           }}>{error}</div>
         )}
 
@@ -327,18 +327,18 @@ export function ChatView({ currentUser }: Props) {
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
               placeholder={t('vectorLogic.typeMessage')} rows={1}
               style={{
-                flex: 1, padding: '10px 14px', fontSize: 13, fontFamily: 'inherit',
+                flex: 1, padding: '10px 14px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
                 background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 10,
                 color: 'var(--tx)', outline: 'none', resize: 'none', minHeight: 42, maxHeight: 200,
               }} />
             <button onClick={send} disabled={sending || !input.trim()}
               style={{
                 background: 'var(--ac)', color: '#fff', border: 'none', borderRadius: 10,
-                padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: sending || !input.trim() ? 'not-allowed' : 'pointer',
+                padding: '10px 18px', fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: sending || !input.trim() ? 'not-allowed' : 'pointer',
                 opacity: sending || !input.trim() ? .4 : 1, fontFamily: 'inherit',
                 display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
               }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>
                 {sending ? 'hourglass_empty' : 'send'}
               </span>
             </button>
@@ -359,9 +359,9 @@ function MessageBubble({ msg }: { msg: AIMessage }) {
       <div style={{
         padding: '8px 12px', marginBottom: 14, background: 'rgba(62,207,142,.06)',
         border: '1px solid rgba(62,207,142,.2)', borderRadius: 8,
-        fontSize: 11, fontFamily: 'monospace', color: 'var(--tx2)', maxWidth: '80%',
+        fontSize: 'var(--fs-2xs)', fontFamily: 'monospace', color: 'var(--tx2)', maxWidth: '80%',
       }}>
-        <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--green)', letterSpacing: '.08em', marginBottom: 4 }}>
+        <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--green)', letterSpacing: '.08em', marginBottom: 4 }}>
           TOOL RESULT
         </div>
         <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{msg.content}</div>
@@ -380,7 +380,7 @@ function MessageBubble({ msg }: { msg: AIMessage }) {
         background: isUser ? 'var(--ac)' : 'var(--sf2)',
         color: isUser ? '#fff' : 'var(--tx)',
         borderRadius: isUser ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
-        fontSize: 13, lineHeight: 1.5,
+        fontSize: 'var(--fs-xs)', lineHeight: 1.5,
         border: isUser ? 'none' : '1px solid var(--bd)',
         whiteSpace: 'pre-wrap', wordBreak: 'break-word',
       }}>

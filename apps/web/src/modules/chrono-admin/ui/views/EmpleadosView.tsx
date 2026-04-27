@@ -163,8 +163,8 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, fic
       {/* ── Header ─── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{t('chronoAdmin.empleadosTitle')}</div>
-          <div style={{ fontSize: 12, color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.empleadosSubtitle')}</div>
+          <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700 }}>{t('chronoAdmin.empleadosTitle')}</div>
+          <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.empleadosSubtitle')}</div>
         </div>
         <button className="ch-btn ch-btn-ghost" onClick={load}>
           ↻ {t('chronoAdmin.recargar')}
@@ -178,7 +178,7 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, fic
             key={fb.key}
             className={filter === fb.key ? 'ch-btn ch-btn-amber' : 'ch-btn ch-btn-ghost'}
             onClick={() => setFilter(fb.key)}
-            style={{ fontSize: 12 }}
+            style={{ fontSize: 'var(--fs-xs)' }}
           >
             {fb.label}
           </button>
@@ -187,7 +187,7 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, fic
           style={{
             background: T.color.surfaceLow, border: `1px solid ${T.color.surfaceHigh}`,
             borderRadius: T.radius.md, padding: '7px 12px',
-            color: T.color.text, fontSize: 12, fontFamily: T.font.body,
+            color: T.color.text, fontSize: 'var(--fs-xs)', fontFamily: T.font.body,
           }}>
           <option value="">{t('chronoAdmin.equipos')}: {t('chronoAdmin.todos')}</option>
           {equipos.map(eq => <option key={eq.id} value={eq.nombre}>{eq.nombre}</option>)}
@@ -196,7 +196,7 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, fic
           style={{
             background: T.color.surfaceLow, border: `1px solid ${T.color.surfaceHigh}`,
             borderRadius: T.radius.md, padding: '7px 12px',
-            color: T.color.text, fontSize: 12, fontFamily: T.font.body,
+            color: T.color.text, fontSize: 'var(--fs-xs)', fontFamily: T.font.body,
           }}>
           <option value="">Rol: {t('chronoAdmin.todos')}</option>
           <option value="admin">Admin</option>
@@ -211,14 +211,14 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, fic
           style={{
             background: T.color.surfaceLow, border: `1px solid ${T.color.surfaceHigh}`,
             borderRadius: T.radius.md, padding: '8px 12px',
-            color: T.color.text, fontSize: 13, width: 240, outline: 'none',
+            color: T.color.text, fontSize: 'var(--fs-xs)', width: 240, outline: 'none',
             fontFamily: T.font.body,
           }}
         />
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 'var(--fs-xs)' }}>
           {t('chronoAdmin.cargando')}
         </div>
       ) : filtered.length === 0 ? (
@@ -230,28 +230,28 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, fic
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.empleado')}
                 </th>
-                <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.email')}
                 </th>
-                <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.horasHoy')}
                 </th>
-                <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.horasMes')}
                 </th>
-                <th style={{ padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                <th style={{ padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.equipos')}
                 </th>
-                <th style={{ textAlign: 'center', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                <th style={{ textAlign: 'center', padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.estado')}
                 </th>
-                <th style={{ textAlign: 'center', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                <th style={{ textAlign: 'center', padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.jornada')}
                 </th>
-                <th style={{ textAlign: 'center', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                <th style={{ textAlign: 'center', padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.fichaTitle')}
                 </th>
               </tr>
@@ -275,32 +275,32 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, fic
                             width: 32, height: 32, borderRadius: '50%',
                             background: `linear-gradient(135deg,${C.amberDim},#78350f)`,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontWeight: 700, color: C.amber, fontFamily: "'IBM Plex Mono',monospace", fontSize: 13,
+                            fontWeight: 700, color: C.amber, fontFamily: "'IBM Plex Mono',monospace", fontSize: 'var(--fs-xs)',
                           }}>
                             {emp.nombre.charAt(0).toUpperCase()}
                           </div>
-                          <span style={{ fontSize: 13, fontWeight: 600 }}>{emp.nombre}</span>
+                          <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 600 }}>{emp.nombre}</span>
                         </div>
                       </td>
-                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, fontSize: 12, color: C.txDim }}>{emp.email}</td>
-                      <td className="mono" style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'right', fontSize: 14, fontWeight: 600, color: C.amber }}>{fmtHours(emp.minutosHoy)}</td>
-                      <td className="mono" style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'right', fontSize: 14, fontWeight: 600, color: C.tx }}>{fmtHours(resumenMes[emp.userId] ?? null)}</td>
-                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, fontSize: 11, color: C.txDim }}>
+                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, fontSize: 'var(--fs-xs)', color: C.txDim }}>{emp.email}</td>
+                      <td className="mono" style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'right', fontSize: 'var(--fs-sm)', fontWeight: 600, color: C.amber }}>{fmtHours(emp.minutosHoy)}</td>
+                      <td className="mono" style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'right', fontSize: 'var(--fs-sm)', fontWeight: 600, color: C.tx }}>{fmtHours(resumenMes[emp.userId] ?? null)}</td>
+                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, fontSize: 'var(--fs-2xs)', color: C.txDim }}>
                         {getUserTeam(emp.userId) || '—'}
                       </td>
                       <td style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'center' }}>
-                        <span className="ch-badge" style={{ background: badge.bg, color: badge.color, fontSize: 10, padding: '3px 8px' }}>
+                        <span className="ch-badge" style={{ background: badge.bg, color: badge.color, fontSize: 'var(--fs-2xs)', padding: '3px 8px' }}>
                           {t(STATUS_I18N[emp.estadoHoy] ?? 'chronoAdmin.sinFicharLabel')}
                         </span>
                       </td>
-                      <td className="mono" style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'center', fontSize: 11, color: C.txDim }}>
+                      <td className="mono" style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'center', fontSize: 'var(--fs-2xs)', color: C.txDim }}>
                         {cfg ? `${(cfg.horasJornadaMinutos ?? 480) / 60}h · ${(cfg.jornadaDias ?? []).join('')}` : t('chronoAdmin.sinConfigurar')}
                       </td>
                       <td style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'center' }}>
                         <button
                           className="ch-btn ch-btn-ghost"
                           onClick={e => { e.stopPropagation(); setFichaUserId(emp.userId); }}
-                          style={{ fontSize: 11, padding: '4px 10px' }}
+                          style={{ fontSize: 'var(--fs-2xs)', padding: '4px 10px' }}
                         >
                           {t('chronoAdmin.fichaVerFicha')}
                         </button>
@@ -314,39 +314,39 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, fic
                           <div className="fade-in" style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
                             {/* Horas jornada */}
                             <div style={{ flex: 1 }}>
-                              <label style={{ fontSize: 10, color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                              <label style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
                                 {t('chronoAdmin.horasJornada')} ({t('chronoAdmin.enMinutos')})
                               </label>
                               <input
                                 type="number"
                                 value={editDraft.horasJornadaMinutos ?? ''}
                                 onChange={e => setEditDraft(prev => ({ ...prev, horasJornadaMinutos: e.target.value ? Number(e.target.value) : null }))}
-                                style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '8px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none', fontFamily: "'IBM Plex Mono',monospace" }}
+                                style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '8px 10px', color: C.tx, fontSize: 'var(--fs-xs)', width: '100%', outline: 'none', fontFamily: "'IBM Plex Mono',monospace" }}
                               />
                             </div>
 
                             {/* Dias vacaciones */}
                             <div style={{ flex: 1 }}>
-                              <label style={{ fontSize: 10, color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                              <label style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
                                 {t('chronoAdmin.diasVacaciones')}
                               </label>
                               <input
                                 type="number"
                                 value={editDraft.diasVacaciones ?? ''}
                                 onChange={e => setEditDraft(prev => ({ ...prev, diasVacaciones: e.target.value ? Number(e.target.value) : null }))}
-                                style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '8px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none', fontFamily: "'IBM Plex Mono',monospace" }}
+                                style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '8px 10px', color: C.tx, fontSize: 'var(--fs-xs)', width: '100%', outline: 'none', fontFamily: "'IBM Plex Mono',monospace" }}
                               />
                             </div>
 
                             {/* Jornada dias */}
                             <div>
-                              <label style={{ fontSize: 10, color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                              <label style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
                                 {t('chronoAdmin.jornadaDias')}
                               </label>
                               <div style={{ display: 'flex', gap: 3 }}>
                                 {DIAS_SEMANA.map(dia => (
                                   <button key={dia} onClick={() => toggleDia(dia)} style={{
-                                    width: 32, height: 34, borderRadius: 6, fontSize: 11, fontWeight: 600,
+                                    width: 32, height: 34, borderRadius: 6, fontSize: 'var(--fs-2xs)', fontWeight: 600,
                                     border: editDraft.jornadaDias.includes(dia) ? `1px solid ${C.amber}` : `1px solid ${C.bd}`,
                                     background: editDraft.jornadaDias.includes(dia) ? C.amberGlow : C.sf,
                                     color: editDraft.jornadaDias.includes(dia) ? C.amber : C.txMuted,
@@ -358,7 +358,7 @@ export function EmpleadosView({ fichajeRepo, empleadoConfigRepo, equipoRepo, fic
 
                             {/* Save */}
                             <button className="ch-btn ch-btn-amber" onClick={() => handleSave(emp.userId)} disabled={saving}
-                              style={{ height: 34, fontSize: 12, whiteSpace: 'nowrap' }}>
+                              style={{ height: 34, fontSize: 'var(--fs-xs)', whiteSpace: 'nowrap' }}>
                               {saving ? '...' : t('chronoAdmin.guardar')}
                             </button>
                           </div>

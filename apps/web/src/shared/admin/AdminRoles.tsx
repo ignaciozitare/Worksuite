@@ -95,8 +95,8 @@ function AdminRoles() {
           <input className="a-inp" placeholder="New role name" value={newRoleName}
             onChange={e=>setNewRoleName(e.target.value)}
             onKeyDown={e=>{if(e.key==='Enter')createRole();}}
-            style={{flex:1,fontSize:11,padding:'4px 7px'}}/>
-          <button className="btn-g" onClick={createRole} style={{padding:'4px 8px',fontSize:11,flexShrink:0}}>+</button>
+            style={{flex:1,fontSize: 'var(--fs-2xs)',padding:'4px 7px'}}/>
+          <button className="btn-g" onClick={createRole} style={{padding:'4px 8px',fontSize: 'var(--fs-2xs)',flexShrink:0}}>+</button>
         </div>
         <div style={{flex:1,overflowY:'auto'}}>
           {roles.map(r=>(
@@ -106,37 +106,37 @@ function AdminRoles() {
               borderBottom:'1px solid var(--bd)'}}
               onClick={()=>setSelRole(r)}>
               <div style={{flex:1}}>
-                <div style={{fontSize:12,fontWeight:600,color:selRole?.id===r.id?'var(--ac2)':'var(--tx)'}}>
+                <div style={{fontSize: 'var(--fs-xs)',fontWeight:600,color:selRole?.id===r.id?'var(--ac2)':'var(--tx)'}}>
                   {r.name}
-                  {r.is_system && <span style={{fontSize:9,color:'var(--tx3)',marginLeft:6,fontWeight:400}}>system</span>}
+                  {r.is_system && <span style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',marginLeft:6,fontWeight:400}}>system</span>}
                 </div>
-                {r.description&&<div style={{fontSize:10,color:'var(--tx3)',marginTop:1}}>{r.description}</div>}
+                {r.description&&<div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',marginTop:1}}>{r.description}</div>}
               </div>
               {!r.is_system&&(
                 <button onClick={e=>{e.stopPropagation();deleteRole(r.id);}}
-                  style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'var(--tx3)',padding:'1px 3px'}}>×</button>
+                  style={{background:'none',border:'none',cursor:'pointer',fontSize: 'var(--fs-xs)',color:'var(--tx3)',padding:'1px 3px'}}>×</button>
               )}
             </div>
           ))}
         </div>
-        {msg&&<div style={{padding:'6px 10px',fontSize:11,color:'var(--red)'}}>{msg}</div>}
+        {msg&&<div style={{padding:'6px 10px',fontSize: 'var(--fs-2xs)',color:'var(--red)'}}>{msg}</div>}
       </div>
 
       {/* Right: permissions editor */}
       {selRole ? (
         <div style={{flex:1,padding:20,overflowY:'auto'}}>
           <div style={{marginBottom:16}}>
-            <div style={{fontSize:16,fontWeight:700,color:'var(--tx)',marginBottom:4}}>{selRole.name}</div>
+            <div style={{fontSize: 'var(--fs-body)',fontWeight:700,color:'var(--tx)',marginBottom:4}}>{selRole.name}</div>
             <input className="a-inp" defaultValue={selRole.description}
               onBlur={e=>saveDescription(e.target.value)}
               placeholder="Role description"
               disabled={selRole.name==='admin'}
-              style={{fontSize:12,padding:'5px 8px',width:'100%',maxWidth:380}}/>
+              style={{fontSize: 'var(--fs-xs)',padding:'5px 8px',width:'100%',maxWidth:380}}/>
           </div>
 
           {/* Modules */}
           <div style={{marginBottom:20}}>
-            <div style={{fontSize:11,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:10}}>
+            <div style={{fontSize: 'var(--fs-2xs)',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:10}}>
               Visible Modules
             </div>
             <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
@@ -149,10 +149,10 @@ function AdminRoles() {
                       background:on?'var(--glow)':'var(--sf2)',
                       cursor:selRole.name==='admin'?'default':'pointer',opacity:selRole.name==='admin'?.6:1,transition:'var(--ease)'}}>
                     <div style={{width:14,height:14,borderRadius:3,background:on?'var(--ac)':'transparent',
-                      border:`2px solid ${on?'var(--ac)':'var(--bd2)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff'}}>
+                      border:`2px solid ${on?'var(--ac)':'var(--bd2)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize: 'var(--fs-2xs)',color:'#fff'}}>
                       {on&&'✓'}
                     </div>
-                    <span style={{fontSize:12,fontWeight:600,color:on?'var(--ac2)':'var(--tx2)'}}>{mod.label}</span>
+                    <span style={{fontSize: 'var(--fs-xs)',fontWeight:600,color:on?'var(--ac2)':'var(--tx2)'}}>{mod.label}</span>
                   </div>
                 );
               })}
@@ -161,9 +161,9 @@ function AdminRoles() {
 
           {/* Admin permissions */}
           <div>
-            <div style={{fontSize:11,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:10}}>
+            <div style={{fontSize: 'var(--fs-2xs)',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--tx3)',marginBottom:10}}>
               Admin Access
-              <span style={{fontSize:10,fontWeight:400,marginLeft:8,color:'var(--tx3)'}}>— controls what appears in the Admin panel</span>
+              <span style={{fontSize: 'var(--fs-2xs)',fontWeight:400,marginLeft:8,color:'var(--tx3)'}}>— controls what appears in the Admin panel</span>
             </div>
             <div style={{display:'flex',flexDirection:'column',gap:6}}>
               {ALL_ADMIN_PERMS.map(perm=>{
@@ -175,12 +175,12 @@ function AdminRoles() {
                       background:on?'rgba(79,110,247,.05)':'var(--sf2)',
                       cursor:selRole.name==='admin'?'default':'pointer',transition:'var(--ease)'}}>
                     <div style={{width:18,height:18,borderRadius:4,background:on?'var(--ac)':'transparent',
-                      border:`2px solid ${on?'var(--ac)':'var(--bd2)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#fff',flexShrink:0}}>
+                      border:`2px solid ${on?'var(--ac)':'var(--bd2)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize: 'var(--fs-2xs)',color:'#fff',flexShrink:0}}>
                       {on&&'✓'}
                     </div>
                     <div>
-                      <div style={{fontSize:12,fontWeight:600,color:on?'var(--ac2)':'var(--tx)'}}>{perm.label}</div>
-                      <div style={{fontSize:10,color:'var(--tx3)'}}>{perm.desc}</div>
+                      <div style={{fontSize: 'var(--fs-xs)',fontWeight:600,color:on?'var(--ac2)':'var(--tx)'}}>{perm.label}</div>
+                      <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)'}}>{perm.desc}</div>
                     </div>
                   </div>
                 );
@@ -189,13 +189,13 @@ function AdminRoles() {
           </div>
 
           {selRole.name==='admin'&&(
-            <div style={{marginTop:16,fontSize:11,color:'var(--tx3)',padding:'8px 12px',background:'var(--sf2)',borderRadius:'var(--r)',border:'1px solid var(--bd)'}}>
+            <div style={{marginTop:16,fontSize: 'var(--fs-2xs)',color:'var(--tx3)',padding:'8px 12px',background:'var(--sf2)',borderRadius:'var(--r)',border:'1px solid var(--bd)'}}>
               🔒 The <strong>admin</strong> role has full access and cannot be modified.
             </div>
           )}
         </div>
       ) : (
-        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:13}}>
+        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize: 'var(--fs-xs)'}}>
           ← Select a role to configure permissions
         </div>
       )}

@@ -55,10 +55,10 @@ export function UserMenu({ user, onLogout }: Props) {
         }}
       >
         <UserAvatar user={user} size={24} imageWidth={64} />
-        <span style={{ fontSize: 12, color: 'var(--tx2)', fontWeight: 600 }}>
+        <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx2)', fontWeight: 600 }}>
           {user.name || user.email}
         </span>
-        <span style={{ fontSize: 9, color: 'var(--tx3)', marginLeft: 2 }}>
+        <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginLeft: 2 }}>
           ▾
         </span>
       </button>
@@ -76,10 +76,10 @@ export function UserMenu({ user, onLogout }: Props) {
             borderBottom: '1px solid var(--bd)',
             marginBottom: 6,
           }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--tx)' }}>
+            <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--tx)' }}>
               {user.name}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 2 }}>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 2 }}>
               {user.email}
             </div>
           </div>
@@ -99,13 +99,13 @@ export function UserMenu({ user, onLogout }: Props) {
                     width: '100%', padding: '10px 12px', borderRadius: 6,
                     background: 'transparent', border: 'none', cursor: 'pointer',
                     color: item.danger ? '#ef4444' : 'var(--tx2)',
-                    fontSize: 13, fontWeight: 500, textAlign: 'left',
+                    fontSize: 'var(--fs-xs)', fontWeight: 500, textAlign: 'left',
                     transition: 'background .12s',
                   }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg2, rgba(255,255,255,.05))')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <span style={{ fontSize: 14, width: 18, textAlign: 'center' }}>{item.icon}</span>
+                  <span style={{ fontSize: 'var(--fs-sm)', width: 18, textAlign: 'center' }}>{item.icon}</span>
                   <span>{t(item.labelKey)}</span>
                 </button>
               </div>

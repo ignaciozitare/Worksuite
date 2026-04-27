@@ -117,7 +117,7 @@ export function LoginPage() {
           <form onSubmit={handleLogin} style={S.form}>
             {error && (
               <div role="alert" style={S.errorBanner}>
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>error</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>error</span>
                 <span>{error}</span>
               </div>
             )}
@@ -157,7 +157,7 @@ export function LoginPage() {
                   aria-label={showPwd ? t('auth.hidePassword') : t('auth.showPassword')}
                   style={S.pwdToggle}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>
                     {showPwd ? 'visibility_off' : 'visibility'}
                   </span>
                 </button>
@@ -285,13 +285,13 @@ const S: Record<string, React.CSSProperties> = {
     textAlign: 'center',
   },
   eyebrow: {
-    fontSize: 11,
+    fontSize: 'var(--fs-2xs)',
     fontWeight: 700,
     letterSpacing: '0.1em',
     color: 'var(--ac-strong)',
   },
   headline: {
-    fontSize: 48,
+    fontSize: 'var(--fs-display)',
     fontWeight: 600,
     color: 'var(--tx)',
     lineHeight: 1.1,
@@ -300,7 +300,7 @@ const S: Record<string, React.CSSProperties> = {
     whiteSpace: 'pre-line',
   },
   tagline: {
-    fontSize: 16,
+    fontSize: 'var(--fs-body)',
     fontWeight: 400,
     color: 'var(--tx2)',
     lineHeight: 1.6,
@@ -338,14 +338,14 @@ const S: Record<string, React.CSSProperties> = {
     gap: 8,
   },
   title: {
-    fontSize: 28,
+    fontSize: 'var(--fs-xl)',
     fontWeight: 600,
     color: 'var(--tx)',
     letterSpacing: '-0.02em',
     margin: 0,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 'var(--fs-sm)',
     fontWeight: 400,
     color: 'var(--tx2)',
     margin: 0,
@@ -363,7 +363,7 @@ const S: Record<string, React.CSSProperties> = {
     background: 'var(--red-dim)',
     color: 'var(--red)',
     borderRadius: 8,
-    fontSize: 13,
+    fontSize: 'var(--fs-xs)',
     fontWeight: 500,
     border: 'none',
   },
@@ -373,7 +373,7 @@ const S: Record<string, React.CSSProperties> = {
     gap: 6,
   },
   lbl: {
-    fontSize: 12,
+    fontSize: 'var(--fs-xs)',
     fontWeight: 700,
     letterSpacing: '0.05em',
     textTransform: 'uppercase',
@@ -387,7 +387,7 @@ const S: Record<string, React.CSSProperties> = {
     borderRadius: 8,
     padding: '10px 14px',
     color: 'var(--tx)',
-    fontSize: 14,
+    fontSize: 'var(--fs-sm)',
     fontFamily: 'inherit',
     boxSizing: 'border-box',
     transition: 'box-shadow 0.15s',
@@ -412,7 +412,7 @@ const S: Record<string, React.CSSProperties> = {
     border: 'none',
     borderRadius: 12,
     color: 'var(--ac-on)',
-    fontSize: 14,
+    fontSize: 'var(--fs-sm)',
     fontWeight: 600,
     cursor: 'pointer',
     fontFamily: 'inherit',
@@ -432,7 +432,7 @@ const S: Record<string, React.CSSProperties> = {
   divLine: { flex: 1, height: 1, background: 'var(--bd)' },
   divTxt: {
     color: 'var(--tx3)',
-    fontSize: 11,
+    fontSize: 'var(--fs-2xs)',
     whiteSpace: 'nowrap',
     fontWeight: 600,
     letterSpacing: '0.05em',
@@ -448,7 +448,7 @@ const S: Record<string, React.CSSProperties> = {
     background: 'var(--sf2)',
     border: 'none',
     borderRadius: 8,
-    fontSize: 13,
+    fontSize: 'var(--fs-xs)',
     fontWeight: 500,
     color: 'var(--tx)',
     fontFamily: 'inherit',
@@ -457,7 +457,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   footer: {
     textAlign: 'center',
-    fontSize: 13,
+    fontSize: 'var(--fs-xs)',
     color: 'var(--tx3)',
   },
   footerAccent: {

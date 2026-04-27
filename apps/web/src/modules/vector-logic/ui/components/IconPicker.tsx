@@ -124,7 +124,7 @@ export function IconPicker({ value, onChange, size = 24, color, onColorChange }:
               <input value={search} onChange={e => setSearch(e.target.value)} autoFocus
                 placeholder={t('vectorLogic.searchIcons')}
                 style={{
-                  width: '100%', padding: '6px 10px', fontSize: 12, fontFamily: 'inherit',
+                  width: '100%', padding: '6px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
                   background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6,
                   color: 'var(--tx)', outline: 'none',
                 }} />
@@ -152,12 +152,12 @@ export function IconPicker({ value, onChange, size = 24, color, onColorChange }:
                     }}
                     onMouseEnter={e => { if (!selected) { e.currentTarget.style.background = 'var(--sf2)'; e.currentTarget.style.color = 'var(--tx)'; } }}
                     onMouseLeave={e => { if (!selected) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--tx2)'; } }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{name}</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>{name}</span>
                   </button>
                 );
               })}
               {filtered.length === 0 && (
-                <div style={{ gridColumn: '1 / -1', fontSize: 11, color: 'var(--tx3)', textAlign: 'center', padding: '20px 0' }}>
+                <div style={{ gridColumn: '1 / -1', fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', textAlign: 'center', padding: '20px 0' }}>
                   No icons match "{search}"
                 </div>
               )}
@@ -171,7 +171,7 @@ export function IconPicker({ value, onChange, size = 24, color, onColorChange }:
                 background: 'var(--sf2)',
               }}>
                 <span style={{
-                  fontSize: 9, fontWeight: 700, letterSpacing: '.08em',
+                  fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '.08em',
                   color: 'var(--tx3)', textTransform: 'uppercase',
                 }}>
                   {t('vectorLogic.iconColor')}

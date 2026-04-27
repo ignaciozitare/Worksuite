@@ -33,10 +33,10 @@ function RejectModal({ onConfirm, onCancel, t }) {
         width: '100%', maxWidth: 420, padding: 24,
         boxShadow: '0 24px 80px rgba(0,0,0,.6)', borderRadius: 10,
       }}>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>
+        <div style={{ fontSize: 'var(--fs-body)', fontWeight: 700, marginBottom: 4 }}>
           {t('chronoAdmin.razonRechazo')}
         </div>
-        <div style={{ fontSize: 12, color: C.txDim, marginBottom: 16 }}>
+        <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginBottom: 16 }}>
           {t('chronoAdmin.razonRechazoDesc')}
         </div>
         <textarea
@@ -46,7 +46,7 @@ function RejectModal({ onConfirm, onCancel, t }) {
           placeholder={t('chronoAdmin.motivoPlaceholder')}
           style={{ width: '100%', resize: 'vertical' }}
         />
-        {error && <div style={{ color: C.red, fontSize: 12, marginTop: 6 }}>{error}</div>}
+        {error && <div style={{ color: C.red, fontSize: 'var(--fs-xs)', marginTop: 6 }}>{error}</div>}
         <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
           <button className="ch-btn ch-btn-ghost" onClick={onCancel}>
             {t('chronoAdmin.cancelar')}
@@ -130,8 +130,8 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
       {/* ── Header ─── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{t('chronoAdmin.aprobaciones')}</div>
-          <div style={{ fontSize: 12, color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.aprobacionesDesc')}</div>
+          <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700 }}>{t('chronoAdmin.aprobaciones')}</div>
+          <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.aprobacionesDesc')}</div>
         </div>
         <button className="ch-btn ch-btn-ghost" onClick={load}>
           ↻ {t('chronoAdmin.recargar')}
@@ -141,18 +141,18 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
       {/* ── Stat badges ─── */}
       <div style={{ display: 'flex', gap: 14, marginBottom: 24 }}>
         <div className="ch-stat" style={{ flex: 1, '--accent': C.amber }}>
-          <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+          <div className="mono" style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
             {t('chronoAdmin.fichajesPendientes')}
           </div>
-          <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: C.amber, marginTop: 6 }}>
+          <div className="mono" style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: C.amber, marginTop: 6 }}>
             {fichajesPend.length}
           </div>
         </div>
         <div className="ch-stat" style={{ flex: 1, '--accent': C.purple }}>
-          <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+          <div className="mono" style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
             {t('chronoAdmin.vacacionesPendientes')}
           </div>
-          <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: C.purple, marginTop: 6 }}>
+          <div className="mono" style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: C.purple, marginTop: 6 }}>
             {vacacionesPend.length}
           </div>
         </div>
@@ -168,13 +168,13 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
             style={{ padding: '8px 16px', borderRadius: 6 }}
           >
             <span>{st.label}</span>
-            <span className="ch-badge ch-badge-amber" style={{ fontSize: 10, padding: '2px 6px' }}>{st.count}</span>
+            <span className="ch-badge ch-badge-amber" style={{ fontSize: 'var(--fs-2xs)', padding: '2px 6px' }}>{st.count}</span>
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 'var(--fs-xs)' }}>
           {t('chronoAdmin.cargando')}
         </div>
       ) : (
@@ -208,7 +208,7 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
                               width: 28, height: 28, borderRadius: '50%',
                               background: `linear-gradient(135deg,${C.amberDim},#78350f)`,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontWeight: 700, color: C.amber, fontSize: 11, fontFamily: "'IBM Plex Mono',monospace",
+                              fontWeight: 700, color: C.amber, fontSize: 'var(--fs-2xs)', fontFamily: "'IBM Plex Mono',monospace",
                             }}>
                               {(f.userName || '?').charAt(0).toUpperCase()}
                             </div>
@@ -219,7 +219,7 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
                         <td><span className="mono">{fmtTime(f.entradaAt)}</span></td>
                         <td><span className="mono" style={{ color: C.txDim }}>{fmtTime(f.comidaIniAt)} - {fmtTime(f.comidaFinAt)}</span></td>
                         <td><span className="mono">{fmtTime(f.salidaAt)}</span></td>
-                        <td><span style={{ fontSize: 12, color: C.txDim }}>{f.justificacion || '--'}</span></td>
+                        <td><span style={{ fontSize: 'var(--fs-xs)', color: C.txDim }}>{f.justificacion || '--'}</span></td>
                         <td>
                           <div style={{ display: 'flex', gap: 6 }}>
                             <button className="ch-btn ch-btn-green" onClick={() => handleAproveFichaje(f.id)}>
@@ -267,7 +267,7 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
                               width: 28, height: 28, borderRadius: '50%',
                               background: `linear-gradient(135deg,${C.amberDim},#78350f)`,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontWeight: 700, color: C.amber, fontSize: 11, fontFamily: "'IBM Plex Mono',monospace",
+                              fontWeight: 700, color: C.amber, fontSize: 'var(--fs-2xs)', fontFamily: "'IBM Plex Mono',monospace",
                             }}>
                               {(v.userName || '?').charAt(0).toUpperCase()}
                             </div>
@@ -280,7 +280,7 @@ export function AprobacionesView({ fichajeRepo, vacacionRepo, currentUser }: Pro
                         <td><span className="mono" style={{ color: C.txDim }}>{fmtDate(v.fechaInicio)}</span></td>
                         <td><span className="mono" style={{ color: C.txDim }}>{fmtDate(v.fechaFin)}</span></td>
                         <td><span className="mono" style={{ fontWeight: 600, color: C.amber }}>{v.diasHabiles}</span></td>
-                        <td><span style={{ fontSize: 12, color: C.txDim }}>{v.motivo || '--'}</span></td>
+                        <td><span style={{ fontSize: 'var(--fs-xs)', color: C.txDim }}>{v.motivo || '--'}</span></td>
                         <td>
                           <div style={{ display: 'flex', gap: 6 }}>
                             <button className="ch-btn ch-btn-green" onClick={() => handleApproveVacacion(v.id)}>

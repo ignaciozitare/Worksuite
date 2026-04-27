@@ -95,7 +95,7 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
     borderRadius: T.radius.md,
     padding: '9px 12px',
     color: T.color.text,
-    fontSize: 13,
+    fontSize: 'var(--fs-xs)',
     width: '100%',
     outline: 'none',
     fontFamily: T.font.body,
@@ -103,7 +103,7 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
   };
 
   const labelStyle: React.CSSProperties = {
-    fontSize: 10, color: T.color.textDim, display: 'block', marginBottom: 5,
+    fontSize: 'var(--fs-2xs)', color: T.color.textDim, display: 'block', marginBottom: 5,
     textTransform: 'uppercase', letterSpacing: '.1em', fontWeight: 600,
   };
 
@@ -140,21 +140,21 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
             width: 42, height: 42, borderRadius: T.radius.md,
             background: `linear-gradient(135deg, ${T.color.primary}, ${T.color.primaryStrong})`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 700, color: T.color.primaryOn, fontSize: 16,
+            fontWeight: 700, color: T.color.primaryOn, fontSize: 'var(--fs-body)',
             fontFamily: T.font.body,
             boxShadow: `0 0 14px ${T.color.primaryDim}`,
           }}>
             {userName.charAt(0).toUpperCase()}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: C.tx }}>{userName}</div>
-            <div style={{ fontSize: 12, color: C.txDim }}>{userEmail}</div>
+            <div style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: C.tx }}>{userName}</div>
+            <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim }}>{userEmail}</div>
           </div>
           <button
             onClick={onClose}
             style={{
               background: 'transparent', border: `1px solid ${C.bd}`, borderRadius: 6,
-              color: C.txDim, cursor: 'pointer', padding: '6px 10px', fontSize: 14,
+              color: C.txDim, cursor: 'pointer', padding: '6px 10px', fontSize: 'var(--fs-sm)',
             }}
           >
             ✕
@@ -164,13 +164,13 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
         {/* Body */}
         <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px' }}>
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: C.txDim, fontSize: 13 }}>
+            <div style={{ textAlign: 'center', padding: '40px 0', color: C.txDim, fontSize: 'var(--fs-xs)' }}>
               {t('chronoAdmin.cargando')}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {/* Sección: Datos profesionales */}
-              <div style={{ fontSize: 11, fontWeight: 700, color: T.color.primary, textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: -6 }}>
+              <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: T.color.primary, textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: -6 }}>
                 {t('chronoAdmin.fichaSeccionProfesional')}
               </div>
 
@@ -206,7 +206,7 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
               </div>
 
               {/* Sección: Contacto */}
-              <div style={{ fontSize: 11, fontWeight: 700, color: T.color.primary, textTransform: 'uppercase', letterSpacing: '.12em', marginTop: 6, marginBottom: -6 }}>
+              <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: T.color.primary, textTransform: 'uppercase', letterSpacing: '.12em', marginTop: 6, marginBottom: -6 }}>
                 {t('chronoAdmin.fichaSeccionContacto')}
               </div>
 
@@ -225,7 +225,7 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
               </div>
 
               {/* Sección: Seguridad Social */}
-              <div style={{ fontSize: 11, fontWeight: 700, color: T.color.primary, textTransform: 'uppercase', letterSpacing: '.12em', marginTop: 6, marginBottom: -6 }}>
+              <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: T.color.primary, textTransform: 'uppercase', letterSpacing: '.12em', marginTop: 6, marginBottom: -6 }}>
                 {t('chronoAdmin.fichaSeccionLegal')}
               </div>
 
@@ -235,7 +235,7 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
               </div>
 
               {/* Sección: Baja */}
-              <div style={{ fontSize: 11, fontWeight: 700, color: C.red, textTransform: 'uppercase', letterSpacing: '.12em', marginTop: 6, marginBottom: -6 }}>
+              <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: C.red, textTransform: 'uppercase', letterSpacing: '.12em', marginTop: 6, marginBottom: -6 }}>
                 {t('chronoAdmin.fichaSeccionBaja')}
               </div>
 
@@ -251,7 +251,7 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
               </div>
 
               {/* Zonas de reserva permitidas */}
-              <div style={{ fontSize: 11, fontWeight: 700, color: T.color.tertiary, textTransform: 'uppercase', letterSpacing: '.12em', marginTop: 6, marginBottom: -6 }}>
+              <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: T.color.tertiary, textTransform: 'uppercase', letterSpacing: '.12em', marginTop: 6, marginBottom: -6 }}>
                 {t('hotdesk.allowedZones')}
               </div>
               <div>
@@ -261,9 +261,9 @@ export function FichaEmpleadoDrawer({ userId, userName, userEmail, fichaRepo, on
                   onChange={e => set('allowedBookingZones', e.target.value)}
                   rows={3}
                   placeholder={t('hotdesk.allZonesAllowed')}
-                  style={{ ...inputStyle, resize: 'vertical', fontFamily: T.font.mono, fontSize: 11 }}
+                  style={{ ...inputStyle, resize: 'vertical', fontFamily: T.font.mono, fontSize: 'var(--fs-2xs)' }}
                 />
-                <p style={{ fontSize: 10, color: C.txDim, marginTop: 4, lineHeight: 1.4 }}>
+                <p style={{ fontSize: 'var(--fs-2xs)', color: C.txDim, marginTop: 4, lineHeight: 1.4 }}>
                   {t('hotdesk.allowedZonesDesc')}
                 </p>
               </div>

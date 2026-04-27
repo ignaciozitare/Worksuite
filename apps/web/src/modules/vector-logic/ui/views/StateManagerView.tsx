@@ -237,7 +237,7 @@ export function StateManagerView({ currentUser }: Props) {
   };
 
   if (loading) {
-    return <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize:13}}>{t('common.loading')}</div>;
+    return <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize: 'var(--fs-xs)'}}>{t('common.loading')}</div>;
   }
 
   return (
@@ -245,20 +245,20 @@ export function StateManagerView({ currentUser }: Props) {
       {/* Header */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24}}>
         <div>
-          <h2 style={{fontSize:22,fontWeight:700,color:'var(--tx)',margin:0,fontFamily:"'Space Grotesk',sans-serif"}}>
+          <h2 style={{fontSize: 'var(--fs-lg)',fontWeight:700,color:'var(--tx)',margin:0,fontFamily:"'Space Grotesk',sans-serif"}}>
             {t('vectorLogic.workflowEngine')}
           </h2>
-          <p style={{fontSize:12,color:'var(--tx3)',marginTop:4}}>
+          <p style={{fontSize: 'var(--fs-xs)',color:'var(--tx3)',marginTop:4}}>
             {t('vectorLogic.stateManager')}
           </p>
         </div>
         <div style={{display:'flex',gap:8}}>
           <button onClick={openCreateForm} style={btnStyle('primary')}>
-            <span className="material-symbols-outlined" style={{fontSize:16}}>add</span>
+            <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-sm)'}}>add</span>
             {t('vectorLogic.newState')}
           </button>
           <button onClick={() => setShowWfForm(true)} style={btnStyle('ghost')}>
-            <span className="material-symbols-outlined" style={{fontSize:16}}>add</span>
+            <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-sm)'}}>add</span>
             {t('vectorLogic.newWorkflow')}
           </button>
         </div>
@@ -273,10 +273,10 @@ export function StateManagerView({ currentUser }: Props) {
                 background: selected?.id === wf.id ? 'var(--ac)' : 'transparent',
                 color: selected?.id === wf.id ? '#fff' : 'var(--tx3)',
                 border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: selected?.id === wf.id ? 600 : 400,
-                fontSize: 12, padding: '6px 14px', transition: 'all .15s', fontFamily: 'inherit',
+                fontSize: 'var(--fs-xs)', padding: '6px 14px', transition: 'all .15s', fontFamily: 'inherit',
               }}>
               {wf.name}
-              <span style={{fontSize:9,marginLeft:6,opacity:.7}}>{wf.isPublished ? '●' : '○'}</span>
+              <span style={{fontSize: 'var(--fs-2xs)',marginLeft:6,opacity:.7}}>{wf.isPublished ? '●' : '○'}</span>
             </button>
           ))}
         </div>
@@ -284,8 +284,8 @@ export function StateManagerView({ currentUser }: Props) {
 
       {!selected && workflows.length === 0 && (
         <div style={{textAlign:'center',padding:'60px 0',color:'var(--tx3)'}}>
-          <span className="material-symbols-outlined" style={{fontSize:48,opacity:.3,marginBottom:12,display:'block'}}>account_tree</span>
-          <div style={{fontSize:14,fontWeight:500,marginBottom:8}}>{t('vectorLogic.noWorkflows')}</div>
+          <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-lg)',opacity:.3,marginBottom:12,display:'block'}}>account_tree</span>
+          <div style={{fontSize: 'var(--fs-sm)',fontWeight:500,marginBottom:8}}>{t('vectorLogic.noWorkflows')}</div>
           <button onClick={() => setShowWfForm(true)} style={btnStyle('primary')}>
             {t('vectorLogic.newWorkflow')}
           </button>
@@ -319,10 +319,10 @@ export function StateManagerView({ currentUser }: Props) {
                 transition: 'outline .12s',
               }}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
-                  <span style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',color:cc.color}}>
+                  <span style={{fontSize: 'var(--fs-2xs)',fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',color:cc.color}}>
                     {t(`vectorLogic.category${cat.charAt(0) + cat.slice(1).toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase())}`)}
                   </span>
-                  <span style={{fontSize:10,color:'var(--tx3)',fontWeight:600}}>{items.length}</span>
+                  <span style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',fontWeight:600}}>{items.length}</span>
                 </div>
                 <div style={{display:'flex',flexDirection:'column',gap:8}}>
                   {items.map(ws => (
@@ -346,22 +346,22 @@ export function StateManagerView({ currentUser }: Props) {
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(79,110,247,.06)'; e.currentTarget.style.transform = 'translateX(2px)'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'var(--sf3)'; e.currentTarget.style.transform = 'translateX(0)'; }}>
                       <div>
-                        <div style={{fontSize:13,fontWeight:600,color:'var(--tx)'}}>{ws.state?.name}</div>
-                        {ws.isInitial && <span style={{fontSize:9,color:'var(--amber)',fontWeight:700}}>{t('vectorLogic.badgeInitial')}</span>}
+                        <div style={{fontSize: 'var(--fs-xs)',fontWeight:600,color:'var(--tx)'}}>{ws.state?.name}</div>
+                        {ws.isInitial && <span style={{fontSize: 'var(--fs-2xs)',color:'var(--amber)',fontWeight:700}}>{t('vectorLogic.badgeInitial')}</span>}
                       </div>
                       <div style={{display:'flex',gap:4}}>
-                        <span className="material-symbols-outlined" style={{fontSize:14,color:'var(--tx3)',opacity:.4}}>edit</span>
+                        <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-xs)',color:'var(--tx3)',opacity:.4}}>edit</span>
                         <button onClick={(e) => { e.stopPropagation(); removeState(ws.id); }}
-                          style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',fontSize:14,fontFamily:'inherit',opacity:.5,transition:'opacity .15s'}}
+                          style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',fontSize: 'var(--fs-sm)',fontFamily:'inherit',opacity:.5,transition:'opacity .15s'}}
                           onMouseEnter={e => e.currentTarget.style.opacity = '1'}
                           onMouseLeave={e => e.currentTarget.style.opacity = '.5'}>
-                          <span className="material-symbols-outlined" style={{fontSize:16}}>close</span>
+                          <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-sm)'}}>close</span>
                         </button>
                       </div>
                     </div>
                   ))}
                   {items.length === 0 && (
-                    <div style={{fontSize:11,color:'var(--tx3)',textAlign:'center',padding:'16px 0',opacity:.5}}>
+                    <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',textAlign:'center',padding:'16px 0',opacity:.5}}>
                       {t('vectorLogic.noneYet')}
                     </div>
                   )}
@@ -375,7 +375,7 @@ export function StateManagerView({ currentUser }: Props) {
       {/* State library — existing states to add */}
       {selected && states.length > 0 && (
         <div style={{marginTop:24}}>
-          <h3 style={{fontSize:12,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:12}}>
+          <h3 style={{fontSize: 'var(--fs-xs)',fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:12}}>
             {t('vectorLogic.stateLibrary')}
           </h3>
           <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
@@ -396,7 +396,7 @@ export function StateManagerView({ currentUser }: Props) {
                   style={{
                     display:'flex',alignItems:'center',gap:6,padding:'6px 10px',borderRadius:8,
                     background:cc.bg,border:`1px solid ${cc.border}`,color:cc.color,
-                    fontSize:12,fontWeight:600,
+                    fontSize: 'var(--fs-xs)',fontWeight:600,
                     cursor: blocked ? 'not-allowed' : 'grab',
                     opacity: blocked ? .4 : (isDragging ? .5 : 1),
                     fontFamily:'inherit',transition:'all .15s',
@@ -405,14 +405,14 @@ export function StateManagerView({ currentUser }: Props) {
                   <span onClick={() => !blocked && addExistingState(s)} style={{ cursor: blocked ? 'not-allowed' : 'pointer' }}>
                     {s.name}
                   </span>
-                  <span style={{fontSize:9,opacity:.6}}>{t(`vectorLogic.category${s.category.charAt(0) + s.category.slice(1).toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase())}`)}</span>
+                  <span style={{fontSize: 'var(--fs-2xs)',opacity:.6}}>{t(`vectorLogic.category${s.category.charAt(0) + s.category.slice(1).toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase())}`)}</span>
                   <button
                     title={t('common.edit')}
                     onClick={(e) => { e.stopPropagation(); openEditForm(s); }}
                     style={{ background:'none', border:'none', padding:0, marginLeft:4, cursor:'pointer', color:cc.color, opacity:.7, display:'flex', alignItems:'center' }}
                     onMouseEnter={e => e.currentTarget.style.opacity = '1'}
                     onMouseLeave={e => e.currentTarget.style.opacity = '.7'}>
-                    <span className="material-symbols-outlined" style={{fontSize:14}}>edit</span>
+                    <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-xs)'}}>edit</span>
                   </button>
                   <button
                     title={t('common.delete')}
@@ -420,7 +420,7 @@ export function StateManagerView({ currentUser }: Props) {
                     style={{ background:'none', border:'none', padding:0, cursor:'pointer', color:'var(--red)', opacity:.7, display:'flex', alignItems:'center' }}
                     onMouseEnter={e => e.currentTarget.style.opacity = '1'}
                     onMouseLeave={e => e.currentTarget.style.opacity = '.7'}>
-                    <span className="material-symbols-outlined" style={{fontSize:14}}>delete</span>
+                    <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-xs)'}}>delete</span>
                   </button>
                 </div>
               );
@@ -451,7 +451,7 @@ export function StateManagerView({ currentUser }: Props) {
                   style={{width:'100%',height:36,border:'1px solid var(--bd)',borderRadius:8,background:'var(--sf2)',cursor:'pointer'}} />
               </div>
             </div>
-            {formError && <div style={{fontSize:12,color:'var(--red)',padding:'6px 10px',background:'rgba(224,82,82,.08)',borderRadius:6}}>{formError}</div>}
+            {formError && <div style={{fontSize: 'var(--fs-xs)',color:'var(--red)',padding:'6px 10px',background:'rgba(224,82,82,.08)',borderRadius:6}}>{formError}</div>}
             <div style={{display:'flex',justifyContent:'flex-end',gap:8,paddingTop:8,borderTop:'1px solid var(--bd)'}}>
               <button style={btnStyle('ghost')} onClick={() => { setShowForm(false); setEditingState(null); }}>{t('common.cancel')}</button>
               <button style={btnStyle('primary')} onClick={saveState}>{editingState ? t('common.save') : t('common.create')}</button>
@@ -483,7 +483,7 @@ export function StateManagerView({ currentUser }: Props) {
 /* ── Shared inline styles ────────────────────────────────────────────────── */
 const btnStyle = (variant = 'primary', extra = {}) => ({
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-  borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer', border: 'none',
+  borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-xs)', cursor: 'pointer', border: 'none',
   fontFamily: 'inherit', transition: 'all .2s',
   ...(variant === 'primary' && {
     background: 'linear-gradient(135deg, #adc6ff, #4d8eff)',
@@ -500,13 +500,13 @@ const btnStyle = (variant = 'primary', extra = {}) => ({
 });
 
 const inpStyle = (extra = {}) => ({
-  width: '100%', padding: '8px 10px', fontSize: 13, fontFamily: 'inherit',
+  width: '100%', padding: '8px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
   background: 'var(--sf2)', border: '1px solid var(--bd)',
   borderRadius: 8, color: 'var(--tx)', outline: 'none', ...extra,
 });
 
 const lblStyle = {
-  fontSize: 11, fontWeight: 700, color: 'var(--tx3)',
+  fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
   textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 5,
 };
 
@@ -521,10 +521,10 @@ function Modal({ title, onClose, children }) {
         boxShadow:'0 24px 80px rgba(0,0,0,.6)'}}>
         <div style={{padding:'16px 20px',borderBottom:'1px solid var(--bd)',
           display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-          <h3 style={{fontSize:15,fontWeight:700,color:'var(--tx)',margin:0}}>{title}</h3>
+          <h3 style={{fontSize: 'var(--fs-sm)',fontWeight:700,color:'var(--tx)',margin:0}}>{title}</h3>
           <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',
-            color:'var(--tx3)',fontSize:20,lineHeight:1,fontFamily:'inherit'}}>
-            <span className="material-symbols-outlined" style={{fontSize:18}}>close</span>
+            color:'var(--tx3)',fontSize: 'var(--fs-lg)',lineHeight:1,fontFamily:'inherit'}}>
+            <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-md)'}}>close</span>
           </button>
         </div>
         <div style={{padding:'18px 20px'}}>{children}</div>

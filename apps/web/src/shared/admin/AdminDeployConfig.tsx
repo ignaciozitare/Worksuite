@@ -69,15 +69,15 @@ function JiraFieldMapping({verCfg,setVerCfg}){
   return(
     <div className="a-card" style={{marginTop:16}}>
       <div className="a-ct">🔗 Jira Field Mapping</div>
-      <div style={{fontSize:11,color:"var(--tx3)",marginBottom:14}}>
+      <div style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginBottom:14}}>
         Selecciona qué campo de Jira usar como "Repository & Components" para agrupar tickets por repositorio en las releases.
       </div>
 
       <button onClick={()=>{setErrMsg("");fetchJiraMetadata();}} disabled={loading}
-        style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,padding:"7px 14px",fontSize:11,cursor:"pointer",color:"var(--tx2)",fontWeight:600,fontFamily:"inherit",marginBottom:14}}>
+        style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,padding:"7px 14px",fontSize: 'var(--fs-2xs)',cursor:"pointer",color:"var(--tx2)",fontWeight:600,fontFamily:"inherit",marginBottom:14}}>
         {loading?t("common.loading"):"🔄 Cargar campos desde Jira"}
       </button>
-      {errMsg&&<div style={{padding:"8px 12px",background:"rgba(239,68,68,.08)",border:"1px solid rgba(239,68,68,.25)",borderRadius:6,color:"var(--red)",fontSize:11,marginBottom:14}}>{errMsg}</div>}
+      {errMsg&&<div style={{padding:"8px 12px",background:"rgba(239,68,68,.08)",border:"1px solid rgba(239,68,68,.25)",borderRadius:6,color:"var(--red)",fontSize: 'var(--fs-2xs)',marginBottom:14}}>{errMsg}</div>}
 
       {issueTypes.length>0&&(
         <DualPanelPicker
@@ -91,22 +91,22 @@ function JiraFieldMapping({verCfg,setVerCfg}){
 
       {fields.length>0&&(
         <div style={{marginBottom:14}}>
-          <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:6,letterSpacing:".06em",textTransform:"uppercase"}}>Campo para Repository & Components</div>
+          <div style={{fontSize: 'var(--fs-2xs)',fontWeight:700,color:"var(--tx3)",marginBottom:6,letterSpacing:".06em",textTransform:"uppercase"}}>Campo para Repository & Components</div>
           <select value={selectedField} onChange={e=>setSelectedField(e.target.value)}
-            style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,padding:"7px 10px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",width:"100%",maxWidth:400}}>
+            style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:6,padding:"7px 10px",color:"var(--tx)",fontSize: 'var(--fs-xs)',fontFamily:"inherit",width:"100%",maxWidth:400}}>
             <option value="components">components (estándar Jira)</option>
             {fields.map(f=>(
               <option key={f.id} value={f.id}>{f.name}{f.custom?" (custom)":""} — {f.id}</option>
             ))}
           </select>
-          <div style={{fontSize:10,color:"var(--tx3)",marginTop:4}}>
+          <div style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginTop:4}}>
             Campo actual: <strong style={{color:"var(--ac2)"}}>{selectedField||"components"}</strong>
           </div>
         </div>
       )}
 
       <button onClick={save} disabled={saving}
-        style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:6,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",marginTop:8}}>
+        style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:6,padding:"8px 16px",fontSize: 'var(--fs-xs)',fontWeight:600,cursor:"pointer",fontFamily:"inherit",marginTop:8}}>
         {saving?t("common.loading"):saved?t("common.success"):t("common.save")}
       </button>
     </div>
@@ -333,7 +333,7 @@ function AdminDeployConfig() {
       {/* Tab bar */}
       <div style={{display:'flex',gap:4,marginBottom:20,background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:10,padding:4,alignSelf:'flex-start',width:'fit-content'}}>
         {TABS.map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)} style={{background:tab===t.id?'var(--ac)':'transparent',color:tab===t.id?'#fff':'var(--tx3)',border:'none',borderRadius:7,cursor:'pointer',fontWeight:tab===t.id?600:400,fontSize:12,padding:'5px 14px',transition:'all 0.15s',fontFamily:'inherit'}}>
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{background:tab===t.id?'var(--ac)':'transparent',color:tab===t.id?'#fff':'var(--tx3)',border:'none',borderRadius:7,cursor:'pointer',fontWeight:tab===t.id?600:400,fontSize: 'var(--fs-xs)',padding:'5px 14px',transition:'all 0.15s',fontFamily:'inherit'}}>
             {t.label}
           </button>
         ))}
@@ -345,15 +345,15 @@ function AdminDeployConfig() {
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
           <div className="a-ct" style={{margin:0,flex:1}}>Estados de Jira que se importan</div>
           <button onClick={fetchAllJiraStatuses} disabled={fetchingJ}
-            style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"5px 12px",fontSize:11,color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
+            style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"5px 12px",fontSize: 'var(--fs-2xs)',color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
             {fetchingJ?"⟳ Obteniendo…":"↓ Traer todos de Jira"}
           </button>
           <button onClick={saveJiraStatuses} disabled={savingJ}
-            style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:5,padding:"5px 12px",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+            style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:5,padding:"5px 12px",fontSize: 'var(--fs-2xs)',fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
             {savingJ?t("common.loading"):savedJ?t("common.success"):t("common.save")}
           </button>
         </div>
-        <div style={{fontSize:11,color:"var(--tx3)",marginBottom:12}}>
+        <div style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginBottom:12}}>
           Los tickets con estos estados aparecerán en el Deploy Planner al conectar Jira.
         </div>
 
@@ -361,14 +361,14 @@ function AdminDeployConfig() {
         <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:10}}>
           {jiraList.map(j=>(
             <div key={j.id} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",background:"var(--sf2)",borderRadius:6,border:"1px solid var(--bd)"}}>
-              <span style={{fontSize:11,color:"var(--tx3)"}}>●</span>
+              <span style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)"}}>●</span>
               <input value={j.name} onChange={e=>editJiraStatus(j.id,e.target.value)}
-                style={{flex:1,background:"none",border:"none",outline:"none",fontSize:12,color:"var(--tx)",fontFamily:"inherit"}}/>
+                style={{flex:1,background:"none",border:"none",outline:"none",fontSize: 'var(--fs-xs)',color:"var(--tx)",fontFamily:"inherit"}}/>
               <button onClick={()=>delJiraStatus(j.id)}
-                style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14,lineHeight:1}}>×</button>
+                style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize: 'var(--fs-sm)',lineHeight:1}}>×</button>
             </div>
           ))}
-          {jiraList.length===0&&<div style={{fontSize:11,color:"var(--tx3)",padding:"8px 0"}}>Sin estados configurados</div>}
+          {jiraList.length===0&&<div style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",padding:"8px 0"}}>Sin estados configurados</div>}
         </div>
 
         {/* Add */}
@@ -376,16 +376,16 @@ function AdminDeployConfig() {
           <input value={newJiraName} onChange={e=>setNewJiraName(e.target.value)}
             onKeyDown={e=>{if(e.key==="Enter"){addJiraStatus(newJiraName);setNewJiraName("");}}}
             placeholder="Nombre del estado en Jira…"
-            style={{flex:1,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",outline:"none"}}/>
+            style={{flex:1,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize: 'var(--fs-xs)',fontFamily:"inherit",outline:"none"}}/>
           <button onClick={()=>{addJiraStatus(newJiraName);setNewJiraName("");}}
-            style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 12px",fontSize:12,color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit"}}>+ Añadir</button>
+            style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 12px",fontSize: 'var(--fs-xs)',color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit"}}>+ Añadir</button>
         </div>
       </div>
 
       {/* ── Release statuses ──────────────────────────────────── */}
       <div className="a-card">
         <div className="a-ct">Estados de Release</div>
-        <div style={{fontSize:11,color:"var(--tx3)",marginBottom:14}}>
+        <div style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginBottom:14}}>
           Arrastra para reordenar. Los estados "final" van a History.
         </div>
 
@@ -397,18 +397,18 @@ function AdminDeployConfig() {
               onDragOver={e=>{e.preventDefault();setDragOver(i);}}
               onDragEnd={onDragEnd}
               style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",background:dragOver===i?"var(--glow)":"var(--sf2)",borderRadius:8,border:`1px solid ${dragOver===i?"var(--ac)":"var(--bd)"}`,cursor:"grab",transition:"background .1s"}}>
-              <span style={{color:"var(--tx3)",fontSize:12,cursor:"grab"}}>⠿</span>
+              <span style={{color:"var(--tx3)",fontSize: 'var(--fs-xs)',cursor:"grab"}}>⠿</span>
               <div style={{width:14,height:14,borderRadius:3,background:st.color,flexShrink:0,border:`1px solid ${st.color}66`}}/>
 
               {editing?.id===st.id ? (
                 <>
                   <input value={editing.name} onChange={e=>setEditing(v=>({...v,name:e.target.value}))}
-                    style={{flex:1,background:"var(--sf)",border:"1px solid var(--ac)",borderRadius:4,padding:"3px 7px",fontSize:12,color:"var(--tx)",fontFamily:"inherit",outline:"none"}}/>
+                    style={{flex:1,background:"var(--sf)",border:"1px solid var(--ac)",borderRadius:4,padding:"3px 7px",fontSize: 'var(--fs-xs)',color:"var(--tx)",fontFamily:"inherit",outline:"none"}}/>
                   <input type="color" value={editing.color} onChange={e=>setEditing(v=>({...v,color:e.target.value}))}
                     style={{width:28,height:24,border:"none",background:"none",cursor:"pointer",padding:0}}/>
-                  <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"var(--tx3)",flexShrink:0}}>
+                  <label style={{display:"flex",alignItems:"center",gap:4,fontSize: 'var(--fs-2xs)',color:"var(--tx3)",flexShrink:0}}>
                     <select value={editing.status_category||"backlog"} onChange={e=>setEditing(v=>({...v,status_category:e.target.value}))}
-                      style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:4,padding:"2px 6px",fontSize:10,color:"var(--tx)",fontFamily:"inherit"}}>
+                      style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:4,padding:"2px 6px",fontSize: 'var(--fs-2xs)',color:"var(--tx)",fontFamily:"inherit"}}>
                       <option value="backlog">Backlog</option>
                       <option value="in_progress">In Progress</option>
                       <option value="approved">Approved</option>
@@ -416,19 +416,19 @@ function AdminDeployConfig() {
                     </select>
                   </label>
                   <button onClick={()=>saveRelStatus(editing)}
-                    style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:4,padding:"3px 10px",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>✓</button>
+                    style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:4,padding:"3px 10px",fontSize: 'var(--fs-2xs)',cursor:"pointer",fontFamily:"inherit"}}>✓</button>
                   <button onClick={()=>setEditing(null)}
-                    style={{background:"none",border:"none",color:"var(--tx3)",cursor:"pointer",fontSize:13}}>×</button>
+                    style={{background:"none",border:"none",color:"var(--tx3)",cursor:"pointer",fontSize: 'var(--fs-xs)'}}>×</button>
                 </>
               ) : (
                 <>
-                  <span style={{flex:1,fontSize:13,fontWeight:600,color:"var(--tx)"}}>{st.name}</span>
-                  <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:st.bg_color,color:st.color,border:`1px solid ${st.border}`,flexShrink:0}}>{st.name}</span>
-                  <span style={{fontSize:9,color:"var(--tx3)",background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:10,padding:"1px 6px",flexShrink:0}}>{st.status_category||"backlog"}</span>
+                  <span style={{flex:1,fontSize: 'var(--fs-xs)',fontWeight:600,color:"var(--tx)"}}>{st.name}</span>
+                  <span style={{fontSize: 'var(--fs-2xs)',padding:"2px 8px",borderRadius:20,background:st.bg_color,color:st.color,border:`1px solid ${st.border}`,flexShrink:0}}>{st.name}</span>
+                  <span style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:10,padding:"1px 6px",flexShrink:0}}>{st.status_category||"backlog"}</span>
                   <button onClick={()=>setEditing({id:st.id,name:st.name,color:st.color,status_category:st.status_category||"backlog"})}
-                    style={{background:"none",border:"none",color:"var(--tx3)",cursor:"pointer",fontSize:13}}>✎</button>
+                    style={{background:"none",border:"none",color:"var(--tx3)",cursor:"pointer",fontSize: 'var(--fs-xs)'}}>✎</button>
                   <button onClick={()=>delRelStatus(st.id)}
-                    style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14}}>×</button>
+                    style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize: 'var(--fs-sm)'}}>×</button>
                 </>
               )}
             </div>
@@ -437,26 +437,26 @@ function AdminDeployConfig() {
 
         {/* Add new release status */}
         <div style={{padding:"12px 14px",background:"var(--sf2)",borderRadius:8,border:"1px dashed var(--bd)"}}>
-          <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:8,textTransform:"uppercase",letterSpacing:".08em"}}>Nuevo estado</div>
+          <div style={{fontSize: 'var(--fs-2xs)',fontWeight:700,color:"var(--tx3)",marginBottom:8,textTransform:"uppercase",letterSpacing:".08em"}}>Nuevo estado</div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
             <input value={newStatus.name} onChange={e=>setNewStatus(s=>({...s,name:e.target.value}))}
               placeholder="Nombre del estado"
-              style={{flex:2,minWidth:130,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",outline:"none"}}/>
+              style={{flex:2,minWidth:130,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize: 'var(--fs-xs)',fontFamily:"inherit",outline:"none"}}/>
             <div style={{display:"flex",alignItems:"center",gap:5}}>
-              <label style={{fontSize:11,color:"var(--tx3)"}}>Color</label>
+              <label style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)"}}>Color</label>
               <input type="color" value={newStatus.color}
                 onChange={e=>setNewStatus(s=>({...s,color:e.target.value}))}
                 style={{width:32,height:28,border:"none",background:"none",cursor:"pointer",padding:0}}/>
             </div>
             <select value={newStatus.status_category||"backlog"} onChange={e=>setNewStatus(s=>({...s,status_category:e.target.value}))}
-              style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"4px 8px",fontSize:10,color:"var(--tx)",fontFamily:"inherit"}}>
+              style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"4px 8px",fontSize: 'var(--fs-2xs)',color:"var(--tx)",fontFamily:"inherit"}}>
               <option value="backlog">Backlog</option>
               <option value="in_progress">In Progress</option>
               <option value="approved">Approved</option>
               <option value="done">Done</option>
             </select>
             <button onClick={addRelStatus}
-              style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:5,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+              style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:5,padding:"7px 14px",fontSize: 'var(--fs-xs)',fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
               + Añadir
             </button>
           </div>
@@ -474,7 +474,7 @@ function AdminDeployConfig() {
       {/* ── Version config ─────────────────────────────────────── */}
       <div className="a-card" style={{marginTop:16}}>
         <div className="a-ct">Generador de versiones</div>
-        <div style={{fontSize:11,color:"var(--tx3)",marginBottom:14}}>
+        <div style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginBottom:14}}>
           Define el prefijo, separador y los segmentos (major/minor/patch o los que necesites).
           Los valores son el punto de partida cuando no hay releases. Después el picker
           lee el último número real y calcula el siguiente correctamente.
@@ -484,22 +484,22 @@ function AdminDeployConfig() {
             {/* Prefix + Separator */}
             <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
               <div>
-                <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:4,letterSpacing:".06em",textTransform:"uppercase"}}>Prefijo</div>
+                <div style={{fontSize: 'var(--fs-2xs)',fontWeight:700,color:"var(--tx3)",marginBottom:4,letterSpacing:".06em",textTransform:"uppercase"}}>Prefijo</div>
                 <input value={verCfg.prefix||""} onChange={e=>setVerCfg(v=>({...v,prefix:e.target.value}))}
                   placeholder="v" maxLength={8}
-                  style={{width:72,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:14,fontFamily:"monospace",outline:"none",textAlign:"center"}}/>
+                  style={{width:72,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize: 'var(--fs-sm)',fontFamily:"monospace",outline:"none",textAlign:"center"}}/>
               </div>
               <div>
-                <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:4,letterSpacing:".06em",textTransform:"uppercase"}}>Separador</div>
+                <div style={{fontSize: 'var(--fs-2xs)',fontWeight:700,color:"var(--tx3)",marginBottom:4,letterSpacing:".06em",textTransform:"uppercase"}}>Separador</div>
                 <input value={verCfg.separator||"."} onChange={e=>setVerCfg(v=>({...v,separator:e.target.value}))}
                   placeholder="." maxLength={2}
-                  style={{width:44,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize:14,fontFamily:"monospace",outline:"none",textAlign:"center"}}/>
+                  style={{width:44,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 10px",color:"var(--tx)",fontSize: 'var(--fs-sm)',fontFamily:"monospace",outline:"none",textAlign:"center"}}/>
               </div>
-              <div style={{padding:"0 4px",fontSize:11,color:"var(--tx3)",marginBottom:4}}>
+              <div style={{padding:"0 4px",fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginBottom:4}}>
                 Formato: <strong style={{color:"var(--tx)",fontFamily:"monospace"}}>
                   {(verCfg.prefix||"v")}{(verCfg.segments||[]).map(s=>s.value??0).join(verCfg.separator||".")}
                 </strong>
-                <div style={{fontSize:10,color:"var(--tx3)",marginTop:2}}>
+                <div style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginTop:2}}>
                   Cuando hagas la primera release desde el picker verás major{verCfg.separator||"."}minor{verCfg.separator||"."}patch como opciones de bump.
                 </div>
               </div>
@@ -507,33 +507,33 @@ function AdminDeployConfig() {
 
             {/* Segments */}
             <div>
-              <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:8,letterSpacing:".06em",textTransform:"uppercase"}}>Segmentos (valores iniciales)</div>
+              <div style={{fontSize: 'var(--fs-2xs)',fontWeight:700,color:"var(--tx3)",marginBottom:8,letterSpacing:".06em",textTransform:"uppercase"}}>Segmentos (valores iniciales)</div>
               <div style={{display:"flex",flexDirection:"column",gap:6}}>
                 {(verCfg.segments||[]).map((seg,i)=>(
                   <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:"var(--sf2)",borderRadius:7,border:"1px solid var(--bd)"}}>
                     <input value={seg.name}
                       onChange={e=>{const segs=[...(verCfg.segments||[])];segs[i]={...segs[i],name:e.target.value};setVerCfg(v=>({...v,segments:segs}));}}
-                      style={{flex:1,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"4px 8px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",outline:"none"}}
+                      style={{flex:1,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"4px 8px",color:"var(--tx)",fontSize: 'var(--fs-xs)',fontFamily:"inherit",outline:"none"}}
                       placeholder="nombre (ej: major)"/>
                     <div style={{display:"flex",alignItems:"center",gap:5}}>
-                      <span style={{fontSize:11,color:"var(--tx3)"}}>Inicio:</span>
+                      <span style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)"}}>Inicio:</span>
                       <input type="number" min="0" value={seg.value??0}
                         onChange={e=>{const segs=[...(verCfg.segments||[])];segs[i]={...segs[i],value:parseInt(e.target.value)||0};setVerCfg(v=>({...v,segments:segs}));}}
-                        style={{width:64,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"4px 8px",color:"var(--tx)",fontSize:12,fontFamily:"monospace",outline:"none",textAlign:"center"}}/>
+                        style={{width:64,background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"4px 8px",color:"var(--tx)",fontSize: 'var(--fs-xs)',fontFamily:"monospace",outline:"none",textAlign:"center"}}/>
                     </div>
                     <button onClick={()=>{const segs=(verCfg.segments||[]).filter((_,j)=>j!==i);setVerCfg(v=>({...v,segments:segs}));}}
-                      style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14,lineHeight:1}}>×</button>
+                      style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize: 'var(--fs-sm)',lineHeight:1}}>×</button>
                   </div>
                 ))}
               </div>
               <button onClick={()=>setVerCfg(v=>({...v,segments:[...(v.segments||[]),{name:"nuevo",value:0}]}))}
-                style={{marginTop:8,background:"var(--sf2)",border:"1px dashed var(--bd)",borderRadius:5,padding:"6px 14px",fontSize:11,color:"var(--tx3)",cursor:"pointer",fontFamily:"inherit"}}>
+                style={{marginTop:8,background:"var(--sf2)",border:"1px dashed var(--bd)",borderRadius:5,padding:"6px 14px",fontSize: 'var(--fs-2xs)',color:"var(--tx3)",cursor:"pointer",fontFamily:"inherit"}}>
                 + Añadir segmento
               </button>
             </div>
 
             <button onClick={saveVerCfg} disabled={verCfgSaving}
-              style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:6,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",alignSelf:"flex-start"}}>
+              style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:6,padding:"8px 16px",fontSize: 'var(--fs-xs)',fontWeight:600,cursor:"pointer",fontFamily:"inherit",alignSelf:"flex-start"}}>
               {verCfgSaving?t("common.loading"):verCfgSaved?t("common.success"):t("common.save")}
             </button>
           </div>
@@ -546,7 +546,7 @@ function AdminDeployConfig() {
       {/* ── Repo groups ───────────────────────────────────────── */}
       <div className="a-card" style={{marginTop:16}}>
         <div className="a-ct">Grupos de repositorios con dependencias</div>
-        <div style={{fontSize:11,color:"var(--tx3)",marginBottom:14}}>
+        <div style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginBottom:14}}>
           Define grupos de repos que comparten pipeline. Si dos releases activas tienen repos del mismo grupo,
           el merge a master quedará bloqueado hasta que ambas estén cerradas.
         </div>
@@ -558,22 +558,22 @@ function AdminDeployConfig() {
               {/* Group header */}
               <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderBottom:expandedGroup===group.id?"1px solid var(--bd)":"none"}}>
                 <button onClick={()=>setExpandedGroup(expandedGroup===group.id?null:group.id)}
-                  style={{background:"none",border:"none",color:"var(--tx3)",cursor:"pointer",fontSize:11,flexShrink:0,padding:0}}>
+                  style={{background:"none",border:"none",color:"var(--tx3)",cursor:"pointer",fontSize: 'var(--fs-2xs)',flexShrink:0,padding:0}}>
                   {expandedGroup===group.id?"▼":"▶"}
                 </button>
                 <input
                   value={group.name}
                   onChange={e=>renameGroup(group.id,e.target.value)}
-                  style={{flex:1,background:"none",border:"none",outline:"none",fontSize:13,fontWeight:600,color:"var(--tx)",fontFamily:"inherit"}}
+                  style={{flex:1,background:"none",border:"none",outline:"none",fontSize: 'var(--fs-xs)',fontWeight:600,color:"var(--tx)",fontFamily:"inherit"}}
                 />
                 <div style={{display:"flex",gap:5,alignItems:"center"}}>
                   {group.repos.slice(0,3).map(r=>(
-                    <span key={r} style={{fontSize:9,padding:"2px 7px",borderRadius:10,background:"var(--glow)",border:"1px solid var(--bd)",color:"var(--tx3)"}}>{r}</span>
+                    <span key={r} style={{fontSize: 'var(--fs-2xs)',padding:"2px 7px",borderRadius:10,background:"var(--glow)",border:"1px solid var(--bd)",color:"var(--tx3)"}}>{r}</span>
                   ))}
-                  {group.repos.length>3&&<span style={{fontSize:9,color:"var(--tx3)"}}>+{group.repos.length-3}</span>}
-                  <span style={{fontSize:10,color:"var(--tx3)",marginLeft:4}}>{group.repos.length} repos</span>
+                  {group.repos.length>3&&<span style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)"}}>+{group.repos.length-3}</span>}
+                  <span style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginLeft:4}}>{group.repos.length} repos</span>
                   <button onClick={()=>deleteGroup(group.id)}
-                    style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14,marginLeft:4}}>×</button>
+                    style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize: 'var(--fs-sm)',marginLeft:4}}>×</button>
                 </div>
               </div>
 
@@ -588,15 +588,15 @@ function AdminDeployConfig() {
                         setRepoGroups(gs=>gs.map(g=>g.id===group.id?{...g,repos:next}:g));
                         await deployConfigRepo.updateRepoGroupRepos(group.id, next);
                       }}
-                        style={{padding:"4px 10px",borderRadius:20,border:"1px solid var(--ac)",background:"var(--glow)",color:"var(--ac2)",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"inherit"}}>
+                        style={{padding:"4px 10px",borderRadius:20,border:"1px solid var(--ac)",background:"var(--glow)",color:"var(--ac2)",cursor:"pointer",fontSize: 'var(--fs-2xs)',fontWeight:700,fontFamily:"inherit"}}>
                         ✓ {repo} ×
                       </button>
                     ))}
-                    {group.repos.length===0&&<span style={{fontSize:11,color:"var(--tx3)"}}>Sin repositorios — carga desde Jira</span>}
+                    {group.repos.length===0&&<span style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)"}}>Sin repositorios — carga desde Jira</span>}
                   </div>
                   {/* Button to load more repos from Jira */}
                   <button onClick={loadAvailableRepos} disabled={loadingRepos}
-                    style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 12px",fontSize:11,color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit",marginBottom:8}}>
+                    style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 12px",fontSize: 'var(--fs-2xs)',color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit",marginBottom:8}}>
                     {loadingRepos?"Cargando…":"🔄 Cargar repositorios desde Jira"}
                   </button>
                   {/* Available repos from Jira (not yet in group) */}
@@ -607,20 +607,20 @@ function AdminDeployConfig() {
                         setRepoGroups(gs=>gs.map(g=>g.id===group.id?{...g,repos:next}:g));
                         await deployConfigRepo.updateRepoGroupRepos(group.id, next);
                       }}
-                        style={{padding:"4px 10px",borderRadius:20,border:"1px solid var(--bd)",background:"transparent",color:"var(--tx3)",cursor:"pointer",fontSize:11,fontFamily:"inherit",transition:"all .15s"}}>
+                        style={{padding:"4px 10px",borderRadius:20,border:"1px solid var(--bd)",background:"transparent",color:"var(--tx3)",cursor:"pointer",fontSize: 'var(--fs-2xs)',fontFamily:"inherit",transition:"all .15s"}}>
                         + {repo}
                       </button>
                     ))}
                   </div>
                   {group.repos.length>0&&(
-                    <div style={{fontSize:10,color:"var(--tx3)",marginTop:4}}>{group.repos.length} repositorios seleccionados</div>
+                    <div style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginTop:4}}>{group.repos.length} repositorios seleccionados</div>
                   )}
                 </div>
               )}
             </div>
           ))}
           {repoGroups.length===0&&(
-            <div style={{fontSize:11,color:"var(--tx3)",padding:"8px 0"}}>Sin grupos configurados</div>
+            <div style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",padding:"8px 0"}}>Sin grupos configurados</div>
           )}
         </div>
 
@@ -631,10 +631,10 @@ function AdminDeployConfig() {
             onChange={e=>setNewGroupName(e.target.value)}
             onKeyDown={e=>{if(e.key==="Enter")addGroup();}}
             placeholder="Nombre del grupo (ej: Backend monorepo)…"
-            style={{flex:1,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"8px 12px",color:"var(--tx)",fontSize:12,fontFamily:"inherit",outline:"none"}}
+            style={{flex:1,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:5,padding:"8px 12px",color:"var(--tx)",fontSize: 'var(--fs-xs)',fontFamily:"inherit",outline:"none"}}
           />
           <button onClick={addGroup}
-            style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:5,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>
+            style={{background:"var(--ac)",color:"#fff",border:"none",borderRadius:5,padding:"8px 16px",fontSize: 'var(--fs-xs)',fontWeight:600,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>
             + Nuevo grupo
           </button>
         </div>
@@ -720,24 +720,24 @@ function SubtaskConfigSection() {
   return (
     <div className="a-card" style={{marginTop:16}}>
       <div className="a-ct"><BugIcon size={16} color="#ef4444"/> {t('deployPlanner.subtaskConfig')}</div>
-      <div style={{fontSize:11,color:"var(--tx3)",marginBottom:14}}>{t('deployPlanner.subtaskDesc')}</div>
+      <div style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginBottom:14}}>{t('deployPlanner.subtaskDesc')}</div>
 
       {/* Load Jira types button */}
       <button onClick={loadJiraTypes} disabled={loading}
-        style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 12px",fontSize:11,color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit",marginBottom:14}}>
+        style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:5,padding:"6px 12px",fontSize: 'var(--fs-2xs)',color:"var(--tx2)",cursor:"pointer",fontFamily:"inherit",marginBottom:14}}>
         {loading ? t('common.loading') : `🔄 ${t('deployPlanner.loadIssueTypes')}`}
       </button>
 
       {/* Available types from Jira (not yet configured) */}
       {jiraTypes.length > 0 && (
         <div style={{marginBottom:14}}>
-          <div style={{fontSize:10,fontWeight:700,color:"var(--tx3)",marginBottom:6,letterSpacing:".06em",textTransform:"uppercase"}}>
+          <div style={{fontSize: 'var(--fs-2xs)',fontWeight:700,color:"var(--tx3)",marginBottom:6,letterSpacing:".06em",textTransform:"uppercase"}}>
             Issue types disponibles
           </div>
           <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
             {jiraTypes.filter(it => !configuredTypes.has(it.name.toLowerCase())).map(it => (
               <button key={it.id} onClick={() => addType(it.name)}
-                style={{padding:"4px 10px",borderRadius:20,border:"1px solid var(--bd)",background:"transparent",color:"var(--tx3)",cursor:"pointer",fontSize:11,fontFamily:"inherit"}}>
+                style={{padding:"4px 10px",borderRadius:20,border:"1px solid var(--bd)",background:"transparent",color:"var(--tx3)",cursor:"pointer",fontSize: 'var(--fs-2xs)',fontFamily:"inherit"}}>
                 + {it.name}
               </button>
             ))}
@@ -750,11 +750,11 @@ function SubtaskConfigSection() {
         {configs.map(cfg => (
           <div key={cfg.id} style={{background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:8,padding:"12px 14px"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-              <span style={{fontSize:13,fontWeight:700,color:CATEGORY_COLORS[cfg.category] || "var(--tx)"}}>{cfg.jira_issue_type}</span>
+              <span style={{fontSize: 'var(--fs-xs)',fontWeight:700,color:CATEGORY_COLORS[cfg.category] || "var(--tx)"}}>{cfg.jira_issue_type}</span>
 
               {/* Category selector */}
               <select value={cfg.category} onChange={e => updateConfig(cfg.id, { category: e.target.value })}
-                style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"2px 8px",fontSize:10,color:"var(--tx)",fontFamily:"inherit"}}>
+                style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"2px 8px",fontSize: 'var(--fs-2xs)',color:"var(--tx)",fontFamily:"inherit"}}>
                 <option value="bug">Bug</option>
                 <option value="test">🧪 Test</option>
                 <option value="other">📋 Otro</option>
@@ -764,34 +764,34 @@ function SubtaskConfigSection() {
               {cfg.category === 'test' && (
                 <input value={cfg.test_type || ''} onChange={e => updateConfig(cfg.id, { test_type: e.target.value })}
                   placeholder="Tipo (Regresión, Smoke, UAT…)"
-                  style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"4px 8px",fontSize:10,color:"var(--tx)",fontFamily:"inherit",flex:1}}/>
+                  style={{background:"var(--sf)",border:"1px solid var(--bd)",borderRadius:4,padding:"4px 8px",fontSize: 'var(--fs-2xs)',color:"var(--tx)",fontFamily:"inherit",flex:1}}/>
               )}
 
               <button onClick={() => removeConfig(cfg.id)}
-                style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize:14,marginLeft:"auto"}}>×</button>
+                style={{background:"none",border:"none",color:"var(--red)",cursor:"pointer",fontSize: 'var(--fs-sm)',marginLeft:"auto"}}>×</button>
             </div>
 
             {/* Closed statuses picker */}
-            <div style={{fontSize:10,color:"var(--tx3)",marginBottom:4}}>{t('deployPlanner.closedStatuses')}:</div>
+            <div style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginBottom:4}}>{t('deployPlanner.closedStatuses')}:</div>
             <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
               {/* Show saved statuses + available from Jira */}
               {[...new Set([...cfg.closed_statuses, ...jiraStatuses])].sort().map(status => {
                 const isOn = cfg.closed_statuses.includes(status);
                 return (
                   <button key={status} onClick={() => toggleClosedStatus(cfg.id, status)}
-                    style={{padding:"2px 8px",borderRadius:10,border:`1px solid ${isOn ? "var(--green)" : "var(--bd)"}`,background:isOn ? "rgba(62,207,142,.1)" : "transparent",color:isOn ? "var(--green)" : "var(--tx3)",cursor:"pointer",fontSize:9,fontFamily:"inherit"}}>
+                    style={{padding:"2px 8px",borderRadius:10,border:`1px solid ${isOn ? "var(--green)" : "var(--bd)"}`,background:isOn ? "rgba(62,207,142,.1)" : "transparent",color:isOn ? "var(--green)" : "var(--tx3)",cursor:"pointer",fontSize: 'var(--fs-2xs)',fontFamily:"inherit"}}>
                     {isOn ? "✓ " : ""}{status}
                   </button>
                 );
               })}
               {cfg.closed_statuses.length === 0 && jiraStatuses.length === 0 && (
-                <span style={{fontSize:10,color:"var(--tx3)"}}>Carga tipos de Jira para ver los estados disponibles</span>
+                <span style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)"}}>Carga tipos de Jira para ver los estados disponibles</span>
               )}
             </div>
           </div>
         ))}
         {configs.length === 0 && (
-          <div style={{fontSize:11,color:"var(--tx3)",padding:"8px 0"}}>Sin tipos configurados — carga tipos desde Jira y añade los que necesites</div>
+          <div style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",padding:"8px 0"}}>Sin tipos configurados — carga tipos desde Jira y añade los que necesites</div>
         )}
       </div>
     </div>

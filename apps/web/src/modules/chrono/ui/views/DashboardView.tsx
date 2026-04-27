@@ -334,7 +334,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
         <div>
           <span style={{
             color: T.color.primaryStrong,
-            fontSize: 12, fontWeight: 700,
+            fontSize: 'var(--fs-xs)', fontWeight: 700,
             textTransform: 'uppercase', letterSpacing: '0.2em',
             fontFamily: T.font.body,
           }}>
@@ -348,7 +348,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
             {t(greetingKey, { name: userName })}
           </h2>
           <p style={{
-            color: T.color.textMuted, marginTop: 8, fontSize: 14,
+            color: T.color.textMuted, marginTop: 8, fontSize: 'var(--fs-sm)',
             maxWidth: 420, lineHeight: 1.5,
           }}>
             {t('chrono.dashboardDesc')}
@@ -418,7 +418,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
             borderRadius: T.radius.lg,
             padding: '10px 16px',
             color: T.color.danger,
-            fontSize: 13,
+            fontSize: 'var(--fs-xs)',
           }}
         >
           {error}
@@ -473,7 +473,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
               fontWeight: 700,
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              fontSize: 12,
+              fontSize: 'var(--fs-xs)',
               marginTop: 8,
             }}>
               {t('chrono.duracionSesion')}
@@ -495,7 +495,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
                 borderRadius: T.radius.lg,
                 border: 'none',
                 fontWeight: 700,
-                fontSize: 18,
+                fontSize: 'var(--fs-md)',
                 cursor: (acting || isOnLunch) ? 'default' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -509,7 +509,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
               onMouseEnter={e => { if (!acting && !isOnLunch) e.currentTarget.style.transform = 'scale(1.02)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}>timer</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)', fontVariationSettings: "'FILL' 1" }}>timer</span>
               {mainBtnLabel}
             </button>
 
@@ -526,7 +526,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
                 padding: '16px 32px',
                 borderRadius: T.radius.lg,
                 fontWeight: 700,
-                fontSize: 18,
+                fontSize: 'var(--fs-md)',
                 cursor: (canStartLunch || isOnLunch) ? 'pointer' : 'default',
                 transition: 'background .15s',
                 opacity: (canStartLunch || isOnLunch) ? 1 : 0.4,
@@ -551,7 +551,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
           {/* Status indicators */}
           <div style={{
             display: 'flex', gap: 32, marginTop: 32,
-            color: T.color.textMuted, fontSize: 14, position: 'relative',
+            color: T.color.textMuted, fontSize: 'var(--fs-sm)', position: 'relative',
           }}>
             {isOpen && fichaje?.entradaAt && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -569,7 +569,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
             )}
             {isOnLunch && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>restaurant</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>restaurant</span>
                 {t('chrono.enPausaComida')}
               </div>
             )}
@@ -579,12 +579,12 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
           <div style={{ width: '100%', maxWidth: 500, marginTop: 20, position: 'relative' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
               <span style={{
-                fontSize: 10, color: T.color.textMuted,
+                fontSize: 'var(--fs-2xs)', color: T.color.textMuted,
                 letterSpacing: '.08em', textTransform: 'uppercase',
               }}>
                 {t('chrono.jornadaLabel')}
               </span>
-              <span className="mono" style={{ fontSize: 10, color: T.color.textDim }}>{pct}%</span>
+              <span className="mono" style={{ fontSize: 'var(--fs-2xs)', color: T.color.textDim }}>{pct}%</span>
             </div>
             <div style={{
               height: 6, background: T.color.surfaceLow,
@@ -620,22 +620,22 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
               background: stats[0].accent,
             }} />
             <p style={{
-              fontSize: 11, fontWeight: 700, color: T.color.textMuted,
+              fontSize: 'var(--fs-2xs)', fontWeight: 700, color: T.color.textMuted,
               textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 16,
             }}>
               {stats[0].label}
             </p>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-              <h3 style={{ fontSize: 36, fontWeight: 700, color: '#fff', margin: 0, fontFamily: T.font.body }}>
+              <h3 style={{ fontSize: 'var(--fs-display)', fontWeight: 700, color: '#fff', margin: 0, fontFamily: T.font.body }}>
                 {stats[0].value}
               </h3>
               {pct >= 100 ? (
-                <div style={{ color: T.color.secondary, display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>trending_up</span> {t('chrono.completa')}
+                <div style={{ color: T.color.secondary, display: 'flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-xs)', fontWeight: 700 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>trending_up</span> {t('chrono.completa')}
                 </div>
               ) : (
-                <div style={{ color: T.color.secondary, display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>trending_up</span> On Track
+                <div style={{ color: T.color.secondary, display: 'flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-xs)', fontWeight: 700 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>trending_up</span> On Track
                 </div>
               )}
             </div>
@@ -667,14 +667,14 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
               background: stats[1].accent,
             }} />
             <p style={{
-              fontSize: 11, fontWeight: 700, color: T.color.textMuted,
+              fontSize: 'var(--fs-2xs)', fontWeight: 700, color: T.color.textMuted,
               textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 16,
             }}>
               {stats[1].label}
             </p>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-              <h3 style={{ fontSize: 36, fontWeight: 700, color: '#fff', margin: 0, fontFamily: T.font.body }}>
-                {fmtHM(weekMinutes)} <span style={{ fontSize: 18, color: T.color.textMuted, fontWeight: 400 }}>/ {fmtHM(weekTargetMin)}</span>
+              <h3 style={{ fontSize: 'var(--fs-display)', fontWeight: 700, color: '#fff', margin: 0, fontFamily: T.font.body }}>
+                {fmtHM(weekMinutes)} <span style={{ fontSize: 'var(--fs-md)', color: T.color.textMuted, fontWeight: 400 }}>/ {fmtHM(weekTargetMin)}</span>
               </h3>
             </div>
             {/* Mini bar chart (sparkline for weekdays) */}
@@ -711,17 +711,17 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
             position: 'absolute', top: 0, left: 0, right: 0, height: 2,
             background: T.color.tertiary,
           }} />
-          <span className="material-symbols-outlined" style={{ fontSize: 30, marginBottom: 16, display: 'block', color: T.color.tertiary }}>account_balance_wallet</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', marginBottom: 16, display: 'block', color: T.color.tertiary }}>account_balance_wallet</span>
           <p style={{
-            fontSize: 11, fontWeight: 700, color: T.color.textMuted,
+            fontSize: 'var(--fs-2xs)', fontWeight: 700, color: T.color.textMuted,
             textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 4,
           }}>
             {stats[2].label}
           </p>
-          <h3 style={{ fontSize: 30, fontWeight: 700, color: '#fff', margin: 0, fontFamily: T.font.body }}>
+          <h3 style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: '#fff', margin: 0, fontFamily: T.font.body }}>
             {stats[2].value}
           </h3>
-          <p style={{ fontSize: 11, color: T.color.textDim, marginTop: 8 }}>
+          <p style={{ fontSize: 'var(--fs-2xs)', color: T.color.textDim, marginTop: 8 }}>
             {t('chrono.bolsaHorasHint')}
           </p>
         </div>
@@ -739,17 +739,17 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
             position: 'absolute', top: 0, left: 0, right: 0, height: 2,
             background: T.color.warning,
           }} />
-          <span className="material-symbols-outlined" style={{ fontSize: 30, marginBottom: 16, display: 'block', color: T.color.warning }}>event_available</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', marginBottom: 16, display: 'block', color: T.color.warning }}>event_available</span>
           <p style={{
-            fontSize: 11, fontWeight: 700, color: T.color.textMuted,
+            fontSize: 'var(--fs-2xs)', fontWeight: 700, color: T.color.textMuted,
             textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 4,
           }}>
             {stats[3].label}
           </p>
-          <h3 style={{ fontSize: 30, fontWeight: 700, color: '#fff', margin: 0, fontFamily: T.font.body }}>
+          <h3 style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: '#fff', margin: 0, fontFamily: T.font.body }}>
             {stats[3].value}
           </h3>
-          <p style={{ fontSize: 11, color: T.color.textDim, marginTop: 8 }}>
+          <p style={{ fontSize: 'var(--fs-2xs)', color: T.color.textDim, marginTop: 8 }}>
             {t('chrono.vacRestantesHint')}
           </p>
         </div>
@@ -764,14 +764,14 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
           overflow: 'hidden',
         }}>
           <p style={{
-            fontSize: 11, fontWeight: 700, color: T.color.textMuted,
+            fontSize: 'var(--fs-2xs)', fontWeight: 700, color: T.color.textMuted,
             textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 16,
           }}>
             {t('chrono.alertas')}
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {alerts.length === 0 && (
-              <div style={{ fontSize: 13, color: T.color.textDim }}>—</div>
+              <div style={{ fontSize: 'var(--fs-xs)', color: T.color.textDim }}>—</div>
             )}
             {alerts.map((a, i) => (
               <div key={i} style={{
@@ -780,9 +780,9 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
                 borderRadius: T.radius.lg,
                 borderLeft: `3px solid ${a.color}`,
               }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 20, color: a.color }}>warning</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)', color: a.color }}>warning</span>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', margin: 0 }}>{a.text}</p>
+                  <p style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: '#fff', margin: 0 }}>{a.text}</p>
                 </div>
               </div>
             ))}
@@ -797,13 +797,13 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
           padding: 24,
         }}>
           <div style={{
-            fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
+            fontSize: 'var(--fs-2xs)', fontWeight: 700, textTransform: 'uppercase',
             letterSpacing: '.12em', color: T.color.textMuted, marginBottom: 14,
           }}>
             {t('chrono.equipoHoy')}
           </div>
           {teamMembers.length === 0 ? (
-            <div style={{ fontSize: 13, color: T.color.textDim }}>{t('chrono.proximaVista')}</div>
+            <div style={{ fontSize: 'var(--fs-xs)', color: T.color.textDim }}>{t('chrono.proximaVista')}</div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
               {teamMembers.map((m, i) => (
@@ -812,7 +812,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
                     width: 32, height: 32, borderRadius: '50%',
                     background: `linear-gradient(135deg, ${T.color.primaryDim}, ${T.color.primaryOn})`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11, fontWeight: 700, color: T.color.primary,
+                    fontSize: 'var(--fs-2xs)', fontWeight: 700, color: T.color.primary,
                     fontFamily: T.font.mono,
                     position: 'relative',
                   }}>
@@ -822,8 +822,8 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
                     </span>
                   </div>
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 500, color: T.color.text }}>{m.name}</div>
-                    <div style={{ fontSize: 10, color: T.color.textDim }}>
+                    <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 500, color: T.color.text }}>{m.name}</div>
+                    <div style={{ fontSize: 'var(--fs-2xs)', color: T.color.textDim }}>
                       {m.status === 'working' ? t('chrono.trabajando')
                         : m.status === 'lunch' ? t('chrono.enPausa')
                         : t('chrono.noFichado')}
@@ -839,7 +839,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
       {/* ── Exit confirmation modal ───────────────────────────────────────── */}
       {showExitModal && (
         <Modal title={t('chrono.confirmarSalida')} onClose={() => setShowExitModal(false)} width={480}>
-          <div style={{ fontSize: 13, color: C.txDim, marginBottom: 24 }}>
+          <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginBottom: 24 }}>
             {t('chrono.confirmarSalidaMsg', { hours: fmtHM(minutesNow) })}
           </div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
@@ -858,7 +858,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
         <Modal title={t('chrono.nuevaIncidencia')} onClose={() => setShowIncModal(false)} width={480}>
           {/* Category */}
           <div style={{ marginBottom: 14 }}>
-            <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: C.txMuted, marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: 'var(--fs-2xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: C.txMuted, marginBottom: 6 }}>
               {t('chrono.categoriaInc')}
             </label>
             <select value={incCategoria} onChange={e => setIncCategoria(e.target.value as CategoriaIncidencia)}>
@@ -870,7 +870,7 @@ export function DashboardView({ fichajeRepo, bolsaRepo, incidenciaRepo, configEm
 
           {/* Description */}
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: C.txMuted, marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: 'var(--fs-2xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: C.txMuted, marginBottom: 6 }}>
               {t('chrono.descripcionInc')}
             </label>
             <textarea

@@ -44,14 +44,14 @@ export function NotificationsBell({ userId, repo }: Props) {
         style={{ position: 'relative' }}
       >
         <span className="material-symbols-outlined" style={{
-          fontSize: 16, color: 'var(--tx2)',
+          fontSize: 'var(--fs-body)', color: 'var(--tx2)',
           fontVariationSettings: "'wght' 300",
         }}>notifications</span>
         {unread > 0 && (
           <span style={{
             position: 'absolute', top: -5, right: -5,
             minWidth: 16, height: 16, padding: '0 4px', borderRadius: 8,
-            background: C.red, color: '#fff', fontSize: 9, fontWeight: 700,
+            background: C.red, color: '#fff', fontSize: 'var(--fs-2xs)', fontWeight: 700,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             border: '1px solid var(--bg)',
           }}>{unread}</span>
@@ -79,20 +79,20 @@ export function NotificationsBell({ userId, repo }: Props) {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
               <span className="mono" style={{
-                fontSize: 13, fontWeight: 700, color: C.amber, letterSpacing: '.05em',
+                fontSize: 'var(--fs-xs)', fontWeight: 700, color: C.amber, letterSpacing: '.05em',
                 fontFamily: "'IBM Plex Mono',monospace",
               }}>
                 {t('chrono.alertas')} ({unread})
               </span>
               <button
                 onClick={() => setOpen(false)}
-                style={{ background: 'none', border: 'none', color: C.txDim, cursor: 'pointer', fontSize: 18 }}
+                style={{ background: 'none', border: 'none', color: C.txDim, cursor: 'pointer', fontSize: 'var(--fs-md)' }}
               >×</button>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', padding: 10 }}>
               {notifs.length === 0 && (
-                <div style={{ textAlign: 'center', padding: 30, color: C.txMuted, fontSize: 12 }}>
+                <div style={{ textAlign: 'center', padding: 30, color: C.txMuted, fontSize: 'var(--fs-xs)' }}>
                   {t('chrono.sinAlarmas')}
                 </div>
               )}
@@ -109,17 +109,17 @@ export function NotificationsBell({ userId, repo }: Props) {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                     <span style={{
-                      fontSize: 10, fontWeight: 700,
+                      fontSize: 'var(--fs-2xs)', fontWeight: 700,
                       color: n.tipo === 'warning' ? C.red : n.tipo === 'action' ? C.amber : C.txDim,
                       textTransform: 'uppercase', letterSpacing: '.08em',
                       fontFamily: "'IBM Plex Mono',monospace",
                     }}>{n.tipo}</span>
                     {!n.leida && <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.amber }} />}
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: C.tx, marginBottom: 2 }}>{n.titulo}</div>
-                  <div style={{ fontSize: 11, color: C.txDim, lineHeight: 1.4 }}>{n.mensaje}</div>
+                  <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: C.tx, marginBottom: 2 }}>{n.titulo}</div>
+                  <div style={{ fontSize: 'var(--fs-2xs)', color: C.txDim, lineHeight: 1.4 }}>{n.mensaje}</div>
                   <div className="mono" style={{
-                    fontSize: 9, color: C.txMuted, marginTop: 6,
+                    fontSize: 'var(--fs-2xs)', color: C.txMuted, marginTop: 6,
                     fontFamily: "'IBM Plex Mono',monospace",
                   }}>
                     {new Date(n.createdAt).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}

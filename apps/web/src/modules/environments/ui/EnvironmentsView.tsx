@@ -45,7 +45,7 @@ function toDeploymentShape(res, env) {
 // ── Inline helpers (sin @worksuite/ui hasta que esté listo) ──────────────────
 const btnStyle = (variant='primary', extra={}) => ({
   display:'inline-flex', alignItems:'center', gap:5, padding:'6px 14px',
-  borderRadius:8, fontWeight:600, fontSize:13, cursor:'pointer', border:'none',
+  borderRadius:8, fontWeight:600, fontSize: 'var(--fs-xs)', cursor:'pointer', border:'none',
   fontFamily:'inherit', transition:'all .15s',
   ...(variant==='primary' && { background:'var(--ac)', color:'#fff' }),
   ...(variant==='ghost'   && { background:'var(--sf2)', color:'var(--tx3)', border:'1px solid var(--bd)' }),
@@ -56,12 +56,12 @@ const btnStyle = (variant='primary', extra={}) => ({
   ...extra,
 });
 const inpStyle = (extra={}) => ({
-  width:'100%', padding:'7px 10px', fontSize:13, fontFamily:'inherit',
+  width:'100%', padding:'7px 10px', fontSize: 'var(--fs-xs)', fontFamily:'inherit',
   background:'var(--sf2)', border:'1px solid var(--bd)',
   borderRadius:8, color:'var(--tx)', outline:'none', ...extra,
 });
 const lblStyle = {
-  fontSize:11, fontWeight:700, color:'var(--tx3)',
+  fontSize: 'var(--fs-2xs)', fontWeight:700, color:'var(--tx3)',
   textTransform:'uppercase', letterSpacing:'.05em', display:'block', marginBottom:5,
 };
 
@@ -176,7 +176,7 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
             <label style={lblStyle}>{t('admin.envReposFromJira')}</label>
             <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
               {extractedRepos.map(name => (
-                <span key={name} style={{padding:'4px 10px',fontSize:12,borderRadius:20,fontFamily:'inherit',
+                <span key={name} style={{padding:'4px 10px',fontSize: 'var(--fs-xs)',borderRadius:20,fontFamily:'inherit',
                   background:'rgba(124,58,237,.15)',color:'#a78bfa',
                   border:'1px solid rgba(124,58,237,.3)'}}>
                   📦 {name}
@@ -186,7 +186,7 @@ function ReservationForm({ res, envs, repos, allRes, policy, currentUser, onSave
           </div>
         )}
         {error&&<div style={{padding:'8px 12px',background:'rgba(239,68,68,.1)',
-          border:'1px solid rgba(239,68,68,.3)',borderRadius:8,fontSize:12,color:'#ef4444'}}>⛔ {error}</div>}
+          border:'1px solid rgba(239,68,68,.3)',borderRadius:8,fontSize: 'var(--fs-xs)',color:'#ef4444'}}>⛔ {error}</div>}
         <div style={{display:'flex',justifyContent:'flex-end',gap:8,paddingTop:8,
           borderTop:'1px solid var(--bd)'}}>
           <button style={btnStyle('ghost')} onClick={onClose}>{t('common.cancel')}</button>
@@ -220,19 +220,19 @@ function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEd
     <Modal title={t('admin.envDetailTitle')} onClose={onClose}>
       <div style={{display:'flex',flexDirection:'column',gap:12}}>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          {env&&<span style={{padding:'2px 8px',borderRadius:20,fontSize:11,fontWeight:700,
+          {env&&<span style={{padding:'2px 8px',borderRadius:20,fontSize: 'var(--fs-2xs)',fontWeight:700,
             background:cat.bg,color:cat.color}}>{env.category}</span>}
-          <span style={{fontWeight:700,fontSize:16,color:'var(--tx)'}}>{env?.name}</span>
+          <span style={{fontWeight:700,fontSize: 'var(--fs-body)',color:'var(--tx)'}}>{env?.name}</span>
         </div>
         <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
           {(res.jiraIssueKeys??[]).map(k=>(
             <a key={k} href={`${jiraBaseUrl}/browse/${k}`} target="_blank" rel="noopener noreferrer"
-              style={{padding:'3px 10px',borderRadius:6,fontSize:12,fontFamily:'monospace',
+              style={{padding:'3px 10px',borderRadius:6,fontSize: 'var(--fs-xs)',fontFamily:'monospace',
               background:'rgba(124,58,237,.15)',color:'#a78bfa',textDecoration:'none'}}>{k} ↗</a>
           ))}
         </div>
-        {res.description&&<p style={{fontSize:13,color:'var(--tx3)',lineHeight:1.5}}>{res.description}</p>}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,fontSize:12}}>
+        {res.description&&<p style={{fontSize: 'var(--fs-xs)',color:'var(--tx3)',lineHeight:1.5}}>{res.description}</p>}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,fontSize: 'var(--fs-xs)'}}>
           {[
             [t('admin.envResponsible'), owner?.name??owner?.email??'—'],
             [t('admin.envDuration'),    durH(res.plannedStart,res.plannedEnd)+'h'],
@@ -244,19 +244,19 @@ function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEd
             ]:[]),
           ].map(([l,v])=>(
             <div key={l}>
-              <div style={{fontSize:10,fontWeight:700,color:'var(--tx3)',
+              <div style={{fontSize: 'var(--fs-2xs)',fontWeight:700,color:'var(--tx3)',
                 textTransform:'uppercase',letterSpacing:'.04em',marginBottom:2}}>{l}</div>
               <div style={{color:'var(--tx)'}}>{v}</div>
             </div>
           ))}
         </div>
         {allRepos.length>0&&<div style={{display:'flex',flexWrap:'wrap',gap:4}}>
-          {allRepos.map(n=><span key={n} style={{padding:'2px 8px',borderRadius:4,fontSize:12,
+          {allRepos.map(n=><span key={n} style={{padding:'2px 8px',borderRadius:4,fontSize: 'var(--fs-xs)',
             background:'var(--sf2)',color:'var(--tx3)'}}>📦 {n}</span>)}
         </div>}
         {(res.usageSession?.branches??[]).length>0&&<div style={{display:'flex',flexWrap:'wrap',gap:4}}>
           {res.usageSession.branches.map(b=><span key={b} style={{padding:'2px 8px',borderRadius:4,
-            fontSize:12,fontFamily:'monospace',background:'rgba(124,58,237,.12)',color:'#a78bfa'}}>{b}</span>)}
+            fontSize: 'var(--fs-xs)',fontFamily:'monospace',background:'rgba(124,58,237,.12)',color:'#a78bfa'}}>{b}</span>)}
         </div>}
         {res.statusCategory==='in_use'&&isOwner&&(
           <div>
@@ -270,13 +270,13 @@ function ReservationDetail({ res, envs, repos, users, currentUser, onClose, onEd
                 <button style={btnStyle('ghost',{padding:'6px 12px'})} onClick={()=>setShowB(false)}>×</button>
               </div>
             ):(
-              <button style={btnStyle('outline',{fontSize:12})} onClick={()=>setShowB(true)}>{t('admin.envAddBranch')}</button>
+              <button style={btnStyle('outline',{fontSize: 'var(--fs-xs)'})} onClick={()=>setShowB(true)}>{t('admin.envAddBranch')}</button>
             )}
           </div>
         )}
         {env?.url&&<a href={env.url} target="_blank" rel="noopener noreferrer"
           style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'9px 14px',
-            background:'var(--ac)',color:'#fff',borderRadius:8,textDecoration:'none',fontSize:14,fontWeight:600}}>
+            background:'var(--ac)',color:'#fff',borderRadius:8,textDecoration:'none',fontSize: 'var(--fs-sm)',fontWeight:600}}>
           {t('admin.envAccessEnv')}
         </a>}
         <div style={{display:'flex',flexWrap:'wrap',gap:8,paddingTop:12,borderTop:'1px solid var(--bd)'}}>
@@ -325,7 +325,7 @@ function GanttView({ reservations, envs, onBarClick }) {
 
   if (!bars.length) {
     return (
-      <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize:13}}>
+      <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize: 'var(--fs-xs)'}}>
         {t('admin.envNoGanttData')}
       </div>
     );
@@ -381,7 +381,7 @@ function HistoryView({ onSelect }) {
     };
     const s = map[status] ?? map.Reserved;
     return (
-      <span style={{padding:'3px 10px',borderRadius:4,fontSize:10,fontWeight:700,
+      <span style={{padding:'3px 10px',borderRadius:4,fontSize: 'var(--fs-2xs)',fontWeight:700,
         textTransform:'uppercase',letterSpacing:'.04em',
         background:s.bg,color:s.color}}>{status}</span>
     );
@@ -389,19 +389,19 @@ function HistoryView({ onSelect }) {
 
   if (loading) {
     return (
-      <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize:13}}>
+      <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize: 'var(--fs-xs)'}}>
         {t('admin.envLoadingHistory')}
       </div>
     );
   }
 
   const thStyle = {
-    padding:'12px 20px', fontSize:11, fontWeight:700, color:'var(--tx3)',
+    padding:'12px 20px', fontSize: 'var(--fs-2xs)', fontWeight:700, color:'var(--tx3)',
     textTransform:'uppercase', letterSpacing:'.06em', textAlign:'left',
     background:'var(--sf2)',
   };
   const tdStyle = {
-    padding:'12px 20px', fontSize:13, color:'var(--tx)',
+    padding:'12px 20px', fontSize: 'var(--fs-xs)', color:'var(--tx)',
     borderBottom:'1px solid var(--bd)',
   };
 
@@ -419,11 +419,11 @@ function HistoryView({ onSelect }) {
             border:'1px solid var(--bd)',transition:'border-color .15s'}}
             onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(77,142,255,.2)';}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor='var(--bd)';}}>
-            <p style={{fontSize:10,fontWeight:700,letterSpacing:'.1em',color:'var(--tx3)',
+            <p style={{fontSize: 'var(--fs-2xs)',fontWeight:700,letterSpacing:'.1em',color:'var(--tx3)',
               textTransform:'uppercase',marginBottom:4}}>{m.label}</p>
             <div style={{display:'flex',alignItems:'baseline',gap:8}}>
-              <span style={{fontSize:24,fontWeight:600,letterSpacing:'-0.02em'}}>{m.value}</span>
-              {m.sub && <span style={{fontSize:12,fontWeight:500,color:m.subColor}}>{m.sub}</span>}
+              <span style={{fontSize: 'var(--fs-xl)',fontWeight:600,letterSpacing:'-0.02em'}}>{m.value}</span>
+              {m.sub && <span style={{fontSize: 'var(--fs-xs)',fontWeight:500,color:m.subColor}}>{m.sub}</span>}
             </div>
           </div>
         ))}
@@ -431,7 +431,7 @@ function HistoryView({ onSelect }) {
 
       {/* ── Audit Trail Table ─────────────────────────────────── */}
       {!history.length ? (
-        <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize:13}}>
+        <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize: 'var(--fs-xs)'}}>
           {t('admin.envHistoryNoRecords')}
         </div>
       ) : (
@@ -460,24 +460,24 @@ function HistoryView({ onSelect }) {
                         <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
                           background: h.status==='Completed'?'var(--green)' : h.status==='Cancelled'?'var(--amber)' : h.status==='InUse'?'var(--ac2)':'var(--red)'}} />
                         <div>
-                          <div style={{fontSize:13,fontWeight:600,color:'var(--tx)'}}>{h.environment_name || '—'}</div>
+                          <div style={{fontSize: 'var(--fs-xs)',fontWeight:600,color:'var(--tx)'}}>{h.environment_name || '—'}</div>
                         </div>
                       </div>
                     </td>
                     <td style={tdStyle}>
-                      <span style={{fontSize:13,color:'var(--tx2)'}}>{h.reserved_by_name || '—'}</span>
+                      <span style={{fontSize: 'var(--fs-xs)',color:'var(--tx2)'}}>{h.reserved_by_name || '—'}</span>
                     </td>
                     <td style={tdStyle}>
-                      <div style={{fontSize:13,color:'var(--tx)'}}>
+                      <div style={{fontSize: 'var(--fs-xs)',color:'var(--tx)'}}>
                         {h.planned_start ? new Date(h.planned_start).toLocaleDateString(undefined,{day:'numeric',month:'short'}) : '—'}
                         {h.planned_end ? ` – ${new Date(h.planned_end).toLocaleDateString(undefined,{day:'numeric',month:'short'})}` : ''}
                       </div>
-                      {h.created_at && <div style={{fontSize:10,color:'var(--tx3)'}}>
+                      {h.created_at && <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)'}}>
                         {new Date(h.created_at).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})}
                       </div>}
                     </td>
                     <td style={tdStyle}>
-                      <span style={{fontSize:13,fontWeight:500}}>
+                      <span style={{fontSize: 'var(--fs-xs)',fontWeight:500}}>
                         {h.planned_start && h.planned_end
                           ? durH(h.planned_start, h.actual_end ?? h.planned_end) + 'h' : '—'}
                       </span>
@@ -486,7 +486,7 @@ function HistoryView({ onSelect }) {
                     <td style={tdStyle}>
                       <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
                         {(h.jira_issue_keys??[]).map(k=>(
-                          <span key={k} style={{padding:'2px 8px',borderRadius:4,fontSize:10,fontWeight:700,
+                          <span key={k} style={{padding:'2px 8px',borderRadius:4,fontSize: 'var(--fs-2xs)',fontWeight:700,
                             fontFamily:'monospace',background:'var(--sf3)',color:'var(--ac2)'}}>{k}</span>
                         ))}
                         {(!h.jira_issue_keys||!h.jira_issue_keys.length)&&<span style={{color:'var(--tx3)'}}>—</span>}
@@ -505,11 +505,11 @@ function HistoryView({ onSelect }) {
         <div style={{marginTop:40,marginBottom:24}}>
           <div style={{background:'var(--sf2)',borderRadius:12,padding:28,
             borderTop:'1px solid var(--bd)'}}>
-            <h3 style={{fontSize:18,fontWeight:600,marginBottom:12,display:'flex',alignItems:'center',gap:10,color:'var(--tx)'}}>
-              <span className="material-symbols-outlined" style={{fontSize:22,color:'var(--ac2)'}}>analytics</span>
+            <h3 style={{fontSize: 'var(--fs-md)',fontWeight:600,marginBottom:12,display:'flex',alignItems:'center',gap:10,color:'var(--tx)'}}>
+              <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-lg)',color:'var(--ac2)'}}>analytics</span>
               {t('admin.envRetentionTitle')}
             </h3>
-            <div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.7,maxWidth:720}}
+            <div style={{fontSize: 'var(--fs-xs)',color:'var(--tx2)',lineHeight:1.7,maxWidth:720}}
               dangerouslySetInnerHTML={{__html: historyNote}} />
           </div>
         </div>
@@ -521,19 +521,19 @@ function HistoryView({ onSelect }) {
           <div style={{display:'flex',flexDirection:'column',gap:12}}>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               {statusBadge(selected.status)}
-              <span style={{fontWeight:700,fontSize:16,color:'var(--tx)'}}>{selected.environment_name}</span>
+              <span style={{fontWeight:700,fontSize: 'var(--fs-body)',color:'var(--tx)'}}>{selected.environment_name}</span>
             </div>
 
             <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
               {(selected.jira_issue_keys??[]).map(k=>(
-                <span key={k} style={{padding:'3px 10px',borderRadius:6,fontSize:12,fontFamily:'monospace',
+                <span key={k} style={{padding:'3px 10px',borderRadius:6,fontSize: 'var(--fs-xs)',fontFamily:'monospace',
                   background:'rgba(124,58,237,.15)',color:'#a78bfa'}}>{k}</span>
               ))}
             </div>
 
-            {selected.description&&<p style={{fontSize:13,color:'var(--tx3)',lineHeight:1.5}}>{selected.description}</p>}
+            {selected.description&&<p style={{fontSize: 'var(--fs-xs)',color:'var(--tx3)',lineHeight:1.5}}>{selected.description}</p>}
 
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,fontSize:12}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,fontSize: 'var(--fs-xs)'}}>
               {[
                 [t('admin.envHistoryResponsible'),  selected.reserved_by_name || '—'],
                 [t('admin.envHistoryEnv'),      selected.environment_name || '—'],
@@ -545,7 +545,7 @@ function HistoryView({ onSelect }) {
                 [t('admin.envHistoryCreated'),   selected.created_at ? fmtDt(selected.created_at) : '—'],
               ].map(([l,v])=>(
                 <div key={l}>
-                  <div style={{fontSize:10,fontWeight:700,color:'var(--tx3)',
+                  <div style={{fontSize: 'var(--fs-2xs)',fontWeight:700,color:'var(--tx3)',
                     textTransform:'uppercase',letterSpacing:'.04em',marginBottom:2}}>{l}</div>
                   <div style={{color:'var(--tx)'}}>{v}</div>
                 </div>
@@ -554,11 +554,11 @@ function HistoryView({ onSelect }) {
 
             {(selected.repos??[]).length>0&&(
               <div>
-                <div style={{fontSize:10,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',
+                <div style={{fontSize: 'var(--fs-2xs)',fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',
                   letterSpacing:'.04em',marginBottom:4}}>{t('admin.envHistoryRepos')}</div>
                 <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
                   {selected.repos.map(r=>(
-                    <span key={r} style={{padding:'3px 8px',borderRadius:4,fontSize:12,
+                    <span key={r} style={{padding:'3px 8px',borderRadius:4,fontSize: 'var(--fs-xs)',
                       background:'var(--sf2)',color:'var(--tx3)'}}>{r}</span>
                   ))}
                 </div>
@@ -851,18 +851,18 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
           <div style={{width:40,height:40,borderRadius:8,background:'rgba(77,142,255,.2)',
             display:'flex',alignItems:'center',justifyContent:'center',
             border:'1px solid rgba(77,142,255,.3)'}}>
-            <span className="material-symbols-outlined" style={{fontSize:22,color:'#4d8eff'}}>hub</span>
+            <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-lg)',color:'#4d8eff'}}>hub</span>
           </div>
           <div>
-            <h1 style={{fontSize:16,fontWeight:700,color:'var(--tx)',letterSpacing:'-0.01em',lineHeight:1,margin:0}}>{t('admin.envTracker')}</h1>
-            <p style={{fontSize:10,color:'var(--tx)',opacity:.4,fontWeight:700,letterSpacing:'.1em',marginTop:4,textTransform:'uppercase'}}>{t('admin.envModuleSubtitle')}</p>
+            <h1 style={{fontSize: 'var(--fs-body)',fontWeight:700,color:'var(--tx)',letterSpacing:'-0.01em',lineHeight:1,margin:0}}>{t('admin.envTracker')}</h1>
+            <p style={{fontSize: 'var(--fs-2xs)',color:'var(--tx)',opacity:.4,fontWeight:700,letterSpacing:'.1em',marginTop:4,textTransform:'uppercase'}}>{t('admin.envModuleSubtitle')}</p>
           </div>
         </div>
 
         {/* CTA */}
         <div style={{padding:'0 4px',margin:'16px 0 24px'}}>
           <button className="ev-cta" onClick={()=>{ setForm('new'); void loadAvailableTickets(); }}>
-            <span className="material-symbols-outlined" style={{fontSize:18}}>add_circle</span>
+            <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-md)'}}>add_circle</span>
             <span>{t('admin.envNewReservation')}</span>
           </button>
         </div>
@@ -873,7 +873,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
             <button key={t.id}
               className={`ev-nav-item${mainTab===t.id?' active':''}`}
               onClick={()=>setMainTab(t.id)}>
-              <span className="material-symbols-outlined" style={{fontSize:20}}>{t.icon}</span>
+              <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-md)'}}>{t.icon}</span>
               <span>{t.label}</span>
             </button>
           ))}
@@ -889,10 +889,10 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
             {/* View toggle */}
             <div className="ev-view-toggle">
               <button className={`ev-view-btn${viewMode==='list'?' active':''}`} onClick={()=>setViewMode('list')} title={t('admin.envViewList')}>
-                <span className="material-symbols-outlined" style={{fontSize:18}}>view_list</span>
+                <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-md)'}}>view_list</span>
               </button>
               <button className={`ev-view-btn${viewMode==='grid'?' active':''}`} onClick={()=>setViewMode('grid')} title={t('admin.envViewGrid')}>
-                <span className="material-symbols-outlined" style={{fontSize:18}}>grid_view</span>
+                <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-md)'}}>grid_view</span>
               </button>
             </div>
             {/* Filters */}
@@ -900,7 +900,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
               border:'1px solid var(--bd)',borderRadius:8,padding:3}}>
               {filterTabs.map(ft=>(
                 <button key={ft.id} onClick={()=>setFilter(ft.id)}
-                  style={{padding:'4px 12px',fontSize:12,fontWeight:filter===ft.id?600:400,borderRadius:6,
+                  style={{padding:'4px 12px',fontSize: 'var(--fs-xs)',fontWeight:filter===ft.id?600:400,borderRadius:6,
                     border:'none',cursor:'pointer',fontFamily:'inherit',
                     background:filter===ft.id?'var(--sf3)':'transparent',
                     color:filter===ft.id?'var(--tx)':'var(--tx3)',
@@ -910,7 +910,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
               ))}
             </div>
             <input placeholder={t('admin.envSearchPlaceholder')} value={search} onChange={e=>setSearch(e.target.value)}
-              style={{width:220,padding:'7px 12px',fontSize:12,fontFamily:'inherit',
+              style={{width:220,padding:'7px 12px',fontSize: 'var(--fs-xs)',fontFamily:'inherit',
                 background:'var(--sf2)',border:'1px solid var(--bd)',
                 borderRadius:8,color:'var(--tx)',outline:'none'}}/>
           </div>
@@ -921,11 +921,11 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
           {mainTab==='reservas' && (
             <>
               {loading ? (
-                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize:13}}>
+                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize: 'var(--fs-xs)'}}>
                   {t('admin.envLoadingReservations')}
                 </div>
               ) : visible.length === 0 ? (
-                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize:13}}>
+                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize: 'var(--fs-xs)'}}>
                   {t('admin.envNoReservations')}
                 </div>
               ) : viewMode==='list' ? (
@@ -949,22 +949,22 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
                         onMouseLeave={e=>{e.currentTarget.style.background='var(--sf2)';}}>
                         {/* Left: env info */}
                         <div style={{minWidth:120}}>
-                          <span style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',
+                          <span style={{fontSize: 'var(--fs-2xs)',fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',
                             color:cc.color,display:'block',marginBottom:2}}>{env?.category??'—'}</span>
-                          <span style={{fontSize:15,fontWeight:700,color:cc.color}}>{env?.name??'—'}</span>
+                          <span style={{fontSize: 'var(--fs-sm)',fontWeight:700,color:cc.color}}>{env?.name??'—'}</span>
                         </div>
                         {/* Center: tickets & repos */}
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:4}}>
                             {(r.jiraIssueKeys??[]).map(k=>(
-                              <span key={k} style={{padding:'2px 8px',borderRadius:4,fontSize:11,fontFamily:'monospace',
+                              <span key={k} style={{padding:'2px 8px',borderRadius:4,fontSize: 'var(--fs-2xs)',fontFamily:'monospace',
                                 background:'rgba(124,58,237,.12)',color:'#a78bfa'}}>{k}</span>
                             ))}
                           </div>
                           {(r.extractedRepos??[]).length>0&&(
                             <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
                               {r.extractedRepos.map(name=>(
-                                <span key={name} style={{padding:'2px 8px',borderRadius:4,fontSize:10,
+                                <span key={name} style={{padding:'2px 8px',borderRadius:4,fontSize: 'var(--fs-2xs)',
                                   background:'var(--bg)',color:'var(--tx3)'}}>{name}</span>
                               ))}
                             </div>
@@ -972,10 +972,10 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
                         </div>
                         {/* Right: status & meta */}
                         <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4,flexShrink:0}}>
-                          <span style={{padding:'3px 10px',borderRadius:20,fontSize:10,fontWeight:700,
+                          <span style={{padding:'3px 10px',borderRadius:20,fontSize: 'var(--fs-2xs)',fontWeight:700,
                             background:statusBadge.bg,color:statusBadge.color}}>{statusBadge.label}</span>
-                          <span style={{fontSize:10,color:'var(--tx3)'}}>{owner?.name??owner?.email??'—'}</span>
-                          <span style={{fontSize:10,color:'var(--tx3)'}}>{durH(r.plannedStart,r.plannedEnd)}h</span>
+                          <span style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)'}}>{owner?.name??owner?.email??'—'}</span>
+                          <span style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)'}}>{durH(r.plannedStart,r.plannedEnd)}h</span>
                         </div>
                       </div>
                     );
@@ -1003,28 +1003,28 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
                         {/* Header */}
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
                           <div>
-                            <span style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',
+                            <span style={{fontSize: 'var(--fs-2xs)',fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',
                               color:cc.color,display:'block',marginBottom:4}}>{env?.category??'—'}</span>
-                            <h3 style={{fontSize:18,fontWeight:700,color:cc.color,margin:0}}>{env?.name??'—'}</h3>
+                            <h3 style={{fontSize: 'var(--fs-md)',fontWeight:700,color:cc.color,margin:0}}>{env?.name??'—'}</h3>
                           </div>
-                          <span style={{padding:'4px 10px',borderRadius:20,fontSize:10,fontWeight:700,
+                          <span style={{padding:'4px 10px',borderRadius:20,fontSize: 'var(--fs-2xs)',fontWeight:700,
                             background:statusBadge.bg,color:statusBadge.color}}>{statusBadge.label}</span>
                         </div>
                         {/* Jira tickets */}
                         <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
-                          <span className="material-symbols-outlined" style={{fontSize:16,color:'var(--tx3)'}}>confirmation_number</span>
-                          <span style={{fontSize:13,fontWeight:500,color:'var(--tx2)'}}>
+                          <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-sm)',color:'var(--tx3)'}}>confirmation_number</span>
+                          <span style={{fontSize: 'var(--fs-xs)',fontWeight:500,color:'var(--tx2)'}}>
                             {(r.jiraIssueKeys??[]).join(', ')||'—'}
                           </span>
                         </div>
                         {/* Repos */}
                         {(r.extractedRepos??[]).length>0&&(
                           <div style={{marginBottom:12}}>
-                            <div style={{fontSize:10,fontWeight:700,color:'rgba(140,144,159,.5)',textTransform:'uppercase',
+                            <div style={{fontSize: 'var(--fs-2xs)',fontWeight:700,color:'rgba(140,144,159,.5)',textTransform:'uppercase',
                               letterSpacing:'.04em',marginBottom:6}}>Repos</div>
                             <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                               {r.extractedRepos.map(name=>(
-                                <span key={name} style={{padding:'4px 10px',fontSize:11,borderRadius:4,
+                                <span key={name} style={{padding:'4px 10px',fontSize: 'var(--fs-2xs)',borderRadius:4,
                                   background:'var(--bg)',color:'var(--tx2)',border:'1px solid rgba(66,71,83,.1)'}}>{name}</span>
                               ))}
                             </div>
@@ -1033,8 +1033,8 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
                         {/* Footer */}
                         <div style={{paddingTop:12,borderTop:'1px solid rgba(66,71,83,.1)',
                           display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                          <span style={{fontSize:11,fontWeight:500,color:'var(--tx3)'}}>{owner?.name??owner?.email??'—'}</span>
-                          <span style={{fontSize:11,color:'rgba(140,144,159,.6)',fontWeight:500}}>
+                          <span style={{fontSize: 'var(--fs-2xs)',fontWeight:500,color:'var(--tx3)'}}>{owner?.name??owner?.email??'—'}</span>
+                          <span style={{fontSize: 'var(--fs-2xs)',color:'rgba(140,144,159,.6)',fontWeight:500}}>
                             {durH(r.plannedStart,r.plannedEnd)}h
                           </span>
                         </div>
@@ -1049,7 +1049,7 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
           {mainTab==='gantt' && (
             <>
               {loading ? (
-                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize:13}}>
+                <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)',fontSize: 'var(--fs-xs)'}}>
                   {t('admin.envLoading')}
                 </div>
               ) : (
@@ -1065,9 +1065,9 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
       {/* ── Right Environment Sidebar ───────────────────────────────── */}
       <aside className="ev-right-sidebar">
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4,padding:'8px 4px 0'}}>
-          <span style={{fontSize:11,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:'.05em'}}>{t('admin.envSidebarTitle')}</span>
+          <span style={{fontSize: 'var(--fs-2xs)',fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:'.05em'}}>{t('admin.envSidebarTitle')}</span>
           <button onClick={()=>setSidebarAvailOnly(v=>!v)}
-            style={{fontSize:10,padding:'2px 8px',borderRadius:10,cursor:'pointer',fontFamily:'inherit',fontWeight:600,
+            style={{fontSize: 'var(--fs-2xs)',padding:'2px 8px',borderRadius:10,cursor:'pointer',fontFamily:'inherit',fontWeight:600,
               border:`1px solid ${sidebarAvailOnly?'#22c55e':'rgba(66,71,83,.15)'}`,
               background:sidebarAvailOnly?'rgba(34,197,94,.12)':'transparent',
               color:sidebarAvailOnly?'#22c55e':'#8c909f',transition:'all .12s'}}>
@@ -1100,22 +1100,22 @@ export function EnvironmentsView({ currentUser, wsUsers }) {
               <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
                 <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,
                   background:st.occupied?'var(--red)':'var(--green)'}}/>
-                <span style={{fontSize:12,fontWeight:700,color:'var(--tx)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{env.name}</span>
-                <span style={{fontSize:9,padding:'1px 5px',borderRadius:8,fontWeight:600,
+                <span style={{fontSize: 'var(--fs-xs)',fontWeight:700,color:'var(--tx)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{env.name}</span>
+                <span style={{fontSize: 'var(--fs-2xs)',padding:'1px 5px',borderRadius:8,fontWeight:600,
                   background:cc.bg,color:cc.color,flexShrink:0}}>{env.category}</span>
               </div>
               {st.occupied ? (
-                <div style={{fontSize:10,color:'#ffb4ab',marginLeft:14}}>
+                <div style={{fontSize: 'var(--fs-2xs)',color:'#ffb4ab',marginLeft:14}}>
                   {st.label}{st.endDate ? ` · ${t('admin.envSidebarUntil')} ${new Date(st.endDate).toLocaleDateString(undefined,{day:'numeric',month:'short'})}` : ''}
                 </div>
               ) : (
-                <div style={{fontSize:10,color:'var(--green)',marginLeft:14}}>{t('admin.envSidebarAvailable')}</div>
+                <div style={{fontSize: 'var(--fs-2xs)',color:'var(--green)',marginLeft:14}}>{t('admin.envSidebarAvailable')}</div>
               )}
             </div>
           );
         })}
         {sortedEnvs.length===0&&(
-          <div style={{fontSize:11,color:'var(--tx3)',textAlign:'center',padding:'20px 0'}}>
+          <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',textAlign:'center',padding:'20px 0'}}>
             {sidebarAvailOnly?t('admin.envSidebarNoFree'):t('admin.envSidebarNoEnvs')}
           </div>
         )}

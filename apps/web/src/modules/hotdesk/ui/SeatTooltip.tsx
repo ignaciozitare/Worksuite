@@ -68,20 +68,20 @@ function SeatTooltip({ seatId, anchorX, anchorY, hd, currentUser, blueprint, the
     <div ref={ref} className="hd-tooltip" data-theme={theme} style={{ left: pos.left, top: pos.top, width: 480 }}>
       {/* Header */}
       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-        <span style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:13,color: statusColor}}>
+        <span style={{fontFamily:'var(--mono)',fontWeight:700,fontSize: 'var(--fs-xs)',color: statusColor}}>
           {seatId}
         </span>
-        <span style={{fontSize:10,padding:'2px 7px',borderRadius:10,fontWeight:600,
+        <span style={{fontSize: 'var(--fs-2xs)',padding:'2px 7px',borderRadius:10,fontWeight:600,
           background: statusBg, color: statusColor}}>
           {statusLabel}
         </span>
-        {ownerName && !isBlocked && <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>{ownerName.split(' ')[0]}</span>}
+        {ownerName && !isBlocked && <span style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',marginLeft:'auto'}}>{ownerName.split(' ')[0]}</span>}
       </div>
       {/* Mini-map showing position */}
       <div style={{background:'var(--sf2)',borderRadius:6,overflow:'hidden',border:'1px solid var(--bd)'}}>
         {blueprint
           ? <BlueprintMiniMap blueprint={blueprint} hd={hdWithUser} seatId={seatId} theme={theme}/>
-          : <div style={{height:80,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'var(--tx3)'}}>{t("hotdesk.noBlueprint")}</div>
+          : <div style={{height:80,display:'flex',alignItems:'center',justifyContent:'center',fontSize: 'var(--fs-2xs)',color:'var(--tx3)'}}>{t("hotdesk.noBlueprint")}</div>
         }
       </div>
     </div>

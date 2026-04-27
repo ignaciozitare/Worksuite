@@ -80,7 +80,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 120 }
         onInput={onInput}
         data-placeholder={placeholder ?? ''}
         style={{
-          padding: '10px 14px', fontSize: 13, lineHeight: 1.6, color: 'var(--tx)',
+          padding: '10px 14px', fontSize: 'var(--fs-xs)', lineHeight: 1.6, color: 'var(--tx)',
           outline: 'none', minHeight, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
         }}
       />
@@ -122,7 +122,7 @@ function ToolButton({ title, onClick, icon }: { title: string; onClick: () => vo
       }}
       onMouseEnter={e => { e.currentTarget.style.background = 'var(--sf2)'; e.currentTarget.style.color = 'var(--tx)'; }}
       onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--tx2)'; }}>
-      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{icon}</span>
+      <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>{icon}</span>
     </button>
   );
 }

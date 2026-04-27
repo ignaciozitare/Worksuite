@@ -40,11 +40,11 @@ interface SLabelProps {
 export const SLabel = ({ children, style = {} }: SLabelProps) => (
   <div
     style={{
-      fontSize: 9,
+      fontSize: 'var(--fs-2xs)',
       fontWeight: 700,
       letterSpacing: '.12em',
       textTransform: 'uppercase',
-      color: 'var(--dp-tx3,#8c909f)',
+      color: 'var(--dp-tx3)',
       ...style,
     }}
   >
@@ -58,12 +58,12 @@ interface RepoChipProps {
 
 export const RepoChip = ({ name }: RepoChipProps) => (
   <Chip style={{
-    fontSize: 9,
+    fontSize: 'var(--fs-2xs)',
     padding: '2px 7px',
     borderRadius: 3,
-    background: 'var(--dp-sf2,#201f1f)',
+    background: 'var(--dp-sf2)',
     border: '1px solid rgba(66,71,84,.15)',
-    color: 'var(--dp-tx3,#8c909f)',
+    color: 'var(--dp-tx3)',
     gap: 0,
   }}>
     {name}

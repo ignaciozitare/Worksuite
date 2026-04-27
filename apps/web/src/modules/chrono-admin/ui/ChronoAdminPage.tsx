@@ -86,9 +86,9 @@ function ComingSoonPlaceholder({ label }: { label: string }) {
   const { t } = useTranslation();
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
-      <div className="mono" style={{ fontSize: 40, color: C.amberDim, marginBottom: 16 }}>{ '◎' }</div>
-      <div style={{ fontSize: 18, fontWeight: 600, color: C.tx, marginBottom: 6 }}>{label}</div>
-      <div className="mono" style={{ fontSize: 13, color: C.txDim, letterSpacing: '.05em' }}>
+      <div className="mono" style={{ fontSize: 'var(--fs-display)', color: C.amberDim, marginBottom: 16 }}>{ '◎' }</div>
+      <div style={{ fontSize: 'var(--fs-md)', fontWeight: 600, color: C.tx, marginBottom: 6 }}>{label}</div>
+      <div className="mono" style={{ fontSize: 'var(--fs-xs)', color: C.txDim, letterSpacing: '.05em' }}>
         {t('chronoAdmin.comingSoon')}
       </div>
     </div>
@@ -135,13 +135,13 @@ function ChronoAdminPage({ currentUser }: Props) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             border: '1px solid rgba(77,142,255,.3)',
           }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 22, color: '#4d8eff' }}>group</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', color: '#4d8eff' }}>group</span>
           </div>
           <div>
-            <h1 style={{ fontSize: 16, fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.01em', lineHeight: 1, margin: 0 }}>
+            <h1 style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.01em', lineHeight: 1, margin: 0 }}>
               {t('chrono.admin')}
             </h1>
-            <p style={{ fontSize: 10, color: 'var(--tx)', opacity: .4, fontWeight: 700, letterSpacing: '.1em', marginTop: 4, textTransform: 'uppercase' }}>
+            <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx)', opacity: .4, fontWeight: 700, letterSpacing: '.1em', marginTop: 4, textTransform: 'uppercase' }}>
               {t('chrono.adminModuleSubtitle')}
             </p>
           </div>
@@ -157,7 +157,7 @@ function ChronoAdminPage({ currentUser }: Props) {
                 onClick={() => setView(tab.id)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px',
-                  borderRadius: 8, fontSize: 13, fontWeight: active ? 600 : 500,
+                  borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: active ? 600 : 500,
                   letterSpacing: '.02em', cursor: 'pointer', border: 'none',
                   background: active ? 'rgba(77,142,255,.1)' : 'transparent',
                   color: active ? 'var(--ac)' : 'var(--tx)',
@@ -168,7 +168,7 @@ function ChronoAdminPage({ currentUser }: Props) {
                 onMouseEnter={e => { if (!active) { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'var(--sf2)'; e.currentTarget.style.transform = 'translateX(2px)'; }}}
                 onMouseLeave={e => { if (!active) { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'none'; }}}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{tab.icon}</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>{tab.icon}</span>
                 <span>{t(tab.labelKey)}</span>
               </button>
             );

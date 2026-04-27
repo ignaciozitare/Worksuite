@@ -78,7 +78,7 @@ export function AppSwitcher({ currentMod, userModules, onNavigate }: AppSwitcher
       >
         <span
           className="material-symbols-outlined"
-          style={{ fontSize: 20, fontVariationSettings: "'wght' 300" }}
+          style={{ fontSize: 'var(--fs-lg)', fontVariationSettings: "'wght' 300" }}
         >
           apps
         </span>
@@ -105,7 +105,7 @@ export function AppSwitcher({ currentMod, userModules, onNavigate }: AppSwitcher
         >
           <div
             style={{
-              fontSize: 10,
+              fontSize: 'var(--fs-2xs)',
               fontWeight: 700,
               letterSpacing: '.05em',
               textTransform: 'uppercase' as const,
@@ -162,7 +162,7 @@ export function AppSwitcher({ currentMod, userModules, onNavigate }: AppSwitcher
                   <span
                     className="material-symbols-outlined"
                     style={{
-                      fontSize: 22,
+                      fontSize: 'var(--fs-lg)',
                       color: isActive ? 'var(--ac2)' : m.color,
                       fontVariationSettings: isActive ? "'wght' 400, 'FILL' 1" : "'wght' 300",
                       transition: 'var(--ease)',
@@ -172,7 +172,7 @@ export function AppSwitcher({ currentMod, userModules, onNavigate }: AppSwitcher
                   </span>
                   <span
                     style={{
-                      fontSize: 10,
+                      fontSize: 'var(--fs-2xs)',
                       fontWeight: isActive ? 700 : 500,
                       color: isActive ? 'var(--ac2)' : 'var(--tx3)',
                       letterSpacing: '.01em',

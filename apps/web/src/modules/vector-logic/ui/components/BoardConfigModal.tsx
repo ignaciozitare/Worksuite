@@ -441,11 +441,11 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 600, color: 'var(--tx)', margin: 0, letterSpacing: '-0.01em' }}>
+            <h3 style={{ fontSize: 'var(--fs-md)', fontWeight: 600, color: 'var(--tx)', margin: 0, letterSpacing: '-0.01em' }}>
               {isNew ? t('vectorLogic.boardModalCreateTitle') : t('vectorLogic.editBoardTitle')}
             </h3>
             {!isNew && originalBoard && (
-              <span style={{ fontSize: 13, color: 'var(--tx3)' }}>{originalBoard.name}</span>
+              <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)' }}>{originalBoard.name}</span>
             )}
           </div>
           <button
@@ -454,7 +454,7 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
             aria-label={t('common.close')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx2)', display: 'flex' }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>close</span>
           </button>
         </div>
 
@@ -469,7 +469,7 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
               {error && (
                 <div role="alert" style={{
                   padding: '10px 14px', background: 'var(--red-dim)', color: 'var(--red)',
-                  borderRadius: 8, fontSize: 13, fontWeight: 500,
+                  borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 500,
                 }}>
                   {error}
                 </div>
@@ -505,7 +505,7 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                     onClick={() => setVisibility('personal')}
                     style={visibility === 'personal' ? S.toggleActive : S.toggleInactive}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>person</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>person</span>
                     {t('vectorLogic.boardPersonal')}
                   </button>
                   <button
@@ -513,7 +513,7 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                     onClick={() => setVisibility('shared')}
                     style={visibility === 'shared' ? S.toggleActive : S.toggleInactive}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>groups</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>groups</span>
                     {t('vectorLogic.boardShared')}
                   </button>
                 </div>
@@ -531,13 +531,13 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                         disabled={availableUsersForMember.length === 0}
                         style={S.smallButton}
                       >
-                        <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--ac-strong)' }}>add</span>
+                        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--ac-strong)' }}>add</span>
                         {t('vectorLogic.boardAddMember')}
                       </button>
                       {memberPickerOpen && (
                         <div style={S.statePickerPanel}>
                           {availableUsersForMember.length === 0 ? (
-                            <div style={{ padding: 10, fontSize: 12, color: 'var(--tx3)' }}>
+                            <div style={{ padding: 10, fontSize: 'var(--fs-xs)', color: 'var(--tx3)' }}>
                               {t('vectorLogic.boardNoMoreUsers')}
                             </div>
                           ) : (
@@ -549,7 +549,7 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                                 style={S.statePickerItem}
                               >
                                 <span style={{ flex: 1 }}>{u.name || u.email}</span>
-                                <span style={{ fontSize: 11, color: 'var(--tx3)' }}>{u.email}</span>
+                                <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>{u.email}</span>
                               </button>
                             ))
                           )}
@@ -557,12 +557,12 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                       )}
                     </div>
                   </div>
-                  <p style={{ fontSize: 12, color: 'var(--tx3)', margin: 0 }}>
+                  <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)', margin: 0 }}>
                     {t('vectorLogic.boardPermissionsHelp')}
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {members.length === 0 && (
-                      <div style={{ padding: 12, fontSize: 12, color: 'var(--tx3)', background: 'var(--sf2)', borderRadius: 8 }}>
+                      <div style={{ padding: 12, fontSize: 'var(--fs-xs)', color: 'var(--tx3)', background: 'var(--sf2)', borderRadius: 8 }}>
                         {t('vectorLogic.boardNoMembers')}
                       </div>
                     )}
@@ -574,16 +574,16 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                             width: 28, height: 28, borderRadius: '50%',
                             background: 'var(--ac-dim)', color: 'var(--ac-strong)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 11, fontWeight: 700,
+                            fontSize: 'var(--fs-2xs)', fontWeight: 700,
                           }}>
                             {(u?.name || u?.email || '?').slice(0, 2).toUpperCase()}
                           </span>
                           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 500, color: 'var(--tx)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {u?.name || u?.email || m.userId}
                             </span>
                             {u?.name && (
-                              <span style={{ fontSize: 11, color: 'var(--tx3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {u.email}
                               </span>
                             )}
@@ -602,7 +602,7 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                             aria-label={t('common.delete')}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', display: 'flex' }}
                           >
-                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+                            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>close</span>
                           </button>
                         </div>
                       );
@@ -620,17 +620,17 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                     onClick={handleAddColumn}
                     style={S.smallButton}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--ac-strong)' }}>add</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--ac-strong)' }}>add</span>
                     {t('vectorLogic.boardAddColumn')}
                   </button>
                 </div>
-                <p style={{ fontSize: 12, color: 'var(--tx3)', margin: 0 }}>
+                <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)', margin: 0 }}>
                   {t('vectorLogic.boardColumnsHelp')}
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {columns.length === 0 && (
-                    <div style={{ padding: 12, fontSize: 12, color: 'var(--tx3)', background: 'var(--sf2)', borderRadius: 8 }}>
+                    <div style={{ padding: 12, fontSize: 'var(--fs-xs)', color: 'var(--tx3)', background: 'var(--sf2)', borderRadius: 8 }}>
                       {t('vectorLogic.boardNeedAtLeastOneColumn')}
                     </div>
                   )}
@@ -661,7 +661,7 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span className="material-symbols-outlined"
-                                style={{ fontSize: 16, color: 'var(--tx3)', cursor: 'grab' }}>
+                                style={{ fontSize: 'var(--fs-body)', color: 'var(--tx3)', cursor: 'grab' }}>
                             drag_indicator
                           </span>
                           <span style={{
@@ -678,7 +678,7 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                           />
                           <div style={S.wipBox}>
                             <span className="material-symbols-outlined"
-                                  style={{ fontSize: 12, color: 'var(--tx3)' }}
+                                  style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)' }}
                                   title={t('vectorLogic.boardWipLimit')}>
                               speed
                             </span>
@@ -698,7 +698,7 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                             aria-label={t('common.delete')}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', display: 'flex' }}
                           >
-                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+                            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>close</span>
                           </button>
                         </div>
                         <div style={{ position: 'relative', paddingLeft: 26 }}>
@@ -707,22 +707,22 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                             onClick={() => setOpenStateMenuColIdx(isMenuOpen ? null : idx)}
                             style={S.statesPickerButton}
                           >
-                            <span className="material-symbols-outlined" style={{ fontSize: 13, color: 'var(--tx3)' }}>label</span>
+                            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>label</span>
                             <span style={{
                               flex: 1, color: colStates.length === 0 ? 'var(--tx3)' : 'var(--tx)',
-                              fontSize: 12, fontWeight: 500,
+                              fontSize: 'var(--fs-xs)', fontWeight: 500,
                               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                             }}>
                               {summary}
                             </span>
-                            <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>
                               keyboard_arrow_down
                             </span>
                           </button>
                           {isMenuOpen && (
                             <div style={{ ...S.statePickerPanel, top: 'calc(100% + 4px)', left: 26, right: 0 }}>
                               {allStates.length === 0 ? (
-                                <div style={{ padding: 10, fontSize: 12, color: 'var(--tx3)' }}>—</div>
+                                <div style={{ padding: 10, fontSize: 'var(--fs-xs)', color: 'var(--tx3)' }}>—</div>
                               ) : (
                                 allStates.map(s => {
                                   const checked = col.stateIds.includes(s.id);
@@ -766,7 +766,7 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
               {/* Filters */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label style={S.label}>{t('vectorLogic.boardFilters')}</label>
-                <p style={{ fontSize: 12, color: 'var(--tx3)', margin: 0 }}>
+                <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)', margin: 0 }}>
                   {t('vectorLogic.boardFiltersHelp')}
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -836,7 +836,7 @@ export function BoardConfigModal({ boardId, ownerId, wsUsers = [], onClose, onSa
                 disabled={saving}
                 style={S.deleteButton}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>delete</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>delete</span>
                 {t('vectorLogic.boardDeleteBoard')}
               </button>
             )}
@@ -921,14 +921,14 @@ function FilterMultiRow({
         }}>
           {summary}
         </span>
-        <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>
           keyboard_arrow_down
         </span>
       </button>
       {open && (
         <div style={S.filterDropdown}>
           {options.length === 0 ? (
-            <div style={{ padding: 10, fontSize: 12, color: 'var(--tx3)' }}>—</div>
+            <div style={{ padding: 10, fontSize: 'var(--fs-xs)', color: 'var(--tx3)' }}>—</div>
           ) : (
             options.map(o => {
               const checked = selected.includes(o.id);
@@ -937,7 +937,7 @@ function FilterMultiRow({
                   key={o.id}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px',
-                    cursor: 'pointer', color: 'var(--tx)', fontSize: 13,
+                    cursor: 'pointer', color: 'var(--tx)', fontSize: 'var(--fs-xs)',
                   }}
                 >
                   <input
@@ -976,7 +976,7 @@ function FilterDateRow({
           onChange={(e) => onChangeFrom(e.target.value || null)}
           style={S.dateInput}
         />
-        <span style={{ color: 'var(--tx3)', fontSize: 12 }}>→</span>
+        <span style={{ color: 'var(--tx3)', fontSize: 'var(--fs-xs)' }}>→</span>
         <input
           type="date"
           value={to ?? ''}
@@ -990,12 +990,12 @@ function FilterDateRow({
 
 const S: Record<string, React.CSSProperties> = {
   label: {
-    fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
+    fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
     color: 'var(--tx2)',
   },
   input: {
     width: '100%', background: 'var(--sf2)', border: '1px solid var(--bd)',
-    borderRadius: 8, padding: '10px 14px', color: 'var(--tx)', fontSize: 14,
+    borderRadius: 8, padding: '10px 14px', color: 'var(--tx)', fontSize: 'var(--fs-sm)',
     fontFamily: 'inherit', outline: 'none',
   },
   toggleGroup: {
@@ -1005,17 +1005,17 @@ const S: Record<string, React.CSSProperties> = {
   toggleActive: {
     display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
     background: 'var(--ac-strong)', color: 'var(--ac-on)', border: 'none',
-    borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+    borderRadius: 6, fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
   },
   toggleInactive: {
     display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
     background: 'transparent', color: 'var(--tx3)', border: 'none',
-    borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+    borderRadius: 6, fontSize: 'var(--fs-xs)', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
   },
   smallButton: {
     display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 8px',
     background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6,
-    color: 'var(--ac-strong)', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+    color: 'var(--ac-strong)', fontSize: 'var(--fs-2xs)', fontWeight: 600, cursor: 'pointer',
     fontFamily: 'inherit',
   },
   statePickerPanel: {
@@ -1027,10 +1027,10 @@ const S: Record<string, React.CSSProperties> = {
   statePickerItem: {
     display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
     width: '100%', background: 'transparent', border: 'none', cursor: 'pointer',
-    color: 'var(--tx)', fontSize: 13, fontFamily: 'inherit', textAlign: 'left',
+    color: 'var(--tx)', fontSize: 'var(--fs-xs)', fontFamily: 'inherit', textAlign: 'left',
   },
   catLabel: {
-    fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: 'var(--tx3)',
+    fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '0.05em', color: 'var(--tx3)',
   },
   columnRow: {
     display: 'flex', alignItems: 'center', gap: 12,
@@ -1039,14 +1039,14 @@ const S: Record<string, React.CSSProperties> = {
   columnNameInput: {
     flex: 1, background: 'var(--sf3)', border: '1px solid var(--bd)',
     borderRadius: 6, padding: '6px 10px', color: 'var(--tx)',
-    fontSize: 13, fontWeight: 500, fontFamily: 'inherit', outline: 'none',
+    fontSize: 'var(--fs-xs)', fontWeight: 500, fontFamily: 'inherit', outline: 'none',
     minWidth: 0,
   },
   statesPickerButton: {
     width: '100%', display: 'flex', alignItems: 'center', gap: 8,
     padding: '6px 10px', background: 'var(--sf3)', border: '1px solid var(--bd)',
     borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
-    color: 'var(--tx2)', fontSize: 12, fontWeight: 500,
+    color: 'var(--tx2)', fontSize: 'var(--fs-xs)', fontWeight: 500,
     minWidth: 0,
   },
   filterRow: {
@@ -1059,16 +1059,16 @@ const S: Record<string, React.CSSProperties> = {
   },
   permissionSelect: {
     background: 'var(--sf3)', border: '1px solid var(--bd)', borderRadius: 6,
-    padding: '4px 8px', color: 'var(--tx)', fontSize: 12, fontWeight: 600,
+    padding: '4px 8px', color: 'var(--tx)', fontSize: 'var(--fs-xs)', fontWeight: 600,
     fontFamily: 'inherit', cursor: 'pointer', outline: 'none',
   },
   filterRowLabel: {
-    fontSize: 12, fontWeight: 500, color: 'var(--tx2)', width: 120, flexShrink: 0,
+    fontSize: 'var(--fs-xs)', fontWeight: 500, color: 'var(--tx2)', width: 120, flexShrink: 0,
   },
   filterRowButton: {
     flex: 1, display: 'flex', alignItems: 'center', gap: 10,
     padding: '4px 8px', background: 'transparent', border: 'none',
-    cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
+    cursor: 'pointer', fontFamily: 'inherit', fontSize: 'var(--fs-xs)',
     minWidth: 0,
   },
   filterDropdown: {
@@ -1079,7 +1079,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   dateInput: {
     flex: 1, padding: '6px 10px', background: 'var(--sf3)', border: '1px solid var(--bd)',
-    borderRadius: 6, color: 'var(--tx)', fontSize: 13, fontFamily: 'inherit',
+    borderRadius: 6, color: 'var(--tx)', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
     outline: 'none', colorScheme: 'dark',
   },
   wipBox: {
@@ -1088,23 +1088,23 @@ const S: Record<string, React.CSSProperties> = {
   },
   wipInput: {
     width: 40, background: 'transparent', border: 'none', outline: 'none',
-    color: 'var(--tx)', fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+    color: 'var(--tx)', fontSize: 'var(--fs-xs)', fontWeight: 600, fontFamily: 'inherit',
     textAlign: 'center',
   },
   deleteButton: {
     display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px',
     background: 'transparent', border: 'none', color: 'var(--red)',
-    borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer',
+    borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 500, cursor: 'pointer',
     fontFamily: 'inherit',
   },
   cancelButton: {
     padding: '10px 18px', background: 'var(--sf2)', border: '1px solid var(--bd)',
-    color: 'var(--tx2)', borderRadius: 8, fontSize: 13, fontWeight: 600,
+    color: 'var(--tx2)', borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 600,
     cursor: 'pointer', fontFamily: 'inherit',
   },
   saveButton: {
     padding: '10px 18px', background: 'linear-gradient(135deg, var(--ac), var(--ac-strong))',
-    border: 'none', color: 'var(--ac-on)', borderRadius: 8, fontSize: 13, fontWeight: 600,
+    border: 'none', color: 'var(--ac-on)', borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 600,
     cursor: 'pointer', fontFamily: 'inherit',
     boxShadow: '0 4px 12px var(--ac-dim)',
   },

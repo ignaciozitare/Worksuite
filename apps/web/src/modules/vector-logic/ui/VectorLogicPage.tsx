@@ -190,13 +190,13 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
           <div style={{width:40,height:40,borderRadius:8,background:'var(--ac-dim)',
             display:'flex',alignItems:'center',justifyContent:'center',
             border:'1px solid var(--bd)'}}>
-            <span className="material-symbols-outlined" style={{fontSize:22,color:'var(--ac)'}}>hub</span>
+            <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-lg)',color:'var(--ac)'}}>hub</span>
           </div>
           <div>
-            <h1 style={{fontSize:16,fontWeight:700,color:'var(--tx)',letterSpacing:'-0.01em',lineHeight:1,margin:0,fontFamily:"'Space Grotesk',sans-serif"}}>
+            <h1 style={{fontSize: 'var(--fs-body)',fontWeight:700,color:'var(--tx)',letterSpacing:'-0.01em',lineHeight:1,margin:0,fontFamily:"'Space Grotesk',sans-serif"}}>
               {t('vectorLogic.title')}
             </h1>
-            <p style={{fontSize:10,color:'var(--tx)',opacity:.4,fontWeight:700,letterSpacing:'.1em',marginTop:4,textTransform:'uppercase'}}>
+            <p style={{fontSize: 'var(--fs-2xs)',color:'var(--tx)',opacity:.4,fontWeight:700,letterSpacing:'.1em',marginTop:4,textTransform:'uppercase'}}>
               {t('vectorLogic.moduleSubtitle')}
             </p>
           </div>
@@ -214,10 +214,10 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
             aria-expanded={skExpanded}
           >
             <span className={`material-symbols-outlined chev ${skExpanded ? 'open' : 'closed'}`}
-                  style={{fontSize:18,color:'var(--tx2)'}}>
+                  style={{fontSize: 'var(--fs-md)',color:'var(--tx2)'}}>
               keyboard_arrow_down
             </span>
-            <span className="material-symbols-outlined" style={{fontSize:20,color:'var(--ac)',opacity:.85}}>view_kanban</span>
+            <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-md)',color:'var(--ac)',opacity:.85}}>view_kanban</span>
             <span style={{flex:1}}>{t('vectorLogic.smartKanban')}</span>
           </button>
 
@@ -232,13 +232,13 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
                     className={`vl-board-item${active ? ' active' : ''}`}
                     onClick={() => handleSelectBoard(defaultBoard.id)}
                   >
-                    <span className="material-symbols-outlined" style={{fontSize:14}}>{defaultBoard.icon || 'bolt'}</span>
+                    <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-xs)'}}>{defaultBoard.icon || 'bolt'}</span>
                     <span style={{flex:1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
                       {defaultBoard.name}
                     </span>
                     <span
                       className="vl-board-edit material-symbols-outlined"
-                      style={{fontSize:14}}
+                      style={{fontSize: 'var(--fs-sm)'}}
                       onClick={(e) => handleEditBoard(e, defaultBoard.id)}
                       role="button"
                       aria-label={t('vectorLogic.editBoardTitle')}
@@ -258,7 +258,7 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
                     className={`vl-board-item${active ? ' active' : ''}`}
                     onClick={() => handleSelectBoard(b.id)}
                   >
-                    <span className="material-symbols-outlined" style={{fontSize:14}}>
+                    <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-xs)'}}>
                       {b.icon || 'view_kanban'}
                     </span>
                     <span style={{flex:1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
@@ -270,7 +270,7 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
                     {canEditBoard(b) && (
                       <span
                         className="vl-board-edit material-symbols-outlined"
-                        style={{fontSize:14}}
+                        style={{fontSize: 'var(--fs-sm)'}}
                         onClick={(e) => handleEditBoard(e, b.id)}
                         role="button"
                         aria-label={t('vectorLogic.editBoardTitle')}
@@ -287,7 +287,7 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
                 className="vl-add-board"
                 onClick={handleAddBoard}
               >
-                <span className="material-symbols-outlined" style={{fontSize:14}}>add</span>
+                <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-xs)'}}>add</span>
                 <span>{t('vectorLogic.addBoard')}</span>
               </button>
             </div>
@@ -303,16 +303,16 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
                 className={`vl-nav-item${active ? ' active' : ''}${disabled ? ' disabled' : ''}`}
                 onClick={() => !disabled && setView(item.id as Tab)}
               >
-                <span className="material-symbols-outlined" style={{fontSize:20}}>{item.icon}</span>
+                <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-md)'}}>{item.icon}</span>
                 <span style={{flex:1}}>{item.label}</span>
-                {disabled && <span style={{fontSize:8,padding:'2px 6px',borderRadius:4,background:'var(--sf3)',color:'var(--tx3)',fontWeight:700,letterSpacing:'.05em'}}>{t('vectorLogic.badgeSoon')}</span>}
+                {disabled && <span style={{fontSize: 'var(--fs-2xs)',padding:'2px 6px',borderRadius:4,background:'var(--sf3)',color:'var(--tx3)',fontWeight:700,letterSpacing:'.05em'}}>{t('vectorLogic.badgeSoon')}</span>}
               </button>
             );
           })}
         </nav>
 
         {/* Footer */}
-        <div style={{padding:'14px 12px',borderTop:'1px solid var(--bd)',fontSize:10,color:'var(--tx3)',letterSpacing:'.08em',fontFamily:"'Space Grotesk',monospace"}}>
+        <div style={{padding:'14px 12px',borderTop:'1px solid var(--bd)',fontSize: 'var(--fs-2xs)',color:'var(--tx3)',letterSpacing:'.08em',fontFamily:"'Space Grotesk',monospace"}}>
           v1.0 &middot; WorkSuite
         </div>
       </aside>

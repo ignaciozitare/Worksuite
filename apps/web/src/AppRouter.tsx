@@ -6,13 +6,13 @@ import WorkSuiteApp from './WorkSuiteApp';
 
 function ProtectedRoute({ children }: { children: JSX.Element }): JSX.Element {
   const { token, isLoading } = useAuth();
-  if (isLoading) return <div style={{ background: 'var(--bg, #0d0d10)', minHeight: '100vh' }} />;
+  if (isLoading) return <div style={{ background: 'var(--bg)', minHeight: '100vh' }} />;
   return token ? children : <Navigate to="/login" replace />;
 }
 
 function PublicRoute({ children }: { children: JSX.Element }): JSX.Element {
   const { token, isLoading } = useAuth();
-  if (isLoading) return <div style={{ background: 'var(--bg, #0d0d10)', minHeight: '100vh' }} />;
+  if (isLoading) return <div style={{ background: 'var(--bg)', minHeight: '100vh' }} />;
   return token ? <Navigate to="/jira-tracker/calendar" replace /> : children;
 }
 

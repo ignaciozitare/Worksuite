@@ -60,8 +60,8 @@ export function Metrics({ releases, tickets, statusCfg, classifiedSubs = [] }: M
 
   interface Stat { l: string; v: string | number; s: string; c: string; }
   const stats: Stat[] = [
-    { l: 'TOTAL RELEASES',  v: releases.length,    s: `${deployed.length} deployed · ${rollbacks.length} rollbacks`, c: 'var(--dp-tx,#e5e2e1)' },
-    { l: 'DURACIÓN MEDIA',  v: `${avgDur}d`,        s: 'inicio → fin',                                                 c: 'var(--dp-tx,#e5e2e1)' },
+    { l: 'TOTAL RELEASES',  v: releases.length,    s: `${deployed.length} deployed · ${rollbacks.length} rollbacks`, c: 'var(--dp-tx)' },
+    { l: 'DURACIÓN MEDIA',  v: `${avgDur}d`,        s: 'inicio → fin',                                                 c: 'var(--dp-tx)' },
     { l: 'TASA DE ÉXITO',   v: `${successRate}%`,   s: `${deployed.length}/${finished.length} finalizadas`,            c: '#34d399' },
     { l: 'TICKETS/RELEASE', v: tpr,                 s: 'media',                                                         c: '#adc6ff' },
     { l: 'REPOS ÚNICOS',    v: allRepos.length,     s: 'repositorios',                                                  c: '#a78bfa' },
@@ -73,35 +73,35 @@ export function Metrics({ releases, tickets, statusCfg, classifiedSubs = [] }: M
 
   return (
     <div>
-      <h2 style={{ fontSize: 14, color: 'var(--dp-tx,#e5e2e1)', fontWeight: 700, marginBottom: 20 }}>Métricas</h2>
+      <h2 style={{ fontSize: 'var(--fs-sm)', color: 'var(--dp-tx)', fontWeight: 700, marginBottom: 20 }}>Métricas</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10, marginBottom: 22 }}>
         {stats.map(s => (
-          <div key={s.l} style={{ background: 'var(--dp-sf,#1c1b1b)', border: '1px solid var(--dp-bd,#424754)', borderRadius: 8, padding: '13px 15px' }}>
+          <div key={s.l} style={{ background: 'var(--dp-sf)', border: '1px solid var(--dp-bd)', borderRadius: 8, padding: '13px 15px' }}>
             <SLabel style={{ marginBottom: 7 }}>{s.l}</SLabel>
-            <div style={{ fontSize: 26, fontWeight: 700, color: s.c, lineHeight: 1 }}>{s.v}</div>
-            <div style={{ fontSize: 9, color: 'var(--dp-tx3,#8c909f)', marginTop: 4 }}>{s.s}</div>
+            <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: s.c, lineHeight: 1 }}>{s.v}</div>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)', marginTop: 4 }}>{s.s}</div>
           </div>
         ))}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-        <div style={{ background: 'var(--dp-sf,#1c1b1b)', border: '1px solid var(--dp-bd,#424754)', borderRadius: 8, padding: '15px 17px' }}>
+        <div style={{ background: 'var(--dp-sf)', border: '1px solid var(--dp-bd)', borderRadius: 8, padding: '15px 17px' }}>
           <SLabel style={{ marginBottom: 12 }}>RELEASES POR MES</SLabel>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 72, borderBottom: '1px solid var(--dp-bd,#424754)', paddingBottom: 3 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 72, borderBottom: '1px solid var(--dp-bd)', paddingBottom: 3 }}>
             {months.map(([m, v]) => (
               <div key={m} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                 <div style={{ background: '#3b82f6', width: '100%', height: Math.round(v / maxM * 64), borderRadius: '2px 2px 0 0', minHeight: 4 }} />
-                <span style={{ fontSize: 7, color: 'var(--dp-tx3,#8c909f)' }}>{v}</span>
+                <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)' }}>{v}</span>
               </div>
             ))}
-            {months.length === 0 && <div style={{ fontSize: 10, color: 'var(--dp-tx3,#8c909f)', width: '100%', textAlign: 'center' }}>Sin datos</div>}
+            {months.length === 0 && <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)', width: '100%', textAlign: 'center' }}>Sin datos</div>}
           </div>
           {months.length > 0 && (
             <div style={{ display: 'flex', gap: 4, marginTop: 3 }}>
-              {months.map(([m]) => <div key={m} style={{ flex: 1, fontSize: 7, color: 'var(--dp-tx3,#8c909f)', textAlign: 'center' }}>{m.slice(5)}</div>)}
+              {months.map(([m]) => <div key={m} style={{ flex: 1, fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)', textAlign: 'center' }}>{m.slice(5)}</div>)}
             </div>
           )}
         </div>
-        <div style={{ background: 'var(--dp-sf,#1c1b1b)', border: '1px solid var(--dp-bd,#424754)', borderRadius: 8, padding: '15px 17px' }}>
+        <div style={{ background: 'var(--dp-sf)', border: '1px solid var(--dp-bd)', borderRadius: 8, padding: '15px 17px' }}>
           <SLabel style={{ marginBottom: 12 }}>TICKETS POR TIPO</SLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
             {typeEntries.map(([type, count]) => {
@@ -109,32 +109,32 @@ export function Metrics({ releases, tickets, statusCfg, classifiedSubs = [] }: M
               return (
                 <div key={type}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                    <span style={{ fontSize: 10, color: 'var(--dp-tx2,#c2c6d6)' }}>{type}</span>
-                    <span style={{ fontSize: 10, color, fontWeight: 700 }}>{count} ({Math.round(count / Math.max(allKeys.length, 1) * 100)}%)</span>
+                    <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx2)' }}>{type}</span>
+                    <span style={{ fontSize: 'var(--fs-2xs)', color, fontWeight: 700 }}>{count} ({Math.round(count / Math.max(allKeys.length, 1) * 100)}%)</span>
                   </div>
-                  <div style={{ height: 4, background: 'var(--dp-bd,#424754)', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ height: 4, background: 'var(--dp-bd)', borderRadius: 2, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${Math.round(count / Math.max(...Object.values(byType), 1) * 100)}%`, background: color, borderRadius: 2 }} />
                   </div>
                 </div>
               );
             })}
-            {typeEntries.length === 0 && <div style={{ fontSize: 10, color: 'var(--dp-tx3,#8c909f)' }}>Sin datos</div>}
+            {typeEntries.length === 0 && <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)' }}>Sin datos</div>}
           </div>
         </div>
       </div>
-      <div style={{ background: 'var(--dp-sf,#1c1b1b)', border: '1px solid var(--dp-bd,#424754)', borderRadius: 8, padding: '15px 17px' }}>
+      <div style={{ background: 'var(--dp-sf)', border: '1px solid var(--dp-bd)', borderRadius: 8, padding: '15px 17px' }}>
         <SLabel style={{ marginBottom: 12 }}>REPOS MÁS DESPLEGADOS</SLabel>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {repoEntries.map(([repo, count]) => (
             <div key={repo} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 9, color: 'var(--dp-tx2,#64748b)', width: 120, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{repo}</span>
-              <div style={{ flex: 1, height: 3, background: 'var(--dp-bd,#424754)', borderRadius: 2, overflow: 'hidden' }}>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx2)', width: 120, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{repo}</span>
+              <div style={{ flex: 1, height: 3, background: 'var(--dp-bd)', borderRadius: 2, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${Math.round(count / maxR * 100)}%`, background: '#3b82f6', borderRadius: 2 }} />
               </div>
-              <span style={{ fontSize: 9, color: 'var(--dp-tx3,#8c909f)', width: 14, textAlign: 'right' }}>{count}</span>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)', width: 14, textAlign: 'right' }}>{count}</span>
             </div>
           ))}
-          {repoEntries.length === 0 && <div style={{ fontSize: 10, color: 'var(--dp-tx3,#8c909f)' }}>Sin datos</div>}
+          {repoEntries.length === 0 && <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)' }}>Sin datos</div>}
         </div>
       </div>
     </div>

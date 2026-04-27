@@ -126,7 +126,7 @@ function HDReserveModal({
   /* ── Shared inline styles ────────────────────────────────────────────────── */
   const btnGhost: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-    padding: '9px 18px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+    padding: '9px 18px', borderRadius: 6, fontSize: 'var(--fs-xs)', fontWeight: 600,
     cursor: 'pointer', border: `1px solid ${C.border}50`,
     fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '.05em', textTransform: 'uppercase',
     background: `${C.sfHigh}80`, color: C.txMuted,
@@ -162,13 +162,13 @@ function HDReserveModal({
   };
 
   const infoBox: React.CSSProperties = {
-    fontSize: 12, padding: '10px 14px', borderRadius: T.radius.lg,
+    fontSize: 'var(--fs-xs)', padding: '10px 14px', borderRadius: T.radius.lg,
     background: C.sfHigh, border: `1px solid ${C.sfBright}22`,
   };
 
   const navArrow: React.CSSProperties = {
     background: `${C.sfHigh}80`, border: `1px solid ${C.border}50`,
-    borderRadius: 6, width: 28, height: 28, fontSize: 16,
+    borderRadius: 6, width: 28, height: 28, fontSize: 'var(--fs-body)',
     cursor: 'pointer', display: 'flex', alignItems: 'center',
     justifyContent: 'center', color: C.txMuted, fontFamily: 'inherit',
     backdropFilter: 'blur(8px)', transition: 'all .15s',
@@ -207,7 +207,7 @@ function HDReserveModal({
           background: C.bg,
         }}>
           <div style={{
-            fontSize: 15, fontWeight: 700, color: C.tx,
+            fontSize: 'var(--fs-sm)', fontWeight: 700, color: C.tx,
             letterSpacing: '-0.01em',
           }}>
             {title}
@@ -218,11 +218,11 @@ function HDReserveModal({
               background: `${C.sfHigh}80`, border: `1px solid ${C.border}40`,
               borderRadius: 6, width: 28, height: 28,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: C.txDim, fontSize: 14,
+              cursor: 'pointer', color: C.txDim, fontSize: 'var(--fs-sm)',
               transition: 'all .15s', backdropFilter: 'blur(8px)',
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>close</span>
           </button>
         </div>
 
@@ -243,11 +243,11 @@ function HDReserveModal({
             <div style={{
               fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700,
               color: isBlocked ? C.txDim : C.primary,
-              fontSize: 18, letterSpacing: '-0.01em',
+              fontSize: 'var(--fs-md)', letterSpacing: '-0.01em',
             }}>
               {seatId}
             </div>
-            <div style={{ fontSize: 12, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 'var(--fs-xs)', lineHeight: 1.5 }}>
               {isBlocked && <div style={{ color: C.txDim }}>{t("hotdesk.blockedSeat")}{blockedSeats[seatId] ? ` — ${blockedSeats[seatId]}` : ''}</div>}
               {isMyFixed && !isBlocked && <div style={{ color: C.amber }}>{t("hotdesk.myFixedSeat")}</div>}
               {isOtherFixed && !isBlocked && <div style={{ color: C.red }}>{t("hotdesk.fixed")}: {fixedOwner}</div>}
@@ -281,7 +281,7 @@ function HDReserveModal({
               textAlign: 'center',
             }}>
               <div style={{
-                fontSize: 11, color: C.txMuted, marginBottom: 12,
+                fontSize: 'var(--fs-2xs)', color: C.txMuted, marginBottom: 12,
                 fontFamily: "'IBM Plex Mono', monospace",
                 letterSpacing: '.08em', textTransform: 'uppercase',
               }}>
@@ -291,17 +291,17 @@ function HDReserveModal({
                 onClick={handleConfirmPresence}
                 style={{
                   ...btnGreen,
-                  width: '100%', padding: '14px 0', fontSize: 14,
+                  width: '100%', padding: '14px 0', fontSize: 'var(--fs-sm)',
                   fontWeight: 700, borderRadius: T.radius.lg,
                   letterSpacing: '.08em', justifyContent: 'center',
                 }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>login</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>login</span>
                 {t("hotdesk.checkIn")}
               </button>
               {config?.autoReleaseEnabled && (
                 <div style={{
-                  fontSize: 10, color: C.txDim, marginTop: 8,
+                  fontSize: 'var(--fs-2xs)', color: C.txDim, marginTop: 8,
                   fontFamily: "'IBM Plex Mono', monospace",
                 }}>
                   {t("hotdesk.autoReleaseWarning")}
@@ -312,7 +312,7 @@ function HDReserveModal({
 
           {/* My fixed seat — delegate or release */}
           {isMyFixed && !isMine && !isBlocked && (
-            <div style={{ fontSize: 12, color: C.txMuted, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 'var(--fs-xs)', color: C.txMuted, lineHeight: 1.6 }}>
               {t("hotdesk.delegateSeatDesc")}
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                 <button style={{ ...btnDanger, flex: 1, justifyContent: 'center' }} onClick={() => onRelease(seatId, date)}>
@@ -335,7 +335,7 @@ function HDReserveModal({
               border: `1px solid ${C.sfBright}22`,
             }}>
               <div style={{
-                fontSize: 12, fontWeight: 700, color: C.tx, marginBottom: 10,
+                fontSize: 'var(--fs-xs)', fontWeight: 700, color: C.tx, marginBottom: 10,
                 letterSpacing: '.02em',
               }}>
                 {t("hotdesk.delegateSeat")}
@@ -344,7 +344,7 @@ function HDReserveModal({
               {/* User picker */}
               <div style={{ marginBottom: 10 }}>
                 <label style={{
-                  fontSize: 9, color: C.txDim, display: 'block', marginBottom: 4,
+                  fontSize: 'var(--fs-2xs)', color: C.txDim, display: 'block', marginBottom: 4,
                   fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase',
                 }}>
                   {t("hotdesk.selectUser")}
@@ -353,7 +353,7 @@ function HDReserveModal({
                   value={delegateUser}
                   onChange={e => setDelegateUser(e.target.value)}
                   style={{
-                    width: '100%', padding: '8px 10px', borderRadius: 6, fontSize: 12,
+                    width: '100%', padding: '8px 10px', borderRadius: 6, fontSize: 'var(--fs-xs)',
                     background: C.bg, border: `1px solid ${C.sfHigh}`,
                     color: C.tx, fontFamily: "'IBM Plex Mono', monospace",
                     outline: 'none',
@@ -369,7 +369,7 @@ function HDReserveModal({
               {/* Date picker */}
               <div style={{ marginBottom: 10 }}>
                 <label style={{
-                  fontSize: 9, color: C.txDim, display: 'block', marginBottom: 4,
+                  fontSize: 'var(--fs-2xs)', color: C.txDim, display: 'block', marginBottom: 4,
                   fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase',
                 }}>
                   {t("hotdesk.selectDatesLabel")}
@@ -377,7 +377,7 @@ function HDReserveModal({
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                   <button style={navArrow} onClick={prev}>&#8249;</button>
                   <span style={{
-                    fontSize: 12, fontWeight: 600, color: C.primary,
+                    fontSize: 'var(--fs-xs)', fontWeight: 600, color: C.primary,
                     fontFamily: "'IBM Plex Mono', monospace",
                   }}>
                     {fmtMonthYear(yr, mo, lang)}
@@ -389,7 +389,7 @@ function HDReserveModal({
 
               {delegateDates.length > 0 && (
                 <div style={{
-                  fontSize: 11, color: C.purple, marginBottom: 10,
+                  fontSize: 'var(--fs-2xs)', color: C.purple, marginBottom: 10,
                   fontFamily: "'IBM Plex Mono', monospace",
                 }}>
                   {t("hotdesk.selectDates")}: {delegateDates.sort().join(", ")}
@@ -422,7 +422,7 @@ function HDReserveModal({
           {/* My reservation — release it */}
           {isMine && !isMyFixed && !isPending && (
             <div>
-              <div style={{ fontSize: 12, color: C.txMuted, marginBottom: 10 }}>
+              <div style={{ fontSize: 'var(--fs-xs)', color: C.txMuted, marginBottom: 10 }}>
                 {t("hotdesk.releaseQuestion")}
               </div>
               <button
@@ -436,7 +436,7 @@ function HDReserveModal({
 
           {/* My fixed seat that I have reserved — release */}
           {isMyFixed && isMine && !isPending && (
-            <div style={{ fontSize: 12, color: C.txMuted, marginBottom: 10 }}>
+            <div style={{ fontSize: 'var(--fs-xs)', color: C.txMuted, marginBottom: 10 }}>
               {t("hotdesk.releaseQuestion")}
               <button
                 style={{ ...btnDanger, width: '100%', marginTop: 10, justifyContent: 'center' }}
@@ -455,12 +455,12 @@ function HDReserveModal({
               textAlign: 'center',
             }}>
               <div style={{
-                fontSize: 13, fontWeight: 700, color: C.amber, marginBottom: 4,
+                fontSize: 'var(--fs-xs)', fontWeight: 700, color: C.amber, marginBottom: 4,
                 fontFamily: "'IBM Plex Mono', monospace",
               }}>
                 {t("hotdesk.pendingConfirmation")}
               </div>
-              <div style={{ fontSize: 10, color: C.txDim }}>
+              <div style={{ fontSize: 'var(--fs-2xs)', color: C.txDim }}>
                 {t("hotdesk.autoReleaseWarning")}
               </div>
             </div>
@@ -482,7 +482,7 @@ function HDReserveModal({
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <button style={navArrow} onClick={prev}>&#8249;</button>
                     <span style={{
-                      fontSize: 12, fontWeight: 600, color: C.primary,
+                      fontSize: 'var(--fs-xs)', fontWeight: 600, color: C.primary,
                       fontFamily: "'IBM Plex Mono', monospace",
                     }}>
                       {fmtMonthYear(yr, mo, lang)}
@@ -492,7 +492,7 @@ function HDReserveModal({
                   <MiniCalendar year={yr} month={mo} lang={lang} selectedDates={sel} onToggleDate={toggle} occupiedDates={blockedDates} />
                   {sel.length > 0 && (
                     <div style={{
-                      fontSize: 11, color: C.green, padding: '8px 12px',
+                      fontSize: 'var(--fs-2xs)', color: C.green, padding: '8px 12px',
                       background: C.greenDim, borderRadius: T.radius.lg,
                       border: `1px solid ${C.green}25`,
                       fontFamily: "'IBM Plex Mono', monospace",

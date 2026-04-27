@@ -144,18 +144,18 @@ export function WorldClock({ currentUser }: Props) {
           display: 'inline-flex', alignItems: 'center', gap: 6,
           padding: '5px 10px', borderRadius: 8, fontFamily: 'inherit',
           background: 'var(--sf2)', border: '1px solid var(--bd)',
-          color: 'var(--tx)', cursor: 'pointer', fontSize: 12,
+          color: 'var(--tx)', cursor: 'pointer', fontSize: 'var(--fs-xs)',
         }}
         title={t('vectorLogic.worldClock')}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--ac)' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--ac)' }}>
           schedule
         </span>
         <span style={{ fontWeight: 600, fontFamily: "'Space Grotesk',sans-serif" }}>
           {formatTime(homeTimezone)}
         </span>
-        <span style={{ fontSize: 10, color: 'var(--tx3)' }}>{homeCity}</span>
-        <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>
+        <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>{homeCity}</span>
+        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>
           public
         </span>
       </button>
@@ -168,7 +168,7 @@ export function WorldClock({ currentUser }: Props) {
             borderRadius: 10, padding: 10, boxShadow: '0 8px 24px rgba(0,0,0,.4)',
           }}
         >
-          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--tx3)', letterSpacing: '.1em', marginBottom: 8 }}>
+          <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', letterSpacing: '.1em', marginBottom: 8 }}>
             {t('vectorLogic.worldClockCities')}
           </div>
 
@@ -178,18 +178,18 @@ export function WorldClock({ currentUser }: Props) {
             padding: '8px 10px', borderRadius: 8, background: 'var(--ac-dim)',
             marginBottom: 6,
           }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--ac)' }}>home</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--ac)' }}>home</span>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 12, color: 'var(--tx)', fontWeight: 600 }}>{homeCity}</span>
-              <span style={{ fontSize: 9, color: 'var(--tx3)' }}>{homeTimezone}</span>
+              <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx)', fontWeight: 600 }}>{homeCity}</span>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>{homeTimezone}</span>
             </div>
-            <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Grotesk',sans-serif", color: 'var(--tx)' }}>
+            <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, fontFamily: "'Space Grotesk',sans-serif", color: 'var(--tx)' }}>
               {formatTime(homeTimezone)}
             </span>
           </div>
 
           {cities.length === 0 ? (
-            <div style={{ fontSize: 11, color: 'var(--tx3)', textAlign: 'center', padding: '12px 0', opacity: .7 }}>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', textAlign: 'center', padding: '12px 0', opacity: .7 }}>
               {t('vectorLogic.noWorldCities')}
             </div>
           ) : (
@@ -202,17 +202,17 @@ export function WorldClock({ currentUser }: Props) {
                     padding: '6px 8px', borderRadius: 6, background: 'var(--sf2)',
                   }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: 12, color: 'var(--tx)', fontWeight: 500 }}>{c.cityName}</span>
-                      <span style={{ fontSize: 9, color: 'var(--tx3)' }}>{c.timezone}</span>
+                      <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx)', fontWeight: 500 }}>{c.cityName}</span>
+                      <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>{c.timezone}</span>
                     </div>
                     <span style={{
-                      fontSize: 9, padding: '2px 6px', borderRadius: 3,
+                      fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3,
                       background: 'var(--sf3)', color: 'var(--tx2)',
                       fontWeight: 700, letterSpacing: '.02em', minWidth: 36, textAlign: 'center',
                     }}>
                       {formatDiff(diff)}
                     </span>
-                    <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'Space Grotesk',sans-serif", color: 'var(--tx)', minWidth: 44, textAlign: 'right' }}>
+                    <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, fontFamily: "'Space Grotesk',sans-serif", color: 'var(--tx)', minWidth: 44, textAlign: 'right' }}>
                       {formatTime(c.timezone)}
                     </span>
                     <button
@@ -223,7 +223,7 @@ export function WorldClock({ currentUser }: Props) {
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', padding: 0, display: 'flex' }}
                       title={t('common.delete')}
                     >
-                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>close</span>
                     </button>
                   </div>
                 );
@@ -259,7 +259,7 @@ export function WorldClock({ currentUser }: Props) {
                   flex: 1, padding: '6px 10px', borderRadius: 6,
                   background: isValidTz(newTz.trim()) ? 'var(--ac)' : 'var(--sf3)',
                   color: isValidTz(newTz.trim()) ? 'var(--ac-on)' : 'var(--tx3)',
-                  border: 'none', fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
+                  border: 'none', fontFamily: 'inherit', fontSize: 'var(--fs-2xs)', fontWeight: 600,
                   cursor: isValidTz(newTz.trim()) ? 'pointer' : 'not-allowed',
                 }}>
                   {t('common.create')}
@@ -267,7 +267,7 @@ export function WorldClock({ currentUser }: Props) {
                 <button onClick={() => { setAdding(false); setNewTz(''); setNewCity(''); }} style={{
                   padding: '6px 10px', borderRadius: 6, background: 'transparent',
                   color: 'var(--tx2)', border: '1px solid var(--bd)',
-                  fontFamily: 'inherit', fontSize: 11, cursor: 'pointer',
+                  fontFamily: 'inherit', fontSize: 'var(--fs-2xs)', cursor: 'pointer',
                 }}>
                   {t('common.cancel')}
                 </button>
@@ -280,10 +280,10 @@ export function WorldClock({ currentUser }: Props) {
                 marginTop: 8, width: '100%', display: 'inline-flex', alignItems: 'center',
                 justifyContent: 'center', gap: 6, padding: '6px 10px', borderRadius: 6,
                 background: 'var(--ac-dim)', color: 'var(--ac)', border: 'none',
-                fontFamily: 'inherit', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: 'var(--fs-2xs)', fontWeight: 600, cursor: 'pointer',
               }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>add</span>
               {t('vectorLogic.addCity')}
             </button>
           )}
@@ -294,7 +294,7 @@ export function WorldClock({ currentUser }: Props) {
 }
 
 const addInp = {
-  width: '100%', padding: '6px 10px', fontSize: 11, fontFamily: 'inherit',
+  width: '100%', padding: '6px 10px', fontSize: 'var(--fs-2xs)', fontFamily: 'inherit',
   background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6,
   color: 'var(--tx)', outline: 'none',
 };

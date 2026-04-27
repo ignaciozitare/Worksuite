@@ -39,7 +39,7 @@ export function UserPicker({ users, value, onChange, placeholder }: Props) {
         type="button"
         onClick={() => setOpen(v => !v)}
         style={{
-          width: '100%', padding: '7px 10px', fontSize: 13, fontFamily: 'inherit',
+          width: '100%', padding: '7px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
           background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 8,
           color: selected ? 'var(--tx)' : 'var(--tx3)',
           cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left',
@@ -57,7 +57,7 @@ export function UserPicker({ users, value, onChange, placeholder }: Props) {
         ) : (
           <span style={{ flex: 1 }}>{effectivePlaceholder}</span>
         )}
-        <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--tx3)' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)', color: 'var(--tx3)' }}>
           {open ? 'expand_less' : 'expand_more'}
         </span>
       </button>
@@ -76,7 +76,7 @@ export function UserPicker({ users, value, onChange, placeholder }: Props) {
               <input value={search} onChange={e => setSearch(e.target.value)} autoFocus
                 placeholder={t('common.search')}
                 style={{
-                  width: '100%', padding: '6px 10px', fontSize: 12, fontFamily: 'inherit',
+                  width: '100%', padding: '6px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
                   background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6,
                   color: 'var(--tx)', outline: 'none',
                 }} />
@@ -89,7 +89,7 @@ export function UserPicker({ users, value, onChange, placeholder }: Props) {
                   style={{ ...rowStyle, color: 'var(--tx3)' }}
                   onMouseEnter={e => e.currentTarget.style.background = 'var(--sf2)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>close</span>
                   <span>{t('common.clear')}</span>
                 </button>
               )}
@@ -109,21 +109,21 @@ export function UserPicker({ users, value, onChange, placeholder }: Props) {
                     onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}>
                     <Avatar initials={(u.name ?? u.email).slice(0,2)} color="linear-gradient(135deg, var(--ac), var(--ac2))" size={20} name={u.name} />
                     <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {u.name ?? u.email}
                       </div>
                       {u.name && (
-                        <div style={{ fontSize: 10, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {u.email}
                         </div>
                       )}
                     </div>
-                    {isSelected && <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check</span>}
+                    {isSelected && <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>check</span>}
                   </button>
                 );
               })}
               {filtered.length === 0 && (
-                <div style={{ fontSize: 11, color: 'var(--tx3)', textAlign: 'center', padding: '16px 0' }}>
+                <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', textAlign: 'center', padding: '16px 0' }}>
                   {t('common.noResults')}
                 </div>
               )}
@@ -139,5 +139,5 @@ export function UserPicker({ users, value, onChange, placeholder }: Props) {
 const rowStyle = {
   display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
   borderRadius: 6, cursor: 'pointer', border: 'none', width: '100%',
-  fontFamily: 'inherit', fontSize: 12, transition: 'background .12s',
+  fontFamily: 'inherit', fontSize: 'var(--fs-xs)', transition: 'background .12s',
 };

@@ -50,13 +50,13 @@ function SettingsTab() {
     setSaving(false);
   };
 
-  if (!config) return <div style={{ padding: 24, color: 'var(--tx3)', fontSize: 13 }}>{t('admin.hotdeskLoading')}</div>;
+  if (!config) return <div style={{ padding: 24, color: 'var(--tx3)', fontSize: 'var(--fs-xs)' }}>{t('admin.hotdeskLoading')}</div>;
 
   const ROLES = ['admin', 'user', 'manager', 'viewer'];
 
   return (
     <div style={{ maxWidth: 640, display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {msg && <div style={{ padding: '8px 14px', borderRadius: 6, background: 'rgba(34,197,94,.08)', border: '1px solid rgba(34,197,94,.2)', color: 'var(--green)', fontSize: 12, fontWeight: 500 }}>{msg}</div>}
+      {msg && <div style={{ padding: '8px 14px', borderRadius: 6, background: 'rgba(34,197,94,.08)', border: '1px solid rgba(34,197,94,.2)', color: 'var(--green)', fontSize: 'var(--fs-xs)', fontWeight: 500 }}>{msg}</div>}
 
       {/* Require booking confirmation */}
       <div className="a-card" style={{ marginBottom: 0 }}>
@@ -66,7 +66,7 @@ function SettingsTab() {
             <input type="checkbox" checked={config.confirmationEnabled}
               onChange={e => save({ confirmationEnabled: e.target.checked })}
               style={{ accentColor: 'var(--ac)' }} />
-            <span style={{ fontSize: 13, color: 'var(--tx)' }}>{t('admin.hotdeskRequireConfirmation')}</span>
+            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx)' }}>{t('admin.hotdeskRequireConfirmation')}</span>
           </label>
         </div>
       </div>
@@ -78,8 +78,8 @@ function SettingsTab() {
           <input className="a-inp" type="number" min={5} max={240} step={5}
             value={config.confirmationDeadlineMinutes}
             onChange={e => save({ confirmationDeadlineMinutes: Math.max(5, +e.target.value) })}
-            style={{ width: 80, fontSize: 13, padding: '6px 10px' }} />
-          <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{t('admin.hotdeskMinutes')}</span>
+            style={{ width: 80, fontSize: 'var(--fs-xs)', padding: '6px 10px' }} />
+          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)' }}>{t('admin.hotdeskMinutes')}</span>
         </div>
       </div>
 
@@ -89,7 +89,7 @@ function SettingsTab() {
         <input className="a-inp" type="time"
           value={config.businessDayStart}
           onChange={e => save({ businessDayStart: e.target.value })}
-          style={{ width: 120, fontSize: 13, padding: '6px 10px' }} />
+          style={{ width: 120, fontSize: 'var(--fs-xs)', padding: '6px 10px' }} />
       </div>
 
       {/* Auto-release */}
@@ -99,27 +99,27 @@ function SettingsTab() {
           <input type="checkbox" checked={config.autoReleaseEnabled}
             onChange={e => save({ autoReleaseEnabled: e.target.checked })}
             style={{ accentColor: 'var(--ac)' }} />
-          <span style={{ fontSize: 13, color: 'var(--tx)' }}>{t('admin.hotdeskAutoReleaseDesc')}</span>
+          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx)' }}>{t('admin.hotdeskAutoReleaseDesc')}</span>
         </label>
       </div>
 
       {/* Max booking days ahead */}
       <div className="a-card" style={{ marginBottom: 0 }}>
         <div className="a-ct">{t('admin.hotdeskMaxBookingDays')}</div>
-        <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 8 }}>{t('admin.hotdeskMaxBookingDaysDesc')}</div>
+        <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginBottom: 8 }}>{t('admin.hotdeskMaxBookingDaysDesc')}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <input className="a-inp" type="number" min={1} max={90} step={1}
             value={config.maxBookingDays}
             onChange={e => save({ maxBookingDays: Math.max(1, Math.min(90, +e.target.value)) })}
-            style={{ width: 80, fontSize: 13, padding: '6px 10px' }} />
-          <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{t('admin.hotdeskDays')}</span>
+            style={{ width: 80, fontSize: 'var(--fs-xs)', padding: '6px 10px' }} />
+          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)' }}>{t('admin.hotdeskDays')}</span>
         </div>
       </div>
 
       {/* Exempt roles */}
       <div className="a-card" style={{ marginBottom: 0 }}>
         <div className="a-ct">{t('admin.hotdeskExemptRoles')}</div>
-        <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 8 }}>{t('admin.hotdeskExemptRolesDesc')}</div>
+        <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginBottom: 8 }}>{t('admin.hotdeskExemptRolesDesc')}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {ROLES.map(role => {
             const active = (config.exemptRoles || []).includes(role);
@@ -132,7 +132,7 @@ function SettingsTab() {
                   save({ exemptRoles: next });
                 }}
                 style={{
-                  padding: '5px 12px', borderRadius: 16, fontSize: 12, fontWeight: active ? 600 : 400,
+                  padding: '5px 12px', borderRadius: 16, fontSize: 'var(--fs-xs)', fontWeight: active ? 600 : 400,
                   border: `1px solid ${active ? 'var(--ac)' : 'var(--bd)'}`,
                   background: active ? 'rgba(77,142,255,.12)' : 'var(--sf2)',
                   color: active ? 'var(--ac2)' : 'var(--tx2)',
@@ -198,7 +198,7 @@ function BlockedSeatsTab() {
 
   return (
     <div style={{ maxWidth: 640, display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {msg && <div style={{ padding: '8px 14px', borderRadius: 6, background: 'rgba(34,197,94,.08)', border: '1px solid rgba(34,197,94,.2)', color: 'var(--green)', fontSize: 12, fontWeight: 500 }}>{msg}</div>}
+      {msg && <div style={{ padding: '8px 14px', borderRadius: 6, background: 'rgba(34,197,94,.08)', border: '1px solid rgba(34,197,94,.2)', color: 'var(--green)', fontSize: 'var(--fs-xs)', fontWeight: 500 }}>{msg}</div>}
 
       {/* Add blocked seat */}
       <div className="a-card" style={{ marginBottom: 0 }}>
@@ -206,12 +206,12 @@ function BlockedSeatsTab() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <input className="a-inp" placeholder={t('admin.hotdeskSeatIdPlaceholder')} value={newSeatId}
             onChange={e => setNewSeatId(e.target.value)}
-            style={{ fontSize: 13, padding: '6px 10px' }} />
+            style={{ fontSize: 'var(--fs-xs)', padding: '6px 10px' }} />
           <input className="a-inp" placeholder={t('admin.hotdeskBlockReasonPlaceholder')} value={newReason}
             onChange={e => setNewReason(e.target.value)}
-            style={{ fontSize: 13, padding: '6px 10px' }} />
+            style={{ fontSize: 'var(--fs-xs)', padding: '6px 10px' }} />
           <button className="b-sub" onClick={handleBlock} disabled={!newSeatId.trim()}
-            style={{ alignSelf: 'flex-start', padding: '6px 16px', fontSize: 12 }}>
+            style={{ alignSelf: 'flex-start', padding: '6px 16px', fontSize: 'var(--fs-xs)' }}>
             {t('admin.hotdeskBlockBtn')}
           </button>
         </div>
@@ -221,9 +221,9 @@ function BlockedSeatsTab() {
       <div className="a-card" style={{ marginBottom: 0 }}>
         <div className="a-ct">{t('admin.hotdeskBlockedList')}</div>
         {loading ? (
-          <div style={{ fontSize: 12, color: 'var(--tx3)', padding: 8 }}>{t('admin.hotdeskLoading')}</div>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)', padding: 8 }}>{t('admin.hotdeskLoading')}</div>
         ) : blocked.length === 0 ? (
-          <div style={{ fontSize: 12, color: 'var(--tx3)', padding: 8 }}>{t('admin.hotdeskNoBlockedSeats')}</div>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)', padding: 8 }}>{t('admin.hotdeskNoBlockedSeats')}</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {blocked.map(seat => (
@@ -232,14 +232,14 @@ function BlockedSeatsTab() {
                 padding: '8px 12px', background: 'rgba(239,68,68,.06)',
                 border: '1px solid rgba(239,68,68,.15)', borderRadius: 6,
               }}>
-                <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 12, color: 'var(--red)', minWidth: 50 }}>
+                <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: 'var(--fs-xs)', color: 'var(--red)', minWidth: 50 }}>
                   {seat.seat_id}
                 </span>
-                <span style={{ flex: 1, fontSize: 12, color: 'var(--tx2)' }}>
+                <span style={{ flex: 1, fontSize: 'var(--fs-xs)', color: 'var(--tx2)' }}>
                   {seat.blocked_reason || <span style={{ color: 'var(--tx3)', fontStyle: 'italic' }}>{t('admin.hotdeskNoReason')}</span>}
                 </span>
                 <button onClick={() => handleUnblock(seat.seat_id)}
-                  style={{ background: 'none', border: '1px solid rgba(239,68,68,.2)', borderRadius: 4, color: 'var(--red)', cursor: 'pointer', fontSize: 11, padding: '3px 10px', fontFamily: 'inherit' }}>
+                  style={{ background: 'none', border: '1px solid rgba(239,68,68,.2)', borderRadius: 4, color: 'var(--red)', cursor: 'pointer', fontSize: 'var(--fs-2xs)', padding: '3px 10px', fontFamily: 'inherit' }}>
                   {t('admin.hotdeskUnblock')}
                 </button>
               </div>
@@ -371,22 +371,22 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, height: '100%', overflow: 'hidden' }}>
-      {msg && <div style={{ padding: '8px 14px', borderRadius: 6, background: 'rgba(34,197,94,.08)', border: '1px solid rgba(34,197,94,.2)', color: 'var(--green)', fontSize: 12, fontWeight: 500, flexShrink: 0 }}>{msg}</div>}
+      {msg && <div style={{ padding: '8px 14px', borderRadius: 6, background: 'rgba(34,197,94,.08)', border: '1px solid rgba(34,197,94,.2)', color: 'var(--green)', fontSize: 'var(--fs-xs)', fontWeight: 500, flexShrink: 0 }}>{msg}</div>}
 
       {/* Building + Floor selectors */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
         {buildings.length > 0 ? <>
-          <select className="a-inp" style={{ width: 'auto', fontSize: 12, padding: '5px 10px' }}
+          <select className="a-inp" style={{ width: 'auto', fontSize: 'var(--fs-xs)', padding: '5px 10px' }}
             value={selBldg?.id || ''} onChange={e => { const b = buildings.find(x => x.id === e.target.value); setSelBldg(b || null); }}>
             {buildings.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
-          <select className="a-inp" style={{ width: 'auto', fontSize: 12, padding: '5px 10px' }}
+          <select className="a-inp" style={{ width: 'auto', fontSize: 'var(--fs-xs)', padding: '5px 10px' }}
             value={selFloor?.id || ''} onChange={e => { const fl = floors.find(x => x.id === e.target.value); setSelFloor(fl || null); setSelSeat(null); }}>
             {floors.map(fl => <option key={fl.id} value={fl.id}>{fl.floor_name}</option>)}
           </select>
-          <span style={{ fontSize: 11, color: 'var(--tx3)' }}>{seats.length} {t('hotdesk.seatsTotal')}</span>
+          <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>{seats.length} {t('hotdesk.seatsTotal')}</span>
         </> : (
-          <div style={{ fontSize: 12, color: 'var(--tx3)' }}>{t('admin.hotdeskNoBuildings')}</div>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)' }}>{t('admin.hotdeskNoBuildings')}</div>
         )}
       </div>
 
@@ -402,7 +402,7 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
               onSeat={sid => { setSelSeat(sid); setSelDates([]); setSelUser(''); setAsFixed(false); setAsBlocked(false); setBlockReason(''); }}
               highlightSeat={selSeat}
               theme={theme}
-            /> : <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx3)', fontSize: 12 }}>{t('hotdesk.selectBuildingFloor')}</div>}
+            /> : <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx3)', fontSize: 'var(--fs-xs)' }}>{t('hotdesk.selectBuildingFloor')}</div>}
           </div>
         </div>
 
@@ -410,7 +410,7 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
         <div style={{ flex: '0 0 40%', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12, overflow: 'auto' }}>
           {/* Seat grid */}
           <div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 8 }}>{t('admin.selectSeat').toUpperCase()}</div>
+            <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 8 }}>{t('admin.selectSeat').toUpperCase()}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
               {seats.map(seat => {
                 const st = ReservationService.statusOf(seat.id, TODAY, hd.fixed, hd.reservations);
@@ -425,11 +425,11 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
                       borderRadius: 'var(--r)',
                       background: isSel ? 'var(--glow)' : isBl ? 'rgba(245,158,11,.08)' : st === SeatStatus.FIXED ? 'rgba(239,68,68,.06)' : st === SeatStatus.OCCUPIED ? 'rgba(59,130,246,.06)' : 'var(--sf2)',
                       color: isSel ? 'var(--ac2)' : isBl ? 'var(--amber)' : st === SeatStatus.FIXED ? 'var(--red)' : st === SeatStatus.OCCUPIED ? 'var(--ac2)' : 'var(--tx2)',
-                      cursor: 'pointer', fontSize: 9, fontWeight: 600, textAlign: 'center', lineHeight: 1.2, padding: '2px 3px', transition: 'var(--ease)'
+                      cursor: 'pointer', fontSize: 'var(--fs-2xs)', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, padding: '2px 3px', transition: 'var(--ease)'
                     }}>
                     {seat.id}
-                    {isBl && <div style={{ fontSize: 7, lineHeight: 1, marginTop: 1, color: 'var(--amber)' }}>blocked</div>}
-                    {!isBl && hd.fixed[seat.id] && <div style={{ fontSize: 7, lineHeight: 1, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hd.fixed[seat.id].split(' ')[0].slice(0, 5)}</div>}
+                    {isBl && <div style={{ fontSize: 'var(--fs-2xs)', lineHeight: 1, marginTop: 1, color: 'var(--amber)' }}>blocked</div>}
+                    {!isBl && hd.fixed[seat.id] && <div style={{ fontSize: 'var(--fs-2xs)', lineHeight: 1, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hd.fixed[seat.id].split(' ')[0].slice(0, 5)}</div>}
                   </button>
                 );
               })}
@@ -439,13 +439,13 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
           {/* Fixed seats summary */}
           {Object.keys(hd.fixed).length > 0 && (
             <div>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 6 }}>{t('hotdesk.fixed')}</div>
+              <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 6 }}>{t('hotdesk.fixed')}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                 {Object.entries(hd.fixed).map(([sid, uname]) => (
-                  <div key={sid} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', background: 'rgba(239,68,68,.06)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 'var(--r)', fontSize: 11 }}>
-                    <span style={{ fontFamily: 'var(--mono)', color: 'var(--red)', fontWeight: 700, fontSize: 11 }}>{sid}</span>
+                  <div key={sid} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', background: 'rgba(239,68,68,.06)', border: '1px solid rgba(239,68,68,.2)', borderRadius: 'var(--r)', fontSize: 'var(--fs-2xs)' }}>
+                    <span style={{ fontFamily: 'var(--mono)', color: 'var(--red)', fontWeight: 700, fontSize: 'var(--fs-2xs)' }}>{sid}</span>
                     <span style={{ color: 'var(--tx2)' }}>{uname}</span>
-                    <button onClick={() => removeFixed(sid)} style={{ background: 'none', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 12, padding: '0 2px', lineHeight: 1 }}>x</button>
+                    <button onClick={() => removeFixed(sid)} style={{ background: 'none', border: 'none', color: 'var(--tx3)', cursor: 'pointer', fontSize: 'var(--fs-xs)', padding: '0 2px', lineHeight: 1 }}>x</button>
                   </div>
                 ))}
               </div>
@@ -455,20 +455,20 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
           {/* Blocked seats summary */}
           {blocked.length > 0 && (
             <div>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 6 }}>{t('admin.hotdeskBlockedList')}</div>
+              <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 6 }}>{t('admin.hotdeskBlockedList')}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {blocked.map(seat => (
                   <div key={seat.seat_id} style={{
                     display: 'flex', alignItems: 'center', gap: 8,
                     padding: '6px 10px', background: 'rgba(245,158,11,.06)',
-                    border: '1px solid rgba(245,158,11,.15)', borderRadius: 'var(--r)', fontSize: 11,
+                    border: '1px solid rgba(245,158,11,.15)', borderRadius: 'var(--r)', fontSize: 'var(--fs-2xs)',
                   }}>
                     <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--amber)', minWidth: 40 }}>{seat.seat_id}</span>
-                    <span style={{ flex: 1, fontSize: 11, color: 'var(--tx2)' }}>
+                    <span style={{ flex: 1, fontSize: 'var(--fs-2xs)', color: 'var(--tx2)' }}>
                       {seat.blocked_reason || <span style={{ color: 'var(--tx3)', fontStyle: 'italic' }}>{t('admin.hotdeskNoReason')}</span>}
                     </span>
                     <button onClick={() => handleUnblock(seat.seat_id)}
-                      style={{ background: 'none', border: '1px solid rgba(245,158,11,.2)', borderRadius: 4, color: 'var(--amber)', cursor: 'pointer', fontSize: 10, padding: '2px 8px', fontFamily: 'inherit' }}>
+                      style={{ background: 'none', border: '1px solid rgba(245,158,11,.2)', borderRadius: 4, color: 'var(--amber)', cursor: 'pointer', fontSize: 'var(--fs-2xs)', padding: '2px 8px', fontFamily: 'inherit' }}>
                       {t('admin.hotdeskUnblock')}
                     </button>
                   </div>
@@ -481,7 +481,7 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
           {selSeat ? (
             <div className="a-card" style={{ marginBottom: 0, flexShrink: 0 }}>
               <div className="a-ct">{t('admin.assignSeat')} — <span style={{ color: 'var(--ac2)', fontFamily: 'var(--mono)' }}>{selSeat}</span>
-                <span style={{ fontSize: 10, fontWeight: 400, color: 'var(--tx3)', marginLeft: 8 }}>
+                <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 400, color: 'var(--tx3)', marginLeft: 8 }}>
                   {isBlocked(selSeat) ? t('admin.hotdeskBlockedTab') : hd.fixed[selSeat] ? t('hotdesk.fixed') + ': ' + hd.fixed[selSeat] : hd.reservations.find(r => r.seatId === selSeat && r.date === TODAY)?.userName || t('hotdesk.free')}
                 </span>
               </div>
@@ -489,7 +489,7 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
                 {/* Mode selector: Assign / Block */}
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button onClick={() => { setAsBlocked(false); }} style={{
-                    flex: 1, padding: '7px 0', borderRadius: 'var(--r)', fontSize: 12, fontWeight: !asBlocked ? 600 : 400,
+                    flex: 1, padding: '7px 0', borderRadius: 'var(--r)', fontSize: 'var(--fs-xs)', fontWeight: !asBlocked ? 600 : 400,
                     border: `1px solid ${!asBlocked ? 'var(--ac)' : 'var(--bd)'}`,
                     background: !asBlocked ? 'var(--glow)' : 'var(--sf2)',
                     color: !asBlocked ? 'var(--ac2)' : 'var(--tx3)',
@@ -498,7 +498,7 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
                     {t('admin.confirmAssign')}
                   </button>
                   <button onClick={() => { setAsBlocked(true); setAsFixed(false); setSelUser(''); }} style={{
-                    flex: 1, padding: '7px 0', borderRadius: 'var(--r)', fontSize: 12, fontWeight: asBlocked ? 600 : 400,
+                    flex: 1, padding: '7px 0', borderRadius: 'var(--r)', fontSize: 'var(--fs-xs)', fontWeight: asBlocked ? 600 : 400,
                     border: `1px solid ${asBlocked ? 'var(--amber)' : 'var(--bd)'}`,
                     background: asBlocked ? 'rgba(245,158,11,.1)' : 'var(--sf2)',
                     color: asBlocked ? 'var(--amber)' : 'var(--tx3)',
@@ -512,7 +512,7 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
                   <>
                     <input className="a-inp" placeholder={t('admin.hotdeskBlockReasonPlaceholder')} value={blockReason}
                       onChange={e => setBlockReason(e.target.value)}
-                      style={{ fontSize: 13, padding: '6px 10px' }} />
+                      style={{ fontSize: 'var(--fs-xs)', padding: '6px 10px' }} />
                   </>
                 ) : (
                   <>
@@ -522,23 +522,23 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
                     </select>
                     <div onClick={() => setAsFixed(f => !f)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--sf2)', borderRadius: 'var(--r)', border: `1px solid ${asFixed ? 'rgba(239,68,68,.3)' : 'var(--bd)'}`, cursor: 'pointer' }}>
                       <div style={{ width: 14, height: 14, borderRadius: 3, background: asFixed ? 'var(--red)' : 'transparent', border: `2px solid ${asFixed ? 'var(--red)' : 'var(--bd2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        {asFixed && <span style={{ color: 'var(--sf)', fontSize: 9, fontWeight: 700 }}>ok</span>}
+                        {asFixed && <span style={{ color: 'var(--sf)', fontSize: 'var(--fs-2xs)', fontWeight: 700 }}>ok</span>}
                       </div>
                       <div>
-                        <div style={{ fontSize: 12, color: asFixed ? 'var(--red)' : 'var(--tx2)', fontWeight: asFixed ? 600 : 400 }}>{t('admin.asFixed')}</div>
-                        <div style={{ fontSize: 10, color: 'var(--tx3)' }}>{t('admin.asFixedHint')}</div>
+                        <div style={{ fontSize: 'var(--fs-xs)', color: asFixed ? 'var(--red)' : 'var(--tx2)', fontWeight: asFixed ? 600 : 400 }}>{t('admin.asFixed')}</div>
+                        <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>{t('admin.asFixedHint')}</div>
                       </div>
                     </div>
                     {!asFixed && (
                       <div>
-                        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 6 }}>{t('hotdesk.selectDates')}</div>
+                        <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 6 }}>{t('hotdesk.selectDates')}</div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                           <button className="n-arr" onClick={() => mo === 0 ? (sMo(11), sYr(y => y - 1)) : sMo(m => m - 1)}>&#8249;</button>
-                          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ac2)' }}>{fmtMonthYear(yr, mo, 'en')}</span>
+                          <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, color: 'var(--ac2)' }}>{fmtMonthYear(yr, mo, 'en')}</span>
                           <button className="n-arr" onClick={() => mo === 11 ? (sMo(0), sYr(y => y + 1)) : sMo(m => m + 1)}>&#8250;</button>
                         </div>
                         <MiniCalendar year={yr} month={mo} lang={lang} selectedDates={selDates} onToggleDate={d => setSelDates(p => p.includes(d) ? p.filter(x => x !== d) : [...p, d])} occupiedDates={occupiedForSeat} />
-                        {selDates.length > 0 && <div style={{ fontSize: 10, color: 'var(--green)', marginTop: 6 }}>{selDates.length} {t('hotdesk.selectDates')}</div>}
+                        {selDates.length > 0 && <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--green)', marginTop: 6 }}>{selDates.length} {t('hotdesk.selectDates')}</div>}
                       </div>
                     )}
                   </>
@@ -552,7 +552,7 @@ function AssignmentsTab({ hd, setHd, users, theme }) {
               </div>
             </div>
           ) : (
-            <div style={{ padding: 16, background: 'var(--sf2)', borderRadius: 'var(--r2)', border: '1px solid var(--bd)', color: 'var(--tx3)', fontSize: 12, textAlign: 'center' }}>
+            <div style={{ padding: 16, background: 'var(--sf2)', borderRadius: 'var(--r2)', border: '1px solid var(--bd)', color: 'var(--tx3)', fontSize: 'var(--fs-xs)', textAlign: 'center' }}>
               {t('admin.selectSeat')}
             </div>
           )}

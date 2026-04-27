@@ -213,7 +213,7 @@ function WorkSuiteApp() {
   if (loadingData) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'var(--tx3)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
+        <div style={{ color: 'var(--tx3)', fontSize: 'var(--fs-xs)', fontFamily: 'Inter, sans-serif' }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ac)', boxShadow: '0 0 12px var(--ac)', margin: '0 auto 12px', animation: 'pulse 1.5s ease infinite' }} />
           {t('common.loading')}
         </div>
@@ -239,10 +239,10 @@ function WorkSuiteApp() {
                 userModules={CURRENT_USER.modules || ["jt", "hd", "retro", "deploy"]}
                 onNavigate={navigate}
               />
-              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ac2)' }}>WorkSuite</span>
+              <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--ac2)' }}>WorkSuite</span>
               {!window.location.hostname.startsWith('worksuite-phi') && (
                 <span style={{
-                  fontSize: 9, fontWeight: 700, color: 'var(--ac)',
+                  fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)',
                   letterSpacing: '0.05em', padding: '2px 6px',
                   borderRadius: 4, background: 'var(--ac-dim)',
                 }}>PREVIEW</span>
@@ -255,7 +255,7 @@ function WorkSuiteApp() {
                 className="tb-icon-btn"
               >
                 <span className="material-symbols-outlined" style={{
-                  fontSize: 16, color: 'var(--tx2)',
+                  fontSize: 'var(--fs-body)', color: 'var(--tx2)',
                   fontVariationSettings: "'wght' 300",
                 }}>{theme === "dark" ? "dark_mode" : "light_mode"}</span>
               </button>
@@ -264,7 +264,7 @@ function WorkSuiteApp() {
                 onClick={() => setLocale(locale === "en" ? "es" : "en")}
                 style={{ padding: '4px 8px' }}
               >
-                <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--tx2)' }}>{locale.toUpperCase()}</span>
+                <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, color: 'var(--tx2)' }}>{locale.toUpperCase()}</span>
               </button>
               <WorldClock currentUser={CURRENT_USER} />
               <NotificationsBell userId={CURRENT_USER.id} repo={notificationRepo} />
@@ -400,7 +400,7 @@ function WorkSuiteApp() {
         <HDReserveModal seatId={hdModal.seatId} initDate={hdModal.date} hd={hd} onConfirm={handleHdConfirm} onRelease={handleHdRelease} onClose={() => setHdModal(null)} currentUser={CURRENT_USER} wsUsers={users} onConfirmPresence={handleHdConfirmPresence} onDelegate={handleHdDelegate} />
       )}
       {toast && (
-        <div style={{ position: "fixed", bottom: 20, right: 20, zIndex: 9999, padding: "11px 18px", borderRadius: "var(--r2)", fontSize: 13, fontWeight: 500, background: "var(--sf)", border: "1px solid var(--bd2)", color: "var(--tx)", boxShadow: "var(--shadow)", animation: "fadeIn .2s ease" }}>
+        <div style={{ position: "fixed", bottom: 20, right: 20, zIndex: 9999, padding: "11px 18px", borderRadius: "var(--r2)", fontSize: 'var(--fs-xs)', fontWeight: 500, background: "var(--sf)", border: "1px solid var(--bd2)", color: "var(--tx)", boxShadow: "var(--shadow)", animation: "fadeIn .2s ease" }}>
           {toast}
         </div>
       )}

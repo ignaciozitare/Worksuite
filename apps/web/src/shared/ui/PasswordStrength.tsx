@@ -15,7 +15,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
       <div className="pwd-meter">
         {[0, 1, 2, 3].map(i => <div key={i} className={`pwd-seg ${i < score ? level : ""}`} />)}
       </div>
-      <div style={{ fontSize: 10, color: colors[level], marginTop: 2 }}>{label}</div>
+      <div style={{ fontSize: 'var(--fs-2xs)', color: colors[level], marginTop: 2 }}>{label}</div>
     </div>
   );
 }

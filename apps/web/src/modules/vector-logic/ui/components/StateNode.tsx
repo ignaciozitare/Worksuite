@@ -98,20 +98,20 @@ function StateNodeComponent({ data, selected }: { data: StateNodeData; selected?
               if (e.key === 'Escape') { setName(data.label); setEditing(false); }
             }}
             style={{
-              flex: 1, fontSize: 14, fontWeight: 700, color: 'var(--tx)',
+              flex: 1, fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--tx)',
               background: 'var(--sf3)', border: '1px solid var(--ac)',
               borderRadius: 4, padding: '2px 6px', outline: 'none',
               fontFamily: 'inherit', minWidth: 0,
             }} />
         ) : (
           <span style={{
-            fontSize: 14, fontWeight: 700, color: 'var(--tx)', flex: 1,
+            fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--tx)', flex: 1,
             cursor: 'text', userSelect: 'none',
           }}>{data.label}</span>
         )}
         {data.isInitial && (
           <span style={{
-            fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+            fontSize: 'var(--fs-2xs)', fontWeight: 700, padding: '2px 6px', borderRadius: 4,
             background: 'rgba(245,158,11,.15)', color: 'var(--amber)',
             letterSpacing: '.05em', textTransform: 'uppercase',
           }}>{t('vectorLogic.badgeInitial')}</span>
@@ -121,7 +121,7 @@ function StateNodeComponent({ data, selected }: { data: StateNodeData; selected?
       {/* Category badge */}
       <div style={{ padding: '0 14px 8px' }}>
         <span style={{
-          fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+          fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
           color: catColor, opacity: .8,
         }}>{t(`vectorLogic.category${data.category.charAt(0) + data.category.slice(1).toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase())}`)}</span>
       </div>
@@ -130,19 +130,19 @@ function StateNodeComponent({ data, selected }: { data: StateNodeData; selected?
       <div style={{
         padding: '6px 14px', borderTop: '1px solid var(--bd)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        fontSize: 9, color: 'var(--tx3)', opacity: .6,
+        fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', opacity: .6,
       }}>
         <span>{t('vectorLogic.clickToRename')}</span>
         {data.onDelete && (
           <button onClick={(e) => { e.stopPropagation(); data.onDelete?.(); }}
             style={{
               background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)',
-              fontSize: 14, opacity: .5, transition: 'opacity .15s',
+              fontSize: 'var(--fs-sm)', opacity: .5, transition: 'opacity .15s',
               padding: 0, lineHeight: 0,
             }}
             onMouseEnter={e => e.currentTarget.style.opacity = '1'}
             onMouseLeave={e => e.currentTarget.style.opacity = '.5'}>
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>delete</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>delete</span>
           </button>
         )}
       </div>

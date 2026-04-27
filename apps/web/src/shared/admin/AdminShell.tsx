@@ -58,16 +58,16 @@ function AdminShell({ users, setUsers, hd, setHd, currentUser, theme="dark" }: A
         <div className="admin-nav-t">{t("admin.sidebar")}</div>
         {NAV.map(item=>(
           <button key={item.id} className={`an-btn ${mod===item.id ? (item.hd?"active-hd":"active") : ""}`} onClick={()=>setMod(item.id)}>
-            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{item.icon}</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>{item.icon}</span>
             <span>{item.label}</span>
             {item.badge&&<span className="an-badge">{item.badge}</span>}
           </button>
         ))}
         <div style={{borderTop:'1px solid var(--bd)',marginTop:12,paddingTop:12}}>
           <button className="an-btn" onClick={openUIKit} style={{opacity:.7}}>
-            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>palette</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>palette</span>
             <span>UI Kit</span>
-            <span style={{fontSize:9,color:'var(--tx3)',marginLeft:'auto'}}>↗</span>
+            <span style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',marginLeft:'auto'}}>↗</span>
           </button>
         </div>
       </nav>

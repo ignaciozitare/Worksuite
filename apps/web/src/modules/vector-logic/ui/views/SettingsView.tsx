@@ -195,10 +195,10 @@ export function SettingsView({ currentUser }: Props) {
   return (
     <div style={{ maxWidth: 720 }}>
       <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
+        <h2 style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
           {t('vectorLogic.aiSettings')}
         </h2>
-        <p style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 4 }}>
+        <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)', marginTop: 4 }}>
           {t('vectorLogic.aiSettingsDesc')}
         </p>
       </div>
@@ -221,7 +221,7 @@ export function SettingsView({ currentUser }: Props) {
             desc={t('vectorLogic.modeExternalDesc')}
           />
         </div>
-        <p style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 12, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 12, lineHeight: 1.5 }}>
           {mode === 'embedded' ? t('vectorLogic.modeEmbeddedHint') : t('vectorLogic.modeExternalHint')}
         </p>
       </Section>
@@ -266,12 +266,12 @@ export function SettingsView({ currentUser }: Props) {
                   }
                   style={{ ...inpStyle(), fontFamily: 'monospace' }} />
                 <button onClick={() => setShowKey(v => !v)} style={btnStyle('ghost')}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>
                     {showKey ? 'visibility_off' : 'visibility'}
                   </span>
                 </button>
               </div>
-              <p style={{ fontSize: 10, color: 'var(--tx3)', marginTop: 6, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 6, lineHeight: 1.5 }}>
                 {provider === 'google' && (
                   <>
                     {t('vectorLogic.providerGoogleHelp')}{' '}
@@ -310,19 +310,19 @@ export function SettingsView({ currentUser }: Props) {
                   )}
                 </select>
                 <button onClick={loadModels} disabled={loadingModels || !apiKey} style={btnStyle('primary')}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>
                     {loadingModels ? 'hourglass_empty' : 'download'}
                   </span>
                   {loadingModels ? t('common.loading') : t('vectorLogic.loadModels')}
                 </button>
               </div>
               {modelsError && (
-                <p style={{ fontSize: 10, color: 'var(--red)', marginTop: 6, lineHeight: 1.5, fontFamily: 'monospace', wordBreak: 'break-word' }}>
+                <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--red)', marginTop: 6, lineHeight: 1.5, fontFamily: 'monospace', wordBreak: 'break-word' }}>
                   ⚠ {modelsError}
                 </p>
               )}
               {models.length > 0 && !modelsError && (
-                <p style={{ fontSize: 10, color: 'var(--green)', marginTop: 6 }}>
+                <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--green)', marginTop: 6 }}>
                   ✓ {models.length} {t('vectorLogic.modelsAvailable')}
                 </p>
               )}
@@ -332,8 +332,8 @@ export function SettingsView({ currentUser }: Props) {
           <Section title={t('vectorLogic.systemPrompt')}>
             <textarea value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)}
               rows={6}
-              style={{ ...inpStyle(), fontFamily: 'monospace', fontSize: 12, resize: 'vertical' }} />
-            <p style={{ fontSize: 10, color: 'var(--tx3)', marginTop: 6 }}>
+              style={{ ...inpStyle(), fontFamily: 'monospace', fontSize: 'var(--fs-xs)', resize: 'vertical' }} />
+            <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 6 }}>
               {t('vectorLogic.systemPromptDesc')}
             </p>
           </Section>
@@ -343,7 +343,7 @@ export function SettingsView({ currentUser }: Props) {
       {/* External mode — point user to MCP Access tab */}
       {mode === 'external' && (
         <Section title={t('vectorLogic.modeExternal')}>
-          <p style={{ fontSize: 12, color: 'var(--tx2)', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx2)', lineHeight: 1.6 }}>
             {t('vectorLogic.modeExternalSetup')}
           </p>
         </Section>
@@ -353,7 +353,7 @@ export function SettingsView({ currentUser }: Props) {
       <Section title={t('vectorLogic.emailIntelligence')}>
         {!gmail?.oauthConfigured && (
           <div style={{
-            fontSize: 11, color: 'var(--amber)', padding: '8px 12px',
+            fontSize: 'var(--fs-2xs)', color: 'var(--amber)', padding: '8px 12px',
             background: 'rgba(245,158,11,.08)', borderRadius: 8, marginBottom: 12,
             border: '1px solid rgba(245,158,11,.2)',
           }}>
@@ -362,19 +362,19 @@ export function SettingsView({ currentUser }: Props) {
         )}
         {gmailError && (
           <div style={{
-            fontSize: 11, color: 'var(--red)', padding: '8px 12px',
+            fontSize: 'var(--fs-2xs)', color: 'var(--red)', padding: '8px 12px',
             background: 'rgba(224,82,82,.08)', borderRadius: 8, marginBottom: 12,
           }}>{gmailError}</div>
         )}
         {!gmail?.connection ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 32, color: 'var(--tx3)' }}>mail</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', color: 'var(--tx3)' }}>mail</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>{t('vectorLogic.gmailNotConnected')}</div>
-              <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 2 }}>{t('vectorLogic.gmailConnectHint')}</div>
+              <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)' }}>{t('vectorLogic.gmailNotConnected')}</div>
+              <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 2 }}>{t('vectorLogic.gmailConnectHint')}</div>
             </div>
             <button onClick={connectGmail} disabled={!gmail?.oauthConfigured} style={btnStyle('primary')}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>link</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>link</span>
               {t('vectorLogic.connectGmail')}
             </button>
           </div>
@@ -385,10 +385,10 @@ export function SettingsView({ currentUser }: Props) {
               padding: '10px 14px', background: 'var(--sf3)', borderRadius: 8,
               border: '1px solid rgba(62,207,142,.25)',
             }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 22, color: 'var(--green)' }}>check_circle</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', color: 'var(--green)' }}>check_circle</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>{gmail.connection.email}</div>
-                <div style={{ fontSize: 10, color: 'var(--tx3)' }}>
+                <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)' }}>{gmail.connection.email}</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>
                   {gmail.connection.lastPolledAt
                     ? `${t('vectorLogic.lastChecked')}: ${new Date(gmail.connection.lastPolledAt).toLocaleString()}`
                     : t('vectorLogic.neverPolledYet')}
@@ -408,7 +408,7 @@ export function SettingsView({ currentUser }: Props) {
                   value={Math.round(gmail.connection.confidenceThreshold * 100)}
                   onChange={e => updateGmailSettings({ confidenceThreshold: Number(e.target.value) / 100 })}
                   style={{ width: '100%' }} />
-                <p style={{ fontSize: 10, color: 'var(--tx3)', lineHeight: 1.4, marginTop: 4 }}>
+                <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', lineHeight: 1.4, marginTop: 4 }}>
                   {t('vectorLogic.confidenceThresholdHint')}
                 </p>
               </div>
@@ -459,7 +459,7 @@ export function SettingsView({ currentUser }: Props) {
               <input value={p.name}
                 onChange={e => setPriorities(prev => prev.map(x => x.id === p.id ? { ...x, name: e.target.value } : x))}
                 onBlur={e => updatePriority(p.id, { name: e.target.value.trim() || p.name })}
-                style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--tx)', fontSize: 13, fontWeight: 600, outline: 'none', fontFamily: 'inherit' }} />
+                style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--tx)', fontSize: 'var(--fs-xs)', fontWeight: 600, outline: 'none', fontFamily: 'inherit' }} />
               {/* Icon picker — visual selector with curated Material Symbols. */}
               <IconPicker
                 value={p.icon ?? ''}
@@ -470,17 +470,17 @@ export function SettingsView({ currentUser }: Props) {
                 }}
                 size={20}
               />
-              <span style={{ fontSize: 10, color: 'var(--tx3)', fontFamily: 'monospace' }}>{p.color}</span>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', fontFamily: 'monospace' }}>{p.color}</span>
               <button onClick={() => removePriority(p.id)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', opacity: .6, display: 'flex', alignItems: 'center', padding: 4 }}
                 onMouseEnter={e => e.currentTarget.style.opacity = '1'}
                 onMouseLeave={e => e.currentTarget.style.opacity = '.6'}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>delete</span>
               </button>
             </div>
           ))}
           {priorities.length === 0 && (
-            <div style={{ fontSize: 11, color: 'var(--tx3)', textAlign: 'center', padding: '12px 0', opacity: .6 }}>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', textAlign: 'center', padding: '12px 0', opacity: .6 }}>
               {t('vectorLogic.noneYet')}
             </div>
           )}
@@ -493,7 +493,7 @@ export function SettingsView({ currentUser }: Props) {
             onKeyDown={e => { if (e.key === 'Enter') addPriority(); }}
             style={inpStyle()} />
           <button onClick={addPriority} disabled={!newPriorityName.trim()} style={btnStyle('primary')}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>add</span>
             {t('common.add')}
           </button>
         </div>
@@ -504,7 +504,7 @@ export function SettingsView({ currentUser }: Props) {
         <button onClick={save} disabled={saving} style={btnStyle('primary', { padding: '10px 20px' })}>
           {saving ? t('common.loading') : t('common.save')}
         </button>
-        {saved && <span style={{ fontSize: 12, color: 'var(--green)', fontWeight: 600 }}>✓ {t('admin.envSaved')}</span>}
+        {saved && <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--green)', fontWeight: 600 }}>✓ {t('admin.envSaved')}</span>}
       </div>
     </div>
   );
@@ -518,7 +518,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       padding: 20, marginBottom: 16,
     }}>
       <h3 style={{
-        fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase',
+        fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase',
         letterSpacing: '.08em', marginBottom: 14,
       }}>{title}</h3>
       {children}
@@ -538,12 +538,12 @@ function ModeCard({ active, onClick, icon, title, desc }: {
         borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit',
         textAlign: 'left', transition: 'all .15s',
       }}>
-      <span className="material-symbols-outlined" style={{ fontSize: 24, color: active ? 'var(--ac)' : 'var(--tx3)', marginTop: 2 }}>{icon}</span>
+      <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', color: active ? 'var(--ac)' : 'var(--tx3)', marginTop: 2 }}>{icon}</span>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--tx)' }}>{title}</div>
-        <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 4, lineHeight: 1.4 }}>{desc}</div>
+        <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--tx)' }}>{title}</div>
+        <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 4, lineHeight: 1.4 }}>{desc}</div>
       </div>
-      {active && <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--ac)' }}>check_circle</span>}
+      {active && <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)', color: 'var(--ac)' }}>check_circle</span>}
     </button>
   );
 }
@@ -562,21 +562,21 @@ function ProviderCard({ active, onClick, icon, name, desc, badge }: {
       }}>
       {badge && (
         <span style={{
-          position: 'absolute', top: 8, right: 8, fontSize: 8, fontWeight: 700,
+          position: 'absolute', top: 8, right: 8, fontSize: 'var(--fs-2xs)', fontWeight: 700,
           padding: '2px 6px', borderRadius: 3, background: 'rgba(62,207,142,.15)',
           color: 'var(--green)', letterSpacing: '.05em', textTransform: 'uppercase',
         }}>{badge}</span>
       )}
-      <span style={{ fontSize: 22 }}>{icon}</span>
-      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--tx)' }}>{name}</div>
-      <div style={{ fontSize: 10, color: 'var(--tx3)', lineHeight: 1.3 }}>{desc}</div>
+      <span style={{ fontSize: 'var(--fs-lg)' }}>{icon}</span>
+      <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--tx)' }}>{name}</div>
+      <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', lineHeight: 1.3 }}>{desc}</div>
     </button>
   );
 }
 
 const btnStyle = (variant = 'primary', extra = {}) => ({
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-  borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer', border: 'none',
+  borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-xs)', cursor: 'pointer', border: 'none',
   fontFamily: 'inherit', transition: 'all .2s',
   ...(variant === 'primary' && {
     background: 'linear-gradient(135deg, #adc6ff, #4d8eff)',
@@ -593,12 +593,12 @@ const btnStyle = (variant = 'primary', extra = {}) => ({
 });
 
 const inpStyle = (extra = {}) => ({
-  width: '100%', padding: '8px 12px', fontSize: 13, fontFamily: 'inherit',
+  width: '100%', padding: '8px 12px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
   background: 'var(--sf)', border: '1px solid var(--bd)',
   borderRadius: 8, color: 'var(--tx)', outline: 'none', ...extra,
 });
 
 const lblStyle = {
-  fontSize: 10, fontWeight: 700, color: 'var(--tx3)',
+  fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
   textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 6,
 };

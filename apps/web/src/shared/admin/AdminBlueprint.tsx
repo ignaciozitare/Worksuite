@@ -113,24 +113,24 @@ function AdminBlueprint() {
       {/* Sidebar: buildings + collapsible floors */}
       <div style={{width:220,borderRight:'1px solid var(--bd)',display:'flex',flexDirection:'column',background:'var(--sf)',overflow:'hidden',flexShrink:0}}>
         <div style={{padding:'8px 10px',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
-          <span style={{fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--tx3)'}}>Buildings</span>
-          <button className="btn-g" onClick={()=>setShowEdit(s=>!s)} style={{fontSize:10,padding:'2px 8px'}}>+ Add</button>
+          <span style={{fontSize: 'var(--fs-2xs)',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--tx3)'}}>Buildings</span>
+          <button className="btn-g" onClick={()=>setShowEdit(s=>!s)} style={{fontSize: 'var(--fs-2xs)',padding:'2px 8px'}}>+ Add</button>
         </div>
 
         {showEdit && (
           <div style={{padding:'8px 10px',borderBottom:'1px solid var(--bd)',display:'flex',flexDirection:'column',gap:6,background:'var(--sf2)',flexShrink:0}}>
-            <input className="a-inp" placeholder="Building name *" value={bForm.name} onChange={e=>setBForm(b=>({...b,name:e.target.value}))} style={{fontSize:11,padding:'4px 7px'}}/>
-            <input className="a-inp" placeholder="City (optional)" value={bForm.city} onChange={e=>setBForm(b=>({...b,city:e.target.value}))} style={{fontSize:11,padding:'4px 7px'}}/>
-            <input className="a-inp" placeholder="Address (optional)" value={bForm.address} onChange={e=>setBForm(b=>({...b,address:e.target.value}))} style={{fontSize:11,padding:'4px 7px'}}/>
+            <input className="a-inp" placeholder="Building name *" value={bForm.name} onChange={e=>setBForm(b=>({...b,name:e.target.value}))} style={{fontSize: 'var(--fs-2xs)',padding:'4px 7px'}}/>
+            <input className="a-inp" placeholder="City (optional)" value={bForm.city} onChange={e=>setBForm(b=>({...b,city:e.target.value}))} style={{fontSize: 'var(--fs-2xs)',padding:'4px 7px'}}/>
+            <input className="a-inp" placeholder="Address (optional)" value={bForm.address} onChange={e=>setBForm(b=>({...b,address:e.target.value}))} style={{fontSize: 'var(--fs-2xs)',padding:'4px 7px'}}/>
             <div style={{display:'flex',gap:5}}>
-              <button className="b-cancel" style={{flex:1,padding:'4px',fontSize:11}} onClick={()=>setShowEdit(false)}>Cancel</button>
-              <button className="b-sub" style={{flex:1,padding:'4px',fontSize:11}} onClick={saveBuilding} disabled={saving}>Save</button>
+              <button className="b-cancel" style={{flex:1,padding:'4px',fontSize: 'var(--fs-2xs)'}} onClick={()=>setShowEdit(false)}>Cancel</button>
+              <button className="b-sub" style={{flex:1,padding:'4px',fontSize: 'var(--fs-2xs)'}} onClick={saveBuilding} disabled={saving}>Save</button>
             </div>
           </div>
         )}
 
         <div style={{flex:1,overflowY:'auto'}}>
-          {buildings.length===0 && <div style={{padding:'14px 10px',fontSize:11,color:'var(--tx3)'}}>No buildings yet</div>}
+          {buildings.length===0 && <div style={{padding:'14px 10px',fontSize: 'var(--fs-2xs)',color:'var(--tx3)'}}>No buildings yet</div>}
           {buildings.map(b=>{
             const isSelB=selBldg?.id===b.id;
             const isCollapsed=collapsed[b.id];
@@ -144,15 +144,15 @@ function AdminBlueprint() {
                   <button onClick={()=>{
                     if(isSelB){setCollapsed(c=>({...c,[b.id]:!c[b.id]}));}
                     else{setSelBldg(b);setCollapsed(c=>({...c,[b.id]:false}));}
-                  }} style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',fontSize:10,padding:'0 4px 0 0',flexShrink:0}}>
+                  }} style={{background:'none',border:'none',cursor:'pointer',color:'var(--tx3)',fontSize: 'var(--fs-2xs)',padding:'0 4px 0 0',flexShrink:0}}>
                     {isCollapsed?'▶':'▼'}
                   </button>
-                  <div style={{flex:1,fontWeight:600,fontSize:12,color:isSelB?'var(--ac2)':'var(--tx)',cursor:'pointer',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}
+                  <div style={{flex:1,fontWeight:600,fontSize: 'var(--fs-xs)',color:isSelB?'var(--ac2)':'var(--tx)',cursor:'pointer',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}
                     onClick={()=>{setSelBldg(b);setCollapsed(c=>({...c,[b.id]:false}));}}>
                     🏢 {b.name}
                   </div>
-                  <button onClick={e=>{e.stopPropagation();renameBuilding(b);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:10,color:'var(--tx3)',padding:'1px 3px',opacity:.6}}>✎</button>
-                  <button onClick={e=>{e.stopPropagation();deleteBuilding(b.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'var(--tx3)',padding:'1px 3px',opacity:.6}}>×</button>
+                  <button onClick={e=>{e.stopPropagation();renameBuilding(b);}} style={{background:'none',border:'none',cursor:'pointer',fontSize: 'var(--fs-2xs)',color:'var(--tx3)',padding:'1px 3px',opacity:.6}}>✎</button>
+                  <button onClick={e=>{e.stopPropagation();deleteBuilding(b.id);}} style={{background:'none',border:'none',cursor:'pointer',fontSize: 'var(--fs-2xs)',color:'var(--tx3)',padding:'1px 3px',opacity:.6}}>×</button>
                 </div>
 
                 {/* Floors list (collapsed by default if not selected) */}
@@ -164,20 +164,20 @@ function AdminBlueprint() {
                         borderLeft:`1px solid ${selFloor?.id===fl.id?'var(--ac)':'var(--bd)'}`,
                         cursor:'pointer'}}
                         onClick={()=>{setSelFloor(fl);setEditorKey(k=>k+1);}}>
-                        <span style={{flex:1,fontSize:11,color:selFloor?.id===fl.id?'var(--ac2)':'var(--tx2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                        <span style={{flex:1,fontSize: 'var(--fs-2xs)',color:selFloor?.id===fl.id?'var(--ac2)':'var(--tx2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                           {fl.floor_name}
                         </span>
                         <button onClick={e=>{e.stopPropagation();moveFloor(fl.id,-1);}} disabled={idx===0}
-                          style={{background:'none',border:'none',cursor:'pointer',fontSize:10,color:'var(--tx3)',padding:'1px 2px',opacity:idx===0?.2:1}} title="Move up">↑</button>
+                          style={{background:'none',border:'none',cursor:'pointer',fontSize: 'var(--fs-2xs)',color:'var(--tx3)',padding:'1px 2px',opacity:idx===0?.2:1}} title="Move up">↑</button>
                         <button onClick={e=>{e.stopPropagation();moveFloor(fl.id,1);}} disabled={idx===bFloors.length-1}
-                          style={{background:'none',border:'none',cursor:'pointer',fontSize:10,color:'var(--tx3)',padding:'1px 2px',opacity:idx===bFloors.length-1?.2:1}} title="Move down">↓</button>
+                          style={{background:'none',border:'none',cursor:'pointer',fontSize: 'var(--fs-2xs)',color:'var(--tx3)',padding:'1px 2px',opacity:idx===bFloors.length-1?.2:1}} title="Move down">↓</button>
                         <button onClick={e=>{e.stopPropagation();renameFloor(fl.id);}}
-                          style={{background:'none',border:'none',cursor:'pointer',fontSize:10,color:'var(--tx3)',padding:'1px 3px'}}>✎</button>
+                          style={{background:'none',border:'none',cursor:'pointer',fontSize: 'var(--fs-2xs)',color:'var(--tx3)',padding:'1px 3px'}}>✎</button>
                         <button onClick={e=>{e.stopPropagation();deleteFloor(fl.id);}}
-                          style={{background:'none',border:'none',cursor:'pointer',fontSize:11,color:'var(--tx3)',padding:'1px 3px'}}>×</button>
+                          style={{background:'none',border:'none',cursor:'pointer',fontSize: 'var(--fs-2xs)',color:'var(--tx3)',padding:'1px 3px'}}>×</button>
                       </div>
                     ))}
-                    <button className="btn-g" onClick={addFloor} style={{fontSize:10,padding:'3px 8px',margin:'4px 8px',width:'calc(100% - 16px)'}}>+ Add floor</button>
+                    <button className="btn-g" onClick={addFloor} style={{fontSize: 'var(--fs-2xs)',padding:'3px 8px',margin:'4px 8px',width:'calc(100% - 16px)'}}>+ Add floor</button>
                   </div>
                 )}
               </div>
@@ -185,13 +185,13 @@ function AdminBlueprint() {
           })}
         </div>
 
-        {msg&&<div style={{padding:'6px 10px',fontSize:11,color:'var(--green)',borderTop:'1px solid var(--bd)',flexShrink:0}}>{msg}</div>}
+        {msg&&<div style={{padding:'6px 10px',fontSize: 'var(--fs-2xs)',color:'var(--green)',borderTop:'1px solid var(--bd)',flexShrink:0}}>{msg}</div>}
       </div>
 
       {/* Right: editor */}
       <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
         {!selBldg||!selFloor ? (
-          <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:13}}>
+          <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize: 'var(--fs-xs)'}}>
             {buildings.length===0?'Create a building first':'Select a building and floor to edit its blueprint'}
           </div>
         ) : (
@@ -210,9 +210,9 @@ function BlueprintEditorPanel({ floor, onSave, saving, msg }) {
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
       <div style={{padding:'6px 12px',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',gap:10,background:'var(--sf)',flexShrink:0}}>
-        <span style={{fontWeight:600,fontSize:13,color:'var(--tx)'}}>{floor.floor_name}</span>
-        <span style={{fontSize:11,color:'var(--tx3)',marginLeft:'auto'}}>{items.filter(i=>i.type==='desk'||i.type==='circle').length} clusters</span>
-        {msg&&<span style={{fontSize:11,color:'var(--green)'}}>{msg}</span>}
+        <span style={{fontWeight:600,fontSize: 'var(--fs-xs)',color:'var(--tx)'}}>{floor.floor_name}</span>
+        <span style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',marginLeft:'auto'}}>{items.filter(i=>i.type==='desk'||i.type==='circle').length} clusters</span>
+        {msg&&<span style={{fontSize: 'var(--fs-2xs)',color:'var(--green)'}}>{msg}</span>}
         <button className="btn-p" style={{padding:'5px 14px',width:'auto'}} onClick={()=>onSave(items)} disabled={saving}>
           {saving?'Saving…':'💾 Save blueprint'}
         </button>
@@ -269,7 +269,7 @@ function BuildingFloorSelectors({ selectedBuilding, selectedBlueprint, onChange 
   };
 
   if(buildings.length===0) return (
-    <span style={{fontSize:11,color:'var(--tx3)',padding:'0 8px'}}>No buildings — configure in Admin → Blueprint</span>
+    <span style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',padding:'0 8px'}}>No buildings — configure in Admin → Blueprint</span>
   );
 
   return (
@@ -278,7 +278,7 @@ function BuildingFloorSelectors({ selectedBuilding, selectedBlueprint, onChange 
         value={selectedBuilding?.id||''}
         onChange={e=>selectBuilding(e.target.value)}
         style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:'var(--r)',
-          padding:'6px 10px',fontSize:12,color:'var(--tx)',outline:'none',cursor:'pointer',fontFamily:'inherit',width:'100%'}}>
+          padding:'6px 10px',fontSize: 'var(--fs-xs)',color:'var(--tx)',outline:'none',cursor:'pointer',fontFamily:'inherit',width:'100%'}}>
         <option value="">— Building —</option>
         {buildings.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
       </select>
@@ -287,7 +287,7 @@ function BuildingFloorSelectors({ selectedBuilding, selectedBlueprint, onChange 
         onChange={e=>selectFloor(e.target.value)}
         disabled={!selectedBuilding||floors.length===0}
         style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:'var(--r)',
-          padding:'4px 8px',fontSize:11,color:'var(--tx)',outline:'none',cursor:'pointer',fontFamily:'inherit',
+          padding:'4px 8px',fontSize: 'var(--fs-2xs)',color:'var(--tx)',outline:'none',cursor:'pointer',fontFamily:'inherit',
           opacity:(!selectedBuilding||floors.length===0)?0.5:1}}>
         <option value="">— Floor —</option>
         {floors.map(fl=><option key={fl.id} value={fl.id}>{fl.floor_name}</option>)}
@@ -299,9 +299,9 @@ function BuildingFloorSelectors({ selectedBuilding, selectedBlueprint, onChange 
 function BuildingSelector({ onSelect }) {
   return (
     <div style={{padding:32,textAlign:'center',color:'var(--tx3)'}}>
-      <div style={{fontSize:24,marginBottom:12}}>🏢</div>
-      <div style={{fontSize:13,marginBottom:6}}>No buildings configured yet</div>
-      <div style={{fontSize:11}}>An admin needs to create a building and blueprint in Admin → Blueprint</div>
+      <div style={{fontSize: 'var(--fs-xl)',marginBottom:12}}>🏢</div>
+      <div style={{fontSize: 'var(--fs-xs)',marginBottom:6}}>No buildings configured yet</div>
+      <div style={{fontSize: 'var(--fs-2xs)'}}>An admin needs to create a building and blueprint in Admin → Blueprint</div>
     </div>
   );
 }
@@ -892,7 +892,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
         }}
         style={{display:'flex',alignItems:'center',justifyContent:'center',minWidth:32,height:30,padding:'0 8px',
           border:'1px solid var(--bd)',borderRadius:6,background:'var(--sf2)',color:'var(--tx2)',
-          cursor:'pointer',fontSize:12,fontFamily:'inherit',gap:4,...extra}}>
+          cursor:'pointer',fontSize: 'var(--fs-xs)',fontFamily:'inherit',gap:4,...extra}}>
         {lbl}
       </button>
     );
@@ -914,7 +914,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
               onClick={()=>{setTool(t.id);setTbTip(null);}}
               style={{position:'relative',display:'flex',alignItems:'center',gap:6,padding:'5px 12px',
                 border:`1px solid ${border}`,borderRadius:20,background:bg,
-                color,cursor:'pointer',fontSize:11,fontFamily:'inherit',fontWeight:isActive?600:400,whiteSpace:'nowrap',transition:'all .12s'}}>
+                color,cursor:'pointer',fontSize: 'var(--fs-2xs)',fontFamily:'inherit',fontWeight:isActive?600:400,whiteSpace:'nowrap',transition:'all .12s'}}>
               {t.dot&&<span style={{width:8,height:8,borderRadius:t.circle?'50%':'2px',background:t.dot,flexShrink:0}}/>}
               {t.lbl}
             </button>
@@ -950,33 +950,33 @@ function BlueprintCanvas({ items: initItems, onChange }) {
 
       {/* Properties panel */}
       <div style={{width:180,borderLeft:'1px solid var(--bd)',background:'var(--sf)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
-        <div style={{padding:'6px 8px',fontSize:9,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--tx3)',borderBottom:'1px solid var(--bd)'}}>Properties</div>
+        <div style={{padding:'6px 8px',fontSize: 'var(--fs-2xs)',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--tx3)',borderBottom:'1px solid var(--bd)'}}>Properties</div>
         <div style={{padding:'8px',flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:7}}>
-          {!selItem && <div style={{fontSize:11,color:'var(--tx3)',textAlign:'center',padding:'12px 0'}}>Select an element</div>}
+          {!selItem && <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',textAlign:'center',padding:'12px 0'}}>Select an element</div>}
           {selItem && <>
             {isCl && <>
               <div>
-                <div style={{fontSize:9,fontWeight:600,color:'var(--tx3)',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:3}}>Zone name</div>
-                <input className="a-inp" defaultValue={selItem.label||''} style={{fontSize:11,padding:'3px 6px'}}
+                <div style={{fontSize: 'var(--fs-2xs)',fontWeight:600,color:'var(--tx3)',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:3}}>Zone name</div>
+                <input className="a-inp" defaultValue={selItem.label||''} style={{fontSize: 'var(--fs-2xs)',padding:'3px 6px'}}
                   onChange={e=>pChange('label',e.target.value,false)}
                   onKeyDown={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()}/>
               </div>
               <div>
-                <div style={{fontSize:9,fontWeight:600,color:'var(--tx3)',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:3}}>Seat prefix</div>
-                <input className="a-inp" defaultValue={selItem.prefix||''} maxLength={4} style={{fontSize:11,padding:'3px 6px'}}
+                <div style={{fontSize: 'var(--fs-2xs)',fontWeight:600,color:'var(--tx3)',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:3}}>Seat prefix</div>
+                <input className="a-inp" defaultValue={selItem.prefix||''} maxLength={4} style={{fontSize: 'var(--fs-2xs)',padding:'3px 6px'}}
                   onChange={e=>pChange('prefix',e.target.value,false)}
                   onKeyDown={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()}/>
               </div>
-              <div style={{textAlign:'center',padding:'4px',background:'rgba(34,197,94,.08)',border:'1px solid rgba(34,197,94,.2)',borderRadius:4,fontSize:11,color:'#22c55e',fontWeight:700,fontFamily:'var(--mono)'}}>
+              <div style={{textAlign:'center',padding:'4px',background:'rgba(34,197,94,.08)',border:'1px solid rgba(34,197,94,.2)',borderRadius:4,fontSize: 'var(--fs-2xs)',color:'#22c55e',fontWeight:700,fontFamily:'var(--mono)'}}>
                 {seats.length-dis.filter(d=>seats.some(s=>s.id===d)).length} active · {dis.length} off
               </div>
               <div>
-                <div style={{fontSize:9,fontWeight:600,color:'var(--tx3)',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:4}}>Seats (click = disable)</div>
+                <div style={{fontSize: 'var(--fs-2xs)',fontWeight:600,color:'var(--tx3)',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:4}}>Seats (click = disable)</div>
                 <div style={{display:'flex',flexWrap:'wrap',gap:2}}>
                   {seats.map(s=>(
                     <span key={s.id}
                       onClick={()=>{saveH();if(!selItem.disabled)selItem.disabled=[];selItem.disabled.includes(s.id)?selItem.disabled=selItem.disabled.filter(d=>d!==s.id):selItem.disabled.push(s.id);onChange([...S.items]);draw();re();}}
-                      style={{padding:'1px 4px',borderRadius:2,fontSize:9,fontFamily:'var(--mono)',cursor:'pointer',border:'1px solid',
+                      style={{padding:'1px 4px',borderRadius:2,fontSize: 'var(--fs-2xs)',fontFamily:'var(--mono)',cursor:'pointer',border:'1px solid',
                         background:dis.includes(s.id)?'rgba(80,30,30,.2)':'rgba(34,197,94,.1)',
                         borderColor:dis.includes(s.id)?'rgba(100,50,50,.3)':'rgba(34,197,94,.35)',
                         color:dis.includes(s.id)?'rgba(150,80,80,.6)':'#86efac',
@@ -989,8 +989,8 @@ function BlueprintCanvas({ items: initItems, onChange }) {
             </>}
             {!isCl && selItem.label!==undefined && (
               <div>
-                <div style={{fontSize:9,fontWeight:600,color:'var(--tx3)',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:3}}>Label</div>
-                <input className="a-inp" defaultValue={selItem.label||''} style={{fontSize:11,padding:'3px 6px'}}
+                <div style={{fontSize: 'var(--fs-2xs)',fontWeight:600,color:'var(--tx3)',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:3}}>Label</div>
+                <input className="a-inp" defaultValue={selItem.label||''} style={{fontSize: 'var(--fs-2xs)',padding:'3px 6px'}}
                   onChange={e=>pChange('label',e.target.value,false)}
                   onKeyDown={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()}/>
               </div>
@@ -998,8 +998,8 @@ function BlueprintCanvas({ items: initItems, onChange }) {
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
               {[['W','w'],['H','h'],['X','x'],['Y','y']].map(([l,k])=>(
                 <div key={k}>
-                  <div style={{fontSize:9,color:'var(--tx3)',marginBottom:2}}>{l}</div>
-                  <input className="a-inp" type="number" step={GRID} defaultValue={selItem[k]} style={{fontSize:11,padding:'3px 5px'}}
+                  <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',marginBottom:2}}>{l}</div>
+                  <input className="a-inp" type="number" step={GRID} defaultValue={selItem[k]} style={{fontSize: 'var(--fs-2xs)',padding:'3px 5px'}}
                     onChange={e=>pChange(k,e.target.value,true)}
                     onKeyDown={e=>{e.stopPropagation();if(e.key==='Enter')e.target.blur();}}
                     onMouseDown={e=>e.stopPropagation()}/>
@@ -1012,19 +1012,19 @@ function BlueprintCanvas({ items: initItems, onChange }) {
                 <button onClick={()=>{saveH();selItem.double=!selItem.double;onChange([...S.items]);draw();re();}}
                   style={{flex:1,padding:'4px 6px',border:`1px solid ${selItem.double?'#fb923c':'var(--bd)'}`,borderRadius:4,
                     background:selItem.double?'rgba(251,146,60,.12)':'transparent',
-                    color:selItem.double?'#fb923c':'var(--tx2)',cursor:'pointer',fontSize:10,fontFamily:'inherit'}}>
+                    color:selItem.double?'#fb923c':'var(--tx2)',cursor:'pointer',fontSize: 'var(--fs-2xs)',fontFamily:'inherit'}}>
                   {selItem.double?'Double':'Single'}
                 </button>
                 <button title="Rotate 90°" onClick={()=>{saveH();selItem.angle=((selItem.angle||0)+90)%360;onChange([...S.items]);draw();re();}}
                   style={{padding:'4px 8px',border:'1px solid var(--bd)',borderRadius:4,background:'var(--sf2)',
-                    color:'var(--tx2)',cursor:'pointer',fontSize:12,fontFamily:'inherit'}}>
+                    color:'var(--tx2)',cursor:'pointer',fontSize: 'var(--fs-xs)',fontFamily:'inherit'}}>
                   ↻ 90°
                 </button>
               </div>
-              <div style={{fontSize:9,color:'var(--tx3)',marginTop:2}}>Rotation: {selItem.angle||0}°</div>
+              <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',marginTop:2}}>Rotation: {selItem.angle||0}°</div>
             </>}
             <button onClick={()=>{if(!S.sel)return;saveH();S.items=S.items.filter(i=>i!==S.sel);S.sel=null;onChange([...S.items]);draw();re();}}
-              style={{padding:'4px',border:'1px solid rgba(239,68,68,.2)',borderRadius:4,background:'transparent',color:'#ef4444',cursor:'pointer',fontSize:11,fontFamily:'inherit'}}>✕ Delete</button>
+              style={{padding:'4px',border:'1px solid rgba(239,68,68,.2)',borderRadius:4,background:'transparent',color:'#ef4444',cursor:'pointer',fontSize: 'var(--fs-2xs)',fontFamily:'inherit'}}>✕ Delete</button>
           </>}
         </div>
       </div>
@@ -1032,7 +1032,7 @@ function BlueprintCanvas({ items: initItems, onChange }) {
       {/* Tooltip portal — renders on document.body to escape overflow:hidden stacking contexts */}
       {tbTip && createPortal(
         <div style={{position:'fixed',left:tbTip.x,top:tbTip.y,transform:'translate(-50%,-100%)',
-          background:'#1a1a28',color:'#c8c8e8',fontSize:11,fontWeight:500,
+          background:'#1a1a28',color:'#c8c8e8',fontSize: 'var(--fs-2xs)',fontWeight:500,
           padding:'5px 10px',borderRadius:5,border:'1px solid rgba(255,255,255,.1)',
           boxShadow:'0 4px 14px rgba(0,0,0,.6)',pointerEvents:'none',zIndex:99999,
           whiteSpace:'nowrap',animation:'mbIn .1s ease'}}>

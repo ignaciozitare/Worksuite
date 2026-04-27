@@ -146,7 +146,7 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
   if (loading) {
     return (
       <div className="fade-in" style={{ textAlign: 'center', padding: 48, color: C.txDim }}>
-        <span className="mono" style={{ fontSize: 13, letterSpacing: '.1em' }}>{t('chrono.cargando')}</span>
+        <span className="mono" style={{ fontSize: 'var(--fs-xs)', letterSpacing: '.1em' }}>{t('chrono.cargando')}</span>
       </div>
     );
   }
@@ -156,10 +156,10 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: C.tx, margin: 0, letterSpacing: '-.02em' }}>
+          <h2 style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: C.tx, margin: 0, letterSpacing: '-.02em' }}>
             {t('chrono.vacaciones')}
           </h2>
-          <p className="mono" style={{ fontSize: 12, color: C.txMuted, marginTop: 4, letterSpacing: '.08em' }}>
+          <p className="mono" style={{ fontSize: 'var(--fs-xs)', color: C.txMuted, marginTop: 4, letterSpacing: '.08em' }}>
             {currentYear}
           </p>
         </div>
@@ -177,7 +177,7 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
             background: message.type === 'ok' ? C.greenDim : C.redDim,
             borderColor: message.type === 'ok' ? 'rgba(16,185,129,.3)' : 'rgba(239,68,68,.3)',
             color: message.type === 'ok' ? C.green : C.red,
-            fontSize: 13, fontWeight: 600,
+            fontSize: 'var(--fs-xs)', fontWeight: 600,
           }}
         >
           {message.text}
@@ -188,26 +188,26 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
       {saldo && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
           <div className="ch-stat" style={{ '--accent': C.tx } as any}>
-            <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: C.tx }}>{saldo.diasTotales + saldo.diasExtra}</div>
-            <div className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginTop: 4 }}>
+            <div className="mono" style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: C.tx }}>{saldo.diasTotales + saldo.diasExtra}</div>
+            <div className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginTop: 4 }}>
               {t('chrono.diasTotales')}
             </div>
           </div>
           <div className="ch-stat" style={{ '--accent': C.amber } as any}>
-            <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: C.amber }}>{saldo.diasDisfrutados}</div>
-            <div className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginTop: 4 }}>
+            <div className="mono" style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: C.amber }}>{saldo.diasDisfrutados}</div>
+            <div className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginTop: 4 }}>
               {t('chrono.diasDisfrutados')}
             </div>
           </div>
           <div className="ch-stat" style={{ '--accent': C.green } as any}>
-            <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: C.green }}>{saldo.diasAprobadosFuturos}</div>
-            <div className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginTop: 4 }}>
+            <div className="mono" style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: C.green }}>{saldo.diasAprobadosFuturos}</div>
+            <div className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginTop: 4 }}>
               {t('chrono.diasAprobados')}
             </div>
           </div>
           <div className="ch-stat" style={{ '--accent': C.blue } as any}>
-            <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: C.blue }}>{saldo.diasDisponibles}</div>
-            <div className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginTop: 4 }}>
+            <div className="mono" style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: C.blue }}>{saldo.diasDisponibles}</div>
+            <div className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginTop: 4 }}>
               {t('chrono.diasDisponibles')}
             </div>
           </div>
@@ -217,7 +217,7 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
       {/* ── Annual distribution bar ────────────────────────────────────────── */}
       {saldo && (
         <div className="ch-card" style={{ marginBottom: 20 }}>
-          <div className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginBottom: 10 }}>
+          <div className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginBottom: 10 }}>
             {t('chrono.distribucionAnual')}
           </div>
           <div style={{ height: 10, borderRadius: 5, background: C.bd, overflow: 'hidden', display: 'flex' }}>
@@ -235,15 +235,15 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
           <div style={{ display: 'flex', gap: 20, marginTop: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.amber, display: 'inline-block' }} />
-              <span className="mono" style={{ fontSize: 11, color: C.txDim }}>{t('chrono.diasDisfrutados')}</span>
+              <span className="mono" style={{ fontSize: 'var(--fs-2xs)', color: C.txDim }}>{t('chrono.diasDisfrutados')}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.green, display: 'inline-block' }} />
-              <span className="mono" style={{ fontSize: 11, color: C.txDim }}>{t('chrono.diasAprobados')}</span>
+              <span className="mono" style={{ fontSize: 'var(--fs-2xs)', color: C.txDim }}>{t('chrono.diasAprobados')}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.blue, display: 'inline-block' }} />
-              <span className="mono" style={{ fontSize: 11, color: C.txDim }}>{t('chrono.diasDisponibles')}</span>
+              <span className="mono" style={{ fontSize: 'var(--fs-2xs)', color: C.txDim }}>{t('chrono.diasDisponibles')}</span>
             </div>
           </div>
         </div>
@@ -252,13 +252,13 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
       {/* ── New request form (modal-like card) ─────────────────────────────── */}
       {showForm && (
         <div className="ch-card fade-in" style={{ marginBottom: 20, borderColor: C.amber }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.tx, marginBottom: 16 }}>
+          <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: C.tx, marginBottom: 16 }}>
             {t('chrono.solicitarVacacion')}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 14, marginBottom: 14, alignItems: 'end' }}>
             <div>
-              <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
+              <label className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
                 {t('chrono.tipoVacacion')}
               </label>
               <select value={tipo} onChange={e => setTipo(e.target.value as TipoVacacion)} style={{ width: '100%' }}>
@@ -268,29 +268,29 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
               </select>
             </div>
             <div>
-              <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
+              <label className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
                 {t('chrono.fechaInicio')}
               </label>
               <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={{ width: '100%' }} />
             </div>
             <div>
-              <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
+              <label className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
                 {t('chrono.fechaFin')}
               </label>
               <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} style={{ width: '100%' }} />
             </div>
             <div>
-              <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
+              <label className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
                 {t('chrono.diasHabiles')}
               </label>
               <input type="text" readOnly value={diasHabiles}
-                style={{ background: C.bg, border: `1px solid ${C.bd}`, color: C.amber, padding: '8px 12px', borderRadius: 5, fontSize: 13, fontFamily: "'IBM Plex Mono',monospace", outline: 'none', width: '100%', fontWeight: 700 }}
+                style={{ background: C.bg, border: `1px solid ${C.bd}`, color: C.amber, padding: '8px 12px', borderRadius: 5, fontSize: 'var(--fs-xs)', fontFamily: "'IBM Plex Mono',monospace", outline: 'none', width: '100%', fontWeight: 700 }}
               />
             </div>
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
+            <label className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
               {t('chrono.motivo')}
             </label>
             <textarea
@@ -301,7 +301,7 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
           </div>
 
           {saldo && tipo === 'vacaciones' && diasHabiles > saldo.diasDisponibles && (
-            <div className="mono" style={{ fontSize: 12, color: C.red, marginBottom: 10, fontWeight: 600 }}>
+            <div className="mono" style={{ fontSize: 'var(--fs-xs)', color: C.red, marginBottom: 10, fontWeight: 600 }}>
               {t('chrono.saldoInsuficiente')}
             </div>
           )}
@@ -343,7 +343,7 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
         <div className="ch-card fade-in" style={{ padding: 0, overflow: 'auto', maxHeight: 'calc(100vh - 340px)' }}>
           {vacaciones.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 40, color: C.txMuted }}>
-              <span className="mono" style={{ fontSize: 12, letterSpacing: '.08em' }}>{t('chrono.sinVacaciones')}</span>
+              <span className="mono" style={{ fontSize: 'var(--fs-xs)', letterSpacing: '.08em' }}>{t('chrono.sinVacaciones')}</span>
             </div>
           ) : (
             <table>
@@ -364,13 +364,13 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
                       {t(TIPO_LABELS[v.tipo] as any)}
                     </td>
                     <td>
-                      <span className="mono" style={{ fontSize: 12, color: C.txDim }}>{v.fechaInicio}</span>
+                      <span className="mono" style={{ fontSize: 'var(--fs-xs)', color: C.txDim }}>{v.fechaInicio}</span>
                     </td>
                     <td>
-                      <span className="mono" style={{ fontSize: 12, color: C.txDim }}>{v.fechaFin}</span>
+                      <span className="mono" style={{ fontSize: 'var(--fs-xs)', color: C.txDim }}>{v.fechaFin}</span>
                     </td>
                     <td>
-                      <span className="mono" style={{ fontSize: 14, fontWeight: 700, color: C.amber }}>{v.diasHabiles}</span>
+                      <span className="mono" style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: C.amber }}>{v.diasHabiles}</span>
                     </td>
                     <td>
                       <span className={ESTADO_BADGE[v.estado] || 'ch-badge ch-badge-muted'}>
@@ -379,7 +379,7 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       {v.estado === 'pendiente' && (
-                        <button className="ch-btn ch-btn-red" style={{ padding: '5px 12px', fontSize: 11 }} onClick={() => handleCancel(v.id)}>
+                        <button className="ch-btn ch-btn-red" style={{ padding: '5px 12px', fontSize: 'var(--fs-2xs)' }} onClick={() => handleCancel(v.id)}>
                           {t('chrono.cancelarSolicitud')}
                         </button>
                       )}
@@ -395,7 +395,7 @@ export function VacacionesView({ vacacionRepo, currentUser }: VacacionesViewProp
       {/* ── Tab: Calendario equipo ─────────────────────────────────────────── */}
       {tab === 'equipo' && (
         <div className="ch-card fade-in" style={{ textAlign: 'center', padding: 40, color: C.txMuted }}>
-          <span className="mono" style={{ fontSize: 12, letterSpacing: '.08em' }}>{t('chrono.proximaVista')}</span>
+          <span className="mono" style={{ fontSize: 'var(--fs-xs)', letterSpacing: '.08em' }}>{t('chrono.proximaVista')}</span>
         </div>
       )}
     </div>

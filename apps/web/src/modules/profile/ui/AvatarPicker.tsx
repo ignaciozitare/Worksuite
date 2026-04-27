@@ -135,12 +135,12 @@ export function AvatarPicker({ user, onClose, onSaved }: Props) {
           padding: '16px 20px', borderBottom: '1px solid var(--bd)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', margin: 0 }}>
+          <h3 style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--tx)', margin: 0 }}>
             {mode === 'crop' ? t('profile.avatarCropTitle') : t('profile.avatarPickerTitle')}
           </h3>
           <button onClick={() => !busy && onClose()} disabled={busy}
             style={{ background: 'none', border: 'none', cursor: busy ? 'not-allowed' : 'pointer', color: 'var(--tx3)' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>close</span>
           </button>
         </div>
 
@@ -148,7 +148,7 @@ export function AvatarPicker({ user, onClose, onSaved }: Props) {
           {error && (
             <div style={{
               marginBottom: 12, padding: '8px 12px', borderRadius: 6,
-              background: 'var(--red-dim)', color: 'var(--red)', fontSize: 12,
+              background: 'var(--red-dim)', color: 'var(--red)', fontSize: 'var(--fs-xs)',
             }}>{error}</div>
           )}
 
@@ -165,13 +165,13 @@ export function AvatarPicker({ user, onClose, onSaved }: Props) {
                   background: 'var(--sf2)', marginBottom: 18,
                   opacity: busy ? .5 : 1,
                 }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 28, color: 'var(--tx3)' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', color: 'var(--tx3)' }}>
                   cloud_upload
                 </span>
-                <div style={{ fontSize: 13, color: 'var(--tx)', marginTop: 6, fontWeight: 600 }}>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx)', marginTop: 6, fontWeight: 600 }}>
                   {t('profile.avatarUploadDrop')}
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 2 }}>
+                <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 2 }}>
                   {t('profile.avatarUploadHint')}
                 </div>
                 <input ref={fileInputRef} type="file" accept={ALLOWED_MIME.join(',')}
@@ -180,7 +180,7 @@ export function AvatarPicker({ user, onClose, onSaved }: Props) {
               </div>
 
               {/* Presets */}
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
+              <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
                 {t('profile.avatarPresets')}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 6, marginBottom: 18 }}>
@@ -209,7 +209,7 @@ export function AvatarPicker({ user, onClose, onSaved }: Props) {
                   width: '100%', padding: '10px 12px', borderRadius: 8,
                   background: 'var(--sf2)', border: '1px solid var(--bd)',
                   color: 'var(--tx2)', cursor: busy ? 'not-allowed' : 'pointer',
-                  fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+                  fontSize: 'var(--fs-xs)', fontWeight: 600, fontFamily: 'inherit',
                 }}>
                 {t('profile.avatarRemove')}
               </button>
@@ -242,7 +242,7 @@ export function AvatarPicker({ user, onClose, onSaved }: Props) {
                   }} />
               </div>
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 11, color: 'var(--tx3)', marginBottom: 4 }}>
+                <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginBottom: 4 }}>
                   {t('profile.avatarZoom')}
                 </div>
                 <input type="range" min="1" max="3" step="0.05" value={zoom}
@@ -255,7 +255,7 @@ export function AvatarPicker({ user, onClose, onSaved }: Props) {
                     flex: 1, padding: '10px 12px', borderRadius: 8,
                     background: 'var(--sf2)', border: '1px solid var(--bd)',
                     color: 'var(--tx2)', cursor: busy ? 'not-allowed' : 'pointer',
-                    fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+                    fontSize: 'var(--fs-xs)', fontWeight: 600, fontFamily: 'inherit',
                   }}>
                   {t('common.back')}
                 </button>
@@ -264,7 +264,7 @@ export function AvatarPicker({ user, onClose, onSaved }: Props) {
                     flex: 2, padding: '10px 12px', borderRadius: 8,
                     background: 'var(--ac)', border: 'none',
                     color: 'var(--ac-on)', cursor: busy ? 'wait' : 'pointer',
-                    fontSize: 12, fontWeight: 700, fontFamily: 'inherit',
+                    fontSize: 'var(--fs-xs)', fontWeight: 700, fontFamily: 'inherit',
                   }}>
                   {busy ? t('common.loading') : t('profile.avatarSave')}
                 </button>

@@ -113,8 +113,8 @@ export function JiraView({ jiraRepo, notifRepo }: Props) {
       {/* ── Header ─── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{t('chronoAdmin.jiraTitle')}</div>
-          <div style={{ fontSize: 12, color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.jiraSubtitle')}</div>
+          <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700 }}>{t('chronoAdmin.jiraTitle')}</div>
+          <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.jiraSubtitle')}</div>
         </div>
         <button className="ch-btn ch-btn-ghost" onClick={load}>
           ↻ {t('chronoAdmin.recargar')}
@@ -123,13 +123,13 @@ export function JiraView({ jiraRepo, notifRepo }: Props) {
 
       {/* ── Month selector ─── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <button className="ch-btn ch-btn-ghost" onClick={() => setMes(shiftMes(mes, -1))} style={{ fontSize: 14, padding: '6px 12px' }}>
+        <button className="ch-btn ch-btn-ghost" onClick={() => setMes(shiftMes(mes, -1))} style={{ fontSize: 'var(--fs-sm)', padding: '6px 12px' }}>
           ◀
         </button>
-        <div className="mono" style={{ fontSize: 15, fontWeight: 600, color: C.amber, textTransform: 'capitalize', minWidth: 160, textAlign: 'center' }}>
+        <div className="mono" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: C.amber, textTransform: 'capitalize', minWidth: 160, textAlign: 'center' }}>
           {getMesLabel(mes)}
         </div>
-        <button className="ch-btn ch-btn-ghost" onClick={() => setMes(shiftMes(mes, 1))} style={{ fontSize: 14, padding: '6px 12px' }}>
+        <button className="ch-btn ch-btn-ghost" onClick={() => setMes(shiftMes(mes, 1))} style={{ fontSize: 'var(--fs-sm)', padding: '6px 12px' }}>
           ▶
         </button>
         <div style={{ flex: 1 }} />
@@ -137,7 +137,7 @@ export function JiraView({ jiraRepo, notifRepo }: Props) {
           className="ch-btn ch-btn-amber"
           onClick={handleSendAll}
           disabled={sendingAll || empleadosConDeficit === 0}
-          style={{ fontSize: 12 }}
+          style={{ fontSize: 'var(--fs-xs)' }}
         >
           {sendingAll ? t('chronoAdmin.enviando') : t('chronoAdmin.enviarTodosRecordatorios')}
         </button>
@@ -147,10 +147,10 @@ export function JiraView({ jiraRepo, notifRepo }: Props) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
         {summaryStats.map(s => (
           <div key={s.label} className="ch-card" style={{ padding: '16px 18px' }}>
-            <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+            <div className="mono" style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
               {s.label}
             </div>
-            <div className="mono" style={{ fontSize: 22, fontWeight: 700, color: s.accent, marginTop: 4 }}>
+            <div className="mono" style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: s.accent, marginTop: 4 }}>
               {s.value}
             </div>
           </div>
@@ -158,7 +158,7 @@ export function JiraView({ jiraRepo, notifRepo }: Props) {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 'var(--fs-xs)' }}>
           {t('chronoAdmin.cargando')}
         </div>
       ) : data.length === 0 ? (
@@ -170,22 +170,22 @@ export function JiraView({ jiraRepo, notifRepo }: Props) {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.empleado')}
                 </th>
-                <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.horasJira')}
                 </th>
-                <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.horasFichaje')}
                 </th>
-                <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.diferencia')}
                 </th>
-                <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.proyectos')}
                 </th>
-                <th style={{ textAlign: 'center', padding: '10px 12px', fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
+                <th style={{ textAlign: 'center', padding: '10px 12px', fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: `1px solid ${C.bd}` }}>
                   {t('chronoAdmin.acciones')}
                 </th>
               </tr>
@@ -209,28 +209,28 @@ export function JiraView({ jiraRepo, notifRepo }: Props) {
                             width: 32, height: 32, borderRadius: '50%',
                             background: `linear-gradient(135deg,${C.amberDim},#78350f)`,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontWeight: 700, color: C.amber, fontFamily: "'IBM Plex Mono',monospace", fontSize: 13,
+                            fontWeight: 700, color: C.amber, fontFamily: "'IBM Plex Mono',monospace", fontSize: 'var(--fs-xs)',
                           }}>
                             {emp.nombre.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div style={{ fontSize: 13, fontWeight: 600 }}>{emp.nombre}</div>
-                            <div style={{ fontSize: 11, color: C.txDim }}>{emp.email}</div>
+                            <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600 }}>{emp.nombre}</div>
+                            <div style={{ fontSize: 'var(--fs-2xs)', color: C.txDim }}>{emp.email}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="mono" style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'right', fontSize: 14, fontWeight: 600, color: C.blue }}>
+                      <td className="mono" style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'right', fontSize: 'var(--fs-sm)', fontWeight: 600, color: C.blue }}>
                         {fmtHours(emp.minutosJira)}
                       </td>
-                      <td className="mono" style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'right', fontSize: 14, fontWeight: 600, color: C.amber }}>
+                      <td className="mono" style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'right', fontSize: 'var(--fs-sm)', fontWeight: 600, color: C.amber }}>
                         {fmtHours(emp.minutosFichaje)}
                       </td>
                       <td style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'right' }}>
-                        <span className="ch-badge mono" style={{ background: diffBg, color: diffColor, fontSize: 12, padding: '3px 10px', fontWeight: 600 }}>
+                        <span className="ch-badge mono" style={{ background: diffBg, color: diffColor, fontSize: 'var(--fs-xs)', padding: '3px 10px', fontWeight: 600 }}>
                           {emp.diferencia >= 0 ? '+' : ''}{fmtHours(emp.diferencia)}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, fontSize: 12, color: C.txDim }}>
+                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, fontSize: 'var(--fs-xs)', color: C.txDim }}>
                         {emp.proyectos.map(p => p.key).join(', ') || '—'}
                       </td>
                       <td style={{ padding: '10px 12px', borderBottom: `1px solid ${C.bd}`, textAlign: 'center' }}>
@@ -239,7 +239,7 @@ export function JiraView({ jiraRepo, notifRepo }: Props) {
                             className="ch-btn ch-btn-ghost"
                             onClick={e => { e.stopPropagation(); handleSendReminder(emp); }}
                             disabled={sendingId === emp.userId}
-                            style={{ fontSize: 11, padding: '4px 10px', color: C.orange }}
+                            style={{ fontSize: 'var(--fs-2xs)', padding: '4px 10px', color: C.orange }}
                           >
                             {sendingId === emp.userId ? t('chronoAdmin.enviando') : t('chronoAdmin.enviarRecordatorio')}
                           </button>
@@ -252,17 +252,17 @@ export function JiraView({ jiraRepo, notifRepo }: Props) {
                       <tr>
                         <td colSpan={6} style={{ padding: '12px 24px 16px 56px', borderBottom: `1px solid ${C.bd}`, background: C.sfHover }}>
                           <div className="fade-in">
-                            <div style={{ fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
+                            <div style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>
                               {t('chronoAdmin.desglose')}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                               {emp.proyectos.map(p => (
                                 <div key={p.key} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 12px', borderRadius: 6, background: C.sf }}>
-                                  <span className="ch-badge" style={{ background: C.blueDim, color: C.blue, fontSize: 10, padding: '2px 8px', fontWeight: 600 }}>
+                                  <span className="ch-badge" style={{ background: C.blueDim, color: C.blue, fontSize: 'var(--fs-2xs)', padding: '2px 8px', fontWeight: 600 }}>
                                     {p.key}
                                   </span>
-                                  <span style={{ flex: 1, fontSize: 12, color: C.tx }}>{p.name}</span>
-                                  <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: C.blue }}>{fmtHours(p.minutos)}</span>
+                                  <span style={{ flex: 1, fontSize: 'var(--fs-xs)', color: C.tx }}>{p.name}</span>
+                                  <span className="mono" style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: C.blue }}>{fmtHours(p.minutos)}</span>
                                 </div>
                               ))}
                             </div>

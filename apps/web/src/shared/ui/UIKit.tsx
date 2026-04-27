@@ -38,7 +38,7 @@ class SafeRender extends React.Component {
   static getDerivedStateFromError(error) { return { error }; }
   render() {
     if (this.state.error) return (
-      <div style={{ padding: 12, background: 'var(--red-dim)', border: '1px solid rgba(224,82,82,.3)', borderRadius: 8, fontSize: 12, color: 'var(--red)' }}>
+      <div style={{ padding: 12, background: 'var(--red-dim)', border: '1px solid rgba(224,82,82,.3)', borderRadius: 8, fontSize: 'var(--fs-xs)', color: 'var(--red)' }}>
         Error: {this.state.error?.message || 'Unknown'}
       </div>
     );
@@ -48,18 +48,18 @@ class SafeRender extends React.Component {
 
 const Section = ({ id, title, description, usedIn, duplicates, children }) => (
   <div id={id} style={{ marginBottom: 48, scrollMarginTop: 80 }}>
-    <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--tx)', marginBottom: 2 }}>{title}</h2>
-    {description && <p style={{ fontSize: 12, color: 'var(--tx3)', marginBottom: 8 }}>{description}</p>}
+    <h2 style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--tx)', marginBottom: 2 }}>{title}</h2>
+    {description && <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)', marginBottom: 8 }}>{description}</p>}
     {usedIn && (
       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
-        <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.08em', lineHeight: '18px' }}>Used in:</span>
-        {usedIn.map(m => <span key={m} style={{ fontSize: 10, padding: '1px 7px', borderRadius: 3, background: 'var(--glow)', color: 'var(--ac2)', fontWeight: 600 }}>{m}</span>)}
+        <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.08em', lineHeight: '18px' }}>Used in:</span>
+        {usedIn.map(m => <span key={m} style={{ fontSize: 'var(--fs-2xs)', padding: '1px 7px', borderRadius: 3, background: 'var(--glow)', color: 'var(--ac2)', fontWeight: 600 }}>{m}</span>)}
       </div>
     )}
     {duplicates && (
       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
-        <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--amber)', textTransform: 'uppercase', letterSpacing: '.08em', lineHeight: '18px' }}>Duplicates:</span>
-        {duplicates.map(d => <span key={d} style={{ fontSize: 10, padding: '1px 7px', borderRadius: 3, background: 'var(--amber-dim)', color: 'var(--amber)', fontWeight: 600 }}>{d}</span>)}
+        <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--amber)', textTransform: 'uppercase', letterSpacing: '.08em', lineHeight: '18px' }}>Duplicates:</span>
+        {duplicates.map(d => <span key={d} style={{ fontSize: 'var(--fs-2xs)', padding: '1px 7px', borderRadius: 3, background: 'var(--amber-dim)', color: 'var(--amber)', fontWeight: 600 }}>{d}</span>)}
       </div>
     )}
     <div style={{ padding: '14px 0', borderTop: '1px solid var(--bd)' }}><SafeRender>{children}</SafeRender></div>
@@ -68,20 +68,20 @@ const Section = ({ id, title, description, usedIn, duplicates, children }) => (
 
 const Row = ({ label, children }) => (
   <div style={{ marginBottom: 12 }}>
-    <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>{label}</div>
+    <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>{label}</div>
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>{children}</div>
   </div>
 );
 
 const Code = ({ children }) => (
-  <code style={{ fontSize: 11, padding: '2px 6px', borderRadius: 4, background: 'var(--sf2)', color: 'var(--purple)', fontFamily: 'var(--mono)' }}>{children}</code>
+  <code style={{ fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 4, background: 'var(--sf2)', color: 'var(--purple)', fontFamily: 'var(--mono)' }}>{children}</code>
 );
 
 const Swatch = ({ token, value }: { token: string; value: string }) => (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: 8, background: 'var(--sf2)', borderRadius: 6, minWidth: 80 }}>
     <div style={{ width: 32, height: 32, borderRadius: 6, background: value, border: '1px solid var(--bd)' }} />
-    <code style={{ fontSize: 9, fontWeight: 700, color: 'var(--ac2)', fontFamily: 'var(--mono)' }}>{token}</code>
-    <span style={{ fontSize: 8, color: 'var(--tx3)', fontFamily: 'var(--mono)' }}>{value}</span>
+    <code style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac2)', fontFamily: 'var(--mono)' }}>{token}</code>
+    <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', fontFamily: 'var(--mono)' }}>{value}</span>
   </div>
 );
 
@@ -168,11 +168,11 @@ export function UIKit() {
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ac)', boxShadow: '0 0 10px var(--ac)' }} />
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--tx)', letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: 'var(--fs-xl)', fontWeight: 800, color: 'var(--tx)', letterSpacing: '-0.02em' }}>
               WorkSuite UI Kit
             </h1>
           </div>
-          <p style={{ fontSize: 13, color: 'var(--tx3)' }}>
+          <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)' }}>
             Carbon Logic (Stitch) Design System — Living Brandbook
           </p>
           <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
@@ -184,10 +184,10 @@ export function UIKit() {
 
         {/* ══ TABLE OF CONTENTS ═══════════════════════════════════════════ */}
         <div style={{ marginBottom: 40, padding: 16, background: 'var(--sf)', borderRadius: 8, border: '1px solid var(--bd)' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 10 }}>Index</div>
+          <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 10 }}>Index</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {TOC_ITEMS.map(item => (
-              <a key={item.id} href={`#${item.id}`} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 4, background: 'var(--sf2)', color: 'var(--tx2)', textDecoration: 'none', fontWeight: 500, transition: 'var(--ease)' }}>
+              <a key={item.id} href={`#${item.id}`} style={{ fontSize: 'var(--fs-2xs)', padding: '3px 10px', borderRadius: 4, background: 'var(--sf2)', color: 'var(--tx2)', textDecoration: 'none', fontWeight: 500, transition: 'var(--ease)' }}>
                 {item.label}
               </a>
             ))}
@@ -198,7 +198,7 @@ export function UIKit() {
         {/* ══ DESIGN SYSTEM FOUNDATIONS ═══════════════════════════════════ */}
         {/* ══════════════════════════════════════════════════════════════════ */}
 
-        <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em', marginBottom: 20 }}>Foundations</div>
+        <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em', marginBottom: 20 }}>Foundations</div>
 
         {/* ── Tonal Depth ── */}
         <Section id="tonal" title="Tonal Depth" description="Carbon Logic uses tonal layering instead of borders. Hierarchy comes from surface depth and glow.">
@@ -243,25 +243,25 @@ export function UIKit() {
         <Section id="typography" title="Typography" description="Inter font family. Never use pure #FFFFFF for text.">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: 20, background: 'var(--sf)', borderRadius: 8 }}>
             <div>
-              <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em' }}>Display — Semi-Bold 600, -0.02em</span>
-              <div style={{ fontSize: 42, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--tx)', marginTop: 4 }}>Hyper Precise.</div>
+              <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em' }}>Display — Semi-Bold 600, -0.02em</span>
+              <div style={{ fontSize: 'var(--fs-display)', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--tx)', marginTop: 4 }}>Hyper Precise.</div>
             </div>
             <div>
-              <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em' }}>Headline — Medium 500, -0.01em</span>
-              <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.01em', color: 'var(--tx)', marginTop: 4 }}>Technical logistics platform.</div>
+              <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em' }}>Headline — Medium 500, -0.01em</span>
+              <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 500, letterSpacing: '-0.01em', color: 'var(--tx)', marginTop: 4 }}>Technical logistics platform.</div>
             </div>
             <div style={{ display: 'flex', gap: 40 }}>
               <div>
-                <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em' }}>Title — Medium 500, 0.01em</span>
-                <div style={{ fontSize: 16, fontWeight: 500, letterSpacing: '0.01em', color: 'var(--tx)', marginTop: 4 }}>Section heading</div>
+                <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em' }}>Title — Medium 500, 0.01em</span>
+                <div style={{ fontSize: 'var(--fs-body)', fontWeight: 500, letterSpacing: '0.01em', color: 'var(--tx)', marginTop: 4 }}>Section heading</div>
               </div>
               <div>
-                <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em' }}>Body — Regular 400, 0.01em</span>
-                <div style={{ fontSize: 14, fontWeight: 400, letterSpacing: '0.01em', color: 'var(--tx2)', marginTop: 4 }}>Readable body text for dark backgrounds.</div>
+                <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em' }}>Body — Regular 400, 0.01em</span>
+                <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 400, letterSpacing: '0.01em', color: 'var(--tx2)', marginTop: 4 }}>Readable body text for dark backgrounds.</div>
               </div>
               <div>
-                <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em' }}>Label — Bold 700, ALL-CAPS</span>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tx)', marginTop: 4 }}>META DATA 102.4</div>
+                <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em' }}>Label — Bold 700, ALL-CAPS</span>
+                <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tx)', marginTop: 4 }}>META DATA 102.4</div>
               </div>
             </div>
           </div>
@@ -276,8 +276,8 @@ export function UIKit() {
             <div style={{ display: 'flex', gap: 12 }}>
               <div style={{ width: 40, height: 40, background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 'var(--r)' }} />
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <code style={{ fontSize: 10, color: 'var(--ac2)', fontFamily: 'var(--mono)' }}>--r: 5px</code>
-                <code style={{ fontSize: 10, color: 'var(--ac2)', fontFamily: 'var(--mono)' }}>--r2: 8px</code>
+                <code style={{ fontSize: 'var(--fs-2xs)', color: 'var(--ac2)', fontFamily: 'var(--mono)' }}>--r: 5px</code>
+                <code style={{ fontSize: 'var(--fs-2xs)', color: 'var(--ac2)', fontFamily: 'var(--mono)' }}>--r2: 8px</code>
               </div>
               <div style={{ width: 40, height: 40, background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 'var(--r2)' }} />
             </div>
@@ -289,8 +289,8 @@ export function UIKit() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 16 }}>
             {['dashboard','monitoring','terminal','layers','database','hub','rocket_launch','developer_board','schedule','group','warning','settings','assignment','event_seat','replay','dns','timer','insights','login','bolt','apartment','map','calendar_month','search'].map(icon => (
               <div key={icon} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '8px 2px' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 22, color: 'var(--tx2)' }}>{icon}</span>
-                <span style={{ fontSize: 7, fontFamily: 'var(--mono)', color: 'var(--tx3)' }}>{icon}</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', color: 'var(--tx2)' }}>{icon}</span>
+                <span style={{ fontSize: 'var(--fs-2xs)', fontFamily: 'var(--mono)', color: 'var(--tx3)' }}>{icon}</span>
               </div>
             ))}
           </div>
@@ -300,7 +300,7 @@ export function UIKit() {
         {/* ══ COMPONENTS — @worksuite/ui ═════════════════════════════════ */}
         {/* ══════════════════════════════════════════════════════════════════ */}
 
-        <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em', marginTop: 40, marginBottom: 20 }}>Components — @worksuite/ui</div>
+        <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em', marginTop: 40, marginBottom: 20 }}>Components — @worksuite/ui</div>
 
         {/* ── Btn ── */}
         <Section id="btn" title="Btn" description="Primary button component with variants, sizes, and loading state."
@@ -331,30 +331,30 @@ export function UIKit() {
         <Section id="gradient-btns" title="Gradient Buttons" description="Primary CTAs across modules. linear-gradient(135deg) + glow shadow. This is the Carbon Logic standard for primary actions."
           usedIn={['hotdesk (.hd-btn-green, .hd-btn-primary)', 'chrono (.ch-btn-amber, .ch-btn-green, .ch-btn-red)', 'deploy-planner (Add Release, VersionPicker)']}>
           <Row label="Primary (blue gradient + glow)">
-            <button style={{ background: 'linear-gradient(135deg, var(--ac2), var(--ac))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--ac-dim)', fontFamily: 'inherit' }}>Primary Action</button>
-            <button style={{ background: 'linear-gradient(135deg, var(--ac2), var(--ac))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--ac-dim)', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span> Add Release
+            <button style={{ background: 'linear-gradient(135deg, var(--ac2), var(--ac))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--ac-dim)', fontFamily: 'inherit' }}>Primary Action</button>
+            <button style={{ background: 'linear-gradient(135deg, var(--ac2), var(--ac))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--ac-dim)', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>add</span> Add Release
             </button>
           </Row>
           <Row label="Success (green gradient + glow)">
-            <button style={{ background: 'linear-gradient(135deg, var(--green), var(--green-strong))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--green-dim)', fontFamily: 'inherit' }}>Approve</button>
-            <button style={{ background: 'linear-gradient(135deg, var(--green), var(--green-strong))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--green-dim)', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>login</span> Check In
+            <button style={{ background: 'linear-gradient(135deg, var(--green), var(--green-strong))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--green-dim)', fontFamily: 'inherit' }}>Approve</button>
+            <button style={{ background: 'linear-gradient(135deg, var(--green), var(--green-strong))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--green-dim)', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>login</span> Check In
             </button>
           </Row>
           <Row label="Danger (red gradient + glow)">
-            <button style={{ background: 'linear-gradient(135deg, var(--danger), var(--danger-strong))', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--red-dim)', fontFamily: 'inherit' }}>Reject</button>
-            <button style={{ background: 'linear-gradient(135deg, var(--danger), var(--danger-strong))', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--red-dim)', fontFamily: 'inherit' }}>Cancel Reservation</button>
+            <button style={{ background: 'linear-gradient(135deg, var(--danger), var(--danger-strong))', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--red-dim)', fontFamily: 'inherit' }}>Reject</button>
+            <button style={{ background: 'linear-gradient(135deg, var(--danger), var(--danger-strong))', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--red-dim)', fontFamily: 'inherit' }}>Cancel Reservation</button>
           </Row>
           <Row label="Purple (tertiary gradient + glow)">
-            <button style={{ background: 'linear-gradient(135deg, var(--tertiary), var(--purple-strong))', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--purple-dim)', fontFamily: 'inherit' }}>Delegate</button>
+            <button style={{ background: 'linear-gradient(135deg, var(--tertiary), var(--purple-strong))', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px var(--purple-dim)', fontFamily: 'inherit' }}>Delegate</button>
           </Row>
           <Row label="Pattern">
             <Code>{"background: 'linear-gradient(135deg, var(--ac2), var(--ac))'"}</Code>
             <Code>{"boxShadow: '0 4px 20px var(--ac-dim)'"}</Code>
           </Row>
           <Row label="Files">
-            <div style={{ fontSize: 11, color: 'var(--tx2)', lineHeight: 1.8 }}>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx2)', lineHeight: 1.8 }}>
               <div><Code>modules/hotdesk/ui/HDReserveModal.tsx</Code> — btnPrimary, btnGreen, btnDanger, btnPurple</div>
               <div><Code>modules/hotdesk/ui/HDMapView.tsx</Code> — .hd-btn-green, .hd-btn-primary</div>
               <div><Code>modules/chrono/ui/ChronoPage.tsx</Code> — .ch-btn-amber, .ch-btn-green, .ch-btn-red</div>
@@ -369,16 +369,16 @@ export function UIKit() {
           usedIn={['hotdesk (.hd-btn-ghost)', 'chrono (.ch-btn-ghost)', 'chrono-admin (.ch-btn-ghost)']}>
           <Row label="Glass ghost button">
             <div style={{ padding: 20, background: 'linear-gradient(135deg, var(--ac), var(--purple))', borderRadius: 8 }}>
-              <button style={{ background: 'rgba(58,57,57,0.5)', color: 'var(--tx2)', border: '1px solid rgba(42,42,56,0.3)', borderRadius: 6, padding: '9px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontFamily: 'inherit', letterSpacing: '.05em', textTransform: 'uppercase' as const }}>Cancel</button>
+              <button style={{ background: 'rgba(58,57,57,0.5)', color: 'var(--tx2)', border: '1px solid rgba(42,42,56,0.3)', borderRadius: 6, padding: '9px 18px', fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontFamily: 'inherit', letterSpacing: '.05em', textTransform: 'uppercase' as const }}>Cancel</button>
               <span style={{ width: 8 }} />
-              <button style={{ background: 'rgba(58,57,57,0.5)', color: 'var(--tx2)', border: '1px solid rgba(42,42,56,0.3)', borderRadius: 6, padding: '9px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontFamily: 'inherit', marginLeft: 8 }}>Secondary</button>
+              <button style={{ background: 'rgba(58,57,57,0.5)', color: 'var(--tx2)', border: '1px solid rgba(42,42,56,0.3)', borderRadius: 6, padding: '9px 18px', fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontFamily: 'inherit', marginLeft: 8 }}>Secondary</button>
             </div>
           </Row>
           <Row label="Glass navigation arrows">
             <div style={{ display: 'flex', gap: 6, padding: 16, background: 'var(--sf)', borderRadius: 8 }}>
               {['chevron_left', 'chevron_right'].map(icon => (
-                <button key={icon} style={{ background: 'rgba(58,57,57,0.5)', border: '1px solid rgba(42,42,56,0.3)', borderRadius: 6, width: 28, height: 28, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx2)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{icon}</span>
+                <button key={icon} style={{ background: 'rgba(58,57,57,0.5)', border: '1px solid rgba(42,42,56,0.3)', borderRadius: 6, width: 28, height: 28, fontSize: 'var(--fs-body)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx2)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>{icon}</span>
                 </button>
               ))}
             </div>
@@ -386,8 +386,8 @@ export function UIKit() {
           <Row label="Glass floating card (container)">
             <div style={{ position: 'relative', padding: 24, background: 'var(--bg)', borderRadius: 8 }}>
               <div style={{ background: 'var(--sf)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid var(--sf-bright)', borderRadius: 10, padding: '12px 16px', maxWidth: 220 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--tx)', marginBottom: 6 }}>Floating Card</div>
-                <div style={{ fontSize: 10, color: 'var(--tx3)' }}>backdrop-filter: blur(16px)</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, color: 'var(--tx)', marginBottom: 6 }}>Floating Card</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>backdrop-filter: blur(16px)</div>
               </div>
             </div>
           </Row>
@@ -405,15 +405,15 @@ export function UIKit() {
               <style>{`
                 @keyframes uikit-pulse{0%{box-shadow:0 4px 24px var(--green-dim),0 0 0 0 rgba(74,225,118,.5)}70%{box-shadow:0 4px 24px var(--green-dim),0 0 0 16px rgba(74,225,118,0)}100%{box-shadow:0 4px 24px var(--green-dim),0 0 0 0 rgba(74,225,118,0)}}
               `}</style>
-              <button style={{ background: 'linear-gradient(135deg, var(--green), var(--green-strong))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6, animation: 'uikit-pulse 2s cubic-bezier(.215,.61,.355,1) infinite' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>login</span> Check In
+              <button style={{ background: 'linear-gradient(135deg, var(--green), var(--green-strong))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6, animation: 'uikit-pulse 2s cubic-bezier(.215,.61,.355,1) infinite' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>login</span> Check In
               </button>
-              <span style={{ fontSize: 10, color: 'var(--tx3)' }}>animation: hdPulse 2s infinite</span>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>animation: hdPulse 2s infinite</span>
             </div>
           </Row>
           <Row label="Hover drop-shadow glow (Deploy Planner)">
             <button
-              style={{ background: 'linear-gradient(135deg, var(--ac2), var(--ac))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px var(--ac-dim)', transition: 'all .2s' }}
+              style={{ background: 'linear-gradient(135deg, var(--ac2), var(--ac))', color: 'var(--ac-on)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px var(--ac-dim)', transition: 'all .2s' }}
               onMouseEnter={e => { e.currentTarget.style.filter = 'drop-shadow(0 0 12px var(--ac-dim))'; }}
               onMouseLeave={e => { e.currentTarget.style.filter = 'none'; }}
             >
@@ -437,12 +437,12 @@ export function UIKit() {
           </Row>
           <Row label=".btn-exp — Export (green)">
             <button className="btn-exp" style={{ width: 'auto' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 13 }}>download</span> Export
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>download</span> Export
             </button>
           </Row>
           <Row label=".btn-log — Log action (blue glow)">
             <button className="btn-log">
-              <span className="material-symbols-outlined" style={{ fontSize: 13 }}>add</span> Log
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>add</span> Log
             </button>
           </Row>
           <Row label=".b-sub / .b-cancel / .b-danger — Modal actions">
@@ -509,36 +509,36 @@ export function UIKit() {
           <Row label="Default + custom accent">
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', width: '100%' }}>
               <Card style={{ flex: 1, minWidth: 180 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>Default Card</div>
-                <div style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 6 }}>Top accent line, tonal bg, 8px radius.</div>
+                <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)' }}>Default Card</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)', marginTop: 6 }}>Top accent line, tonal bg, 8px radius.</div>
               </Card>
               <Card accent="var(--green)" style={{ flex: 1, minWidth: 180 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>Green Accent</div>
-                <div style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 6 }}>Custom accent color on top edge.</div>
+                <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)' }}>Green Accent</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)', marginTop: 6 }}>Custom accent color on top edge.</div>
               </Card>
             </div>
           </Row>
           <Row label="Stat (radial glow)">
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', width: '100%' }}>
               <Card variant="stat" style={{ flex: 1, minWidth: 140 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tx3)' }}>Hours</div>
-                <div style={{ fontSize: 26, fontWeight: 600, color: 'var(--tx)', marginTop: 4 }}>142.5h</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tx3)' }}>Hours</div>
+                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 600, color: 'var(--tx)', marginTop: 4 }}>142.5h</div>
               </Card>
               <Card variant="stat" accent="var(--green)" style={{ flex: 1, minWidth: 140 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tx3)' }}>Releases</div>
-                <div style={{ fontSize: 26, fontWeight: 600, color: 'var(--green)', marginTop: 4 }}>8</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tx3)' }}>Releases</div>
+                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 600, color: 'var(--green)', marginTop: 4 }}>8</div>
               </Card>
               <Card variant="stat" accent="var(--red)" style={{ flex: 1, minWidth: 140 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tx3)' }}>Bugs</div>
-                <div style={{ fontSize: 26, fontWeight: 600, color: 'var(--red)', marginTop: 4 }}>3</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tx3)' }}>Bugs</div>
+                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 600, color: 'var(--red)', marginTop: 4 }}>3</div>
               </Card>
             </div>
           </Row>
           <Row label="Glass (backdrop blur)">
             <div style={{ position: 'relative', padding: 20, borderRadius: 10, background: 'linear-gradient(135deg, var(--ac), var(--purple))', overflow: 'hidden' }}>
               <Card variant="glass" style={{ maxWidth: 260 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>Glass Card</div>
-                <div style={{ fontSize: 12, color: 'var(--tx2)', marginTop: 6 }}>Semi-transparent + backdrop blur.</div>
+                <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)' }}>Glass Card</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx2)', marginTop: 6 }}>Semi-transparent + backdrop blur.</div>
               </Card>
             </div>
           </Row>
@@ -551,13 +551,13 @@ export function UIKit() {
           <Row label=".a-card — Admin card">
             <div className="a-card" style={{ maxWidth: 300 }}>
               <div className="a-ct">Admin Card Title</div>
-              <div style={{ fontSize: 12, color: 'var(--tx2)' }}>Content inside an admin section card.</div>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx2)' }}>Content inside an admin section card.</div>
             </div>
           </Row>
           <Row label=".hd-card — HotDesk card">
             <div className="hd-card" style={{ maxWidth: 300 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)' }}>HotDesk Card</div>
-              <div style={{ fontSize: 12, color: 'var(--tx2)', marginTop: 6 }}>Map container, legend wrapper.</div>
+              <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)' }}>HotDesk Card</div>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx2)', marginTop: 6 }}>Map container, legend wrapper.</div>
             </div>
           </Row>
           <Row label=".wlc — Worklog card">
@@ -631,7 +631,7 @@ export function UIKit() {
           </Row>
           {modal && (
             <Modal title="Example Modal" onClose={() => setModal(false)}>
-              <p style={{ color: 'var(--tx2)', fontSize: 13 }}>This is the @worksuite/ui Modal component. Click outside or the X to close.</p>
+              <p style={{ color: 'var(--tx2)', fontSize: 'var(--fs-xs)' }}>This is the @worksuite/ui Modal component. Click outside or the X to close.</p>
               <div style={{ marginTop: 12 }}><Btn onClick={() => setModal(false)}>Accept</Btn></div>
             </Modal>
           )}
@@ -689,18 +689,18 @@ export function UIKit() {
             <div style={{ width: 196, background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 6, padding: '16px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
               <div className="admin-nav-t">Admin Panel</div>
               <button className="an-btn active">
-                <span className="an-icon material-symbols-outlined" style={{ fontSize: 14 }}>group</span>
+                <span className="an-icon material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>group</span>
                 Users
               </button>
               <button className="an-btn">
-                <span className="an-icon material-symbols-outlined" style={{ fontSize: 14 }}>settings</span>
+                <span className="an-icon material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>settings</span>
                 Settings
                 <span className="an-badge">3</span>
               </button>
             </div>
           </Row>
           <Row label="All sidebar implementations">
-            <div style={{ fontSize: 11, color: 'var(--tx2)', lineHeight: 1.8 }}>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx2)', lineHeight: 1.8 }}>
               <div><Code>.sb</Code> JiraTracker filter sidebar — 248px, CSS classes</div>
               <div><Code>.admin-nav</Code> Admin shell nav — 196px, CSS classes</div>
               <div><Code>inline</Code> ChronoPage — ~70 lines, inline styles</div>
@@ -731,9 +731,9 @@ export function UIKit() {
         <Section id="divider" title="Divider" description="Simple separator line."
           usedIn={['Available']}>
           <div style={{ padding: '8px 0' }}>
-            <div style={{ color: 'var(--tx2)', fontSize: 12, marginBottom: 4 }}>Content above</div>
+            <div style={{ color: 'var(--tx2)', fontSize: 'var(--fs-xs)', marginBottom: 4 }}>Content above</div>
             <Divider />
-            <div style={{ color: 'var(--tx2)', fontSize: 12, marginTop: 4 }}>Content below</div>
+            <div style={{ color: 'var(--tx2)', fontSize: 'var(--fs-xs)', marginTop: 4 }}>Content below</div>
           </div>
           <Row label="Import"><Code>{"import { Divider } from '@worksuite/ui'"}</Code></Row>
         </Section>
@@ -742,7 +742,7 @@ export function UIKit() {
         {/* ══ COMPLEX COMPONENTS ═════════════════════════════════════════ */}
         {/* ══════════════════════════════════════════════════════════════════ */}
 
-        <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em', marginTop: 40, marginBottom: 20 }}>Complex Components — @worksuite/ui</div>
+        <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em', marginTop: 40, marginBottom: 20 }}>Complex Components — @worksuite/ui</div>
 
         {/* ── DateRangePicker ── */}
         <Section id="datepicker" title="DateRangePicker" description="Date range selector with calendar popover. Supports showTime and maxDurationHours."
@@ -845,7 +845,7 @@ export function UIKit() {
         {/* ══ MODULE-SPECIFIC PATTERNS ════════════════════════════════════ */}
         {/* ══════════════════════════════════════════════════════════════════ */}
 
-        <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em', marginTop: 40, marginBottom: 20 }}>Module Patterns — Reusable designs from modules</div>
+        <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em', marginTop: 40, marginBottom: 20 }}>Module Patterns — Reusable designs from modules</div>
 
         {/* ── Mini Calendar ── */}
         <Section id="minical" title="MiniCalendar" description="Compact month calendar for date selection. Supports disabled dates (weekends, past, occupied) and multi-select."
@@ -874,13 +874,13 @@ export function UIKit() {
           <Row label="States">
             <div style={{ display: 'flex', gap: 8 }}>
               <div className="mini-day avail" style={{ width: 28, textAlign: 'center' }}>5</div>
-              <span style={{ fontSize: 10, color: 'var(--tx3)' }}>Available</span>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>Available</span>
               <div className="mini-day sel" style={{ width: 28, textAlign: 'center' }}>10</div>
-              <span style={{ fontSize: 10, color: 'var(--tx3)' }}>Selected</span>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>Selected</span>
               <div className="mini-day occ" style={{ width: 28, textAlign: 'center' }}>15</div>
-              <span style={{ fontSize: 10, color: 'var(--tx3)' }}>Occupied</span>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>Occupied</span>
               <div className="mini-day dis" style={{ width: 28, textAlign: 'center' }}>6</div>
-              <span style={{ fontSize: 10, color: 'var(--tx3)' }}>Disabled</span>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>Disabled</span>
             </div>
           </Row>
           <Row label="Import"><Code>{"import { MiniCalendar } from '@/shared/ui/MiniCalendar'"}</Code></Row>
@@ -901,16 +901,16 @@ export function UIKit() {
                 <div key={col.title} style={{ background: 'var(--sf)', borderRadius: 8, border: '1px solid var(--bd)', overflow: 'hidden' }}>
                   <div style={{ padding: '8px 10px', borderBottom: '2px solid var(--bd)', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <div style={{ width: 8, height: 8, borderRadius: 2, background: col.color }} />
-                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: col.color }}>{col.title}</span>
-                    <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--tx3)', fontFamily: 'var(--mono)' }}>{col.count}</span>
+                    <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: col.color }}>{col.title}</span>
+                    <span style={{ marginLeft: 'auto', fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', fontFamily: 'var(--mono)' }}>{col.count}</span>
                   </div>
                   <div style={{ padding: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {Array.from({length: Math.min(col.count, 2)}).map((_, i) => (
-                      <div key={i} style={{ padding: '8px 10px', background: 'var(--sf2)', borderRadius: 6, border: '1px solid var(--bd)', fontSize: 11, color: 'var(--tx2)' }}>
+                      <div key={i} style={{ padding: '8px 10px', background: 'var(--sf2)', borderRadius: 6, border: '1px solid var(--bd)', fontSize: 'var(--fs-2xs)', color: 'var(--tx2)' }}>
                         <div style={{ fontWeight: 600, color: 'var(--tx)', marginBottom: 2 }}>Task {i + 1}</div>
                         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                          <span style={{ fontSize: 9, color: 'var(--ac2)', fontFamily: 'var(--mono)' }}>PROJ-{100 + i}</span>
-                          <span style={{ marginLeft: 'auto', width: 16, height: 16, borderRadius: '50%', background: 'var(--ac)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: '#fff', fontWeight: 700 }}>IZ</span>
+                          <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--ac2)', fontFamily: 'var(--mono)' }}>PROJ-{100 + i}</span>
+                          <span style={{ marginLeft: 'auto', width: 16, height: 16, borderRadius: '50%', background: 'var(--ac)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-2xs)', color: '#fff', fontWeight: 700 }}>IZ</span>
                         </div>
                       </div>
                     ))}
@@ -920,7 +920,7 @@ export function UIKit() {
             </div>
           </Row>
           <Row label="Files">
-            <div style={{ fontSize: 11, color: 'var(--tx2)', lineHeight: 1.8 }}>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx2)', lineHeight: 1.8 }}>
               <div><Code>modules/vector-logic/ui/views/KanbanView.tsx</Code> — 945 lines, full DnD, filters, sort</div>
               <div><Code>modules/retro/ui/RetroBoard.tsx</Code> — 1196 lines, action items kanban, priority badges</div>
               <div><Code>modules/deploy-planner/ui/DeployPlanner.tsx</Code> — Release columns with ticket DnD</div>
@@ -939,21 +939,21 @@ export function UIKit() {
                 { key: 'PROJ-103', summary: 'Upgrade dependencies', type: 'task_alt', status: 'Backlog', statusColor: 'var(--tx3)', statusBg: 'rgba(140,144,159,.08)' },
               ].map(t => (
                 <div key={t.key} style={{ padding: '8px 10px', background: 'var(--sf2)', borderRadius: 6, border: '1px solid var(--bd)', display: 'flex', alignItems: 'center', gap: 8, cursor: 'grab' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.type === 'bug_report' ? 'var(--red)' : 'var(--tx3)' }}>{t.type}</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: t.type === 'bug_report' ? 'var(--red)' : 'var(--tx3)' }}>{t.type}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.summary}</div>
-                    <div style={{ fontSize: 9, color: 'var(--ac2)', fontFamily: 'var(--mono)', marginTop: 1 }}>{t.key}</div>
+                    <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.summary}</div>
+                    <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--ac2)', fontFamily: 'var(--mono)', marginTop: 1 }}>{t.key}</div>
                   </div>
-                  <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: t.statusBg, color: t.statusColor, fontWeight: 600 }}>{t.status}</span>
+                  <span style={{ fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3, background: t.statusBg, color: t.statusColor, fontWeight: 600 }}>{t.status}</span>
                 </div>
               ))}
             </div>
           </Row>
           <Row label="With drag highlight (drop zone active)">
             <div style={{ padding: '8px 10px', background: 'var(--glow)', borderRadius: 6, border: '1px solid var(--ac)', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 0 12px rgba(79,110,247,.2)' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--ac2)' }}>task_alt</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--ac2)' }}>task_alt</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--tx)' }}>Drop here to assign</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, color: 'var(--tx)' }}>Drop here to assign</div>
               </div>
             </div>
           </Row>
@@ -961,13 +961,13 @@ export function UIKit() {
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 8, background: 'rgba(77,142,255,.12)', border: '1px solid rgba(77,142,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 20, color: 'var(--ac-strong)' }}>hub</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)', color: 'var(--ac-strong)' }}>hub</span>
                 </div>
-                <span style={{ fontSize: 8, color: 'var(--tx3)' }}>DeployPlannerIcon</span>
+                <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>DeployPlannerIcon</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 3, background: 'var(--sf2)', border: '1px solid var(--bd)', color: 'var(--tx3)' }}>frontend-app</span>
-                <span style={{ fontSize: 8, color: 'var(--tx3)' }}>RepoChip</span>
+                <span style={{ fontSize: 'var(--fs-2xs)', padding: '2px 7px', borderRadius: 3, background: 'var(--sf2)', border: '1px solid var(--bd)', color: 'var(--tx3)' }}>frontend-app</span>
+                <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>RepoChip</span>
               </div>
             </div>
           </Row>
@@ -984,19 +984,19 @@ export function UIKit() {
           <Row label="Pattern (simplified)">
             <div style={{ display: 'flex', gap: 12, width: '100%' }}>
               <div style={{ flex: 1, background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 8, padding: 10 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>Available fields</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>Available fields</div>
                 <input className="fi" placeholder="Search fields..." readOnly style={{ marginBottom: 8 }} />
                 {['Issue Key', 'Summary', 'Status', 'Assignee', 'Story Points', 'Labels'].map(f => (
-                  <div key={f} style={{ padding: '5px 8px', fontSize: 11, color: 'var(--tx2)', cursor: 'pointer', borderRadius: 4, marginBottom: 2 }}>{f}</div>
+                  <div key={f} style={{ padding: '5px 8px', fontSize: 'var(--fs-2xs)', color: 'var(--tx2)', cursor: 'pointer', borderRadius: 4, marginBottom: 2 }}>{f}</div>
                 ))}
               </div>
               <div style={{ flex: 1, background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 8, padding: 10 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>Selected (drag to reorder)</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>Selected (drag to reorder)</div>
                 {['Issue Key', 'Summary', 'Hours'].map((f, i) => (
-                  <div key={f} style={{ padding: '5px 8px', fontSize: 11, color: 'var(--tx)', background: 'var(--glow)', borderRadius: 4, marginBottom: 4, border: '1px solid rgba(79,110,247,.2)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--tx3)' }}>drag_indicator</span>
+                  <div key={f} style={{ padding: '5px 8px', fontSize: 'var(--fs-2xs)', color: 'var(--tx)', background: 'var(--glow)', borderRadius: 4, marginBottom: 4, border: '1px solid rgba(79,110,247,.2)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>drag_indicator</span>
                     {f}
-                    <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--tx3)' }}>✕</span>
+                    <span style={{ marginLeft: 'auto', fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>✕</span>
                   </div>
                 ))}
               </div>
@@ -1033,7 +1033,7 @@ export function UIKit() {
           <Row label="Drag-over state">
             <div className="cc drag-over" style={{ minHeight: 70, width: 120 }}>
               <div className="ctop"><span className="cday">18</span></div>
-              <div style={{ fontSize: 10, color: 'var(--ac2)', textAlign: 'center', marginTop: 8 }}>Drop here</div>
+              <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--ac2)', textAlign: 'center', marginTop: 8 }}>Drop here</div>
             </div>
           </Row>
           <Row label="File"><Code>modules/jira-tracker/ui/CalendarView.tsx</Code> — 326 lines, month + week views</Row>
@@ -1045,13 +1045,13 @@ export function UIKit() {
           <Row label="Pattern">
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: 'var(--sf)', borderRadius: 8, border: '1px solid var(--bd)' }}>
               <div>
-                <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--tx)', fontFamily: 'var(--mono)' }}>14:32</div>
-                <div style={{ fontSize: 11, color: 'var(--tx3)' }}>Domingo, 20 abril</div>
+                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 600, color: 'var(--tx)', fontFamily: 'var(--mono)' }}>14:32</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>Domingo, 20 abril</div>
               </div>
               <div style={{ width: 1, height: 36, background: 'var(--bd)' }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--ac2)' }}>location_on</span>
-                <span style={{ fontSize: 12, color: 'var(--tx2)' }}>Madrid, Spain</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)', color: 'var(--ac2)' }}>location_on</span>
+                <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx2)' }}>Madrid, Spain</span>
               </div>
             </div>
           </Row>
@@ -1070,10 +1070,10 @@ export function UIKit() {
                 <tbody>
                   <tr>
                     <td><span className="ism">Ignacio Zitare</span></td>
-                    <td><span style={{ fontSize: 11, color: 'var(--tx2)' }}>Engineering</span></td>
+                    <td><span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx2)' }}>Engineering</span></td>
                     <td><span className="hc">8h</span></td>
                     <td><span className="s-b s-done">Complete</span></td>
-                    <td><span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)', cursor: 'pointer' }}>expand_more</span></td>
+                    <td><span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)', cursor: 'pointer' }}>expand_more</span></td>
                   </tr>
                   <tr>
                     <td colSpan={5} style={{ padding: '12px 14px', background: 'var(--sf2)', borderBottom: '1px solid var(--bd)' }}>
@@ -1104,9 +1104,9 @@ export function UIKit() {
                 { icon: 'person', color: 'var(--tx2)', label: 'Neutral' },
               ].map(i => (
                 <div key={i.icon} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: 10, background: 'var(--sf)', borderRadius: 6 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 22, color: i.color }}>{i.icon}</span>
-                  <span style={{ fontSize: 9, color: 'var(--tx3)', fontWeight: 600 }}>{i.label}</span>
-                  <code style={{ fontSize: 8, color: i.color, fontFamily: 'var(--mono)' }}>{i.icon}</code>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', color: i.color }}>{i.icon}</span>
+                  <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', fontWeight: 600 }}>{i.label}</span>
+                  <code style={{ fontSize: 'var(--fs-2xs)', color: i.color, fontFamily: 'var(--mono)' }}>{i.icon}</code>
                 </div>
               ))}
             </div>
@@ -1122,8 +1122,8 @@ export function UIKit() {
                 { icon: 'trending_up', color: 'var(--amber)', label: 'Improvement' },
               ].map(i => (
                 <div key={i.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16, color: i.color }}>{i.icon}</span>
-                  <span style={{ fontSize: 11, color: 'var(--tx2)' }}>{i.label}</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)', color: i.color }}>{i.icon}</span>
+                  <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx2)' }}>{i.label}</span>
                 </div>
               ))}
             </div>
@@ -1140,8 +1140,8 @@ export function UIKit() {
                 { icon: 'timer', color: 'var(--ac-strong)', label: 'Chrono' },
               ].map(m => (
                 <div key={m.label} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', background: 'var(--sf)', borderRadius: 6, border: '1px solid var(--bd)' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 18, color: m.color }}>{m.icon}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--tx2)' }}>{m.label}</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)', color: m.color }}>{m.icon}</span>
+                  <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, color: 'var(--tx2)' }}>{m.label}</span>
                 </div>
               ))}
             </div>
@@ -1169,8 +1169,8 @@ export function UIKit() {
                   borderLeft: `3px solid ${s.color}`,
                   boxShadow: `0 0 0 1px ${s.color}18`,
                 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)', marginBottom: 4 }}>v2.1.0</div>
-                  <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: s.bg, color: s.color, fontWeight: 600 }}>{s.status}</span>
+                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--tx)', marginBottom: 4 }}>v2.1.0</div>
+                  <span style={{ fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3, background: s.bg, color: s.color, fontWeight: 600 }}>{s.status}</span>
                 </div>
               ))}
             </div>
@@ -1185,8 +1185,8 @@ export function UIKit() {
               borderLeft: '3px solid var(--ac)',
               transform: 'scale(1.015)',
             }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)' }}>v2.1.0</div>
-              <div style={{ fontSize: 10, color: 'var(--ac2)', marginTop: 4 }}>Drop ticket here</div>
+              <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--tx)' }}>v2.1.0</div>
+              <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--ac2)', marginTop: 4 }}>Drop ticket here</div>
             </div>
           </Row>
           <Row label="Environment cards — borderLeft by category">
@@ -1204,8 +1204,8 @@ export function UIKit() {
                   border: '1px solid var(--bd)',
                   borderLeft: `4px solid ${e.color}`,
                 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--tx)' }}>{e.env}</div>
-                  <div style={{ fontSize: 9, color: 'var(--tx3)', marginTop: 2 }}>{e.cat}</div>
+                  <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)' }}>{e.env}</div>
+                  <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 2 }}>{e.cat}</div>
                 </div>
               ))}
             </div>
@@ -1218,8 +1218,8 @@ export function UIKit() {
                 { msg: 'Vacation approved', color: 'var(--green)', icon: 'check_circle' },
               ].map((a, i) => (
                 <div key={i} style={{ padding: '8px 12px', background: 'var(--sf)', borderRadius: 6, border: '1px solid var(--bd)', borderLeft: `3px solid ${a.color}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16, color: a.color }}>{a.icon}</span>
-                  <span style={{ fontSize: 11, color: 'var(--tx2)' }}>{a.msg}</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)', color: a.color }}>{a.icon}</span>
+                  <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx2)' }}>{a.msg}</span>
                 </div>
               ))}
             </div>
@@ -1246,11 +1246,11 @@ export function UIKit() {
                   <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle, ${c.accent}22 0%, transparent 70%)` }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                     <div style={{ width: 28, height: 28, borderRadius: 6, background: `${c.accent}1a`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 16, color: c.accent }}>{c.icon}</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)', color: c.accent }}>{c.icon}</span>
                     </div>
-                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--tx3)' }}>{c.label}</span>
+                    <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--tx3)' }}>{c.label}</span>
                   </div>
-                  <div style={{ fontSize: 22, fontWeight: 600, color: c.accent }}>{c.value}</div>
+                  <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 600, color: c.accent }}>{c.value}</div>
                   {c.pct > 0 && (
                     <div style={{ marginTop: 8, height: 3, borderRadius: 2, background: 'var(--sf3)' }}>
                       <div style={{ width: `${c.pct}%`, height: '100%', borderRadius: 2, background: c.accent }} />
@@ -1262,8 +1262,8 @@ export function UIKit() {
           </Row>
           <Row label="With sparkline bars">
             <div style={{ width: 200, padding: 16, background: 'var(--sf)', borderRadius: 8, border: '1px solid var(--bd)' }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 6 }}>LAST 7 DAYS</div>
-              <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--ac)', marginBottom: 8 }}>38.2h</div>
+              <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 6 }}>LAST 7 DAYS</div>
+              <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 600, color: 'var(--ac)', marginBottom: 8 }}>38.2h</div>
               <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 24 }}>
                 {[60, 80, 45, 90, 100, 30, 70].map((v, i) => (
                   <div key={i} style={{ flex: 1, height: `${v}%`, borderRadius: 2, background: 'var(--ac)', opacity: 0.3 + (v / 100) * 0.7 }} />
@@ -1289,7 +1289,7 @@ export function UIKit() {
               ].map(m => (
                 <div key={m.month} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flex: 1 }}>
                   <div style={{ width: '100%', height: `${(m.count / 7) * 60}px`, background: 'var(--ac)', borderRadius: '3px 3px 0 0', opacity: 0.7 + (m.count / 7) * 0.3 }} />
-                  <span style={{ fontSize: 8, color: 'var(--tx3)' }}>{m.month}</span>
+                  <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>{m.month}</span>
                 </div>
               ))}
             </div>
@@ -1303,11 +1303,11 @@ export function UIKit() {
                 { type: 'Epic', count: 3, color: 'var(--purple)', max: 20 },
               ].map(t => (
                 <div key={t.type} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 10, color: 'var(--tx2)', width: 40, textAlign: 'right' }}>{t.type}</span>
+                  <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx2)', width: 40, textAlign: 'right' }}>{t.type}</span>
                   <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--sf3)' }}>
                     <div style={{ width: `${(t.count / t.max) * 100}%`, height: '100%', borderRadius: 3, background: t.color }} />
                   </div>
-                  <span style={{ fontSize: 10, color: 'var(--tx3)', fontFamily: 'var(--mono)', width: 20 }}>{t.count}</span>
+                  <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', fontFamily: 'var(--mono)', width: 20 }}>{t.count}</span>
                 </div>
               ))}
             </div>
@@ -1320,7 +1320,7 @@ export function UIKit() {
                 { label: '< 20s (red)', pct: 15, color: 'var(--red)' },
               ].map(p => (
                 <div key={p.label}>
-                  <div style={{ fontSize: 9, color: 'var(--tx3)', marginBottom: 2 }}>{p.label}</div>
+                  <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginBottom: 2 }}>{p.label}</div>
                   <div style={{ height: 5, borderRadius: 3, background: 'var(--sf3)' }}>
                     <div style={{ width: `${p.pct}%`, height: '100%', borderRadius: 3, background: p.color, transition: 'width 0.3s' }} />
                   </div>
@@ -1330,21 +1330,21 @@ export function UIKit() {
           </Row>
           <Row label="Stacked bar — vacation distribution">
             <div style={{ width: 300 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 4 }}>22 vacation days</div>
+              <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--tx3)', marginBottom: 4 }}>22 vacation days</div>
               <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden' }}>
                 <div style={{ width: '36%', background: 'var(--amber)' }} title="Enjoyed: 8" />
                 <div style={{ width: '18%', background: 'var(--green)' }} title="Approved: 4" />
                 <div style={{ width: '46%', background: 'var(--ac)' }} title="Available: 10" />
               </div>
               <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
-                <span style={{ fontSize: 9, color: 'var(--amber)' }}>Enjoyed 8</span>
-                <span style={{ fontSize: 9, color: 'var(--green)' }}>Approved 4</span>
-                <span style={{ fontSize: 9, color: 'var(--ac)' }}>Available 10</span>
+                <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--amber)' }}>Enjoyed 8</span>
+                <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--green)' }}>Approved 4</span>
+                <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--ac)' }}>Available 10</span>
               </div>
             </div>
           </Row>
           <Row label="Files">
-            <div style={{ fontSize: 11, color: 'var(--tx2)', lineHeight: 1.8 }}>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx2)', lineHeight: 1.8 }}>
               <div><Code>modules/deploy-planner/ui/internal/Metrics.tsx</Code> — bar charts, type distribution, repo counts</div>
               <div><Code>modules/chrono/ui/components/ChronoStatCard.tsx</Code> — progress bar + sparkline</div>
               <div><Code>modules/chrono/ui/views/VacacionesView.tsx</Code> — stacked vacation bar</div>
@@ -1371,13 +1371,13 @@ export function UIKit() {
           <Row label=".hd-cell states (table view)">
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <div className="hd-cell free" style={{ width: 30, height: 30 }}><div className="hd-cell-dot free" /></div>
-              <span style={{ fontSize: 10, color: 'var(--tx3)' }}>Free</span>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>Free</span>
               <div className="hd-cell occ" style={{ width: 30, height: 30 }}><div className="hd-cell-dot occ" /></div>
-              <span style={{ fontSize: 10, color: 'var(--tx3)' }}>Occupied</span>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>Occupied</span>
               <div className="hd-cell fx" style={{ width: 30, height: 30 }}><div className="hd-cell-dot fx" /></div>
-              <span style={{ fontSize: 10, color: 'var(--tx3)' }}>Fixed</span>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>Fixed</span>
               <div className="hd-cell mine" style={{ width: 30, height: 30 }}><div className="hd-cell-dot mine" /></div>
-              <span style={{ fontSize: 10, color: 'var(--tx3)' }}>Mine</span>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>Mine</span>
             </div>
           </Row>
           <Row label="Legend (.hd-legend)">
@@ -1399,7 +1399,7 @@ export function UIKit() {
         {/* ══ SHELL COMPONENTS ══════════════════════════════════════════ */}
         {/* ══════════════════════════════════════════════════════════════════ */}
 
-        <div id="shell" style={{ fontSize: 9, fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em', marginTop: 40, marginBottom: 20 }}>Shell Components — apps/web/src/shared/ui/</div>
+        <div id="shell" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase', letterSpacing: '.2em', marginTop: 40, marginBottom: 20 }}>Shell Components — apps/web/src/shared/ui/</div>
 
         {/* ── NotificationsBell ── */}
         <Section id="notif" title="NotificationsBell" description="Bell icon with unread badge + slide-in panel. Receives NotificationPort via DI."
@@ -1430,7 +1430,7 @@ export function UIKit() {
 
         {/* ══ FOOTER ══════════════════════════════════════════════════════ */}
         <div style={{ borderTop: '1px solid var(--bd)', paddingTop: 20, marginTop: 48, textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: 'var(--tx3)' }}>
+          <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>
             WorkSuite UI Kit — Carbon Logic (Stitch) — {new Date().getFullYear()}
           </p>
         </div>

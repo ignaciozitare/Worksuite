@@ -6,13 +6,13 @@ import type { ConfigEmpresa } from '../../domain/entities/ConfigEmpresa';
 import { configRepo } from '../../container';
 
 const lblStyle = {
-  fontSize: 11, fontWeight: 700, color: 'var(--tx3,#50506a)',
+  fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
   textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 5,
 };
 const inpStyle = (extra = {}) => ({
-  width: '100%', padding: '7px 10px', fontSize: 13, fontFamily: 'inherit',
-  background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)',
-  borderRadius: 8, color: 'var(--tx,#e4e4ef)', outline: 'none',
+  width: '100%', padding: '7px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
+  background: 'var(--sf2)', border: '1px solid var(--bd)',
+  borderRadius: 8, color: 'var(--tx)', outline: 'none',
   boxSizing: 'border-box', ...extra,
 });
 
@@ -82,7 +82,7 @@ export function ChronoConfigSection() {
 
   if (loading) {
     return (
-      <div style={{ padding: 20, color: 'var(--tx3,#50506a)', fontSize: 13 }}>
+      <div style={{ padding: 20, color: 'var(--tx3)', fontSize: 'var(--fs-xs)' }}>
         Loading...
       </div>
     );
@@ -90,7 +90,7 @@ export function ChronoConfigSection() {
 
   return (
     <div style={{ maxWidth: 600 }}>
-      <h3 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 700, color: 'var(--tx,#e4e4ef)' }}>
+      <h3 style={{ margin: '0 0 20px', fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--tx)' }}>
         {t('chronoAdmin.configuracion')}
       </h3>
 
@@ -104,7 +104,7 @@ export function ChronoConfigSection() {
             onChange={e => setHorasJornada(Number(e.target.value))}
             style={inpStyle()}
           />
-          <div style={{ fontSize: 11, color: 'var(--tx3,#50506a)', marginTop: 3 }}>
+          <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 3 }}>
             {Math.floor(horasJornada / 60)}h {horasJornada % 60}m
           </div>
         </div>
@@ -159,9 +159,9 @@ export function ChronoConfigSection() {
             type="checkbox"
             checked={requiereGeo}
             onChange={e => setRequiereGeo(e.target.checked)}
-            style={{ accentColor: 'var(--ac,#4f6ef7)', width: 16, height: 16, cursor: 'pointer' }}
+            style={{ accentColor: 'var(--ac)', width: 16, height: 16, cursor: 'pointer' }}
           />
-          <label style={{ fontSize: 13, color: 'var(--tx,#e4e4ef)', cursor: 'pointer' }}
+          <label style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx)', cursor: 'pointer' }}
             onClick={() => setRequiereGeo(!requiereGeo)}>
             {t('chronoAdmin.requiereGeo')}
           </label>
@@ -173,9 +173,9 @@ export function ChronoConfigSection() {
             type="checkbox"
             checked={requiereAprobacion}
             onChange={e => setRequiereAprobacion(e.target.checked)}
-            style={{ accentColor: 'var(--ac,#4f6ef7)', width: 16, height: 16, cursor: 'pointer' }}
+            style={{ accentColor: 'var(--ac)', width: 16, height: 16, cursor: 'pointer' }}
           />
-          <label style={{ fontSize: 13, color: 'var(--tx,#e4e4ef)', cursor: 'pointer' }}
+          <label style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx)', cursor: 'pointer' }}
             onClick={() => setRequiereAprobacion(!requiereAprobacion)}>
             {t('chronoAdmin.requiereAprobacion')}
           </label>
@@ -199,9 +199,9 @@ export function ChronoConfigSection() {
             onClick={handleSave}
             disabled={saving}
             style={{
-              padding: '8px 20px', borderRadius: 8, fontWeight: 600, fontSize: 14,
+              padding: '8px 20px', borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-sm)',
               cursor: saving ? 'not-allowed' : 'pointer', border: 'none',
-              fontFamily: 'inherit', background: 'var(--ac,#4f6ef7)', color: '#fff',
+              fontFamily: 'inherit', background: 'var(--ac)', color: '#fff',
               opacity: saving ? 0.6 : 1, transition: 'all .15s',
             }}
           >
@@ -209,7 +209,7 @@ export function ChronoConfigSection() {
           </button>
           {saveMsg && (
             <span style={{
-              fontSize: 13, fontWeight: 600,
+              fontSize: 'var(--fs-xs)', fontWeight: 600,
               color: saveMsg === 'OK' ? '#22c55e' : '#ef4444',
             }}>
               {saveMsg}

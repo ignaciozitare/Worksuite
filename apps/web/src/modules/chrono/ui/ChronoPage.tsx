@@ -149,13 +149,13 @@ export function ChronoPage({ currentUser }: Props) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             border: '1px solid rgba(77,142,255,.3)',
           }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 22, color: '#4d8eff' }}>timer</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', color: '#4d8eff' }}>timer</span>
           </div>
           <div>
-            <h1 style={{ fontSize: 16, fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.01em', lineHeight: 1, margin: 0 }}>
+            <h1 style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.01em', lineHeight: 1, margin: 0 }}>
               {t('chrono.title')}
             </h1>
-            <p style={{ fontSize: 10, color: 'var(--tx)', opacity: .4, fontWeight: 700, letterSpacing: '.1em', marginTop: 4, textTransform: 'uppercase' }}>
+            <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx)', opacity: .4, fontWeight: 700, letterSpacing: '.1em', marginTop: 4, textTransform: 'uppercase' }}>
               {t('chrono.moduleSubtitle')}
             </p>
           </div>
@@ -171,7 +171,7 @@ export function ChronoPage({ currentUser }: Props) {
                 onClick={() => setView(item.id)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px',
-                  borderRadius: 8, fontSize: 13, fontWeight: active ? 600 : 500,
+                  borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: active ? 600 : 500,
                   letterSpacing: '.02em', cursor: 'pointer', border: 'none',
                   background: active ? 'rgba(77,142,255,.1)' : 'transparent',
                   color: active ? 'var(--ac)' : 'var(--tx)',
@@ -182,10 +182,10 @@ export function ChronoPage({ currentUser }: Props) {
                 onMouseEnter={e => { if (!active) { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'var(--sf2)'; e.currentTarget.style.transform = 'translateX(2px)'; }}}
                 onMouseLeave={e => { if (!active) { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'none'; }}}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{item.icon}</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>{item.icon}</span>
                 <span style={{ flex: 1 }}>{t(item.labelKey)}</span>
                 {item.badge && incompletosCount > 0 && (
-                  <span className="ch-badge ch-badge-red" style={{ fontSize: 10, padding: '2px 6px' }}>{incompletosCount}</span>
+                  <span className="ch-badge ch-badge-red" style={{ fontSize: 'var(--fs-2xs)', padding: '2px 6px' }}>{incompletosCount}</span>
                 )}
               </button>
             );
@@ -196,7 +196,7 @@ export function ChronoPage({ currentUser }: Props) {
       {/* ── Main ────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflow: 'auto', padding: '28px 32px' }}>
         {/* Breadcrumb */}
-        <div style={{ fontSize: 11, color: C.txMuted, fontFamily: "'IBM Plex Mono',monospace", letterSpacing: '.1em', marginBottom: 24 }}>
+        <div style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, fontFamily: "'IBM Plex Mono',monospace", letterSpacing: '.1em', marginBottom: 24 }}>
           {t('chrono.breadcrumb')} / {t(NAV_ITEMS.find(n => n.id === view)?.labelKey || '').toUpperCase()}
         </div>
 
@@ -216,8 +216,8 @@ function InformesPlaceholder() {
   const { t } = useTranslation();
   return (
     <div className="fade-in">
-      <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>{t('chrono.informes')}</div>
-      <div style={{ fontSize: 13, color: C.txDim, marginBottom: 20 }}>{t('chrono.proximaVista')}</div>
+      <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, marginBottom: 4 }}>{t('chrono.informes')}</div>
+      <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginBottom: 20 }}>{t('chrono.proximaVista')}</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {[
           { icon: '📄', titleKey: 'chrono.horasTotales', fmt: 'PDF / Excel' },
@@ -226,9 +226,9 @@ function InformesPlaceholder() {
           { icon: '⚖️', titleKey: 'chrono.bolsaHoras', fmt: 'PDF / Excel' },
         ].map((r, i) => (
           <div key={i} className="ch-card" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <span style={{ fontSize: 28 }}>{r.icon}</span>
+            <span style={{ fontSize: 'var(--fs-xl)' }}>{r.icon}</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 600 }}>{t(r.titleKey)}</div>
+              <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>{t(r.titleKey)}</div>
               <span className="ch-badge ch-badge-muted" style={{ marginTop: 6 }}>{r.fmt}</span>
             </div>
             <button className="ch-btn ch-btn-amber">⬇ {t('chrono.exportarPdf')}</button>

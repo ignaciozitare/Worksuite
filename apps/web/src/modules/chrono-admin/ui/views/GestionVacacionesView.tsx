@@ -4,23 +4,23 @@ import { useTranslation } from '@worksuite/i18n';
 import type { IAdminVacacionRepository } from '../../domain/ports/IAdminVacacionRepository';
 
 const lblStyle = {
-  fontSize: 11, fontWeight: 700, color: 'var(--tx3,#50506a)',
+  fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
   textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 5,
 };
 const inpStyle = (extra = {}) => ({
-  width: '100%', padding: '7px 10px', fontSize: 13, fontFamily: 'inherit',
-  background: 'var(--sf2,#1b1b22)', border: '1px solid var(--bd,#2a2a38)',
-  borderRadius: 8, color: 'var(--tx,#e4e4ef)', outline: 'none',
+  width: '100%', padding: '7px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
+  background: 'var(--sf2)', border: '1px solid var(--bd)',
+  borderRadius: 8, color: 'var(--tx)', outline: 'none',
   boxSizing: 'border-box', ...extra,
 });
 const thStyle = {
-  textAlign: 'left', padding: '8px 12px', fontSize: 11, fontWeight: 700,
-  color: 'var(--tx3,#50506a)', textTransform: 'uppercase',
-  letterSpacing: '.05em', borderBottom: '1px solid var(--bd,#2a2a38)',
+  textAlign: 'left', padding: '8px 12px', fontSize: 'var(--fs-2xs)', fontWeight: 700,
+  color: 'var(--tx3)', textTransform: 'uppercase',
+  letterSpacing: '.05em', borderBottom: '1px solid var(--bd)',
 };
 const tdStyle = {
-  padding: '10px 12px', fontSize: 13, color: 'var(--tx,#e4e4ef)',
-  borderBottom: '1px solid var(--bd,#2a2a38)',
+  padding: '10px 12px', fontSize: 'var(--fs-xs)', color: 'var(--tx)',
+  borderBottom: '1px solid var(--bd)',
 };
 
 function fmtDate(iso) {
@@ -114,7 +114,7 @@ export function GestionVacacionesView({ vacacionRepo }: Props) {
 
   return (
     <div>
-      <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: 'var(--tx,#e4e4ef)' }}>
+      <h3 style={{ margin: '0 0 16px', fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--tx)' }}>
         {t('chronoAdmin.gestionVacaciones')}
       </h3>
 
@@ -137,7 +137,7 @@ export function GestionVacacionesView({ vacacionRepo }: Props) {
         <>
           {/* Balance display */}
           {loadingSaldo ? (
-            <div style={{ color: 'var(--tx3,#50506a)', fontSize: 13, marginBottom: 16 }}>Loading...</div>
+            <div style={{ color: 'var(--tx3)', fontSize: 'var(--fs-xs)', marginBottom: 16 }}>Loading...</div>
           ) : saldo && (
             <div style={{
               display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
@@ -151,13 +151,13 @@ export function GestionVacacionesView({ vacacionRepo }: Props) {
                 { label: 'Disponibles', value: saldo.diasDisponibles },
               ].map(item => (
                 <div key={item.label} style={{
-                  background: 'var(--sf,#141418)', border: '1px solid var(--bd,#2a2a38)',
+                  background: 'var(--sf)', border: '1px solid var(--bd)',
                   borderRadius: 12, padding: '14px 16px',
                 }}>
-                  <div style={{ fontSize: 11, color: 'var(--tx3,#50506a)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em' }}>
                     {item.label}
                   </div>
-                  <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--tx,#e4e4ef)', marginTop: 4 }}>
+                  <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--tx)', marginTop: 4 }}>
                     {item.value}
                   </div>
                 </div>
@@ -169,10 +169,10 @@ export function GestionVacacionesView({ vacacionRepo }: Props) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
             {/* Adjust vacation days */}
             <div style={{
-              background: 'var(--sf,#141418)', border: '1px solid var(--bd,#2a2a38)',
+              background: 'var(--sf)', border: '1px solid var(--bd)',
               borderRadius: 12, padding: 16,
             }}>
-              <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'var(--tx,#e4e4ef)' }}>
+              <h4 style={{ margin: '0 0 12px', fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--tx)' }}>
                 {t('chronoAdmin.ajustarSaldo')}
               </h4>
               <div style={{ marginBottom: 10 }}>
@@ -192,15 +192,15 @@ export function GestionVacacionesView({ vacacionRepo }: Props) {
                   onChange={e => { setDiasMotivo(e.target.value); setDiasError(''); }}
                   style={inpStyle()}
                 />
-                {diasError && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{diasError}</div>}
+                {diasError && <div style={{ color: '#ef4444', fontSize: 'var(--fs-xs)', marginTop: 4 }}>{diasError}</div>}
               </div>
               <button
                 onClick={handleAjustarSaldo}
                 disabled={!diasExtra}
                 style={{
-                  padding: '6px 14px', borderRadius: 8, fontWeight: 600, fontSize: 13,
+                  padding: '6px 14px', borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-xs)',
                   cursor: diasExtra ? 'pointer' : 'not-allowed', border: 'none',
-                  fontFamily: 'inherit', background: 'var(--ac,#4f6ef7)', color: '#fff',
+                  fontFamily: 'inherit', background: 'var(--ac)', color: '#fff',
                   opacity: diasExtra ? 1 : 0.5, transition: 'all .15s',
                 }}
               >
@@ -210,10 +210,10 @@ export function GestionVacacionesView({ vacacionRepo }: Props) {
 
             {/* Adjust hours bank */}
             <div style={{
-              background: 'var(--sf,#141418)', border: '1px solid var(--bd,#2a2a38)',
+              background: 'var(--sf)', border: '1px solid var(--bd)',
               borderRadius: 12, padding: 16,
             }}>
-              <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'var(--tx,#e4e4ef)' }}>
+              <h4 style={{ margin: '0 0 12px', fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--tx)' }}>
                 {t('chronoAdmin.ajustarBolsa')}
               </h4>
               <div style={{ marginBottom: 10 }}>
@@ -233,15 +233,15 @@ export function GestionVacacionesView({ vacacionRepo }: Props) {
                   onChange={e => { setHorasMotivo(e.target.value); setHorasError(''); }}
                   style={inpStyle()}
                 />
-                {horasError && <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{horasError}</div>}
+                {horasError && <div style={{ color: '#ef4444', fontSize: 'var(--fs-xs)', marginTop: 4 }}>{horasError}</div>}
               </div>
               <button
                 onClick={handleAjustarBolsa}
                 disabled={!horasMinutos}
                 style={{
-                  padding: '6px 14px', borderRadius: 8, fontWeight: 600, fontSize: 13,
+                  padding: '6px 14px', borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-xs)',
                   cursor: horasMinutos ? 'pointer' : 'not-allowed', border: 'none',
-                  fontFamily: 'inherit', background: 'var(--ac,#4f6ef7)', color: '#fff',
+                  fontFamily: 'inherit', background: 'var(--ac)', color: '#fff',
                   opacity: horasMinutos ? 1 : 0.5, transition: 'all .15s',
                 }}
               >
@@ -251,11 +251,11 @@ export function GestionVacacionesView({ vacacionRepo }: Props) {
           </div>
 
           {/* History table */}
-          <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'var(--tx,#e4e4ef)' }}>
+          <h4 style={{ margin: '0 0 12px', fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--tx)' }}>
             Historial
           </h4>
           {history.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--tx3,#50506a)', fontSize: 13 }}>
+            <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--tx3)', fontSize: 'var(--fs-xs)' }}>
               —
             </div>
           ) : (
@@ -279,7 +279,7 @@ export function GestionVacacionesView({ vacacionRepo }: Props) {
                         <td style={tdStyle}>
                           <span style={{
                             display: 'inline-block', padding: '2px 8px', borderRadius: 12,
-                            fontSize: 11, fontWeight: 600,
+                            fontSize: 'var(--fs-2xs)', fontWeight: 600,
                             background: 'rgba(168,85,247,.12)', color: '#a855f7',
                           }}>
                             {v.tipo}
@@ -291,13 +291,13 @@ export function GestionVacacionesView({ vacacionRepo }: Props) {
                         <td style={tdStyle}>
                           <span style={{
                             display: 'inline-block', padding: '2px 8px', borderRadius: 12,
-                            fontSize: 11, fontWeight: 600, background: ec.bg, color: ec.color,
+                            fontSize: 'var(--fs-2xs)', fontWeight: 600, background: ec.bg, color: ec.color,
                           }}>
                             {v.estado}
                           </span>
                         </td>
                         <td style={tdStyle}>
-                          <span style={{ fontSize: 12, color: 'var(--tx3,#50506a)' }}>
+                          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)' }}>
                             {v.motivo || '—'}
                           </span>
                         </td>

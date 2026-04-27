@@ -62,8 +62,8 @@ export function DashboardAdminView({ fichajeRepo }: Props) {
       {/* ── Header ─── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{t('chronoAdmin.dashboardTitle')}</div>
-          <div style={{ fontSize: 12, color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.dashboardSubtitle')}</div>
+          <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700 }}>{t('chronoAdmin.dashboardTitle')}</div>
+          <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.dashboardSubtitle')}</div>
         </div>
         <button className="ch-btn ch-btn-ghost" onClick={load}>
           ↻ {t('chronoAdmin.recargar')}
@@ -71,7 +71,7 @@ export function DashboardAdminView({ fichajeRepo }: Props) {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 'var(--fs-xs)' }}>
           {t('chronoAdmin.cargando')}
         </div>
       ) : (
@@ -91,11 +91,11 @@ export function DashboardAdminView({ fichajeRepo }: Props) {
 
           {/* ── Alerts section ─── */}
           <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>{t('chronoAdmin.alertasTitle')}</div>
+            <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: 12 }}>{t('chronoAdmin.alertasTitle')}</div>
           </div>
 
           {alertas.length === 0 ? (
-            <div className="ch-card" style={{ textAlign: 'center', padding: '32px 0', color: C.txDim, fontSize: 13 }}>
+            <div className="ch-card" style={{ textAlign: 'center', padding: '32px 0', color: C.txDim, fontSize: 'var(--fs-xs)' }}>
               {t('chronoAdmin.sinAlertas')}
             </div>
           ) : (
@@ -107,22 +107,22 @@ export function DashboardAdminView({ fichajeRepo }: Props) {
                     width: 36, height: 36, borderRadius: '50%',
                     background: C.redDim,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 700, color: C.red, fontFamily: "'IBM Plex Mono',monospace", fontSize: 14,
+                    fontWeight: 700, color: C.red, fontFamily: "'IBM Plex Mono',monospace", fontSize: 'var(--fs-sm)',
                   }}>
                     {emp.nombre.charAt(0).toUpperCase()}
                   </div>
 
                   {/* Name + email */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {emp.nombre}
                     </div>
-                    <div style={{ fontSize: 11, color: C.txDim }}>{emp.email}</div>
+                    <div style={{ fontSize: 'var(--fs-2xs)', color: C.txDim }}>{emp.email}</div>
                   </div>
 
                   {/* Incomplete count */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className="ch-badge" style={{ background: C.redDim, color: C.red, fontSize: 11, padding: '3px 8px' }}>
+                    <span className="ch-badge" style={{ background: C.redDim, color: C.red, fontSize: 'var(--fs-2xs)', padding: '3px 8px' }}>
                       {emp.fichajesIncompletos} {t('chronoAdmin.incompletos')}
                     </span>
                   </div>

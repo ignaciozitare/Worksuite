@@ -62,10 +62,10 @@ export function TaskAlarmPicker({ taskId, userId, onCreated, onClose }: Props) {
         flexDirection: 'column', gap: 14,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 20, color: 'var(--amber)' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)', color: 'var(--amber)' }}>
             alarm
           </span>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--tx)', margin: 0 }}>
+          <h3 style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--tx)', margin: 0 }}>
             {t('vectorLogic.addAlarm')}
           </h3>
         </div>
@@ -109,21 +109,21 @@ export function TaskAlarmPicker({ taskId, userId, onCreated, onClose }: Props) {
 }
 
 const lblStyle = {
-  fontSize: 10, fontWeight: 700, color: 'var(--tx3)',
+  fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
   textTransform: 'uppercase' as const, letterSpacing: '.05em', display: 'block', marginBottom: 5,
 };
 const inpStyle = {
-  width: '100%', padding: '7px 10px', fontSize: 12, fontFamily: 'inherit',
+  width: '100%', padding: '7px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
   background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6,
   color: 'var(--tx)', outline: 'none',
 };
 const primaryBtn = {
-  padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+  padding: '7px 14px', borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 600,
   cursor: 'pointer', border: 'none', fontFamily: 'inherit',
   background: 'linear-gradient(135deg, var(--ac2), var(--ac))', color: 'var(--ac-on)',
 };
 const ghostBtn = {
-  padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+  padding: '7px 14px', borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 600,
   cursor: 'pointer', border: '1px solid var(--bd)', fontFamily: 'inherit',
   background: 'var(--sf2)', color: 'var(--tx)',
 };

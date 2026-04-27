@@ -7,7 +7,7 @@ import { AvatarPicker } from './AvatarPicker';
 
 const C = {
   bg: 'var(--bg)', sf: 'var(--sf)', sfHover: 'var(--sf2)', bd: 'var(--bd)',
-  amber: 'var(--amber)', amberDim: 'var(--sf-low, #1c1b1b)', amberGlow: 'var(--amber-dim)',
+  amber: 'var(--amber)', amberDim: 'var(--sf-low)', amberGlow: 'var(--amber-dim)',
   tx: 'var(--tx)', txDim: 'var(--tx2)', txMuted: 'var(--tx3)',
 };
 
@@ -36,10 +36,10 @@ export function ProfilePage() {
 
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <div style={{ fontSize: 22, fontWeight: 700, color: C.tx }}>
+        <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: C.tx }}>
           {t('profile.title')}
         </div>
-        <div style={{ fontSize: 12, color: C.txDim, marginTop: 4 }}>
+        <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginTop: 4 }}>
           {t('profile.subtitle')}
         </div>
       </div>
@@ -67,24 +67,24 @@ export function ProfilePage() {
             background: 'rgba(0,0,0,.55)', display: 'flex',
             alignItems: 'center', justifyContent: 'center',
             opacity: 0, transition: 'opacity .15s',
-            color: 'white', fontSize: 11, fontWeight: 700,
+            color: 'white', fontSize: 'var(--fs-2xs)', fontWeight: 700,
             textTransform: 'uppercase', letterSpacing: '.1em',
             gap: 4,
           }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>photo_camera</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>photo_camera</span>
           </div>
         </button>
 
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: C.tx, marginBottom: 4 }}>
+          <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: C.tx, marginBottom: 4 }}>
             {user.name || user.email}
           </div>
-          <div style={{ fontSize: 13, color: C.txDim }}>
+          <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim }}>
             {user.email}
           </div>
           <div style={{ marginTop: 10, display: 'flex', gap: 6 }}>
             <span style={{
-              fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 4,
+              fontSize: 'var(--fs-2xs)', fontWeight: 700, padding: '4px 10px', borderRadius: 4,
               background: C.amberGlow, color: C.amber, textTransform: 'uppercase',
               letterSpacing: '.08em', fontFamily: "'IBM Plex Mono',monospace",
             }}>
@@ -99,7 +99,7 @@ export function ProfilePage() {
         background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 24,
       }}>
         <div style={{
-          fontSize: 11, fontWeight: 700, color: C.amber, textTransform: 'uppercase',
+          fontSize: 'var(--fs-2xs)', fontWeight: 700, color: C.amber, textTransform: 'uppercase',
           letterSpacing: '.1em', marginBottom: 18, fontFamily: "'IBM Plex Mono',monospace",
         }}>
           {t('profile.detailsSection')}
@@ -109,13 +109,13 @@ export function ProfilePage() {
           {fields.map(f => (
             <div key={f.labelKey}>
               <div style={{
-                fontSize: 10, color: C.txMuted, textTransform: 'uppercase',
+                fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase',
                 letterSpacing: '.08em', marginBottom: 6, fontWeight: 600,
               }}>
                 {t(f.labelKey)}
               </div>
               <div style={{
-                fontSize: 13, color: C.tx, fontFamily: "'IBM Plex Mono',monospace",
+                fontSize: 'var(--fs-xs)', color: C.tx, fontFamily: "'IBM Plex Mono',monospace",
               }}>
                 {f.value || '—'}
               </div>
@@ -129,19 +129,19 @@ export function ProfilePage() {
         marginTop: 24, background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 24,
       }}>
         <div style={{
-          fontSize: 11, fontWeight: 700, color: C.amber, textTransform: 'uppercase',
+          fontSize: 'var(--fs-2xs)', fontWeight: 700, color: C.amber, textTransform: 'uppercase',
           letterSpacing: '.1em', marginBottom: 8, fontFamily: "'IBM Plex Mono',monospace",
         }}>
           {t('profile.languageSection')}
         </div>
-        <div style={{ fontSize: 12, color: C.txDim, marginBottom: 16 }}>
+        <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginBottom: 16 }}>
           {t('profile.languageHelp')}
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button
             onClick={() => setLocale('en')}
             style={{
-              padding: '8px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              padding: '8px 20px', borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 600,
               border: 'none', cursor: 'pointer', transition: 'all .15s',
               background: locale === 'en' ? `linear-gradient(135deg, var(--ac2), var(--ac-strong))` : C.sfHover,
               color: locale === 'en' ? 'var(--ac-on)' : C.tx,
@@ -154,7 +154,7 @@ export function ProfilePage() {
           <button
             onClick={() => setLocale('es')}
             style={{
-              padding: '8px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              padding: '8px 20px', borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 600,
               border: 'none', cursor: 'pointer', transition: 'all .15s',
               background: locale === 'es' ? `linear-gradient(135deg, var(--ac2), var(--ac-strong))` : C.sfHover,
               color: locale === 'es' ? 'var(--ac-on)' : C.tx,
@@ -170,7 +170,7 @@ export function ProfilePage() {
       {/* Future: stats / hours / etc. */}
       <div style={{
         marginTop: 24, padding: 20, background: C.sf, border: `1px dashed ${C.bd}`,
-        borderRadius: 10, textAlign: 'center', color: C.txMuted, fontSize: 12,
+        borderRadius: 10, textAlign: 'center', color: C.txMuted, fontSize: 'var(--fs-xs)',
       }}>
         {t('profile.comingSoon')}
       </div>

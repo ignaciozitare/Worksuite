@@ -43,7 +43,7 @@ export function InformesEmpresaView({ fichajeRepo, vacacionRepo, jiraRepo }: Pro
       {/* Month selector */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
         <button className="ch-btn ch-btn-ghost" onClick={prevMonth} style={{ padding: '6px 12px' }}>‹</button>
-        <span className="mono" style={{ fontSize: 15, fontWeight: 700, color: C.amber, minWidth: 140, textAlign: 'center' }}>
+        <span className="mono" style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: C.amber, minWidth: 140, textAlign: 'center' }}>
           {MONTHS[month]} {year}
         </span>
         <button className="ch-btn ch-btn-ghost" onClick={nextMonth} style={{ padding: '6px 12px' }}>›</button>
@@ -51,11 +51,11 @@ export function InformesEmpresaView({ fichajeRepo, vacacionRepo, jiraRepo }: Pro
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 8, padding: 3 }}>
           {TABS.map(tb => (
             <button key={tb.id} onClick={() => setTab(tb.id)} style={{
-              padding: '5px 12px', borderRadius: 6, fontSize: 12, fontWeight: tab === tb.id ? 600 : 400,
+              padding: '5px 12px', borderRadius: 6, fontSize: 'var(--fs-xs)', fontWeight: tab === tb.id ? 600 : 400,
               border: 'none', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s',
               background: tab === tb.id ? C.amber : 'transparent',
               color: tab === tb.id ? '#000' : C.txDim,
-            }}><span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: 'middle' }}>{tb.icon}</span> {tb.label}</button>
+            }}><span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)', verticalAlign: 'middle' }}>{tb.icon}</span> {tb.label}</button>
           ))}
         </div>
       </div>
@@ -79,9 +79,9 @@ function BarChart({ data, labelKey, valueKey, color, maxHeight = 160 }: { data: 
         const pct = (d[valueKey] || 0) / maxVal;
         return (
           <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: barW }}>
-            <span className="mono" style={{ fontSize: 9, color: C.txDim }}>{d[valueKey] ? fmtH(d[valueKey]) : '—'}</span>
+            <span className="mono" style={{ fontSize: 'var(--fs-2xs)', color: C.txDim }}>{d[valueKey] ? fmtH(d[valueKey]) : '—'}</span>
             <div style={{ width: '80%', height: `${Math.max(2, pct * (maxHeight - 30))}px`, background: color, borderRadius: '3px 3px 0 0', transition: 'height .3s' }} />
-            <span className="mono" style={{ fontSize: 9, color: C.txMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: barW }}>{d[labelKey]}</span>
+            <span className="mono" style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: barW }}>{d[labelKey]}</span>
           </div>
         );
       })}
@@ -93,9 +93,9 @@ function BarChart({ data, labelKey, valueKey, color, maxHeight = 160 }: { data: 
 function Stat({ label, value, color = C.amber, icon = '' }: { label: string; value: string; color?: string; icon?: any }) {
   return (
     <div className="ch-stat" style={{ '--accent': color }}>
-      {icon && <div style={{ fontSize: 16, marginBottom: 6 }}>{icon}</div>}
-      <div className="mono" style={{ fontSize: 24, fontWeight: 700, color }}>{value}</div>
-      <div style={{ fontSize: 10, color: C.txMuted, marginTop: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>{label}</div>
+      {icon && <div style={{ fontSize: 'var(--fs-body)', marginBottom: 6 }}>{icon}</div>}
+      <div className="mono" style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color }}>{value}</div>
+      <div style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, marginTop: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>{label}</div>
     </div>
   );
 }
@@ -156,7 +156,7 @@ function MonthlyReport({ fichajeRepo, mes }: { fichajeRepo: IAdminFichajeReposit
 
       {/* Chart */}
       <div className="ch-card" style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
+        <div style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
           {t('chronoAdmin.horasTotales')} / {t('chronoAdmin.empleado')}
         </div>
         <BarChart data={data.map(d => ({ label: d.userName.split(' ')[0], value: d.resumen.minutosTotales }))} labelKey="label" valueKey="value" color={C.amber} />
@@ -233,7 +233,7 @@ function VacacionesReport({ vacacionRepo, year }: { vacacionRepo: IAdminVacacion
 
       {/* Chart */}
       <div className="ch-card" style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
+        <div style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
           Días por estado
         </div>
         <BarChart
@@ -316,7 +316,7 @@ function JiraReport({ jiraRepo, mes }: { jiraRepo: IJiraResumenRepository; mes: 
 
       {/* Chart — comparison bars */}
       <div className="ch-card" style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
+        <div style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
           Jira vs Fichaje / {t('chronoAdmin.empleado')}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -324,7 +324,7 @@ function JiraReport({ jiraRepo, mes }: { jiraRepo: IJiraResumenRepository; mes: 
             const maxMin = Math.max(d.minutosJira, d.minutosFichaje, 1);
             return (
               <div key={d.userId}>
-                <div style={{ fontSize: 11, color: C.txDim, marginBottom: 4 }}>{d.nombre}</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', color: C.txDim, marginBottom: 4 }}>{d.nombre}</div>
                 <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ height: 8, borderRadius: 4, background: C.bd, overflow: 'hidden', marginBottom: 2 }}>
@@ -334,7 +334,7 @@ function JiraReport({ jiraRepo, mes }: { jiraRepo: IJiraResumenRepository; mes: 
                       <div style={{ height: '100%', width: `${(d.minutosFichaje / maxMin) * 100}%`, background: C.amber, borderRadius: 4 }} />
                     </div>
                   </div>
-                  <div className="mono" style={{ width: 80, textAlign: 'right', fontSize: 10, color: d.diferencia >= 0 ? C.green : C.red }}>
+                  <div className="mono" style={{ width: 80, textAlign: 'right', fontSize: 'var(--fs-2xs)', color: d.diferencia >= 0 ? C.green : C.red }}>
                     {d.diferencia >= 0 ? '+' : ''}{fmtH(d.diferencia)}
                   </div>
                 </div>
@@ -342,7 +342,7 @@ function JiraReport({ jiraRepo, mes }: { jiraRepo: IJiraResumenRepository; mes: 
             );
           })}
         </div>
-        <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 10, color: C.txDim }}>
+        <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 'var(--fs-2xs)', color: C.txDim }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 10, height: 4, borderRadius: 2, background: C.blue }} />Jira</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 10, height: 4, borderRadius: 2, background: C.amber }} />Fichaje</span>
         </div>
@@ -368,7 +368,7 @@ function JiraReport({ jiraRepo, mes }: { jiraRepo: IJiraResumenRepository; mes: 
                   <td className="mono" style={{ textAlign: 'right', color: d.diferencia >= 0 ? C.green : C.red }}>
                     {d.diferencia >= 0 ? '+' : ''}{fmtH(d.diferencia)}
                   </td>
-                  <td style={{ fontSize: 11, color: C.txDim }}>{d.proyectos.map(p => p.key).join(', ') || '—'}</td>
+                  <td style={{ fontSize: 'var(--fs-2xs)', color: C.txDim }}>{d.proyectos.map(p => p.key).join(', ') || '—'}</td>
                 </tr>
                 {expanded === d.userId && d.proyectos.length > 0 && (
                   <tr key={`${d.userId}-detail`}>
@@ -376,8 +376,8 @@ function JiraReport({ jiraRepo, mes }: { jiraRepo: IJiraResumenRepository; mes: 
                       <div className="fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
                         {d.proyectos.map(p => (
                           <div key={p.key} style={{ padding: '8px 12px', background: C.bg, borderRadius: 6, border: `1px solid ${C.bd}` }}>
-                            <div className="mono" style={{ fontSize: 11, fontWeight: 700, color: C.blue }}>{p.key}</div>
-                            <div className="mono" style={{ fontSize: 14, fontWeight: 600, color: C.amber, marginTop: 2 }}>{fmtH(p.minutos)}</div>
+                            <div className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: C.blue }}>{p.key}</div>
+                            <div className="mono" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: C.amber, marginTop: 2 }}>{fmtH(p.minutos)}</div>
                           </div>
                         ))}
                       </div>
@@ -421,7 +421,7 @@ function BolsaReport({ fichajeRepo, mes }: { fichajeRepo: IAdminFichajeRepositor
     <div>
       {/* Chart */}
       <div className="ch-card" style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
+        <div style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
           Saldo horas extra / {t('chronoAdmin.empleado')}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -431,11 +431,11 @@ function BolsaReport({ fichajeRepo, mes }: { fichajeRepo: IAdminFichajeRepositor
             const isPos = d.resumen.minutosExtra >= 0;
             return (
               <div key={d.userId} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ width: 100, fontSize: 11, color: C.txDim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.userName}</span>
+                <span style={{ width: 100, fontSize: 'var(--fs-2xs)', color: C.txDim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.userName}</span>
                 <div style={{ flex: 1, height: 12, background: C.bd, borderRadius: 6, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${pct}%`, background: isPos ? C.green : C.red, borderRadius: 6, transition: 'width .3s' }} />
                 </div>
-                <span className="mono" style={{ width: 70, textAlign: 'right', fontSize: 11, color: isPos ? C.green : C.red }}>
+                <span className="mono" style={{ width: 70, textAlign: 'right', fontSize: 'var(--fs-2xs)', color: isPos ? C.green : C.red }}>
                   {isPos ? '+' : ''}{fmtH(d.resumen.minutosExtra)}
                 </span>
               </div>

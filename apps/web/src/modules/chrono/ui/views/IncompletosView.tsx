@@ -112,7 +112,7 @@ export function IncompletosView({ fichajeRepo, currentUser }: IncompletosViewPro
     <div className="fade-in">
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <div style={{ fontSize: 20, fontWeight: 700, color: C.tx }}>
+        <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: C.tx }}>
           {t('chrono.fichajesIncompletos')}
         </div>
         <span className="ch-badge ch-badge-red">{fichajes.length}</span>
@@ -129,12 +129,12 @@ export function IncompletosView({ fichajeRepo, currentUser }: IncompletosViewPro
         alignItems: 'center',
         gap: 10,
       }}>
-        <span style={{ fontSize: 18 }}>⚠</span>
+        <span style={{ fontSize: 'var(--fs-md)' }}>⚠</span>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: C.red }}>
+          <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: C.red }}>
             {t('chrono.deadlineWarning')}
           </div>
-          <div style={{ fontSize: 12, color: C.txDim, marginTop: 2 }}>
+          <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginTop: 2 }}>
             {t('chrono.deadlineDetail')}
           </div>
         </div>
@@ -147,7 +147,7 @@ export function IncompletosView({ fichajeRepo, currentUser }: IncompletosViewPro
           background: message.type === 'ok' ? C.greenDim : C.redDim,
           borderColor: message.type === 'ok' ? 'rgba(16,185,129,.3)' : 'rgba(239,68,68,.3)',
           color: message.type === 'ok' ? C.green : C.red,
-          fontSize: 13, fontWeight: 600,
+          fontSize: 'var(--fs-xs)', fontWeight: 600,
         }}>
           {message.text}
         </div>
@@ -173,10 +173,10 @@ export function IncompletosView({ fichajeRepo, currentUser }: IncompletosViewPro
             {/* ── Card header ─────────────────────────────────────────────── */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span className="mono" style={{ fontSize: 18, fontWeight: 700, color: C.amber }}>
+                <span className="mono" style={{ fontSize: 'var(--fs-md)', fontWeight: 700, color: C.amber }}>
                   {day}
                 </span>
-                <span style={{ fontSize: 14, color: C.txDim }}>{full}</span>
+                <span style={{ fontSize: 'var(--fs-sm)', color: C.txDim }}>{full}</span>
                 {isPending ? (
                   <span className="ch-badge ch-badge-amber">{t('chrono.pendienteAprobacion')}</span>
                 ) : (
@@ -208,7 +208,7 @@ export function IncompletosView({ fichajeRepo, currentUser }: IncompletosViewPro
                     position: 'relative',
                   }}>
                     <div className="mono" style={{
-                      fontSize: 10,
+                      fontSize: 'var(--fs-2xs)',
                       fontWeight: 600,
                       letterSpacing: '.1em',
                       textTransform: 'uppercase',
@@ -223,7 +223,7 @@ export function IncompletosView({ fichajeRepo, currentUser }: IncompletosViewPro
                         type="time"
                         style={{
                           width: '100%',
-                          fontSize: 16,
+                          fontSize: 'var(--fs-body)',
                           padding: '4px 8px',
                         }}
                         value={form[key] ? form[key].slice(11, 16) : ''}
@@ -234,7 +234,7 @@ export function IncompletosView({ fichajeRepo, currentUser }: IncompletosViewPro
                       />
                     ) : (
                       <div className="mono" style={{
-                        fontSize: 18,
+                        fontSize: 'var(--fs-md)',
                         fontWeight: 700,
                         color: filled ? C.tx : C.red,
                       }}>
@@ -243,7 +243,7 @@ export function IncompletosView({ fichajeRepo, currentUser }: IncompletosViewPro
                     )}
 
                     {!filled && !isEditing && (
-                      <div style={{ fontSize: 10, color: C.red, marginTop: 4, fontWeight: 500 }}>
+                      <div style={{ fontSize: 'var(--fs-2xs)', color: C.red, marginTop: 4, fontWeight: 500 }}>
                         {t('chrono.faltaRegistro')}
                       </div>
                     )}
@@ -257,7 +257,7 @@ export function IncompletosView({ fichajeRepo, currentUser }: IncompletosViewPro
               <div style={{ marginTop: 4 }}>
                 <div style={{ marginBottom: 12 }}>
                   <label className="mono" style={{
-                    fontSize: 10,
+                    fontSize: 'var(--fs-2xs)',
                     fontWeight: 600,
                     letterSpacing: '.1em',
                     textTransform: 'uppercase',

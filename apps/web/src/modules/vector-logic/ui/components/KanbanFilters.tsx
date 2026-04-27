@@ -69,7 +69,7 @@ export function KanbanFilters({
       </select>
 
       <div style={S.searchBox}>
-        <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>search</span>
+        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>search</span>
         <input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -81,7 +81,7 @@ export function KanbanFilters({
             onClick={() => onSearchChange('')}
             aria-label={t('common.clear')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', display: 'flex', padding: 0 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>close</span>
           </button>
         )}
       </div>
@@ -92,7 +92,7 @@ export function KanbanFilters({
 const S: Record<string, React.CSSProperties> = {
   select: {
     background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 8,
-    padding: '6px 10px', color: 'var(--tx)', fontSize: 11, fontWeight: 500,
+    padding: '6px 10px', color: 'var(--tx)', fontSize: 'var(--fs-2xs)', fontWeight: 500,
     fontFamily: 'inherit', cursor: 'pointer', outline: 'none',
   },
   searchBox: {
@@ -102,6 +102,6 @@ const S: Record<string, React.CSSProperties> = {
   },
   searchInput: {
     flex: 1, border: 'none', outline: 'none', background: 'transparent',
-    color: 'var(--tx)', fontSize: 11, fontFamily: 'inherit',
+    color: 'var(--tx)', fontSize: 'var(--fs-2xs)', fontFamily: 'inherit',
   },
 };

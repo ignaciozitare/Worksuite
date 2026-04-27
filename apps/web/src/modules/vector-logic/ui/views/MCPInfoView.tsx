@@ -42,10 +42,10 @@ export function MCPInfoView({ currentUser }: Props) {
   return (
     <div style={{ maxWidth: 820 }}>
       <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
+        <h2 style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
           {t('vectorLogic.mcpAccess')}
         </h2>
-        <p style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 6, lineHeight: 1.6, maxWidth: 680 }}>
+        <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)', marginTop: 6, lineHeight: 1.6, maxWidth: 680 }}>
           {t('vectorLogic.mcpDesc')}
         </p>
       </div>
@@ -67,10 +67,10 @@ export function MCPInfoView({ currentUser }: Props) {
               background: 'var(--sf3)', borderRadius: 8, padding: '10px 14px',
               borderLeft: '3px solid var(--ac)',
             }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--tx)', fontFamily: 'monospace', marginBottom: 4 }}>
+              <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--tx)', fontFamily: 'monospace', marginBottom: 4 }}>
                 {tool.name}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--tx3)', lineHeight: 1.4 }}>{tool.desc}</div>
+              <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', lineHeight: 1.4 }}>{tool.desc}</div>
             </div>
           ))}
         </div>
@@ -81,7 +81,7 @@ export function MCPInfoView({ currentUser }: Props) {
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <code style={codeStyle}>{MCP_URL}</code>
           <button onClick={() => copy(MCP_URL, 'url')} style={btnStyle('ghost')}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>
               {copied === 'url' ? 'check' : 'content_copy'}
             </span>
           </button>
@@ -92,7 +92,7 @@ export function MCPInfoView({ currentUser }: Props) {
       <Section title={t('vectorLogic.mcpAuthToken')}>
         {!token ? (
           <button onClick={loadToken} style={btnStyle('primary')}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>key</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>key</span>
             {t('vectorLogic.mcpGenerateToken')}
           </button>
         ) : (
@@ -100,12 +100,12 @@ export function MCPInfoView({ currentUser }: Props) {
             <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
               <code style={{ ...codeStyle, wordBreak: 'break-all', flex: 1 }}>{token}</code>
               <button onClick={() => copy(token, 'token')} style={btnStyle('ghost')}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>
                   {copied === 'token' ? 'check' : 'content_copy'}
                 </span>
               </button>
             </div>
-            <p style={{ fontSize: 10, color: 'var(--amber)', marginTop: 6, lineHeight: 1.4 }}>
+            <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--amber)', marginTop: 6, lineHeight: 1.4 }}>
               {t('vectorLogic.mcpTokenWarning')}
             </p>
           </div>
@@ -114,7 +114,7 @@ export function MCPInfoView({ currentUser }: Props) {
 
       {/* Claude Desktop setup */}
       <Section title={t('vectorLogic.mcpClaudeDesktop')}>
-        <ol style={{ fontSize: 12, color: 'var(--tx2)', lineHeight: 1.7, paddingLeft: 18, marginBottom: 12 }}>
+        <ol style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx2)', lineHeight: 1.7, paddingLeft: 18, marginBottom: 12 }}>
           <li>{t('vectorLogic.mcpStepDesktop1')}</li>
           <li>{t('vectorLogic.mcpStepDesktop2')} <code style={inlineCode}>claude_desktop_config.json</code></li>
           <li>{t('vectorLogic.mcpStepDesktop3')}</li>
@@ -124,7 +124,7 @@ export function MCPInfoView({ currentUser }: Props) {
           <pre style={preStyle}>{claudeDesktopConfig}</pre>
           <button onClick={() => copy(claudeDesktopConfig, 'desktop')}
             style={{ ...btnStyle('ghost'), position: 'absolute', top: 8, right: 8 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>
               {copied === 'desktop' ? 'check' : 'content_copy'}
             </span>
           </button>
@@ -133,14 +133,14 @@ export function MCPInfoView({ currentUser }: Props) {
 
       {/* Claude Code setup */}
       <Section title={t('vectorLogic.mcpClaudeCode')}>
-        <p style={{ fontSize: 12, color: 'var(--tx2)', lineHeight: 1.6, marginBottom: 10 }}>
+        <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx2)', lineHeight: 1.6, marginBottom: 10 }}>
           {t('vectorLogic.mcpClaudeCodeDesc')}
         </p>
         <div style={{ position: 'relative' }}>
           <pre style={preStyle}>{claudeCodeCommand}</pre>
           <button onClick={() => copy(claudeCodeCommand, 'code')}
             style={{ ...btnStyle('ghost'), position: 'absolute', top: 8, right: 8 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>
               {copied === 'code' ? 'check' : 'content_copy'}
             </span>
           </button>
@@ -157,7 +157,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       padding: 20, marginBottom: 16,
     }}>
       <h3 style={{
-        fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase',
+        fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase',
         letterSpacing: '.08em', marginBottom: 14,
       }}>{title}</h3>
       {children}
@@ -167,7 +167,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 const btnStyle = (variant = 'primary', extra = {}) => ({
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px',
-  borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer', border: 'none',
+  borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-xs)', cursor: 'pointer', border: 'none',
   fontFamily: 'inherit', transition: 'all .15s',
   ...(variant === 'primary' && { background: 'var(--ac)', color: '#fff' }),
   ...(variant === 'ghost' && { background: 'var(--sf3)', color: 'var(--tx3)', border: '1px solid var(--bd)' }),
@@ -176,16 +176,16 @@ const btnStyle = (variant = 'primary', extra = {}) => ({
 
 const codeStyle = {
   display: 'block', padding: '10px 14px', background: 'var(--sf)', border: '1px solid var(--bd)',
-  borderRadius: 8, fontSize: 12, fontFamily: 'monospace', color: 'var(--tx)', flex: 1,
+  borderRadius: 8, fontSize: 'var(--fs-xs)', fontFamily: 'monospace', color: 'var(--tx)', flex: 1,
 };
 
 const inlineCode = {
   padding: '1px 6px', background: 'var(--sf3)', borderRadius: 3, fontFamily: 'monospace',
-  fontSize: 11, color: 'var(--tx)',
+  fontSize: 'var(--fs-2xs)', color: 'var(--tx)',
 };
 
 const preStyle = {
   padding: '14px 16px', background: 'var(--sf)', border: '1px solid var(--bd)',
-  borderRadius: 8, fontSize: 11, fontFamily: 'monospace', color: 'var(--tx)',
+  borderRadius: 8, fontSize: 'var(--fs-2xs)', fontFamily: 'monospace', color: 'var(--tx)',
   overflow: 'auto', whiteSpace: 'pre-wrap', lineHeight: 1.6, margin: 0,
 };

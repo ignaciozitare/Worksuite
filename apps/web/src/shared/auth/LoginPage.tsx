@@ -157,7 +157,7 @@ export function LoginPage() {
             </div>
           </div>
 
-          <label style={{display:'flex',alignItems:'center',gap:8,fontSize:12,color:'var(--tx3, #8888a8)',
+          <label style={{display:'flex',alignItems:'center',gap:8,fontSize: 'var(--fs-xs)',color:'var(--tx3)',
             cursor:'pointer',userSelect:'none',marginTop:-4}}>
             <input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}
               style={{width:14,height:14,accentColor:'#4f6ef7',cursor:'pointer'}}/>
@@ -166,7 +166,7 @@ export function LoginPage() {
 
           {error&&(
             <div style={{padding:'9px 12px',background:'rgba(224,82,82,0.08)',
-              border:'1px solid rgba(224,82,82,0.22)',borderRadius:6,color:'#e05252',fontSize:12,
+              border:'1px solid rgba(224,82,82,0.22)',borderRadius:6,color:'#e05252',fontSize: 'var(--fs-xs)',
               display:'flex',alignItems:'center',gap:8}}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -246,46 +246,46 @@ function SpinIcon() {
 
 const S: Record<string, React.CSSProperties> = {
   root: {
-    minHeight: '100vh', background: 'var(--bg, #0d0d10)',
+    minHeight: '100vh', background: 'var(--bg)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: 16, fontFamily: "'Inter', system-ui, sans-serif",
   },
   card: {
-    background: 'var(--sf, #141418)', border: '1px solid var(--bd, #252530)',
+    background: 'var(--sf)', border: '1px solid var(--bd)',
     borderRadius: 14, padding: '40px 36px', width: '100%', maxWidth: 400,
     boxShadow: '0 24px 64px rgba(0,0,0,0.65)',
     display: 'flex', flexDirection: 'column', gap: 22,
   },
   logo: {
     display: 'flex', alignItems: 'center', gap: 8,
-    justifyContent: 'center', fontSize: 24, fontWeight: 700, letterSpacing: -0.5,
+    justifyContent: 'center', fontSize: 'var(--fs-xl)', fontWeight: 700, letterSpacing: -0.5,
   },
   dot: { width: 10, height: 10, borderRadius: '50%', background: '#4f6ef7', boxShadow: '0 0 12px #4f6ef7' },
-  subtitle: { textAlign: 'center', color: 'var(--tx3, #50506a)', fontSize: 13, margin: '-12px 0 -4px' },
+  subtitle: { textAlign: 'center', color: 'var(--tx3)', fontSize: 'var(--fs-xs)', margin: '-12px 0 -4px' },
   ssoBtn: {
     display: 'flex', alignItems: 'center', gap: 10,
     padding: '10px 14px', width: '100%',
-    border: '1px solid', borderRadius: 8, fontSize: 13, fontWeight: 500,
+    border: '1px solid', borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 500,
     fontFamily: 'inherit', transition: 'all 0.15s ease',
   },
   badge: {
-    fontSize: 9, fontWeight: 700, letterSpacing: '0.07em',
+    fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '0.07em',
     color: '#2a2a3a', textTransform: 'uppercase',
   },
   divider: { display: 'flex', alignItems: 'center', gap: 12, margin: '-4px 0' },
-  divLine: { flex: 1, height: 1, background: 'var(--bd, #202028)' },
-  divTxt: { color: 'var(--tx3, #40404e)', fontSize: 11, whiteSpace: 'nowrap', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' },
+  divLine: { flex: 1, height: 1, background: 'var(--bd)' },
+  divTxt: { color: 'var(--tx3)', fontSize: 'var(--fs-2xs)', whiteSpace: 'nowrap', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' },
   field: { display: 'flex', flexDirection: 'column', gap: 6 },
-  lbl: { fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--tx3, #50506a)' },
+  lbl: { fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--tx3)' },
   input: {
-    width: '100%', background: 'var(--sf2, #1b1b22)', border: '1px solid var(--bd, #252530)',
-    borderRadius: 7, padding: '9px 12px', color: '#e4e4ef', fontSize: 13,
+    width: '100%', background: 'var(--sf2)', border: '1px solid var(--bd)',
+    borderRadius: 7, padding: '9px 12px', color: '#e4e4ef', fontSize: 'var(--fs-xs)',
     fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
     transition: 'border-color 0.15s, box-shadow 0.15s',
   },
   submit: {
     width: '100%', padding: '11px 0', background: '#4f6ef7', border: 'none',
-    borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600,
+    borderRadius: 8, color: '#fff', fontSize: 'var(--fs-xs)', fontWeight: 600,
     cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s ease',
     marginTop: 2, letterSpacing: '0.01em',
   },

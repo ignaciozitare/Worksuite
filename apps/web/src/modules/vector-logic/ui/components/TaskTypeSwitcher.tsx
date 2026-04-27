@@ -57,18 +57,18 @@ export function TaskTypeSwitcher({ current, types, data, onSwitch }: Props) {
           display: 'inline-flex', alignItems: 'center', gap: 6,
           padding: '6px 10px', borderRadius: 8, fontFamily: 'inherit',
           background: 'var(--sf2)', border: '1px solid var(--bd)',
-          color: 'var(--tx)', cursor: 'pointer', fontSize: 12,
+          color: 'var(--tx)', cursor: 'pointer', fontSize: 'var(--fs-xs)',
         }}
         title={t('vectorLogic.changeTaskType')}
       >
         <span className="material-symbols-outlined" style={{
-          fontSize: 16,
+          fontSize: 'var(--fs-body)',
           color: current.iconColor || 'var(--ac)',
         }}>
           {current.icon || 'task_alt'}
         </span>
         <span style={{ fontWeight: 600 }}>{current.name}</span>
-        <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>
           keyboard_arrow_down
         </span>
       </button>
@@ -86,17 +86,17 @@ export function TaskTypeSwitcher({ current, types, data, onSwitch }: Props) {
               <button key={tt.id} onClick={() => onPick(tt)} style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '8px 10px', borderRadius: 6, background: isCurrent ? 'var(--ac-dim)' : 'transparent',
-                border: 'none', fontFamily: 'inherit', fontSize: 12, color: 'var(--tx)', cursor: 'pointer',
+                border: 'none', fontFamily: 'inherit', fontSize: 'var(--fs-xs)', color: 'var(--tx)', cursor: 'pointer',
               }}>
                 <span className="material-symbols-outlined" style={{
-                  fontSize: 16,
+                  fontSize: 'var(--fs-body)',
                   color: tt.iconColor || (isCurrent ? 'var(--ac)' : 'var(--tx2)'),
                 }}>
                   {tt.icon || 'task_alt'}
                 </span>
                 <span style={{ flex: 1, textAlign: 'left', fontWeight: isCurrent ? 600 : 400 }}>{tt.name}</span>
                 {isCurrent && (
-                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--ac)' }}>check</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--ac)' }}>check</span>
                 )}
               </button>
             );
@@ -145,10 +145,10 @@ function FieldMappingDialog({
         flexDirection: 'column', gap: 14,
       }}>
         <div>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--tx)', margin: 0 }}>
+          <h3 style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--tx)', margin: 0 }}>
             {t('vectorLogic.mapFieldsTitle')}
           </h3>
-          <p style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 4 }}>
+          <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 4 }}>
             {t('vectorLogic.mapFieldsDesc')}
           </p>
         </div>
@@ -160,19 +160,19 @@ function FieldMappingDialog({
               alignItems: 'center', padding: 10, background: 'var(--sf2)', borderRadius: 8,
             }}>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--tx)' }}>{f.label}</div>
-                <div style={{ fontSize: 10, color: 'var(--tx3)' }}>
+                <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, color: 'var(--tx)' }}>{f.label}</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>
                   {String(data[f.id] ?? '').slice(0, 60)}
                 </div>
               </div>
-              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>
                 arrow_forward
               </span>
               <select
                 value={mapping[f.id] ?? ''}
                 onChange={(e) => setMapping((m) => ({ ...m, [f.id]: e.target.value || null }))}
                 style={{
-                  padding: '6px 8px', fontSize: 11, fontFamily: 'inherit',
+                  padding: '6px 8px', fontSize: 'var(--fs-2xs)', fontFamily: 'inherit',
                   background: 'var(--bg)', border: '1px solid var(--bd)',
                   borderRadius: 6, color: 'var(--tx)',
                 }}
@@ -188,14 +188,14 @@ function FieldMappingDialog({
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <button onClick={onCancel} style={{
-            padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+            padding: '7px 14px', borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 600,
             cursor: 'pointer', border: '1px solid var(--bd)', fontFamily: 'inherit',
             background: 'var(--sf2)', color: 'var(--tx)',
           }}>
             {t('common.cancel')}
           </button>
           <button onClick={() => onConfirm(mapping)} style={{
-            padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+            padding: '7px 14px', borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 600,
             cursor: 'pointer', border: 'none', fontFamily: 'inherit',
             background: 'linear-gradient(135deg, var(--ac2), var(--ac))', color: 'var(--ac-on)',
           }}>

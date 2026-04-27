@@ -148,10 +148,10 @@ export function BacklogHistoryView({ currentUser }: Props) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ flex: '0 0 auto' }}>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
+          <h2 style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
             {t('vectorLogic.backlogHistory')}
           </h2>
-          <p style={{ fontSize: 11, color: 'var(--tx3)', margin: '4px 0 0' }}>
+          <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', margin: '4px 0 0' }}>
             {t('vectorLogic.backlogHistoryDesc')}
           </p>
         </div>
@@ -171,14 +171,14 @@ export function BacklogHistoryView({ currentUser }: Props) {
           display: 'flex', alignItems: 'center', gap: 6, background: 'var(--sf2)',
           border: '1px solid var(--bd)', borderRadius: 8, padding: '6px 10px', width: 220,
         }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)' }}>search</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>search</span>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('vectorLogic.searchBacklog')}
             style={{
               flex: 1, border: 'none', outline: 'none', background: 'transparent',
-              color: 'var(--tx)', fontSize: 11, fontFamily: 'inherit',
+              color: 'var(--tx)', fontSize: 'var(--fs-2xs)', fontFamily: 'inherit',
             }}
           />
         </div>
@@ -189,7 +189,7 @@ export function BacklogHistoryView({ currentUser }: Props) {
             disabled={creatableTypes.length === 0}
             title={creatableTypes.length === 0 ? t('vectorLogic.noBacklogStateForAnyType') : undefined}
             style={{
-              padding: '8px 14px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+              padding: '8px 14px', borderRadius: 8, fontSize: 'var(--fs-2xs)', fontWeight: 700,
               cursor: creatableTypes.length === 0 ? 'not-allowed' : 'pointer',
               fontFamily: 'inherit', border: 'none',
               background: creatableTypes.length === 0 ? 'var(--sf3)' : 'var(--ac)',
@@ -199,7 +199,7 @@ export function BacklogHistoryView({ currentUser }: Props) {
               boxShadow: creatableTypes.length === 0 ? 'none' : '0 0 20px var(--ac-dim)',
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>add</span>
             {t('vectorLogic.newTask')}
           </button>
         )}
@@ -216,7 +216,7 @@ export function BacklogHistoryView({ currentUser }: Props) {
             value={qaTypeId}
             onChange={(e) => setQaTypeId(e.target.value)}
             style={{
-              padding: '8px 10px', borderRadius: 8, fontSize: 12,
+              padding: '8px 10px', borderRadius: 8, fontSize: 'var(--fs-xs)',
               background: 'var(--sf)', border: '1px solid var(--bd)', color: 'var(--tx)',
               fontFamily: 'inherit', minWidth: 160, cursor: 'pointer',
             }}
@@ -235,7 +235,7 @@ export function BacklogHistoryView({ currentUser }: Props) {
             }}
             placeholder={t('vectorLogic.taskTitle')}
             style={{
-              flex: 1, padding: '8px 12px', borderRadius: 8, fontSize: 12,
+              flex: 1, padding: '8px 12px', borderRadius: 8, fontSize: 'var(--fs-xs)',
               background: 'var(--sf)', border: '1px solid var(--bd)', color: 'var(--tx)',
               outline: 'none', fontFamily: 'inherit',
             }}
@@ -244,7 +244,7 @@ export function BacklogHistoryView({ currentUser }: Props) {
             onClick={handleCreate}
             disabled={!qaTitle.trim() || creating}
             style={{
-              padding: '8px 14px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+              padding: '8px 14px', borderRadius: 8, fontSize: 'var(--fs-2xs)', fontWeight: 700,
               cursor: !qaTitle.trim() || creating ? 'not-allowed' : 'pointer',
               fontFamily: 'inherit', border: 'none',
               background: !qaTitle.trim() || creating ? 'var(--sf3)' : 'var(--ac)',
@@ -258,7 +258,7 @@ export function BacklogHistoryView({ currentUser }: Props) {
             onClick={() => setShowQuickAdd(false)}
             disabled={creating}
             style={{
-              padding: '8px 10px', borderRadius: 8, fontSize: 11,
+              padding: '8px 10px', borderRadius: 8, fontSize: 'var(--fs-2xs)',
               cursor: creating ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
               border: '1px solid var(--bd)', background: 'transparent', color: 'var(--tx2)',
             }}
@@ -275,8 +275,8 @@ export function BacklogHistoryView({ currentUser }: Props) {
         </div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--tx3)', background: 'var(--sf2)', borderRadius: 12 }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: .25, display: 'block', marginBottom: 12 }}>inbox</span>
-          <div style={{ fontSize: 13, fontWeight: 500 }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', opacity: .25, display: 'block', marginBottom: 12 }}>inbox</span>
+          <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 500 }}>
             {mode === 'backlog' ? t('vectorLogic.noBacklog') : t('vectorLogic.noHistory')}
           </div>
         </div>
@@ -293,17 +293,17 @@ export function BacklogHistoryView({ currentUser }: Props) {
               }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--tx3)' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)', color: 'var(--tx3)' }}>
                       {tt?.icon || 'task_alt'}
                     </span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ac)', fontFamily: "'Space Grotesk',sans-serif" }}>
+                    <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)', fontFamily: "'Space Grotesk',sans-serif" }}>
                       {task.code ?? '—'}
                     </span>
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)' }}>
+                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--tx)' }}>
                     {task.title}
                   </div>
-                  <div style={{ fontSize: 10, color: 'var(--tx3)' }}>
+                  <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)' }}>
                     {mode === 'history' && task.archivedAt
                       ? `${t('vectorLogic.archived')} ${new Date(task.archivedAt).toLocaleDateString()}`
                       : `${t('vectorLogic.created')} ${new Date(task.createdAt).toLocaleDateString()}`}
@@ -314,7 +314,7 @@ export function BacklogHistoryView({ currentUser }: Props) {
                   onClick={() => handleAction(task)}
                   title={canAct ? undefined : t('vectorLogic.noOpenStateForType')}
                   style={{
-                    padding: '8px 12px', borderRadius: 8, fontSize: 10, fontWeight: 600,
+                    padding: '8px 12px', borderRadius: 8, fontSize: 'var(--fs-2xs)', fontWeight: 600,
                     cursor: canAct && !busy ? 'pointer' : 'not-allowed',
                     fontFamily: 'inherit', border: 'none',
                     background: canAct ? 'var(--ac-dim)' : 'var(--sf3)',
@@ -323,7 +323,7 @@ export function BacklogHistoryView({ currentUser }: Props) {
                     display: 'inline-flex', alignItems: 'center', gap: 4,
                   }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>
                     {mode === 'backlog' ? 'move_item' : 'restart_alt'}
                   </span>
                   {mode === 'backlog' ? t('vectorLogic.toBoard') : t('vectorLogic.reopen')}
@@ -342,17 +342,17 @@ function ToggleBtn({ active, icon, label, count, onClick }: {
 }) {
   return (
     <button onClick={onClick} style={{
-      padding: '6px 14px', borderRadius: 6, fontSize: 11, fontWeight: active ? 600 : 400,
+      padding: '6px 14px', borderRadius: 6, fontSize: 'var(--fs-2xs)', fontWeight: active ? 600 : 400,
       cursor: 'pointer', fontFamily: 'inherit', border: 'none',
       background: active ? 'var(--ac)' : 'transparent',
       color: active ? 'var(--ac-on)' : 'var(--tx3)',
       display: 'inline-flex', alignItems: 'center', gap: 5,
     }}>
-      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{icon}</span>
+      <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>{icon}</span>
       {label}
       {count !== undefined && (
         <span style={{
-          padding: '1px 6px', borderRadius: 10, fontSize: 9, fontWeight: 700,
+          padding: '1px 6px', borderRadius: 10, fontSize: 'var(--fs-2xs)', fontWeight: 700,
           background: active ? 'rgba(255,255,255,.2)' : 'var(--sf3)',
           color: active ? 'var(--ac-on)' : 'var(--tx3)',
         }}>

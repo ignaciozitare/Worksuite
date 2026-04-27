@@ -173,7 +173,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
   if (loading) {
     return (
       <div className="fade-in" style={{ textAlign: 'center', padding: 48, color: C.txDim }}>
-        <span className="mono" style={{ fontSize: 13, letterSpacing: '.1em' }}>{t('chrono.cargando')}</span>
+        <span className="mono" style={{ fontSize: 'var(--fs-xs)', letterSpacing: '.1em' }}>{t('chrono.cargando')}</span>
       </div>
     );
   }
@@ -183,10 +183,10 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: C.tx, margin: 0, letterSpacing: '-.02em' }}>
+          <h2 style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: C.tx, margin: 0, letterSpacing: '-.02em' }}>
             {t('chrono.alarmas')}
           </h2>
-          <p className="mono" style={{ fontSize: 12, color: C.txMuted, marginTop: 4, letterSpacing: '.08em' }}>
+          <p className="mono" style={{ fontSize: 'var(--fs-xs)', color: C.txMuted, marginTop: 4, letterSpacing: '.08em' }}>
             {t('chrono.alarmasSubtitulo')}
           </p>
         </div>
@@ -206,7 +206,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
             background: message.type === 'ok' ? C.greenDim : C.redDim,
             borderColor: message.type === 'ok' ? 'rgba(16,185,129,.3)' : 'rgba(239,68,68,.3)',
             color: message.type === 'ok' ? C.green : C.red,
-            fontSize: 13, fontWeight: 600,
+            fontSize: 'var(--fs-xs)', fontWeight: 600,
           }}
         >
           {message.text}
@@ -215,7 +215,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
 
       {/* ── Notification channels card ─────────────────────────────────────── */}
       <div className="ch-card" style={{ marginBottom: 20 }}>
-        <div className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginBottom: 14 }}>
+        <div className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginBottom: 14 }}>
           {t('chrono.canales')}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
@@ -225,8 +225,8 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
               padding: '12px 14px', borderRadius: 6, background: C.bg, border: `1px solid ${C.bd}`,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 18 }}>{CHANNEL_ICONS[ch]}</span>
-                <span className="mono" style={{ fontSize: 12, fontWeight: 600, color: C.tx, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                <span style={{ fontSize: 'var(--fs-md)' }}>{CHANNEL_ICONS[ch]}</span>
+                <span className="mono" style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: C.tx, textTransform: 'uppercase', letterSpacing: '.05em' }}>
                   {t(`chrono.${ch}`)}
                 </span>
               </div>
@@ -242,13 +242,13 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
       {/* ── New / Edit form ────────────────────────────────────────────────── */}
       {(showNew || editingId) && (
         <div className="ch-card fade-in" style={{ marginBottom: 20, borderColor: C.amber }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.tx, marginBottom: 16 }}>
+          <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: C.tx, marginBottom: 16 }}>
             {editingId ? t('chrono.editarAlarma') : t('chrono.nuevaAlarma')}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14, marginBottom: 14 }}>
             <div>
-              <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
+              <label className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
                 {t('chrono.label')}
               </label>
               <input
@@ -257,7 +257,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
               />
             </div>
             <div>
-              <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
+              <label className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
                 {t('chrono.hora')}
               </label>
               <input
@@ -266,7 +266,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
               />
             </div>
             <div>
-              <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
+              <label className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
                 {t('chrono.tipoAlarma')}
               </label>
               <select
@@ -279,7 +279,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
               </select>
             </div>
             <div>
-              <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
+              <label className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 6 }}>
                 {t('chrono.sonido')}
               </label>
               <select
@@ -295,7 +295,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
 
           {/* Days */}
           <div style={{ marginBottom: 14 }}>
-            <label className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 8 }}>
+            <label className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, display: 'block', marginBottom: 8 }}>
               {t('chrono.diasSemana')}
             </label>
             <div style={{ display: 'flex', gap: 6 }}>
@@ -308,7 +308,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
                     className="mono"
                     style={{
                       width: 32, height: 32, borderRadius: 4, display: 'inline-flex',
-                      alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700,
+                      alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-2xs)', fontWeight: 700,
                       cursor: 'pointer', border: 'none',
                       background: active ? C.amber : C.bg,
                       color: active ? '#000' : C.txMuted,
@@ -340,7 +340,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
               {t('chrono.cancelarBtn')}
             </button>
             {editingId && (
-              <button className="ch-btn ch-btn-red" style={{ padding: '5px 12px', fontSize: 11 }} onClick={() => handleDelete(editingId)} disabled={submitting}>
+              <button className="ch-btn ch-btn-red" style={{ padding: '5px 12px', fontSize: 'var(--fs-2xs)' }} onClick={() => handleDelete(editingId)} disabled={submitting}>
                 {t('chrono.eliminarAlarma')}
               </button>
             )}
@@ -351,7 +351,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
       {/* ── Alarm list ─────────────────────────────────────────────────────── */}
       {alarmas.length === 0 && !showNew ? (
         <div className="ch-card" style={{ textAlign: 'center', padding: 40, color: C.txMuted }}>
-          <span className="mono" style={{ fontSize: 12, letterSpacing: '.08em' }}>{t('chrono.sinAlarmas')}</span>
+          <span className="mono" style={{ fontSize: 'var(--fs-xs)', letterSpacing: '.08em' }}>{t('chrono.sinAlarmas')}</span>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -374,7 +374,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
 
               {/* Label + day badges */}
               <div style={{ flex: 1, minWidth: 140 }}>
-                <div style={{ fontWeight: 700, color: C.tx, fontSize: 14, marginBottom: 6 }}>
+                <div style={{ fontWeight: 700, color: C.tx, fontSize: 'var(--fs-sm)', marginBottom: 6 }}>
                   {a.label || t(TIPO_LABELS[a.tipo])}
                 </div>
                 <div style={{ display: 'flex', gap: 3 }}>
@@ -387,7 +387,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
                         style={{
                           width: 22, height: 22, borderRadius: 3, display: 'inline-flex',
                           alignItems: 'center', justifyContent: 'center',
-                          fontSize: 10, fontWeight: 700,
+                          fontSize: 'var(--fs-2xs)', fontWeight: 700,
                           background: active ? C.amberGlow : C.bg,
                           color: active ? C.amber : C.txMuted,
                           border: `1px solid ${active ? C.amberDim : C.bd}`,
@@ -407,7 +407,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
                 readOnly
                 style={{
                   width: 90, textAlign: 'center', fontWeight: 700,
-                  fontSize: 15, background: C.bg, border: `1px solid ${C.bd}`,
+                  fontSize: 'var(--fs-sm)', background: C.bg, border: `1px solid ${C.bd}`,
                   color: C.tx, padding: '6px 10px', borderRadius: 5,
                   fontFamily: "'IBM Plex Mono',monospace",
                 }}
@@ -428,14 +428,14 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
               <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                 <button
                   className="ch-btn ch-btn-ghost"
-                  style={{ padding: '5px 12px', fontSize: 11 }}
+                  style={{ padding: '5px 12px', fontSize: 'var(--fs-2xs)' }}
                   onClick={() => openEdit(a)}
                 >
                   {t('chrono.editarAlarma')}
                 </button>
                 <button
                   className="ch-btn ch-btn-red"
-                  style={{ padding: '5px 12px', fontSize: 11 }}
+                  style={{ padding: '5px 12px', fontSize: 'var(--fs-2xs)' }}
                   onClick={() => handleDelete(a.id)}
                 >
                   {t('chrono.eliminarAlarma')}
@@ -448,7 +448,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
 
       {/* ── Advance reminders section ──────────────────────────────────────── */}
       <div className="ch-card" style={{ marginTop: 20 }}>
-        <div className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginBottom: 14 }}>
+        <div className="mono" style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginBottom: 14 }}>
           {t('chrono.avisoAnticipado')}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -461,7 +461,7 @@ export function AlarmasView({ alarmaRepo, currentUser }: AlarmasViewProps) {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '10px 14px', borderRadius: 6, background: C.bg, border: `1px solid ${C.bd}`,
             }}>
-              <span className="mono" style={{ fontSize: 13, fontWeight: 500, color: C.tx }}>
+              <span className="mono" style={{ fontSize: 'var(--fs-xs)', fontWeight: 500, color: C.tx }}>
                 {item.label} {t('chrono.antes')}
               </span>
               <button

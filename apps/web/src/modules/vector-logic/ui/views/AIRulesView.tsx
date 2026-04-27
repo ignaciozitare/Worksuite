@@ -71,24 +71,24 @@ export function AIRulesView({ currentUser }: Props) {
     <div style={{ maxWidth: 820 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
+          <h2 style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
             {t('vectorLogic.aiRules')}
           </h2>
-          <p style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 4, maxWidth: 620 }}>
+          <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)', marginTop: 4, maxWidth: 620 }}>
             {t('vectorLogic.aiRulesDesc')}
           </p>
         </div>
         <button onClick={openNew} style={btnStyle('primary')}>
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>add</span>
           {t('vectorLogic.newRule')}
         </button>
       </div>
 
       {rules.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--tx3)' }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: .2, display: 'block', marginBottom: 12 }}>rule</span>
-          <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>{t('vectorLogic.noRules')}</div>
-          <div style={{ fontSize: 11 }}>{t('vectorLogic.noRulesHint')}</div>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', opacity: .2, display: 'block', marginBottom: 12 }}>rule</span>
+          <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500, marginBottom: 4 }}>{t('vectorLogic.noRules')}</div>
+          <div style={{ fontSize: 'var(--fs-2xs)' }}>{t('vectorLogic.noRulesHint')}</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -109,15 +109,15 @@ export function AIRulesView({ currentUser }: Props) {
                 }} />
               </button>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--tx)', marginBottom: 4 }}>{r.name}</div>
-                <div style={{ fontSize: 12, color: 'var(--tx2)', lineHeight: 1.5 }}>{r.description}</div>
+                <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--tx)', marginBottom: 4 }}>{r.name}</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx2)', lineHeight: 1.5 }}>{r.description}</div>
               </div>
               <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                 <button onClick={() => openEdit(r)} style={iconBtn}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>edit</span>
                 </button>
                 <button onClick={() => remove(r)} style={iconBtn}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--red)' }}>delete</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)', color: 'var(--red)' }}>delete</span>
                 </button>
               </div>
             </div>
@@ -139,11 +139,11 @@ export function AIRulesView({ currentUser }: Props) {
               padding: '16px 20px', borderBottom: '1px solid var(--bd)',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', margin: 0 }}>
+              <h3 style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--tx)', margin: 0 }}>
                 {editing ? t('vectorLogic.editRule') : t('vectorLogic.newRule')}
               </h3>
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>close</span>
               </button>
             </div>
             <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -159,7 +159,7 @@ export function AIRulesView({ currentUser }: Props) {
                   placeholder={t('vectorLogic.ruleDescriptionPlaceholder')}
                   rows={6}
                   style={{ ...inpStyle(), fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.5 }} />
-                <p style={{ fontSize: 10, color: 'var(--tx3)', marginTop: 6, lineHeight: 1.4 }}>
+                <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 6, lineHeight: 1.4 }}>
                   {t('vectorLogic.ruleDescriptionHint')}
                 </p>
               </div>
@@ -177,7 +177,7 @@ export function AIRulesView({ currentUser }: Props) {
 
 const btnStyle = (variant = 'primary', extra = {}) => ({
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-  borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer', border: 'none',
+  borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-xs)', cursor: 'pointer', border: 'none',
   fontFamily: 'inherit', transition: 'all .15s',
   ...(variant === 'primary' && { background: 'var(--ac)', color: '#fff' }),
   ...(variant === 'ghost' && { background: 'var(--sf2)', color: 'var(--tx3)', border: '1px solid var(--bd)' }),
@@ -190,12 +190,12 @@ const iconBtn = {
 };
 
 const inpStyle = (extra = {}) => ({
-  width: '100%', padding: '8px 12px', fontSize: 13, fontFamily: 'inherit',
+  width: '100%', padding: '8px 12px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
   background: 'var(--sf2)', border: '1px solid var(--bd)',
   borderRadius: 8, color: 'var(--tx)', outline: 'none', ...extra,
 });
 
 const lblStyle = {
-  fontSize: 10, fontWeight: 700, color: 'var(--tx3)',
+  fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
   textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 5,
 };

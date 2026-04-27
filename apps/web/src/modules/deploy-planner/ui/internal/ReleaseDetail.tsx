@@ -140,30 +140,30 @@ export function ReleaseDetail({
     <div className="fade-in">
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', fontSize: 11, marginBottom: 12, padding: 0, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--dp-tx3)', cursor: 'pointer', fontSize: 'var(--fs-2xs)', marginBottom: 12, padding: 0, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
           ← Volver a Planning
         </button>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 14 }}>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <span style={{ fontSize: 9, color: 'var(--dp-tx3,#8c909f)', letterSpacing: '.1em', textTransform: 'uppercase' }}>Release</span>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)', letterSpacing: '.1em', textTransform: 'uppercase' }}>Release</span>
               {rel.start_date && rel.end_date && (
                 <>
-                  <span style={{ fontSize: 9, color: 'var(--dp-bd,#424754)' }}>·</span>
-                  <span style={{ fontSize: 9, color: 'var(--dp-tx3,#8c909f)' }}>{rel.start_date} → {rel.end_date}</span>
+                  <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-bd)' }}>·</span>
+                  <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)' }}>{rel.start_date} → {rel.end_date}</span>
                 </>
               )}
             </div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--dp-tx,#e5e2e1)', marginBottom: 4 }}>{rel.release_number || 'Sin versión'}</h1>
-            {rel.description && <p style={{ fontSize: 11, color: 'var(--dp-tx2,#c2c6d6)' }}>{rel.description}</p>}
+            <h1 style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--dp-tx)', marginBottom: 4 }}>{rel.release_number || 'Sin versión'}</h1>
+            {rel.description && <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx2)' }}>{rel.description}</p>}
           </div>
           {/* Global progress */}
-          <div style={{ background: 'var(--dp-sf,#1c1b1b)', border: '1px solid var(--dp-bd,#424754)', borderRadius: 8, padding: '12px 16px', minWidth: 150, textAlign: 'center' }}>
-            <div style={{ fontSize: 26, fontWeight: 700, color: allReady ? '#34d399' : 'var(--dp-tx,#e5e2e1)', lineHeight: 1 }}>
-              {readyCount}<span style={{ fontSize: 13, color: 'var(--dp-tx3,#8c909f)' }}>/{relTickets.length}</span>
+          <div style={{ background: 'var(--dp-sf)', border: '1px solid var(--dp-bd)', borderRadius: 8, padding: '12px 16px', minWidth: 150, textAlign: 'center' }}>
+            <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: allReady ? '#34d399' : 'var(--dp-tx)', lineHeight: 1 }}>
+              {readyCount}<span style={{ fontSize: 'var(--fs-xs)', color: 'var(--dp-tx3)' }}>/{relTickets.length}</span>
             </div>
             <SLabel style={{ marginTop: 4 }}>Tickets listos</SLabel>
-            <div style={{ height: 3, background: 'var(--dp-bd,#424754)', borderRadius: 2, overflow: 'hidden', marginTop: 7 }}>
+            <div style={{ height: 3, background: 'var(--dp-bd)', borderRadius: 2, overflow: 'hidden', marginTop: 7 }}>
               <div style={{ width: `${relTickets.length ? readyCount / relTickets.length * 100 : 0}%`, height: '100%', background: allReady ? '#34d399' : '#3b82f6', borderRadius: 2, transition: 'width .4s ease' }} />
             </div>
           </div>
@@ -181,43 +181,43 @@ export function ReleaseDetail({
                 style={{
                   display: 'flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 20,
                   background: ok ? 'rgba(52,211,153,.08)' : 'var(--dp-sf2,rgba(77,142,255,.06))',
-                  border: `1px solid ${ok ? 'rgba(52,211,153,.3)' : 'var(--dp-bd,#424754)'}`,
-                  fontSize: 10, color: ok ? '#34d399' : 'var(--dp-tx3,#8c909f)',
+                  border: `1px solid ${ok ? 'rgba(52,211,153,.3)' : 'var(--dp-bd)'}`,
+                  fontSize: 'var(--fs-2xs)', color: ok ? '#34d399' : 'var(--dp-tx3)',
                 }}
               >
-                {ok ? '✓' : '○'} {repo} <span style={{ color: 'var(--dp-tx3,#8c909f)', fontSize: 9 }}>{ready}/{rTickets.length}</span>
+                {ok ? '✓' : '○'} {repo} <span style={{ color: 'var(--dp-tx3)', fontSize: 'var(--fs-2xs)' }}>{ready}/{rTickets.length}</span>
               </div>
             );
           })}
         </div>
       </div>
 
-      <div style={{ height: 1, background: 'var(--dp-bd,#424754)', marginBottom: 24 }} />
+      <div style={{ height: 1, background: 'var(--dp-bd)', marginBottom: 24 }} />
 
       {/* Repo cards */}
       <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-start', marginBottom: 28 }}>
         {/* Empty state — tickets not loaded from Jira yet */}
         {allRepos.length === 0 && (
-          <div style={{ width: '100%', padding: '32px 24px', background: 'var(--dp-sf,#1c1b1b)', border: '1px dashed var(--dp-bd,#424754)', borderRadius: 8, textAlign: 'center' }}>
+          <div style={{ width: '100%', padding: '32px 24px', background: 'var(--dp-sf)', border: '1px dashed var(--dp-bd)', borderRadius: 8, textAlign: 'center' }}>
             {(rel.ticket_ids ?? []).length === 0 ? (
               <>
-                <div style={{ fontSize: 20, marginBottom: 8 }}>📋</div>
-                <div style={{ fontSize: 13, color: 'var(--dp-tx2,#c2c6d6)', marginBottom: 4 }}>Sin tickets asignados</div>
-                <div style={{ fontSize: 11, color: 'var(--dp-tx3,#8c909f)' }}>Ve a Planning y arrastra tickets a esta release</div>
+                <div style={{ fontSize: 'var(--fs-lg)', marginBottom: 8 }}>📋</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--dp-tx2)', marginBottom: 4 }}>Sin tickets asignados</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)' }}>Ve a Planning y arrastra tickets a esta release</div>
               </>
             ) : (
               <>
-                <div style={{ fontSize: 20, marginBottom: 8 }}>🔄</div>
-                <div style={{ fontSize: 13, color: 'var(--dp-tx2,#c2c6d6)', marginBottom: 4 }}>{(rel.ticket_ids ?? []).length} tickets asignados — sin datos de repo</div>
-                <div style={{ fontSize: 11, color: 'var(--dp-tx3,#8c909f)' }}>
-                  Los tickets necesitan el campo <strong style={{ color: 'var(--dp-tx2,#c2c6d6)' }}>Components</strong> en Jira para agruparse por repositorio.<br />
+                <div style={{ fontSize: 'var(--fs-lg)', marginBottom: 8 }}>🔄</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--dp-tx2)', marginBottom: 4 }}>{(rel.ticket_ids ?? []).length} tickets asignados — sin datos de repo</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)' }}>
+                  Los tickets necesitan el campo <strong style={{ color: 'var(--dp-tx2)' }}>Components</strong> en Jira para agruparse por repositorio.<br />
                   Revisa que los tickets tienen componentes asignados en Jira.
                 </div>
                 <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {(rel.ticket_ids ?? []).map(k => (
-                    <div key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'var(--dp-sf2,#201f1f)', border: '1px solid var(--dp-bd,#424754)', borderRadius: 6, fontSize: 11, color: 'var(--dp-tx2,#c2c6d6)' }}>
-                      <span style={{ color: 'var(--dp-primary,#adc6ff)', fontWeight: 700 }}>{k}</span>
-                      <span style={{ fontSize: 9, color: 'var(--dp-tx3,#8c909f)' }}>sin componente</span>
+                    <div key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'var(--dp-sf2)', border: '1px solid var(--dp-bd)', borderRadius: 6, fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx2)' }}>
+                      <span style={{ color: 'var(--dp-primary)', fontWeight: 700 }}>{k}</span>
+                      <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)' }}>sin componente</span>
                     </div>
                   ))}
                 </div>
@@ -231,21 +231,21 @@ export function ReleaseDetail({
           const ready = rTickets.filter(t => MERGE_READY.includes(getStatus(t.key))).length;
           const allOk = ready === rTickets.length;
           const someOk = ready > 0;
-          const borderColor = allOk ? '#34d399' : someOk ? '#f59e0b' : 'var(--dp-bd,#424754)';
-          const topColor = allOk ? '#34d399' : someOk ? '#f59e0b' : 'var(--dp-tx3,#8c909f)';
+          const borderColor = allOk ? '#34d399' : someOk ? '#f59e0b' : 'var(--dp-bd)';
+          const topColor = allOk ? '#34d399' : someOk ? '#f59e0b' : 'var(--dp-tx3)';
           return (
-            <div key={repo} className="anim-in" style={{ width: 300, background: 'var(--dp-sf,#1c1b1b)', border: `1px solid ${borderColor}`, borderTop: `2px solid ${topColor}`, borderRadius: 8, flexShrink: 0, transition: 'border-color .3s' }}>
+            <div key={repo} className="anim-in" style={{ width: 300, background: 'var(--dp-sf)', border: `1px solid ${borderColor}`, borderTop: `2px solid ${topColor}`, borderRadius: 8, flexShrink: 0, transition: 'border-color .3s' }}>
               {/* Repo header */}
-              <div style={{ padding: '11px 14px', borderBottom: '1px solid var(--dp-bd,#424754)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 24, height: 24, borderRadius: 5, background: allOk ? 'rgba(52,211,153,.15)' : 'rgba(77,142,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: allOk ? '#34d399' : 'var(--dp-primary,#adc6ff)' }}>{allOk ? '✓' : '⬡'}</div>
+              <div style={{ padding: '11px 14px', borderBottom: '1px solid var(--dp-bd)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 24, height: 24, borderRadius: 5, background: allOk ? 'rgba(52,211,153,.15)' : 'rgba(77,142,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-2xs)', color: allOk ? '#34d399' : 'var(--dp-primary)' }}>{allOk ? '✓' : '⬡'}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--dp-tx,#e5e2e1)' }}>{repo}</div>
-                  <div style={{ fontSize: 9, color: 'var(--dp-tx3,#8c909f)', marginTop: 1 }}>{ready}/{rTickets.length} listos</div>
+                  <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--dp-tx)' }}>{repo}</div>
+                  <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)', marginTop: 1 }}>{ready}/{rTickets.length} listos</div>
                 </div>
-                <div style={{ width: 44, height: 4, background: 'var(--dp-bd,#424754)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ width: 44, height: 4, background: 'var(--dp-bd)', borderRadius: 2, overflow: 'hidden' }}>
                   <div style={{ width: `${rTickets.length ? ready / rTickets.length * 100 : 0}%`, height: '100%', background: allOk ? '#34d399' : someOk ? '#f59e0b' : '#8c909f', borderRadius: 2, transition: 'width .4s' }} />
                 </div>
-                {allOk && <span style={{ fontSize: 9, color: '#34d399', fontWeight: 700 }}>LISTO</span>}
+                {allOk && <span style={{ fontSize: 'var(--fs-2xs)', color: '#34d399', fontWeight: 700 }}>LISTO</span>}
               </div>
 
               {/* Tickets */}
@@ -255,23 +255,23 @@ export function ReleaseDetail({
                 const isReady = MERGE_READY.includes(st);
                 const isSyncing = syncing[ticket.key];
                 return (
-                  <div key={ticket.key} style={{ padding: '10px 14px', borderBottom: i < rTickets.length - 1 ? '1px solid var(--dp-bd,#424754)' : 'none', opacity: isReady ? .7 : 1, transition: 'opacity .2s' }}>
+                  <div key={ticket.key} style={{ padding: '10px 14px', borderBottom: i < rTickets.length - 1 ? '1px solid var(--dp-bd)' : 'none', opacity: isReady ? .7 : 1, transition: 'opacity .2s' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
                       <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIORITY_COLOR[ticket.priority] ?? '#64748b', marginTop: 4, flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
-                          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--dp-primary,#adc6ff)', flexShrink: 0 }}>{ticket.key}</span>
-                          <span style={{ fontSize: 9, color: 'var(--dp-tx3,#8c909f)', background: 'var(--dp-sf2,#201f1f)', border: '1px solid var(--dp-bd,#424754)', borderRadius: 3, padding: '0 4px', flexShrink: 0 }}>{ticket.type || 'Task'}</span>
-                          {isSyncing && <span className="spin" style={{ fontSize: 10, color: 'var(--dp-primary,#adc6ff)' }}>⟳</span>}
+                          <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--dp-primary)', flexShrink: 0 }}>{ticket.key}</span>
+                          <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)', background: 'var(--dp-sf2)', border: '1px solid var(--dp-bd)', borderRadius: 3, padding: '0 4px', flexShrink: 0 }}>{ticket.type || 'Task'}</span>
+                          {isSyncing && <span className="spin" style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-primary)' }}>⟳</span>}
                         </div>
-                        <div style={{ fontSize: 10, color: isReady ? 'var(--dp-tx3,#8c909f)' : 'var(--dp-tx2,#c2c6d6)', lineHeight: 1.4, textDecoration: isReady ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>{ticket.summary}</div>
-                        <div style={{ fontSize: 9, color: 'var(--dp-tx3,#8c909f)' }}>👤 {ticket.assignee || '—'}</div>
+                        <div style={{ fontSize: 'var(--fs-2xs)', color: isReady ? 'var(--dp-tx3)' : 'var(--dp-tx2)', lineHeight: 1.4, textDecoration: isReady ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>{ticket.summary}</div>
+                        <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)' }}>👤 {ticket.assignee || '—'}</div>
                       </div>
                     </div>
                     <select
                       value={st}
                       onChange={e => void handleStatusChange(ticket.key, e.target.value)}
-                      style={{ width: '100%', background: stCfg.bg, border: `1px solid ${stCfg.color}40`, borderRadius: 4, padding: '4px 8px', fontSize: 10, color: stCfg.color, cursor: 'pointer', outline: 'none', fontWeight: 700, fontFamily: 'inherit', transition: 'all .2s' }}
+                      style={{ width: '100%', background: stCfg.bg, border: `1px solid ${stCfg.color}40`, borderRadius: 4, padding: '4px 8px', fontSize: 'var(--fs-2xs)', color: stCfg.color, cursor: 'pointer', outline: 'none', fontWeight: 700, fontFamily: 'inherit', transition: 'all .2s' }}
                     >
                       {TICKET_STATUSES.map(s => {
                         const tsCfg = TICKET_STATUS_CFG[s];
@@ -287,12 +287,12 @@ export function ReleaseDetail({
       </div>
 
       {/* Release status info */}
-      <div style={{ background: 'var(--dp-sf,#1c1b1b)', border: '1px solid var(--dp-bd,#424754)', borderRadius: 8, padding: '18px 20px' }}>
+      <div style={{ background: 'var(--dp-sf)', border: '1px solid var(--dp-bd)', borderRadius: 8, padding: '18px 20px' }}>
         <SLabel style={{ marginBottom: 12 }}>Estado de la Release</SLabel>
 
         {/* Tickets pendientes */}
         {!allReady && (
-          <div style={{ padding: '8px 12px', background: 'rgba(248,113,113,.06)', border: '1px solid #7f1d1d', borderRadius: 6, fontSize: 10, color: '#f87171', marginBottom: 10 }}>
+          <div style={{ padding: '8px 12px', background: 'rgba(248,113,113,.06)', border: '1px solid #7f1d1d', borderRadius: 6, fontSize: 'var(--fs-2xs)', color: '#f87171', marginBottom: 10 }}>
             <div style={{ fontWeight: 700, marginBottom: 4 }}>⚠ Hay tickets pendientes en:</div>
             {allRepos.filter(r => (byRepo[r] ?? []).some(t => !MERGE_READY.includes(getStatus(t.key)))).map(r => {
               const pending = (byRepo[r] ?? []).filter(t => !MERGE_READY.includes(getStatus(t.key))).length;
@@ -301,7 +301,7 @@ export function ReleaseDetail({
           </div>
         )}
 
-        <div style={{ marginTop: 8, fontSize: 9, color: 'var(--dp-tx3,#8c909f)' }}>
+        <div style={{ marginTop: 8, fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)' }}>
           Estados configurables desde Admin → Deploy Config
         </div>
       </div>
@@ -312,55 +312,55 @@ export function ReleaseDetail({
         if (!relSubs.length) return null;
         const counts = SubtaskService.count(relSubs);
         return (
-          <div style={{ background: 'var(--dp-sf,#1c1b1b)', border: '1px solid var(--dp-bd,#424754)', borderRadius: 8, padding: '18px 20px' }}>
+          <div style={{ background: 'var(--dp-sf)', border: '1px solid var(--dp-bd)', borderRadius: 8, padding: '18px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
               <SLabel>Subtareas</SLabel>
-              <span style={{ fontSize: 10, color: 'var(--dp-tx2,#c2c6d6)' }}>{relSubs.length} total</span>
-              {counts.bugs.total > 0 && <span style={{ fontSize: 10, color: counts.bugs.open > 0 ? '#ef4444' : '#22c55e', fontWeight: 600 }}><BugIcon size={12} color="currentColor" />{counts.bugs.closed}/{counts.bugs.total}</span>}
-              {counts.tests.total > 0 && <span style={{ fontSize: 10, color: counts.tests.open > 0 ? '#3b82f6' : '#22c55e', fontWeight: 600 }}>🧪 {counts.tests.closed}/{counts.tests.total}</span>}
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx2)' }}>{relSubs.length} total</span>
+              {counts.bugs.total > 0 && <span style={{ fontSize: 'var(--fs-2xs)', color: counts.bugs.open > 0 ? '#ef4444' : '#22c55e', fontWeight: 600 }}><BugIcon size={12} color="currentColor" />{counts.bugs.closed}/{counts.bugs.total}</span>}
+              {counts.tests.total > 0 && <span style={{ fontSize: 'var(--fs-2xs)', color: counts.tests.open > 0 ? '#3b82f6' : '#22c55e', fontWeight: 600 }}>🧪 {counts.tests.closed}/{counts.tests.total}</span>}
               {onRefreshSubtasks && (
                 <button
                   onClick={() => void onRefreshSubtasks()}
-                  style={{ marginLeft: 'auto', background: 'var(--dp-sf2,#201f1f)', border: '1px solid var(--dp-bd,#424754)', borderRadius: 4, padding: '3px 10px', fontSize: 9, color: 'var(--dp-tx2,#c2c6d6)', cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ marginLeft: 'auto', background: 'var(--dp-sf2)', border: '1px solid var(--dp-bd)', borderRadius: 4, padding: '3px 10px', fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx2)', cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   🔄 Actualizar
                 </button>
               )}
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
-              <thead><tr style={{ borderBottom: '1px solid var(--dp-bd,#424754)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-2xs)' }}>
+              <thead><tr style={{ borderBottom: '1px solid var(--dp-bd)' }}>
                 {['CLAVE', 'TIPO', 'RESUMEN', 'ESTADO', 'ASIGNADO', 'PADRE'].map(h => (
-                  <th key={h} style={{ padding: '7px 10px', textAlign: 'left', color: 'var(--dp-tx3,#8c909f)', fontWeight: 600, letterSpacing: '.06em', fontSize: 9 }}>{h}</th>
+                  <th key={h} style={{ padding: '7px 10px', textAlign: 'left', color: 'var(--dp-tx3)', fontWeight: 600, letterSpacing: '.06em', fontSize: 'var(--fs-2xs)' }}>{h}</th>
                 ))}
               </tr></thead>
               <tbody>
                 {relSubs.sort((a, b) => a.category.localeCompare(b.category) || a.type.localeCompare(b.type)).map(st => (
-                  <tr key={st.key} style={{ borderBottom: '1px solid var(--dp-bd,#424754)' }}>
+                  <tr key={st.key} style={{ borderBottom: '1px solid var(--dp-bd)' }}>
                     <td style={{ padding: '8px 10px' }}>{jiraBaseUrl
-                      ? <a href={`${jiraBaseUrl}/browse/${st.key}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--dp-primary,#adc6ff)', fontWeight: 700, textDecoration: 'none' }}>{st.key}</a>
-                      : <span style={{ color: 'var(--dp-primary,#adc6ff)', fontWeight: 700 }}>{st.key}</span>
+                      ? <a href={`${jiraBaseUrl}/browse/${st.key}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--dp-primary)', fontWeight: 700, textDecoration: 'none' }}>{st.key}</a>
+                      : <span style={{ color: 'var(--dp-primary)', fontWeight: 700 }}>{st.key}</span>
                     }</td>
                     <td style={{ padding: '8px 10px' }}>
                       <span style={{
-                        padding: '2px 7px', borderRadius: 10, fontSize: 9, fontWeight: 600,
+                        padding: '2px 7px', borderRadius: 10, fontSize: 'var(--fs-2xs)', fontWeight: 600,
                         background: st.category === 'bug' ? 'rgba(239,68,68,.12)' : st.category === 'test' ? 'rgba(59,130,246,.12)' : 'rgba(100,116,139,.12)',
-                        color: st.category === 'bug' ? '#ef4444' : st.category === 'test' ? '#3b82f6' : 'var(--dp-tx3,#8c909f)',
+                        color: st.category === 'bug' ? '#ef4444' : st.category === 'test' ? '#3b82f6' : 'var(--dp-tx3)',
                       }}>
                         {st.category === 'bug' ? '🐛' : '🧪'} {st.type}{st.testType ? ` (${st.testType})` : ''}
                       </span>
                     </td>
-                    <td style={{ padding: '8px 10px', color: 'var(--dp-tx,#e5e2e1)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{st.summary}</td>
+                    <td style={{ padding: '8px 10px', color: 'var(--dp-tx)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{st.summary}</td>
                     <td style={{ padding: '8px 10px' }}>
                       <span style={{
-                        padding: '2px 7px', borderRadius: 10, fontSize: 9, fontWeight: 600,
+                        padding: '2px 7px', borderRadius: 10, fontSize: 'var(--fs-2xs)', fontWeight: 600,
                         background: st.isClosed ? 'rgba(34,197,94,.12)' : 'rgba(245,158,11,.12)',
                         color: st.isClosed ? '#22c55e' : '#f59e0b',
                       }}>
                         {st.isClosed ? '✓' : '○'} {st.status}
                       </span>
                     </td>
-                    <td style={{ padding: '8px 10px', color: 'var(--dp-tx2,#c2c6d6)' }}>{st.assignee || '—'}</td>
-                    <td style={{ padding: '8px 10px' }}><span style={{ color: 'var(--dp-tx3,#8c909f)', fontFamily: 'monospace' }}>{st.parentKey}</span></td>
+                    <td style={{ padding: '8px 10px', color: 'var(--dp-tx2)' }}>{st.assignee || '—'}</td>
+                    <td style={{ padding: '8px 10px' }}><span style={{ color: 'var(--dp-tx3)', fontFamily: 'monospace' }}>{st.parentKey}</span></td>
                   </tr>
                 ))}
               </tbody>

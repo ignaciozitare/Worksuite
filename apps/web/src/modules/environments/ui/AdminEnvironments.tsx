@@ -62,14 +62,14 @@ export function AdminEnvJiraFilter() {
     } finally { setSaving(false); }
   };
 
-  if (loading) return <div style={{fontSize:12,color:'var(--tx3)'}}>{t('common.loading')}</div>;
+  if (loading) return <div style={{fontSize: 'var(--fs-xs)',color:'var(--tx3)'}}>{t('common.loading')}</div>;
 
   return (
     <div>
-      <div style={{fontWeight:700,fontSize:14,color:'var(--tx)',marginBottom:6}}>
+      <div style={{fontWeight:700,fontSize: 'var(--fs-sm)',color:'var(--tx)',marginBottom:6}}>
         {t('admin.envJiraFilterTitle')}
       </div>
-      <div style={{fontSize:11,color:'var(--tx3)',marginBottom:14}}>
+      <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',marginBottom:14}}>
         {t('admin.envJiraFilterHint')}
       </div>
 
@@ -102,7 +102,7 @@ export function AdminEnvJiraFilter() {
         <button onClick={save} disabled={saving} style={btn('primary',{padding:'7px 16px'})}>
           {saving ? t('common.loading') : t('common.save')}
         </button>
-        {saved && <span style={{fontSize:11,color:'#22c55e'}}>✓ {t('admin.savedOk')}</span>}
+        {saved && <span style={{fontSize: 'var(--fs-2xs)',color:'#22c55e'}}>✓ {t('admin.savedOk')}</span>}
       </div>
     </div>
   );
@@ -120,8 +120,8 @@ function FilterSection({ label, hint, options, selected, onToggle }) {
   return (
     <div style={{marginBottom:14,padding:'10px 12px',background:'var(--sf2)',borderRadius:8,border:'1px solid var(--bd)'}}>
       <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:8}}>
-        <div style={{fontSize:12,fontWeight:700,color:'var(--tx)'}}>{label}</div>
-        <div style={{fontSize:10,color:allOn?'var(--green)':'var(--tx3)'}}>{allOn ? `✓ ${hint}` : t(selected.length!==1?'admin.envSelectedCount_other':'admin.envSelectedCount_one',{count:selected.length})}</div>
+        <div style={{fontSize: 'var(--fs-xs)',fontWeight:700,color:'var(--tx)'}}>{label}</div>
+        <div style={{fontSize: 'var(--fs-2xs)',color:allOn?'var(--green)':'var(--tx3)'}}>{allOn ? `✓ ${hint}` : t(selected.length!==1?'admin.envSelectedCount_other':'admin.envSelectedCount_one',{count:selected.length})}</div>
       </div>
       <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
         {options.map(opt => {
@@ -129,7 +129,7 @@ function FilterSection({ label, hint, options, selected, onToggle }) {
           return (
             <button key={opt.value} onClick={()=>onToggle(opt.value)}
               style={{
-                fontSize:11, padding:'3px 10px', borderRadius:12, cursor:'pointer', fontFamily:'inherit', fontWeight:600,
+                fontSize: 'var(--fs-2xs)', padding:'3px 10px', borderRadius:12, cursor:'pointer', fontFamily:'inherit', fontWeight:600,
                 background: on ? 'rgba(79,110,247,.15)' : 'var(--sf)',
                 color:      on ? '#4f6ef7'              : 'var(--tx3)',
                 border: `1px solid ${on ? '#4f6ef7' : 'var(--bd)'}`,
@@ -139,7 +139,7 @@ function FilterSection({ label, hint, options, selected, onToggle }) {
             </button>
           );
         })}
-        {options.length === 0 && <div style={{fontSize:10,color:'var(--tx3)'}}>—</div>}
+        {options.length === 0 && <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)'}}>—</div>}
       </div>
     </div>
   );
@@ -171,7 +171,7 @@ export function AdminEnvStatuses() {
     return () => { cancelled = true; };
   }, []);
 
-  if (loading) return <div style={{fontSize:12,color:'var(--tx3)'}}>{t('common.loading')}</div>;
+  if (loading) return <div style={{fontSize: 'var(--fs-xs)',color:'var(--tx3)'}}>{t('common.loading')}</div>;
 
   return (
     <div>
@@ -205,7 +205,7 @@ const uid = () => Math.random().toString(36).slice(2,10);
 
 const btn = (variant='primary', extra={}) => ({
   display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px',
-  borderRadius:8, fontWeight:600, fontSize:12, cursor:'pointer', border:'none',
+  borderRadius:8, fontWeight:600, fontSize: 'var(--fs-xs)', cursor:'pointer', border:'none',
   fontFamily:'inherit', transition:'all .15s',
   ...(variant==='primary' && { background:'var(--ac)', color:'#fff' }),
   ...(variant==='ghost'   && { background:'var(--sf2)', color:'var(--tx3)', border:'1px solid var(--bd)' }),
@@ -214,12 +214,12 @@ const btn = (variant='primary', extra={}) => ({
 });
 
 const inp = (extra={}) => ({
-  width:'100%', padding:'7px 10px', fontSize:13, fontFamily:'inherit',
+  width:'100%', padding:'7px 10px', fontSize: 'var(--fs-xs)', fontFamily:'inherit',
   background:'var(--sf2)', border:'1px solid var(--bd)',
   borderRadius:8, color:'var(--tx)', outline:'none', ...extra,
 });
 
-const lbl = { fontSize:11, fontWeight:700, color:'var(--tx3)',
+const lbl = { fontSize: 'var(--fs-2xs)', fontWeight:700, color:'var(--tx3)',
   textTransform:'uppercase', letterSpacing:'.05em', display:'block', marginBottom:5 };
 
 const CAT = {
@@ -274,7 +274,7 @@ export function AdminEnvEnvironments() {
             <label style={lbl}>{t('common.name')}</label>
             <input style={inp()} value={name} onChange={e=>{setName(e.target.value);setErr('');}}
               placeholder="DEV-03" autoFocus/>
-            {err&&<p style={{fontSize:11,color:'var(--red)',marginTop:3}}>⚠ {err}</p>}
+            {err&&<p style={{fontSize: 'var(--fs-2xs)',color:'var(--red)',marginTop:3}}>⚠ {err}</p>}
           </div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
             <div>
@@ -311,10 +311,10 @@ export function AdminEnvEnvironments() {
   return (
     <div>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-        <span style={{fontWeight:700,fontSize:14,color:'var(--tx)'}}>
+        <span style={{fontWeight:700,fontSize: 'var(--fs-sm)',color:'var(--tx)'}}>
           {t('admin.envCount',{count:envs.filter(e=>!e.isArchived).length})}
         </span>
-        <button style={btn('primary',{padding:'6px 14px',fontSize:12})} onClick={()=>setForm('new')}>{t('admin.envNew')}</button>
+        <button style={btn('primary',{padding:'6px 14px',fontSize: 'var(--fs-xs)'})} onClick={()=>setForm('new')}>{t('admin.envNew')}</button>
       </div>
       <div style={{display:'flex',flexDirection:'column',gap:8}}>
         {envs.map(env=>{
@@ -326,24 +326,24 @@ export function AdminEnvEnvironments() {
               <div style={{width:4,height:32,borderRadius:2,background:env.color??cc.color,flexShrink:0}}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:2}}>
-                  <span style={{fontWeight:600,fontSize:13,color:'var(--tx)'}}>{env.name}</span>
-                  <span style={{background:cc.bg,color:cc.color,padding:'1px 7px',borderRadius:20,fontSize:10,fontWeight:600}}>{env.category}</span>
-                  {env.isLocked&&<span style={{fontSize:9,color:'var(--amber)',fontWeight:700}}>{t('admin.envLocked')}</span>}
-                  {env.isArchived&&<span style={{fontSize:9,color:'var(--tx3)'}}>{t('admin.envArchived')}</span>}
+                  <span style={{fontWeight:600,fontSize: 'var(--fs-xs)',color:'var(--tx)'}}>{env.name}</span>
+                  <span style={{background:cc.bg,color:cc.color,padding:'1px 7px',borderRadius:20,fontSize: 'var(--fs-2xs)',fontWeight:600}}>{env.category}</span>
+                  {env.isLocked&&<span style={{fontSize: 'var(--fs-2xs)',color:'var(--amber)',fontWeight:700}}>{t('admin.envLocked')}</span>}
+                  {env.isArchived&&<span style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)'}}>{t('admin.envArchived')}</span>}
                 </div>
-                <span style={{fontSize:11,color:'var(--tx3)'}}>#{env.priority??99} · Max {env.maxReservationDuration}h{env.url?' · '+env.url:''}</span>
+                <span style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)'}}>#{env.priority??99} · Max {env.maxReservationDuration}h{env.url?' · '+env.url:''}</span>
               </div>
               <div style={{display:'flex',gap:6,flexShrink:0}}>
-                <button onClick={()=>toggle(env,'isLocked')} style={btn('ghost',{fontSize:11,padding:'3px 8px'})}>
+                <button onClick={()=>toggle(env,'isLocked')} style={btn('ghost',{fontSize: 'var(--fs-2xs)',padding:'3px 8px'})}>
                   {env.isLocked?'🔓':'🔒'}
                 </button>
-                <button onClick={()=>setForm(env)} style={btn('ghost',{fontSize:11,padding:'3px 8px'})}>✏️</button>
-                {!env.isArchived&&<button onClick={()=>toggle(env,'isArchived')} style={btn('danger',{fontSize:11,padding:'3px 8px'})}>{t('admin.envArchive')}</button>}
+                <button onClick={()=>setForm(env)} style={btn('ghost',{fontSize: 'var(--fs-2xs)',padding:'3px 8px'})}>✏️</button>
+                {!env.isArchived&&<button onClick={()=>toggle(env,'isArchived')} style={btn('danger',{fontSize: 'var(--fs-2xs)',padding:'3px 8px'})}>{t('admin.envArchive')}</button>}
               </div>
             </div>
           );
         })}
-        {envs.length===0&&<div style={{fontSize:12,color:'var(--tx3)',padding:'20px 0',textAlign:'center'}}>{t('admin.envNoEnvs')}</div>}
+        {envs.length===0&&<div style={{fontSize: 'var(--fs-xs)',color:'var(--tx3)',padding:'20px 0',textAlign:'center'}}>{t('admin.envNoEnvs')}</div>}
       </div>
       {form&&<EnvForm env={form==='new'?null:form} onSave={save} onClose={()=>setForm(null)}/>}
     </div>
@@ -374,27 +374,27 @@ export function AdminEnvRepositories() {
   return (
     <div>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-        <span style={{fontWeight:700,fontSize:14,color:'var(--tx)'}}>
+        <span style={{fontWeight:700,fontSize: 'var(--fs-sm)',color:'var(--tx)'}}>
           {t('admin.envRepoCount',{count:repos.filter(r=>!r.isArchived).length})}
         </span>
-        <button style={btn('primary',{padding:'6px 14px',fontSize:12})} onClick={()=>setShow(true)}>{t('admin.envNew')}</button>
+        <button style={btn('primary',{padding:'6px 14px',fontSize: 'var(--fs-xs)'})} onClick={()=>setShow(true)}>{t('admin.envNew')}</button>
       </div>
       <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
         {repos.map(r=>(
           <div key={r.id} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 12px',
             background:'var(--sf2)',borderRadius:8,border:'1px solid var(--bd)',opacity:r.isArchived?.5:1}}>
-            <span style={{fontSize:13,color:'var(--tx)'}}>📦 {r.name}</span>
-            {!r.isArchived&&<button onClick={()=>archive(r)} style={btn('danger',{fontSize:11,padding:'1px 6px'})}>×</button>}
+            <span style={{fontSize: 'var(--fs-xs)',color:'var(--tx)'}}>📦 {r.name}</span>
+            {!r.isArchived&&<button onClick={()=>archive(r)} style={btn('danger',{fontSize: 'var(--fs-2xs)',padding:'1px 6px'})}>×</button>}
           </div>
         ))}
-        {repos.length===0&&<div style={{fontSize:12,color:'var(--tx3)'}}>{t('admin.envNoRepos')}</div>}
+        {repos.length===0&&<div style={{fontSize: 'var(--fs-xs)',color:'var(--tx3)'}}>{t('admin.envNoRepos')}</div>}
       </div>
       {show&&(
         <Modal title={t('admin.envNewRepo')} onClose={()=>{setShow(false);setErr('');}}>
           <div style={{display:'flex',flexDirection:'column',gap:12}}>
             <input style={inp()} value={name} onChange={e=>{setName(e.target.value);setErr('');}}
               placeholder="frontend-app" autoFocus onKeyDown={e=>{if(e.key==='Enter')create();}}/>
-            {err&&<p style={{fontSize:11,color:'var(--red)'}}>⚠ {err}</p>}
+            {err&&<p style={{fontSize: 'var(--fs-2xs)',color:'var(--red)'}}>⚠ {err}</p>}
             <div style={{display:'flex',justifyContent:'flex-end',gap:8}}>
               <button style={btn('ghost')} onClick={()=>setShow(false)}>{t('common.cancel')}</button>
               <button style={btn('primary')} onClick={create}>{t('common.create')}</button>
@@ -433,7 +433,7 @@ export function AdminEnvPolicy() {
   const Row = ({label,children}) => (
     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
       padding:'10px 0',borderBottom:'1px solid var(--bd)'}}>
-      <span style={{fontSize:13,color:'var(--tx3)'}}>{label}</span>
+      <span style={{fontSize: 'var(--fs-xs)',color:'var(--tx3)'}}>{label}</span>
       {children}
     </div>
   );
@@ -470,7 +470,7 @@ export function AdminEnvPolicy() {
       </>}
       <div style={{display:'flex',alignItems:'center',gap:10,marginTop:16}}>
         <button style={btn('primary',{padding:'8px 18px'})} onClick={save}>{t('admin.envSavePolicy')}</button>
-        {saved&&<span style={{fontSize:12,color:'var(--green)'}}>✓ {t('admin.envSaved')}</span>}
+        {saved&&<span style={{fontSize: 'var(--fs-xs)',color:'var(--green)'}}>✓ {t('admin.envSaved')}</span>}
       </div>
     </div>
   );
@@ -494,12 +494,12 @@ export function AdminEnvHistoryNote() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  if (loading) return <div style={{padding:20,color:'var(--tx3)',fontSize:13}}>{t('common.loading')}</div>;
+  if (loading) return <div style={{padding:20,color:'var(--tx3)',fontSize: 'var(--fs-xs)'}}>{t('common.loading')}</div>;
 
   return (
     <div style={{padding:20,maxWidth:700}}>
       <label style={lbl}>{t('admin.envHistoryNoteLabel')}</label>
-      <p style={{fontSize:12,color:'var(--tx3)',marginBottom:12,lineHeight:1.5}}>
+      <p style={{fontSize: 'var(--fs-xs)',color:'var(--tx3)',marginBottom:12,lineHeight:1.5}}>
         {t('admin.envHistoryNoteHint')}
       </p>
       <div
@@ -509,7 +509,7 @@ export function AdminEnvHistoryNote() {
         onInput={e => setHtml(e.currentTarget.innerHTML)}
         dangerouslySetInnerHTML={{ __html: html }}
         style={{
-          minHeight:120,padding:'12px 14px',fontSize:13,lineHeight:1.7,
+          minHeight:120,padding:'12px 14px',fontSize: 'var(--fs-xs)',lineHeight:1.7,
           fontFamily:'inherit',color:'var(--tx)',
           background:'var(--sf2)',border:'1px solid var(--bd)',
           borderRadius:8,outline:'none',overflowY:'auto',maxHeight:300,
@@ -517,7 +517,7 @@ export function AdminEnvHistoryNote() {
       />
       <div style={{display:'flex',alignItems:'center',gap:10,marginTop:12}}>
         <button style={btn('primary',{padding:'8px 18px'})} onClick={save}>{t('common.save')}</button>
-        {saved&&<span style={{fontSize:12,color:'var(--green)'}}>✓ {t('admin.envSaved')}</span>}
+        {saved&&<span style={{fontSize: 'var(--fs-xs)',color:'var(--green)'}}>✓ {t('admin.envSaved')}</span>}
       </div>
     </div>
   );

@@ -113,10 +113,10 @@ export function RegistrosView({ fichajeRepo, currentUser }: RegistrosViewProps) 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: C.tx, marginBottom: 2 }}>
+          <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: C.tx, marginBottom: 2 }}>
             {t('chrono.registroFichajes')}
           </div>
-          <div className="mono" style={{ fontSize: 13, color: C.txDim, textTransform: 'capitalize' }}>
+          <div className="mono" style={{ fontSize: 'var(--fs-xs)', color: C.txDim, textTransform: 'capitalize' }}>
             {mesLabel}
           </div>
         </div>
@@ -138,10 +138,10 @@ export function RegistrosView({ fichajeRepo, currentUser }: RegistrosViewProps) 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 24 }}>
           {stats.map((s, i) => (
             <div key={i} className="ch-stat" style={{ '--accent': s.color } as React.CSSProperties}>
-              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginBottom: 8 }}>
+              <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: C.txMuted, marginBottom: 8 }}>
                 {s.label}
               </div>
-              <div className="mono" style={{ fontSize: 20, fontWeight: 700, color: s.color }}>
+              <div className="mono" style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: s.color }}>
                 {s.value}
               </div>
             </div>
@@ -199,7 +199,7 @@ export function RegistrosView({ fichajeRepo, currentUser }: RegistrosViewProps) 
                       </span>
                     </td>
                     <td>
-                      <span className="mono" style={{ color: C.amber, fontWeight: 700, fontSize: 14 }}>
+                      <span className="mono" style={{ color: C.amber, fontWeight: 700, fontSize: 'var(--fs-sm)' }}>
                         {fmtHours(f.minutosTrabajados)}
                       </span>
                     </td>

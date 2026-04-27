@@ -48,12 +48,12 @@ function typeIcon(type: string): string {
 function statusChipStyle(status: string): { color: string; bg: string } {
   const s = status.toLowerCase();
   if (s.includes('done') || s.includes('deployed') || s.includes('closed'))
-    return { color: 'var(--dp-secondary,#4ae176)', bg: 'rgba(74,225,118,.1)' };
+    return { color: 'var(--dp-secondary)', bg: 'rgba(74,225,118,.1)' };
   if (s.includes('progress') || s.includes('review') || s.includes('staging'))
-    return { color: 'var(--dp-warning,#f59e0b)', bg: 'rgba(245,158,11,.1)' };
+    return { color: 'var(--dp-warning)', bg: 'rgba(245,158,11,.1)' };
   if (s.includes('block') || s.includes('reject') || s.includes('rollback'))
-    return { color: 'var(--dp-danger,#ffb4ab)', bg: 'rgba(255,180,171,.1)' };
-  return { color: 'var(--dp-tx3,#8c909f)', bg: 'rgba(140,144,159,.08)' };
+    return { color: 'var(--dp-danger)', bg: 'rgba(255,180,171,.1)' };
+  return { color: 'var(--dp-tx3)', bg: 'rgba(140,144,159,.08)' };
 }
 
 /* ─── Truncate helper ────────────────────────────────────────── */
@@ -130,10 +130,10 @@ export function TaskSidebar({
           height: 36,
           marginTop: 28,
           marginRight: 8,
-          background: 'var(--dp-sf,#1c1b1b)',
+          background: 'var(--dp-sf)',
           border: '1px solid var(--dp-bd,var(--bd))',
           borderRadius: 8,
-          color: 'var(--dp-tx2,#c2c6d6)',
+          color: 'var(--dp-tx2)',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -141,7 +141,7 @@ export function TaskSidebar({
           transition: 'all .2s',
         }}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>chevron_left</span>
+        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>chevron_left</span>
       </button>
     );
   }
@@ -178,29 +178,29 @@ export function TaskSidebar({
       >
         <span
           className="material-symbols-outlined"
-          style={{ fontSize: 18, color: 'var(--dp-primary,#adc6ff)' }}
+          style={{ fontSize: 'var(--fs-md)', color: 'var(--dp-primary)' }}
         >
           confirmation_number
         </span>
         <span
           style={{
             flex: 1,
-            fontSize: 12,
+            fontSize: 'var(--fs-xs)',
             fontWeight: 700,
             letterSpacing: '.05em',
             textTransform: 'uppercase',
-            color: 'var(--dp-tx,#e5e2e1)',
+            color: 'var(--dp-tx)',
           }}
         >
           {t('deployPlanner.taskSidebar.title')}
         </span>
         <span
           style={{
-            fontSize: 10,
+            fontSize: 'var(--fs-2xs)',
             padding: '2px 8px',
             borderRadius: 10,
             background: 'var(--dp-primary-dim, var(--ac-dim))',
-            color: 'var(--dp-primary,#adc6ff)',
+            color: 'var(--dp-primary)',
             fontWeight: 700,
           }}
         >
@@ -212,12 +212,12 @@ export function TaskSidebar({
           disabled={refreshing}
           title={t('deployPlanner.taskSidebar.refresh')}
           style={{
-            background: 'var(--dp-sf3,#2a2a2a)',
+            background: 'var(--dp-sf3)',
             border: '1px solid var(--dp-bd,var(--bd))',
             borderRadius: 6,
             width: 26,
             height: 26,
-            color: 'var(--dp-tx2,#c2c6d6)',
+            color: 'var(--dp-tx2)',
             cursor: refreshing ? 'default' : 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -227,7 +227,7 @@ export function TaskSidebar({
         >
           <span
             className={`material-symbols-outlined${refreshing ? ' spin' : ''}`}
-            style={{ fontSize: 14 }}
+            style={{ fontSize: 'var(--fs-sm)' }}
           >
             refresh
           </span>
@@ -239,7 +239,7 @@ export function TaskSidebar({
           style={{
             background: 'transparent',
             border: 'none',
-            color: 'var(--dp-tx3,#8c909f)',
+            color: 'var(--dp-tx3)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -247,7 +247,7 @@ export function TaskSidebar({
             padding: 2,
           }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>chevron_right</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>chevron_right</span>
         </button>
       </div>
 
@@ -258,7 +258,7 @@ export function TaskSidebar({
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            background: 'var(--dp-sf,#1c1b1b)',
+            background: 'var(--dp-sf)',
             borderRadius: 8,
             padding: '0 10px',
             border: '1px solid var(--dp-bd,var(--bd))',
@@ -266,7 +266,7 @@ export function TaskSidebar({
         >
           <span
             className="material-symbols-outlined"
-            style={{ fontSize: 16, color: 'var(--dp-tx3,#8c909f)' }}
+            style={{ fontSize: 'var(--fs-body)', color: 'var(--dp-tx3)' }}
           >
             search
           </span>
@@ -280,8 +280,8 @@ export function TaskSidebar({
               background: 'transparent',
               border: 'none',
               outline: 'none',
-              color: 'var(--dp-tx,#e5e2e1)',
-              fontSize: 12,
+              color: 'var(--dp-tx)',
+              fontSize: 'var(--fs-xs)',
               padding: '8px 0',
               fontFamily: 'inherit',
             }}
@@ -293,13 +293,13 @@ export function TaskSidebar({
                 background: 'transparent',
                 border: 'none',
                 cursor: 'pointer',
-                color: 'var(--dp-tx3,#8c909f)',
+                color: 'var(--dp-tx3)',
                 display: 'flex',
                 alignItems: 'center',
                 padding: 0,
               }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>close</span>
             </button>
           )}
         </div>
@@ -318,13 +318,13 @@ export function TaskSidebar({
             style={{
               textAlign: 'center',
               padding: '40px 16px',
-              color: 'var(--dp-tx3,#8c909f)',
-              fontSize: 12,
+              color: 'var(--dp-tx3)',
+              fontSize: 'var(--fs-xs)',
             }}
           >
             <span
               className="material-symbols-outlined"
-              style={{ fontSize: 32, display: 'block', marginBottom: 8, opacity: 0.4 }}
+              style={{ fontSize: 'var(--fs-xl)', display: 'block', marginBottom: 8, opacity: 0.4 }}
             >
               search_off
             </span>
@@ -368,17 +368,17 @@ export function TaskSidebar({
                 }}
               >
                 {/* Title */}
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)', lineHeight: 1.35 }}>
+                <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)', lineHeight: 1.35 }}>
                   {truncate(ticket.summary, 50)}
                 </div>
                 {/* Meta row */}
                 <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: 'var(--ac-dim)', color: 'var(--ac2)', fontWeight: 700, letterSpacing: '.05em' }}>{ticket.key}</span>
-                  <span className="material-symbols-outlined" style={{ fontSize: 13, color: 'var(--tx3)' }}>{typeIcon(ticket.type)}</span>
-                  <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 8px', borderRadius: 3, color: chip.color, background: chip.bg }}>{ticket.status}</span>
+                  <span style={{ fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3, background: 'var(--ac-dim)', color: 'var(--ac2)', fontWeight: 700, letterSpacing: '.05em' }}>{ticket.key}</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)' }}>{typeIcon(ticket.type)}</span>
+                  <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 600, padding: '2px 8px', borderRadius: 3, color: chip.color, background: chip.bg }}>{ticket.status}</span>
                   <div style={{ flex: 1 }} />
                   {ticket.assignee && (
-                    <div title={ticket.assignee} style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, var(--ac), var(--ac2))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, border: '1px solid rgba(255,255,255,.12)' }}>
+                    <div title={ticket.assignee} style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, var(--ac), var(--ac2))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-2xs)', fontWeight: 700, border: '1px solid rgba(255,255,255,.12)' }}>
                       {ticket.assignee.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
                     </div>
                   )}

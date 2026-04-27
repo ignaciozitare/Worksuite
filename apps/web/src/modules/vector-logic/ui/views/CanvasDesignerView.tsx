@@ -216,7 +216,7 @@ function CanvasDesignerInner({ currentUser }: Props) {
     animated: e.isGlobal,
     markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: '#4f6ef7' },
     style: { stroke: '#4f6ef7', strokeWidth: 2 },
-    labelStyle: { fontSize: 10, fontWeight: 600, fill: '#8c909f' },
+    labelStyle: { fontSize: 'var(--fs-2xs)', fontWeight: 600, fill: '#8c909f' },
     labelBgStyle: { fill: '#1c1b1b', fillOpacity: 0.9 },
   })), [visibleEdges]);
 
@@ -514,7 +514,7 @@ function CanvasDesignerInner({ currentUser }: Props) {
                   color: selected?.id === wf.id ? '#fff' : 'var(--tx3)',
                   border: 'none', borderRadius: 6, cursor: 'pointer',
                   fontWeight: selected?.id === wf.id ? 600 : 400,
-                  fontSize: 11, padding: '5px 12px', fontFamily: 'inherit', transition: 'all .15s',
+                  fontSize: 'var(--fs-2xs)', padding: '5px 12px', fontFamily: 'inherit', transition: 'all .15s',
                 }}>
                 {wf.name}
               </button>
@@ -532,7 +532,7 @@ function CanvasDesignerInner({ currentUser }: Props) {
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '6px 10px', borderRadius: 6,
               background: 'var(--amber-dim)', color: 'var(--amber)',
-              fontSize: 11, fontWeight: 600, letterSpacing: '.04em',
+              fontSize: 'var(--fs-2xs)', fontWeight: 600, letterSpacing: '.04em',
               textTransform: 'uppercase',
             }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--amber)' }} />
@@ -544,7 +544,7 @@ function CanvasDesignerInner({ currentUser }: Props) {
             onClick={handleDiscard}
             disabled={!isDirty || saving}
             style={{
-              padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+              padding: '7px 14px', borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 600,
               fontFamily: 'inherit',
               background: 'var(--sf2)', border: '1px solid var(--bd)',
               color: isDirty ? 'var(--tx)' : 'var(--tx3)',
@@ -558,7 +558,7 @@ function CanvasDesignerInner({ currentUser }: Props) {
             onClick={handleSave}
             disabled={!isDirty || saving}
             style={{
-              padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+              padding: '7px 14px', borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 700,
               fontFamily: 'inherit', color: 'var(--ac-on)',
               background: isDirty
                 ? 'linear-gradient(135deg, var(--ac), var(--ac-strong))'
@@ -616,9 +616,9 @@ function CanvasDesignerInner({ currentUser }: Props) {
             position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
             textAlign: 'center', color: 'var(--tx3)', pointerEvents: 'none',
           }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: .2, marginBottom: 8, display: 'block' }}>schema</span>
-            <div style={{ fontSize: 13, fontWeight: 500 }}>{t('vectorLogic.noStates')}</div>
-            <div style={{ fontSize: 11, opacity: .6, marginTop: 4 }}>{t('vectorLogic.addState')}</div>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', opacity: .2, marginBottom: 8, display: 'block' }}>schema</span>
+            <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 500 }}>{t('vectorLogic.noStates')}</div>
+            <div style={{ fontSize: 'var(--fs-2xs)', opacity: .6, marginTop: 4 }}>{t('vectorLogic.addState')}</div>
           </div>
         )}
 
@@ -647,13 +647,13 @@ function CanvasDesignerInner({ currentUser }: Props) {
       }}>
         <div style={{ padding: '16px 14px 8px' }}>
           <h3 style={{
-            fontSize: 12, fontWeight: 700, color: 'var(--tx)', textTransform: 'uppercase',
+            fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--tx)', textTransform: 'uppercase',
             letterSpacing: '.08em', marginBottom: 10,
           }}>{t('vectorLogic.stateLibrary')}</h3>
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder={t('vectorLogic.filterStates')}
             style={{
-              width: '100%', padding: '6px 10px', fontSize: 11, fontFamily: 'inherit',
+              width: '100%', padding: '6px 10px', fontSize: 'var(--fs-2xs)', fontFamily: 'inherit',
               background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6,
               color: 'var(--tx)', outline: 'none',
             }} />
@@ -661,7 +661,7 @@ function CanvasDesignerInner({ currentUser }: Props) {
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
           {libraryStates.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '12px 0', fontSize: 11, color: 'var(--tx3)', opacity: .6 }}>
+            <div style={{ textAlign: 'center', padding: '12px 0', fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', opacity: .6 }}>
               {t('vectorLogic.noItemsYet')}
             </div>
           )}
@@ -677,10 +677,10 @@ function CanvasDesignerInner({ currentUser }: Props) {
                 cursor: 'grab', userSelect: 'none',
               }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color || 'var(--tx3)' }} />
-              <span style={{ flex: 1, fontSize: 12, color: 'var(--tx)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <span style={{ flex: 1, fontSize: 'var(--fs-xs)', color: 'var(--tx)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {s.name}
               </span>
-              <span style={{ fontSize: 9, color: 'var(--tx3)', fontWeight: 700, letterSpacing: '.04em' }}>{s.category}</span>
+              <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', fontWeight: 700, letterSpacing: '.04em' }}>{s.category}</span>
             </div>
           ))}
         </div>
@@ -719,7 +719,7 @@ function EdgePopover({ edge, x, y, onClose, onPatch, onDelete, t }: {
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <label style={{ fontSize: 10, fontWeight: 700, color: 'var(--tx3)', letterSpacing: '.05em', textTransform: 'uppercase' }}>
+        <label style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', letterSpacing: '.05em', textTransform: 'uppercase' }}>
           {t('vectorLogic.transitionLabel')}
         </label>
         <input
@@ -729,7 +729,7 @@ function EdgePopover({ edge, x, y, onClose, onPatch, onDelete, t }: {
           placeholder={t('vectorLogic.transitionLabelPlaceholder')}
           style={{
             background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6,
-            padding: '6px 10px', color: 'var(--tx)', fontSize: 13, fontFamily: 'inherit',
+            padding: '6px 10px', color: 'var(--tx)', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
             outline: 'none',
           }}
         />
@@ -742,7 +742,7 @@ function EdgePopover({ edge, x, y, onClose, onPatch, onDelete, t }: {
           onChange={(e) => onPatch({ isGlobal: e.target.checked })}
           style={{ accentColor: 'var(--ac)' }}
         />
-        <span style={{ fontSize: 12, color: 'var(--tx)' }}>
+        <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx)' }}>
           {t('vectorLogic.transitionGlobal')}
         </span>
       </label>
@@ -753,10 +753,10 @@ function EdgePopover({ edge, x, y, onClose, onPatch, onDelete, t }: {
           onClick={onDelete}
           style={{
             background: 'transparent', border: 'none', cursor: 'pointer',
-            color: 'var(--red)', fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+            color: 'var(--red)', fontSize: 'var(--fs-xs)', fontWeight: 600, fontFamily: 'inherit',
             display: 'inline-flex', alignItems: 'center', gap: 4, padding: 0,
           }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>delete</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>delete</span>
           {t('common.delete')}
         </button>
         <button
@@ -764,7 +764,7 @@ function EdgePopover({ edge, x, y, onClose, onPatch, onDelete, t }: {
           onClick={onClose}
           style={{
             background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6,
-            padding: '4px 10px', color: 'var(--tx2)', fontSize: 11, fontWeight: 600,
+            padding: '4px 10px', color: 'var(--tx2)', fontSize: 'var(--fs-2xs)', fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit',
           }}>
           {t('common.close')}

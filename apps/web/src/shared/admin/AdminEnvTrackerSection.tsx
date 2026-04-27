@@ -20,7 +20,7 @@ function AdminEnvTrackerSection() {
       <div className="sec-sub" style={{marginBottom:16}}>{t("admin.envTrackerDesc")}</div>
       <div style={{display:"flex",gap:4,marginBottom:20,background:"var(--sf2)",border:"1px solid var(--bd)",borderRadius:10,padding:4,alignSelf:"flex-start",width:"fit-content"}}>
         {SUB.map(s=>(
-          <button key={s.id} onClick={()=>setSub(s.id)} style={{background:sub===s.id?"var(--ac)":"transparent",color:sub===s.id?"#fff":"var(--tx3)",border:"none",borderRadius:7,cursor:"pointer",fontWeight:sub===s.id?600:400,fontSize:12,padding:"5px 14px",transition:"all 0.15s",fontFamily:"inherit"}}>
+          <button key={s.id} onClick={()=>setSub(s.id)} style={{background:sub===s.id?"var(--ac)":"transparent",color:sub===s.id?"#fff":"var(--tx3)",border:"none",borderRadius:7,cursor:"pointer",fontWeight:sub===s.id?600:400,fontSize: 'var(--fs-xs)',padding:"5px 14px",transition:"all 0.15s",fontFamily:"inherit"}}>
             {s.icon} {s.label}
           </button>
         ))}

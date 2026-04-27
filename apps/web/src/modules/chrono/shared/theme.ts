@@ -40,11 +40,11 @@ export const CHRONO_THEME = {
     /** A step up in elevation (hover, nested cards). */
     surfaceHigh:        'var(--sf3)',
     /** Brighter step, used for inputs and highlights. */
-    surfaceBright:      'var(--sf-bright, #3a3939)',
+    surfaceBright:      'var(--sf-bright)',
     /** Lowest-elevation surface (sidebar background, subtle wells). */
-    surfaceLow:         'var(--sf-low, #1c1b1b)',
+    surfaceLow:         'var(--sf-low)',
     /** Even lower (sidebar root, footer). */
-    surfaceLowest:      'var(--sf-lowest, #0e0e0e)',
+    surfaceLowest:      'var(--sf-lowest)',
 
     /** Borders and dividers. */
     border:             'var(--bd2)',
@@ -60,25 +60,25 @@ export const CHRONO_THEME = {
 
     /** Brand primary (buttons, active tabs, accents). */
     primary:            'var(--ac2)',
-    primaryStrong:      'var(--ac-strong, #4d8eff)',
-    primaryOn:          'var(--ac-on, #00285d)',
+    primaryStrong:      'var(--ac-strong)',
+    primaryOn:          'var(--ac-on)',
     primaryDim:         'var(--ac-dim)',
 
     /** Brand secondary (success, on-track, clocked-in indicator). */
     secondary:          'var(--green)',
-    secondaryStrong:    'var(--green-strong, #00b954)',
+    secondaryStrong:    'var(--green-strong)',
     secondaryDim:       'var(--green-dim)',
 
     /** Brand tertiary (violet — hours bank, highlights). */
-    tertiary:           'var(--tertiary, #ddb7ff)',
-    tertiaryStrong:     'var(--purple-strong, #b76dff)',
+    tertiary:           'var(--tertiary)',
+    tertiaryStrong:     'var(--purple-strong)',
     tertiaryDim:        'var(--purple-dim)',
 
     /** Semantic. */
     warning:            'var(--amber)',
     warningDim:         'var(--amber-dim)',
-    danger:             'var(--danger, #ffb4ab)',
-    dangerStrong:       'var(--danger-strong, #ef4444)',
+    danger:             'var(--danger)',
+    dangerStrong:       'var(--danger-strong)',
     dangerDim:          'var(--red-dim)',
   },
 

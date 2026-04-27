@@ -66,7 +66,7 @@ function HDTableView({ hd, onCell, currentUser, blueprint, theme="dark" }: { hd:
         <div className="cal-t">{fmtMonthYear(yr, mo, lang)}</div>
         <button className="n-arr" onClick={next}>&#8250;</button>
         <button onClick={()=>setHidePast(h=>!h)}
-          style={{display:'flex',alignItems:'center',gap:5,padding:'4px 10px',fontSize:11,fontWeight:600,
+          style={{display:'flex',alignItems:'center',gap:5,padding:'4px 10px',fontSize: 'var(--fs-2xs)',fontWeight:600,
             border:`1px solid ${hidePast?'var(--ac)':'var(--bd)'}`,borderRadius:'var(--r)',
             background:hidePast?'var(--glow)':'var(--sf2)',color:hidePast?'var(--ac2)':'var(--tx2)',
             cursor:'pointer',transition:'all .15s',whiteSpace:'nowrap'}}>
@@ -109,14 +109,14 @@ function HDTableView({ hd, onCell, currentUser, blueprint, theme="dark" }: { hd:
                       setTooltip({ seatId:s.id, ax: r.left + r.width/2, ay: r.bottom });
                     }}
                     onMouseLeave={() => setTooltip(null)}>
-                    <span style={{color:col,fontSize:10,fontWeight:700}}>{s.id}</span>
+                    <span style={{color:col,fontSize: 'var(--fs-2xs)',fontWeight:700}}>{s.id}</span>
                     {hd.fixed[s.id] && (
-                      <div style={{fontSize:7,color:"var(--red)",marginTop:1,fontWeight:400,lineHeight:1}}>
+                      <div style={{fontSize: 'var(--fs-2xs)',color:"var(--red)",marginTop:1,fontWeight:400,lineHeight:1}}>
                         {hd.fixed[s.id].split(" ")[0].slice(0,6)}
                       </div>
                     )}
                     {blockedSeats[s.id] && (
-                      <div style={{fontSize:7,color:"var(--tx3)",marginTop:1,fontWeight:400,lineHeight:1}}>
+                      <div style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginTop:1,fontWeight:400,lineHeight:1}}>
                         {t("hotdesk.blocked")}
                       </div>
                     )}
@@ -139,9 +139,9 @@ function HDTableView({ hd, onCell, currentUser, blueprint, theme="dark" }: { hd:
                     color: isWe?"var(--tx3)": isTod?"var(--ac2)":"var(--tx2)",
                     fontWeight:isTod?600:400, minWidth:90, paddingLeft:10
                   }}>
-                    {isTod && <span style={{color:"var(--ac2)",marginRight:3,fontSize:9}}>&#9654;</span>}
-                    <span style={{fontFamily:"var(--mono)",fontSize:11}}>{DOW[dow]}</span>
-                    {" "}<span style={{fontFamily:"var(--mono)",fontSize:11}}>{String(d).padStart(2,"0")}</span>
+                    {isTod && <span style={{color:"var(--ac2)",marginRight:3,fontSize: 'var(--fs-2xs)'}}>&#9654;</span>}
+                    <span style={{fontFamily:"var(--mono)",fontSize: 'var(--fs-2xs)'}}>{DOW[dow]}</span>
+                    {" "}<span style={{fontFamily:"var(--mono)",fontSize: 'var(--fs-2xs)'}}>{String(d).padStart(2,"0")}</span>
                   </td>
                   {seats.map(seat => {
                     const st     = ReservationService.statusOf(seat.id, iso, hd.fixed, hd.reservations, blockedSeats);
@@ -171,23 +171,23 @@ function HDTableView({ hd, onCell, currentUser, blueprint, theme="dark" }: { hd:
                             height:28,borderRadius:3,
                             background:"var(--sf2)",
                             display:"flex",alignItems:"center",justifyContent:"center",
-                            color:"var(--tx3)",fontSize:12,cursor:"not-allowed",
+                            color:"var(--tx3)",fontSize: 'var(--fs-xs)',cursor:"not-allowed",
                             opacity:0.5,
                           }}>X</div>
                         ) : (
                           <div className={`hd-cell ${cls}`}
                             style={{
-                              height:28,fontSize:9,
+                              height:28,fontSize: 'var(--fs-2xs)',
                               ...(isPending ? {animation:'hd-cell-pulse 1.5s ease-in-out infinite',borderStyle:'dashed'} : {}),
                             }}
                             onClick={() => onCell(seat.id, iso)}>
                             <div className={`hd-cell-dot ${cls}`}
                               style={isDelegated ? {background:'var(--purple)'} : isPending ? {background:'var(--amber)'} : undefined}/>
                             {(st!==SeatStatus.FREE && ownerLabel) && (
-                              <span className="hd-cell-name" style={{fontSize:9}}>{ownerLabel}</span>
+                              <span className="hd-cell-name" style={{fontSize: 'var(--fs-2xs)'}}>{ownerLabel}</span>
                             )}
                             {isDelegated && (
-                              <span style={{fontSize:7,color:'var(--purple)',fontWeight:700,marginLeft:2}}>D</span>
+                              <span style={{fontSize: 'var(--fs-2xs)',color:'var(--purple)',fontWeight:700,marginLeft:2}}>D</span>
                             )}
                           </div>
                         )}

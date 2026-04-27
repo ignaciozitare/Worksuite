@@ -101,7 +101,7 @@ export function ChronoStatCard({
               borderRadius: T.radius.md,
               background: `${accent}1a`,
               color: accent,
-              fontSize: 16,
+              fontSize: 'var(--fs-body)',
               fontFamily: T.font.mono,
             }}
           >
@@ -110,7 +110,7 @@ export function ChronoStatCard({
         )}
         <span
           style={{
-            fontSize: 10,
+            fontSize: 'var(--fs-2xs)',
             fontWeight: 700,
             textTransform: 'uppercase',
             letterSpacing: '.12em',
@@ -134,7 +134,7 @@ export function ChronoStatCard({
         <span
           style={{
             fontFamily: T.font.mono,
-            fontSize: 30,
+            fontSize: 'var(--fs-xl)',
             fontWeight: 700,
             lineHeight: 1.1,
             color: T.color.text,
@@ -149,7 +149,7 @@ export function ChronoStatCard({
               display: 'inline-flex',
               alignItems: 'center',
               gap: 4,
-              fontSize: 10,
+              fontSize: 'var(--fs-2xs)',
               fontWeight: 700,
               color: accent,
               textTransform: 'uppercase',
@@ -166,7 +166,7 @@ export function ChronoStatCard({
         <div
           style={{
             marginTop: 8,
-            fontSize: 11,
+            fontSize: 'var(--fs-2xs)',
             color: T.color.textDim,
             position: 'relative',
           }}

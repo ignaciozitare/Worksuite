@@ -50,7 +50,7 @@ function SSOConfig() {
     setSaving(false);
   };
 
-  if (loading) return <div style={{color:'var(--tx3)',fontSize:12}}>Cargando...</div>;
+  if (loading) return <div style={{color:'var(--tx3)',fontSize: 'var(--fs-xs)'}}>Cargando...</div>;
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:10}}>
@@ -77,14 +77,14 @@ function SSOConfig() {
                 border: `2px solid ${cfg[key] ? 'var(--green)' : 'var(--bd2)'}`,
                 display:'flex', alignItems:'center', justifyContent:'center',
               }}>
-                {cfg[key] && <span style={{color:'#fff',fontSize:11,fontWeight:700,lineHeight:1}}>\u2713</span>}
+                {cfg[key] && <span style={{color:'#fff',fontSize: 'var(--fs-2xs)',fontWeight:700,lineHeight:1}}>\u2713</span>}
               </div>
-              <span style={{fontSize:16}}>{icon}</span>
+              <span style={{fontSize: 'var(--fs-body)'}}>{icon}</span>
               <div>
-                <div style={{fontSize:12,fontWeight:600,color:'var(--tx)'}}>{label}</div>
-                <div style={{fontSize:11,color:'var(--tx3)'}}>{desc}</div>
+                <div style={{fontSize: 'var(--fs-xs)',fontWeight:600,color:'var(--tx)'}}>{label}</div>
+                <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)'}}>{desc}</div>
               </div>
-              <div style={{marginLeft:'auto',fontSize:10,fontWeight:700,
+              <div style={{marginLeft:'auto',fontSize: 'var(--fs-2xs)',fontWeight:700,
                 color: cfg[key] ? 'var(--green)' : 'var(--tx3)'}}>
                 {cfg[key] ? 'ACTIVO' : 'INACTIVO'}
               </div>
@@ -97,23 +97,23 @@ function SSOConfig() {
       {cfg.allow_microsoft && (
         <div>
           <div className="a-lbl" style={{marginBottom:6}}>Restricci\u00f3n por grupo de Azure AD</div>
-          <div style={{fontSize:11,color:'var(--tx3)',marginBottom:10,lineHeight:1.6}}>
+          <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',marginBottom:10,lineHeight:1.6}}>
             Solo los usuarios que pertenezcan a este grupo podr\u00e1n acceder con Microsoft.
             Deja en blanco para permitir cualquier cuenta de tu tenant.
           </div>
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
             <div>
-              <div style={{fontSize:10,color:'var(--tx3)',marginBottom:4}}>Object ID del grupo</div>
+              <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',marginBottom:4}}>Object ID del grupo</div>
               <input className="a-inp" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 value={cfg.ad_group_id}
                 onChange={e => setCfg(c => ({ ...c, ad_group_id: e.target.value }))}
-                style={{fontFamily:'var(--mono)',fontSize:12}}/>
-              <div style={{fontSize:10,color:'var(--tx3)',marginTop:4}}>
+                style={{fontFamily:'var(--mono)',fontSize: 'var(--fs-xs)'}}/>
+              <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',marginTop:4}}>
                 Azure Portal \u2192 Azure Active Directory \u2192 Groups \u2192 [tu grupo] \u2192 Object ID
               </div>
             </div>
             <div>
-              <div style={{fontSize:10,color:'var(--tx3)',marginBottom:4}}>Nombre del grupo (referencia)</div>
+              <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',marginBottom:4}}>Nombre del grupo (referencia)</div>
               <input className="a-inp" placeholder="ej. WorkSuite-Users"
                 value={cfg.ad_group_name}
                 onChange={e => setCfg(c => ({ ...c, ad_group_name: e.target.value }))}/>
@@ -121,13 +121,13 @@ function SSOConfig() {
           </div>
           {cfg.ad_group_id && (
             <div style={{marginTop:10,padding:'8px 12px',background:'rgba(62,207,142,.06)',
-              border:'1px solid rgba(62,207,142,.2)',borderRadius:'var(--r)',fontSize:11,color:'var(--green)'}}>
+              border:'1px solid rgba(62,207,142,.2)',borderRadius:'var(--r)',fontSize: 'var(--fs-2xs)',color:'var(--green)'}}>
               \u2713 Solo usuarios del grupo <strong>{cfg.ad_group_name || cfg.ad_group_id}</strong> podr\u00e1n entrar con Microsoft
             </div>
           )}
           {!cfg.ad_group_id && (
             <div style={{marginTop:10,padding:'8px 12px',background:'rgba(245,166,35,.06)',
-              border:'1px solid rgba(245,166,35,.2)',borderRadius:'var(--r)',fontSize:11,color:'var(--amber)'}}>
+              border:'1px solid rgba(245,166,35,.2)',borderRadius:'var(--r)',fontSize: 'var(--fs-2xs)',color:'var(--amber)'}}>
               \u26a0 Sin restricci\u00f3n de grupo: cualquier usuario de tu tenant podr\u00e1 acceder
             </div>
           )}
@@ -138,7 +138,7 @@ function SSOConfig() {
         {saving ? 'Guardando...' : 'Guardar configuraci\u00f3n SSO'}
       </button>
       {ok  && <div className="saved-ok"><span className="dot-ok"/> {ok}</div>}
-      {err && <div style={{fontSize:11,color:'var(--red)'}}>{err}</div>}
+      {err && <div style={{fontSize: 'var(--fs-2xs)',color:'var(--red)'}}>{err}</div>}
 
       {/* Instrucciones colapsables */}
       <SSOInstructions/>
@@ -155,13 +155,13 @@ function SSOInstructions() {
         <span>{open ? '\u25b2' : '\u25bc'}</span>
       </button>
       {open && (
-        <div style={{marginTop:12,display:'flex',flexDirection:'column',gap:16,fontSize:12,color:'var(--tx2)',lineHeight:1.7}}>
+        <div style={{marginTop:12,display:'flex',flexDirection:'column',gap:16,fontSize: 'var(--fs-xs)',color:'var(--tx2)',lineHeight:1.7}}>
           <div>
             <div style={{fontWeight:700,color:'var(--tx)',marginBottom:6}}>\uD83C\uDFE2 Microsoft Azure AD</div>
             <ol style={{margin:0,paddingLeft:18,display:'flex',flexDirection:'column',gap:4}}>
               <li>Ve a <a href="https://portal.azure.com" target="_blank" rel="noreferrer" style={{color:'var(--ac2)'}}>portal.azure.com</a> \u2192 Azure Active Directory \u2192 App registrations \u2192 New registration</li>
               <li>Name: <code style={{fontFamily:'var(--mono)',background:'var(--sf3)',padding:'1px 5px',borderRadius:3}}>WorkSuite</code> \u2014 Supported account types: <em>this organizational directory only</em></li>
-              <li>Redirect URI: <code style={{fontFamily:'var(--mono)',background:'var(--sf3)',padding:'1px 5px',borderRadius:3,fontSize:10}}>https://enclhswdbwbgxbjykdtj.supabase.co/auth/v1/callback</code></li>
+              <li>Redirect URI: <code style={{fontFamily:'var(--mono)',background:'var(--sf3)',padding:'1px 5px',borderRadius:3,fontSize: 'var(--fs-2xs)'}}>https://enclhswdbwbgxbjykdtj.supabase.co/auth/v1/callback</code></li>
               <li>Certificates & secrets \u2192 New client secret \u2192 copia el valor</li>
               <li>Token configuration \u2192 Add groups claim \u2192 Security groups</li>
               <li>En Supabase Dashboard \u2192 Authentication \u2192 Providers \u2192 Azure: pega Client ID, Secret y Tenant ID</li>
@@ -171,7 +171,7 @@ function SSOInstructions() {
             <div style={{fontWeight:700,color:'var(--tx)',marginBottom:6}}>\uD83C\uDF10 Google</div>
             <ol style={{margin:0,paddingLeft:18,display:'flex',flexDirection:'column',gap:4}}>
               <li>Ve a <a href="https://console.cloud.google.com" target="_blank" rel="noreferrer" style={{color:'var(--ac2)'}}>console.cloud.google.com</a> \u2192 APIs & Services \u2192 Credentials \u2192 Create OAuth 2.0 Client ID</li>
-              <li>Redirect URI: <code style={{fontFamily:'var(--mono)',background:'var(--sf3)',padding:'1px 5px',borderRadius:3,fontSize:10}}>https://enclhswdbwbgxbjykdtj.supabase.co/auth/v1/callback</code></li>
+              <li>Redirect URI: <code style={{fontFamily:'var(--mono)',background:'var(--sf3)',padding:'1px 5px',borderRadius:3,fontSize: 'var(--fs-2xs)'}}>https://enclhswdbwbgxbjykdtj.supabase.co/auth/v1/callback</code></li>
               <li>En Supabase Dashboard \u2192 Authentication \u2192 Providers \u2192 Google: pega Client ID y Secret</li>
             </ol>
           </div>
@@ -223,7 +223,7 @@ function PersonalJiraToken() {
         <div style={{width:8,height:8,borderRadius:'50%',
           background:hasToken?'var(--green)':'var(--tx3)',
           boxShadow:hasToken?'0 0 5px var(--green)':'none'}}/>
-        <span style={{fontSize:12,color:hasToken?'var(--green)':'var(--tx3)'}}>
+        <span style={{fontSize: 'var(--fs-xs)',color:hasToken?'var(--green)':'var(--tx3)'}}>
           {hasToken
             ? 'Token personal configurado — tus imputaciones aparecerán con tu nombre en Jira'
             : 'Sin token personal — se usará el token del admin (con nota de autor en comentario)'}
@@ -238,7 +238,7 @@ function PersonalJiraToken() {
           {show?'Ocultar':'Mostrar'}
         </button>
       </div>
-      <div style={{fontSize:10,color:'var(--tx3)',lineHeight:1.6}}>
+      <div style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',lineHeight:1.6}}>
         Genera tu token en{' '}
         <a href="https://id.atlassian.com/manage-profile/security/api-tokens"
           target="_blank" rel="noreferrer" style={{color:'var(--ac2)'}}>
@@ -294,7 +294,7 @@ function AdminSettings() {
     setOkMsg("Desconectado"); setTimeout(() => setOkMsg(""), 3000);
   };
 
-  if (loading) return <div style={{padding:20,color:"var(--tx3)",fontSize:13}}>Cargando...</div>;
+  if (loading) return <div style={{padding:20,color:"var(--tx3)",fontSize: 'var(--fs-xs)'}}>Cargando...</div>;
 
   return (
     <div>
@@ -319,7 +319,7 @@ function AdminSettings() {
           </div>
           <button className="btn-p" onClick={handleSave} disabled={saving}>{saving ? t("common.loading") : t("admin.saveConfig")}</button>
           {conn && <button className="btn-g" onClick={handleDisconnect} style={{marginTop:4,color:"var(--red)",borderColor:"var(--red)"}}>Desconectar</button>}
-          {errMsg && <div style={{marginTop:8,padding:"8px 12px",background:"rgba(229,62,62,.08)",border:"1px solid rgba(229,62,62,.25)",borderRadius:"var(--r)",color:"var(--red)",fontSize:12}}>{errMsg}</div>}
+          {errMsg && <div style={{marginTop:8,padding:"8px 12px",background:"rgba(229,62,62,.08)",border:"1px solid rgba(229,62,62,.25)",borderRadius:"var(--r)",color:"var(--red)",fontSize: 'var(--fs-xs)'}}>{errMsg}</div>}
           {okMsg  && <div className="saved-ok"><span className="dot-ok"/>  {okMsg}</div>}
         </div>
       </div>

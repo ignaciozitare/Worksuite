@@ -499,10 +499,10 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
       <div ref={cwRef} style={{position:'relative',flex:1,minHeight:0,padding:0,overflow:'hidden'}}>
         {/* Zoom controls — bottom left, vertical */}
         <div style={{position:'absolute',bottom:12,left:12,display:'flex',flexDirection:'column',gap:4,zIndex:20}}>
-          <button onClick={()=>zoomBy(0.15)} style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'var(--sf)',backdropFilter:'blur(12px)',border:'1px solid var(--bd)',borderRadius:6,color:'var(--tx2)',cursor:'pointer',fontSize:16,fontWeight:600,fontFamily:'inherit',transition:'all .15s'}}>+</button>
-          <button onClick={()=>zoomBy(-0.15)} style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'var(--sf)',backdropFilter:'blur(12px)',border:'1px solid var(--bd)',borderRadius:6,color:'var(--tx2)',cursor:'pointer',fontSize:16,fontWeight:600,fontFamily:'inherit',transition:'all .15s'}}>−</button>
-          <button onClick={fitToView} title={t("hotdesk.fitMap")} style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'var(--sf)',backdropFilter:'blur(12px)',border:'1px solid var(--bd)',borderRadius:6,color:'var(--tx2)',cursor:'pointer',fontSize:11,fontFamily:'inherit',transition:'all .15s'}}>
-            <span className="material-symbols-outlined" style={{fontSize:16}}>fit_screen</span>
+          <button onClick={()=>zoomBy(0.15)} style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'var(--sf)',backdropFilter:'blur(12px)',border:'1px solid var(--bd)',borderRadius:6,color:'var(--tx2)',cursor:'pointer',fontSize: 'var(--fs-body)',fontWeight:600,fontFamily:'inherit',transition:'all .15s'}}>+</button>
+          <button onClick={()=>zoomBy(-0.15)} style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'var(--sf)',backdropFilter:'blur(12px)',border:'1px solid var(--bd)',borderRadius:6,color:'var(--tx2)',cursor:'pointer',fontSize: 'var(--fs-body)',fontWeight:600,fontFamily:'inherit',transition:'all .15s'}}>−</button>
+          <button onClick={fitToView} title={t("hotdesk.fitMap")} style={{width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',background:'var(--sf)',backdropFilter:'blur(12px)',border:'1px solid var(--bd)',borderRadius:6,color:'var(--tx2)',cursor:'pointer',fontSize: 'var(--fs-2xs)',fontFamily:'inherit',transition:'all .15s'}}>
+            <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-sm)'}}>fit_screen</span>
           </button>
         </div>
         <canvas ref={canvasRef} style={{display:'block',width:'100%',height:'100%',
@@ -529,8 +529,8 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
           }}
         />
         {!allSeats.length && (
-          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:13,flexDirection:'column',gap:8}}>
-            <span style={{fontSize:24}}>MAP</span>
+          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize: 'var(--fs-xs)',flexDirection:'column',gap:8}}>
+            <span style={{fontSize: 'var(--fs-xl)'}}>MAP</span>
             <span>{t("hotdesk.noBlueprint")}</span>
           </div>
         )}
@@ -545,12 +545,12 @@ function BlueprintHDMap({ hd, onSeat, currentUser, blueprint, highlightSeat=null
                  : seatHoverInfo.status === SeatStatus.PENDING ? 'var(--amber)'
                  : seatHoverInfo.status === SeatStatus.DELEGATED ? 'var(--purple)'
                  : hoveredSeat ? 'var(--ac2)' : 'var(--tx)',
-            fontSize:12}}>{seatHoverInfo.id}</span>
-          {seatHoverInfo.status === SeatStatus.BLOCKED && <span style={{fontSize:11,color:'var(--tx3)',marginLeft:8}}>{t("hotdesk.blocked")}</span>}
-          {seatHoverInfo.status === SeatStatus.PENDING && <span style={{fontSize:11,color:'var(--amber)',marginLeft:8}}>{t("hotdesk.pending")}</span>}
-          {seatHoverInfo.status === SeatStatus.DELEGATED && <span style={{fontSize:11,color:'var(--purple)',marginLeft:8}}>{t("hotdesk.delegated")}</span>}
-          {seatHoverInfo.name && seatHoverInfo.status !== SeatStatus.BLOCKED && <span style={{fontSize:11,color:'var(--tx2)',marginLeft:8}}>{seatHoverInfo.name}</span>}
-          {!seatHoverInfo.name && seatHoverInfo.status === SeatStatus.FREE && <span style={{fontSize:11,color:'var(--green)',marginLeft:8}}>{t("hotdesk.free")}</span>}
+            fontSize: 'var(--fs-xs)'}}>{seatHoverInfo.id}</span>
+          {seatHoverInfo.status === SeatStatus.BLOCKED && <span style={{fontSize: 'var(--fs-2xs)',color:'var(--tx3)',marginLeft:8}}>{t("hotdesk.blocked")}</span>}
+          {seatHoverInfo.status === SeatStatus.PENDING && <span style={{fontSize: 'var(--fs-2xs)',color:'var(--amber)',marginLeft:8}}>{t("hotdesk.pending")}</span>}
+          {seatHoverInfo.status === SeatStatus.DELEGATED && <span style={{fontSize: 'var(--fs-2xs)',color:'var(--purple)',marginLeft:8}}>{t("hotdesk.delegated")}</span>}
+          {seatHoverInfo.name && seatHoverInfo.status !== SeatStatus.BLOCKED && <span style={{fontSize: 'var(--fs-2xs)',color:'var(--tx2)',marginLeft:8}}>{seatHoverInfo.name}</span>}
+          {!seatHoverInfo.name && seatHoverInfo.status === SeatStatus.FREE && <span style={{fontSize: 'var(--fs-2xs)',color:'var(--green)',marginLeft:8}}>{t("hotdesk.free")}</span>}
         </div>
       )}
       <div className="hd-sub">{t("hotdesk.reserve")} · <span style={{color:'var(--amber)'}}>● {t("hotdesk.mine")}</span></div>

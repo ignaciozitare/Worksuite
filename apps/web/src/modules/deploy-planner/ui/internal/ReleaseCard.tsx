@@ -134,15 +134,15 @@ export function ReleaseCard({
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
         <span
           onClick={() => onOpen(rel.id)}
-          style={{ flex: 1, fontSize: 18, fontWeight: 600, color: 'var(--dp-primary,#adc6ff)', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}
+          style={{ flex: 1, fontSize: 'var(--fs-md)', fontWeight: 600, color: 'var(--dp-primary)', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}
         >
-          {rel.release_number || <span style={{ color: 'var(--dp-tx3,#8c909f)' }}>sin versión</span>}
+          {rel.release_number || <span style={{ color: 'var(--dp-tx3)' }}>sin versión</span>}
         </span>
-        <button onClick={e => { e.stopPropagation(); onOpen(rel.id); }} title="Abrir detalle" style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '2px 4px' }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>open_in_new</span>
+        <button onClick={e => { e.stopPropagation(); onOpen(rel.id); }} title="Abrir detalle" style={{ background: 'none', border: 'none', color: 'var(--dp-tx3)', cursor: 'pointer', fontSize: 'var(--fs-sm)', lineHeight: 1, padding: '2px 4px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>open_in_new</span>
         </button>
-        <button onClick={e => { e.stopPropagation(); onDelete(rel.id); }} style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '2px 4px' }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+        <button onClick={e => { e.stopPropagation(); onDelete(rel.id); }} style={{ background: 'none', border: 'none', color: 'var(--dp-tx3)', cursor: 'pointer', fontSize: 'var(--fs-body)', lineHeight: 1, padding: '2px 4px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>close</span>
         </button>
       </div>
 
@@ -153,14 +153,14 @@ export function ReleaseCard({
             value={rel.release_number || ''}
             onChange={e => onUpd(rel.id, { release_number: e.target.value })}
             placeholder="v1.0.0"
-            style={{ flex: 1, background: 'var(--dp-sf2,#201f1f)', border: '1px solid var(--dp-bd,var(--bd))', borderRadius: '4px 0 0 4px', padding: '5px 10px', fontSize: 11, color: 'var(--dp-tx,#e5e2e1)', fontFamily: "'Inter', monospace", outline: 'none' }}
+            style={{ flex: 1, background: 'var(--dp-sf2)', border: '1px solid var(--dp-bd,var(--bd))', borderRadius: '4px 0 0 4px', padding: '5px 10px', fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx)', fontFamily: "'Inter', monospace", outline: 'none' }}
           />
           <button
             onClick={e => { e.stopPropagation(); setShowVersionPicker(v => !v); }}
             title="Generar número de versión"
-            style={{ background: 'var(--dp-sf2,#201f1f)', border: '1px solid var(--dp-bd,var(--bd))', borderLeft: 'none', borderRadius: '0 4px 4px 0', padding: '0 10px', fontSize: 14, color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', lineHeight: 1 }}
+            style={{ background: 'var(--dp-sf2)', border: '1px solid var(--dp-bd,var(--bd))', borderLeft: 'none', borderRadius: '0 4px 4px 0', padding: '0 10px', fontSize: 'var(--fs-sm)', color: 'var(--dp-tx3)', cursor: 'pointer', lineHeight: 1 }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>settings</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>settings</span>
           </button>
         </div>
         {showVersionPicker && versionCfg && (
@@ -180,7 +180,7 @@ export function ReleaseCard({
         onClick={e => e.stopPropagation()}
         placeholder="Descripción de la release…"
         rows={rel.description && rel.description.length > 40 ? 3 : 2}
-        style={{ width: '100%', background: 'none', border: 'none', borderBottom: '1px solid var(--dp-bd,var(--bd))', fontSize: 11, color: 'var(--dp-tx2,var(--tx2))', fontFamily: 'inherit', outline: 'none', marginBottom: 12, paddingBottom: 6, resize: 'none', lineHeight: 1.5, letterSpacing: '0.01em' }}
+        style={{ width: '100%', background: 'none', border: 'none', borderBottom: '1px solid var(--dp-bd,var(--bd))', fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx2,var(--tx2))', fontFamily: 'inherit', outline: 'none', marginBottom: 12, paddingBottom: 6, resize: 'none', lineHeight: 1.5, letterSpacing: '0.01em' }}
       />
 
       {/* Status selector with is_final blocking */}
@@ -203,7 +203,7 @@ export function ReleaseCard({
             void onUpd(rel.id, { status: newStatus });
           }}
           onClick={e => e.stopPropagation()}
-          style={{ background: cfg.bg_color, border: `1px solid ${cfg.border}`, borderRadius: 5, padding: '4px 10px', fontSize: 10, color: cfg.color, cursor: 'pointer', outline: 'none', fontWeight: 700, fontFamily: 'inherit' }}
+          style={{ background: cfg.bg_color, border: `1px solid ${cfg.border}`, borderRadius: 5, padding: '4px 10px', fontSize: 'var(--fs-2xs)', color: cfg.color, cursor: 'pointer', outline: 'none', fontWeight: 700, fontFamily: 'inherit' }}
         >
           {Object.entries(statusCfg).map(([name, v]) => {
             const isDoneCat = v.status_category === 'done';
@@ -233,7 +233,7 @@ export function ReleaseCard({
 
       {/* Conflicts */}
       {conflicts.length > 0 && (
-        <div style={{ background: 'var(--red-dim)', border: '1px solid var(--dp-danger-strong,var(--danger-strong))', borderRadius: 4, padding: '6px 9px', fontSize: 10, color: 'var(--dp-danger,var(--danger))', marginBottom: 8 }}>
+        <div style={{ background: 'var(--red-dim)', border: '1px solid var(--dp-danger-strong,var(--danger-strong))', borderRadius: 4, padding: '6px 9px', fontSize: 'var(--fs-2xs)', color: 'var(--dp-danger,var(--danger))', marginBottom: 8 }}>
           <div style={{ fontWeight: 700, marginBottom: 3 }}>Repos en conflicto:</div>
           {conflicts.map(c => (
             <div key={c.repo} style={{ marginTop: 2, color: 'var(--dp-danger,var(--danger))' }}>
@@ -263,18 +263,18 @@ export function ReleaseCard({
               title={noRepo ? '⚠ Sin repositorio — asigna Components en Jira' : t.summary}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px',
-                background: 'var(--dp-sf2,#201f1f)',
+                background: 'var(--dp-sf2)',
                 border: noRepo ? '1px solid rgba(239,68,68,.5)' : '1px solid var(--dp-bd,var(--bd))',
                 borderLeft: `2px solid ${noRepo ? '#ef4444' : pColor}`,
-                borderRadius: 6, cursor: 'grab', fontSize: 10,
+                borderRadius: 6, cursor: 'grab', fontSize: 'var(--fs-2xs)',
               }}
             >
-              {noRepo && <span style={{ color: '#ef4444', fontSize: 10, flexShrink: 0 }}>⚠</span>}
-              <span style={{ color: 'var(--dp-primary,#adc6ff)', fontWeight: 700, flexShrink: 0 }}>{t.key}</span>
-              <span style={{ color: noRepo ? '#ef4444' : 'var(--dp-tx2,#c2c6d6)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {noRepo && <span style={{ color: '#ef4444', fontSize: 'var(--fs-2xs)', flexShrink: 0 }}>⚠</span>}
+              <span style={{ color: 'var(--dp-primary)', fontWeight: 700, flexShrink: 0 }}>{t.key}</span>
+              <span style={{ color: noRepo ? '#ef4444' : 'var(--dp-tx2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {t.summary.slice(0, 28)}{t.summary.length > 28 ? '…' : ''}
               </span>
-              <span style={{ color: 'var(--dp-tx3,#8c909f)', flexShrink: 0, fontSize: 9 }}>
+              <span style={{ color: 'var(--dp-tx3)', flexShrink: 0, fontSize: 'var(--fs-2xs)' }}>
                 {t.assignee?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '—'}
               </span>
               {jiraBaseUrl && (
@@ -284,7 +284,7 @@ export function ReleaseCard({
                   rel="noopener noreferrer"
                   onMouseDown={e => e.stopPropagation()}
                   onClick={e => e.stopPropagation()}
-                  style={{ color: 'var(--dp-tx3,#8c909f)', fontSize: 10, flexShrink: 0, textDecoration: 'none', lineHeight: 1, padding: '0 2px' }}
+                  style={{ color: 'var(--dp-tx3)', fontSize: 'var(--fs-2xs)', flexShrink: 0, textDecoration: 'none', lineHeight: 1, padding: '0 2px' }}
                   title={`Open ${t.key} in Jira`}
                 >
                   ↗
@@ -292,7 +292,7 @@ export function ReleaseCard({
               )}
               <button
                 onClick={e => { e.stopPropagation(); void onUpd(rel.id, { ticket_ids: (rel.ticket_ids ?? []).filter(x => x !== t.key) }); }}
-                style={{ background: 'none', border: 'none', color: 'var(--dp-tx3,#8c909f)', cursor: 'pointer', fontSize: 12, lineHeight: 1, flexShrink: 0 }}
+                style={{ background: 'none', border: 'none', color: 'var(--dp-tx3)', cursor: 'pointer', fontSize: 'var(--fs-xs)', lineHeight: 1, flexShrink: 0 }}
               >
                 ×
               </button>
@@ -303,7 +303,7 @@ export function ReleaseCard({
 
       {/* Warning: tickets sin repo */}
       {relTickets.some(t => !t.repos || t.repos.length === 0) && (
-        <div style={{ fontSize: 9, color: 'var(--dp-danger-strong,var(--danger-strong))', marginBottom: 6, padding: '3px 6px', background: 'var(--red-dim)', borderRadius: 3, border: '1px solid var(--dp-danger-strong,var(--danger-strong))' }}>
+        <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-danger-strong,var(--danger-strong))', marginBottom: 6, padding: '3px 6px', background: 'var(--red-dim)', borderRadius: 3, border: '1px solid var(--dp-danger-strong,var(--danger-strong))' }}>
           ⚠ {relTickets.filter(t => !t.repos || t.repos.length === 0).length} ticket{relTickets.filter(t => !t.repos || t.repos.length === 0).length > 1 ? 's' : ''} sin repositorio — asigna Components en Jira
         </div>
       )}
@@ -316,18 +316,18 @@ export function ReleaseCard({
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar ticket…"
-            style={{ width: '100%', background: 'var(--dp-sf2,#201f1f)', border: '1px solid var(--dp-primary-strong,#4d8eff)', borderRadius: 6, padding: '6px 10px', fontSize: 10, color: 'var(--dp-tx,#e5e2e1)', outline: 'none', marginBottom: 3 }}
+            style={{ width: '100%', background: 'var(--dp-sf2)', border: '1px solid var(--dp-primary-strong)', borderRadius: 6, padding: '6px 10px', fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx)', outline: 'none', marginBottom: 3 }}
             onBlur={() => { setTimeout(() => { setAddingTicket(false); setSearch(''); }, 150); }}
           />
           {unassigned.filter(t => !search || (t.key + t.summary).toLowerCase().includes(search.toLowerCase())).slice(0, 5).map(t => (
             <div
               key={t.key}
               onMouseDown={() => { void onUpd(rel.id, { ticket_ids: [...(rel.ticket_ids ?? []), t.key] }); setAddingTicket(false); setSearch(''); }}
-              style={{ padding: '4px 8px', fontSize: 10, cursor: 'pointer', color: 'var(--dp-tx2,#c2c6d6)', display: 'flex', gap: 8, borderRadius: 3 }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--dp-sf,#1c1b1b)')}
+              style={{ padding: '4px 8px', fontSize: 'var(--fs-2xs)', cursor: 'pointer', color: 'var(--dp-tx2)', display: 'flex', gap: 8, borderRadius: 3 }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--dp-sf)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
-              <span style={{ color: 'var(--dp-primary,#adc6ff)', fontWeight: 700, flexShrink: 0 }}>{t.key}</span>
+              <span style={{ color: 'var(--dp-primary)', fontWeight: 700, flexShrink: 0 }}>{t.key}</span>
               <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.summary}</span>
             </div>
           ))}
@@ -335,7 +335,7 @@ export function ReleaseCard({
       ) : (
         <button
           onClick={e => { e.stopPropagation(); setAddingTicket(true); }}
-          style={{ width: '100%', background: 'transparent', border: '1px dashed var(--dp-bd,var(--bd))', borderRadius: 6, padding: '6px', fontSize: 10, color: 'var(--dp-tx3,var(--tx3))', cursor: 'pointer', marginBottom: 10, transition: 'all .15s' }}
+          style={{ width: '100%', background: 'transparent', border: '1px dashed var(--dp-bd,var(--bd))', borderRadius: 6, padding: '6px', fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3,var(--tx3))', cursor: 'pointer', marginBottom: 10, transition: 'all .15s' }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = cfg.color; e.currentTarget.style.color = cfg.color; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--dp-bd,var(--bd))'; e.currentTarget.style.color = 'var(--dp-tx3,var(--tx3))'; }}
         >
@@ -349,7 +349,7 @@ export function ReleaseCard({
         const counts = SubtaskService.count(relSubs);
         if (counts.bugs.total === 0 && counts.tests.total === 0) return null;
         return (
-          <div style={{ display: 'flex', gap: 8, fontSize: 10, paddingTop: 6, borderTop: '1px solid var(--dp-bd,var(--bd))', marginBottom: 4 }}>
+          <div style={{ display: 'flex', gap: 8, fontSize: 'var(--fs-2xs)', paddingTop: 6, borderTop: '1px solid var(--dp-bd,var(--bd))', marginBottom: 4 }}>
             {counts.bugs.total > 0 && (
               <span style={{ color: counts.bugs.open > 0 ? 'var(--dp-danger-strong,var(--danger-strong))' : 'var(--dp-secondary,var(--green))', fontWeight: 600 }}>
                 <BugIcon size={12} color="currentColor" />{counts.bugs.closed}/{counts.bugs.total}

@@ -34,13 +34,13 @@ const TAB_ICONS: Record<string, string> = {
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 .dp *{box-sizing:border-box;margin:0;padding:0;}
-.dp{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--dp-bg,#131313);color:var(--dp-tx,#e5e2e1);height:100%;overflow:auto;}
+.dp{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--dp-bg);color:var(--dp-tx);height:100%;overflow:auto;}
 .dp button,.dp select,.dp input,.dp textarea{font-family:'Inter',system-ui,-apple-system,sans-serif;}
 .dp input[type=date]::-webkit-calendar-picker-indicator{filter:var(--dp-date-filter,invert(.4) sepia(1) hue-rotate(180deg));}
 .dp ::-webkit-scrollbar{width:4px;height:4px;}
-.dp ::-webkit-scrollbar-track{background:var(--dp-bg,#131313);}
+.dp ::-webkit-scrollbar-track{background:var(--dp-bg);}
 .dp ::-webkit-scrollbar-thumb{background:var(--dp-bd,var(--bd2));border-radius:2px;}
-.dp select option{background:var(--dp-sf,#1c1b1b);}
+.dp select option{background:var(--dp-sf);}
 .dp .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:300;font-style:normal;display:inline-block;line-height:1;text-transform:none;letter-spacing:normal;word-wrap:normal;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased;font-size:inherit;}
 /* Dark (default) — Stitch / Carbon Logic */
 .dp{
@@ -70,8 +70,8 @@ const CSS = `
 /* Sidebar */
 /* Sidebar — sits inside the module container, not fixed to viewport */
 .dp .dp-sidebar{position:sticky;top:0;width:240px;min-width:240px;height:100%;min-height:calc(100vh - 52px);align-self:stretch;background:var(--dp-bg,var(--bg));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid var(--dp-bd,var(--bd));display:flex;flex-direction:column;padding:16px;gap:4px;z-index:30;overflow-y:auto;}
-.dp .dp-sidebar-nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:500;letter-spacing:.02em;cursor:pointer;border:none;background:transparent;color:var(--dp-tx,#e5e2e1);opacity:.6;transition:all .2s;text-align:left;width:100%;font-family:inherit;}
-.dp .dp-sidebar-nav-item:hover{opacity:1;background:var(--dp-sf,#1c1b1b);transform:translateX(2px);}
+.dp .dp-sidebar-nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:500;letter-spacing:.02em;cursor:pointer;border:none;background:transparent;color:var(--dp-tx);opacity:.6;transition:all .2s;text-align:left;width:100%;font-family:inherit;}
+.dp .dp-sidebar-nav-item:hover{opacity:1;background:var(--dp-sf);transform:translateX(2px);}
 .dp .dp-sidebar-nav-item.active{opacity:1;color:var(--dp-primary-strong,var(--ac));background:var(--dp-primary-dim,var(--ac-dim));font-weight:600;box-shadow:0 0 20px var(--dp-primary-dim,var(--ac-dim));}
 .dp .dp-main{flex:1;min-width:0;height:100%;overflow:auto;}
 @keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -409,8 +409,8 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
         <div style={{ padding: '24px 12px 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <DeployPlannerIcon size={40} />
           <div>
-            <h1 style={{ fontSize: 16, fontWeight: 700, color: 'var(--dp-tx,#e5e2e1)', letterSpacing: '-0.01em', lineHeight: 1 }}>Deploy Planner</h1>
-            <p style={{ fontSize: 10, color: 'var(--dp-tx,#e5e2e1)', opacity: .4, fontWeight: 700, letterSpacing: '.1em', marginTop: 4 }}>
+            <h1 style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--dp-tx)', letterSpacing: '-0.01em', lineHeight: 1 }}>Deploy Planner</h1>
+            <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx)', opacity: .4, fontWeight: 700, letterSpacing: '.1em', marginTop: 4 }}>
               {releases.length > 0 ? `${releases.length} RELEASES` : 'PIPELINE'}
             </p>
           </div>
@@ -424,14 +424,14 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
               width: '100%', background: 'linear-gradient(135deg,var(--dp-primary,var(--ac2)),var(--dp-primary-strong,var(--ac)))', color: 'var(--ac-on)',
               fontWeight: 600, padding: '10px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              fontFamily: 'inherit', fontSize: 13, letterSpacing: '.02em',
+              fontFamily: 'inherit', fontSize: 'var(--fs-xs)', letterSpacing: '.02em',
               boxShadow: '0 4px 20px var(--dp-primary-dim,var(--ac-dim))',
               transition: 'all .2s',
             }}
             onMouseEnter={e => (e.currentTarget.style.filter = 'drop-shadow(0 0 12px var(--dp-primary-dim,var(--ac-dim)))')}
             onMouseLeave={e => (e.currentTarget.style.filter = 'none')}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add_circle</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>add_circle</span>
             New Release
           </button>
         </div>
@@ -446,11 +446,11 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
                 className={`dp-sidebar-nav-item${active ? ' active' : ''}`}
                 onClick={() => { setTab(t.id); setDetail(null); }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{TAB_ICONS[t.id]}</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>{TAB_ICONS[t.id]}</span>
                 <span>{t.label}</span>
                 {t.badge !== undefined && t.badge > 0 && (
                   <span style={{
-                    marginLeft: 'auto', fontSize: 9, padding: '1px 7px', borderRadius: 10,
+                    marginLeft: 'auto', fontSize: 'var(--fs-2xs)', padding: '1px 7px', borderRadius: 10,
                     background: active ? 'var(--dp-primary-dim,var(--ac-dim))' : 'var(--dp-sf3,var(--sf3))',
                     color: active ? 'var(--dp-primary-strong,var(--ac))' : 'var(--dp-tx3,var(--tx3))', fontWeight: 700,
                   }}>{t.badge}</span>
@@ -462,10 +462,10 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
 
         {/* Jira sync status (footer) */}
         <div style={{ padding: '12px 8px', borderTop: '1px solid var(--dp-bd,var(--bd))', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 10, color: 'var(--dp-tx3,#8c909f)', flex: 1 }}>
+          <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)', flex: 1 }}>
             {fetchingJira
               ? <><span className="spin" style={{ marginRight: 4 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>sync</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>sync</span>
                 </span>Syncing…</>
               : `${tickets.length} tickets`}
           </span>
@@ -475,7 +475,7 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
             title="Recargar tickets de Jira"
             style={{ background: 'var(--dp-sf3,var(--sf3))', border: '1px solid var(--dp-bd,var(--bd))', borderRadius: 6, width: 28, height: 28, color: 'var(--dp-tx2,var(--tx2))', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>refresh</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>refresh</span>
           </button>
         </div>
       </aside>
@@ -483,7 +483,7 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
       {/* ── Main content ────────────────────────────────── */}
       <div className="dp-main" style={{ padding: 28 }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 60, color: 'var(--dp-tx3,#8c909f)', fontSize: 13 }}>Cargando…</div>
+          <div style={{ textAlign: 'center', padding: 60, color: 'var(--dp-tx3)', fontSize: 'var(--fs-xs)' }}>Cargando…</div>
         ) : detailRel ? (
           <ReleaseDetail
             rel={detailRel}
@@ -516,43 +516,43 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
                 {/* Loading overlay */}
                 {fetchingJira && tickets.length === 0 && (
                   <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'var(--dp-bg,var(--bg))', opacity: 0.95, backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, borderRadius: 8, minHeight: 200 }}>
-                    <div className="spin" style={{ fontSize: 24, color: 'var(--dp-primary,#adc6ff)' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 28 }}>sync</span>
+                    <div className="spin" style={{ fontSize: 'var(--fs-xl)', color: 'var(--dp-primary)' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)' }}>sync</span>
                     </div>
-                    <div style={{ fontSize: 13, color: 'var(--dp-tx,#e5e2e1)', fontWeight: 600, letterSpacing: '-0.01em' }}>Cargando tickets de Jira…</div>
-                    <div style={{ fontSize: 11, color: 'var(--dp-tx3,#8c909f)' }}>Conectando con proyectos y sincronizando issues</div>
+                    <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--dp-tx)', fontWeight: 600, letterSpacing: '-0.01em' }}>Cargando tickets de Jira…</div>
+                    <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)' }}>Conectando con proyectos y sincronizando issues</div>
                   </div>
                 )}
                 {/* Stitch header */}
                 <div style={{ marginBottom: 28 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--dp-primary,#adc6ff)', marginBottom: 6 }}>PRODUCTION PIPELINE</div>
-                  <h1 style={{ fontSize: 28, fontWeight: 600, color: 'var(--dp-tx,#e5e2e1)', letterSpacing: '-0.02em', marginBottom: 6 }}>Planning Board</h1>
-                  <p style={{ fontSize: 13, color: 'var(--dp-tx3,#8c909f)', letterSpacing: '0.01em' }}>
+                  <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--dp-primary)', marginBottom: 6 }}>PRODUCTION PIPELINE</div>
+                  <h1 style={{ fontSize: 'var(--fs-xl)', fontWeight: 600, color: 'var(--dp-tx)', letterSpacing: '-0.02em', marginBottom: 6 }}>Planning Board</h1>
+                  <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--dp-tx3)', letterSpacing: '0.01em' }}>
                     Organiza releases, asigna tickets y coordina deploys a producción.
                   </p>
                 </div>
                 {/* Stat cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, marginBottom: 28 }}>
                   {[
-                    { label: 'ACTIVE RELEASES', value: releases.filter(r => !statusCfg[r.status]?.is_final).length, icon: 'rocket_launch', color: 'var(--dp-primary,#adc6ff)' },
-                    { label: 'SCHEDULED TODAY', value: releases.filter(r => r.end_date === fmt(today)).length, icon: 'today', color: 'var(--dp-warning,#f59e0b)' },
-                    { label: 'SUCCESS RATE', value: `${releases.filter(r => statusCfg[r.status]?.is_final).length ? Math.round(releases.filter(r => r.status === 'Deployed').length / Math.max(releases.filter(r => statusCfg[r.status]?.is_final).length, 1) * 100) : 0}%`, icon: 'trending_up', color: 'var(--dp-secondary,#4ae176)' },
-                    { label: 'PENDING TICKETS', value: tickets.length, icon: 'confirmation_number', color: 'var(--dp-tertiary,#ddb7ff)' },
+                    { label: 'ACTIVE RELEASES', value: releases.filter(r => !statusCfg[r.status]?.is_final).length, icon: 'rocket_launch', color: 'var(--dp-primary)' },
+                    { label: 'SCHEDULED TODAY', value: releases.filter(r => r.end_date === fmt(today)).length, icon: 'today', color: 'var(--dp-warning)' },
+                    { label: 'SUCCESS RATE', value: `${releases.filter(r => statusCfg[r.status]?.is_final).length ? Math.round(releases.filter(r => r.status === 'Deployed').length / Math.max(releases.filter(r => statusCfg[r.status]?.is_final).length, 1) * 100) : 0}%`, icon: 'trending_up', color: 'var(--dp-secondary)' },
+                    { label: 'PENDING TICKETS', value: tickets.length, icon: 'confirmation_number', color: 'var(--dp-tertiary)' },
                   ].map(s => (
                     <div key={s.label} className="glass-card ghost-border-top" style={{ position: 'relative', padding: '16px 18px', overflow: 'hidden' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 18, color: s.color }}>{s.icon}</span>
-                        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--dp-tx3,#8c909f)' }}>{s.label}</span>
+                        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)', color: s.color }}>{s.icon}</span>
+                        <span style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--dp-tx3)' }}>{s.label}</span>
                       </div>
-                      <div style={{ fontSize: 28, fontWeight: 600, color: s.color, lineHeight: 1, letterSpacing: '-0.02em' }}>{s.value}</div>
+                      <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 600, color: s.color, lineHeight: 1, letterSpacing: '-0.02em' }}>{s.value}</div>
                     </div>
                   ))}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 11, color: 'var(--dp-tx3,#8c909f)', marginRight: 8 }}>
+                  <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)', marginRight: 8 }}>
                     {releases.length} releases · {tickets.length} tickets
                     {fetchingJira && tickets.length > 0 && <span className="spin" style={{ marginLeft: 6, display: 'inline-block' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 12 }}>sync</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>sync</span>
                     </span>}
                   </span>
                   {Object.entries(statusCfg).map(([name, cfg]) => {
@@ -562,9 +562,9 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
                         key={name}
                         onClick={() => setFilterStatus(f => f.includes(name) ? f.filter(x => x !== name) : [...f, name])}
                         style={{
-                          fontSize: 10, padding: '4px 12px', borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
+                          fontSize: 'var(--fs-2xs)', padding: '4px 12px', borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
                           background: on ? cfg.bg_color : 'transparent',
-                          color: on ? cfg.color : 'var(--dp-tx3,#8c909f)',
+                          color: on ? cfg.color : 'var(--dp-tx3)',
                           border: `1px solid ${on ? cfg.border : 'rgba(66,71,84,.15)'}`,
                           transition: 'all .12s',
                         }}
@@ -575,8 +575,8 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
                   })}
                 </div>
                 {hidden > 0 && (
-                  <div style={{ fontSize: 10, color: 'var(--dp-tx3,#8c909f)', marginBottom: 14 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 12, verticalAlign: 'middle', marginRight: 4 }}>filter_alt</span>
+                  <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3)', marginBottom: 14 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', verticalAlign: 'middle', marginRight: 4 }}>filter_alt</span>
                     {hidden} release{hidden > 1 ? 's' : ''} oculta{hidden > 1 ? 's' : ''} por filtros — actívalas arriba o ve a History.
                   </div>
                 )}
@@ -604,9 +604,9 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
                         >
                           <span
                             style={{
-                              position: 'absolute', top: -9, left: 14, fontSize: 8, fontWeight: 700,
+                              position: 'absolute', top: -9, left: 14, fontSize: 'var(--fs-2xs)', fontWeight: 700,
                               color: allDone ? 'var(--dp-secondary,var(--green))' : 'var(--dp-warning,var(--amber))',
-                              background: 'var(--dp-bg,#131313)',
+                              background: 'var(--dp-bg)',
                               padding: '0 6px', letterSpacing: '.05em', textTransform: 'uppercase',
                             }}
                           >
@@ -664,12 +664,12 @@ export function DeployPlanner({ currentUser }: DeployPlannerProps) {
                   })()}
                   <div
                     onClick={() => void addRelease()}
-                    style={{ width: 320, minHeight: 140, background: 'transparent', border: '2px dashed var(--dp-bd,var(--bd))', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', color: 'var(--dp-tx3,var(--tx3))', fontSize: 12, transition: 'all .2s' }}
+                    style={{ width: 320, minHeight: 140, background: 'transparent', border: '2px dashed var(--dp-bd,var(--bd))', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', color: 'var(--dp-tx3,var(--tx3))', fontSize: 'var(--fs-xs)', transition: 'all .2s' }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--dp-primary,var(--ac2))'; e.currentTarget.style.background = 'var(--dp-primary-dim,var(--ac-dim))'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--dp-bd,var(--bd))'; e.currentTarget.style.background = 'transparent'; }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: 28, color: 'var(--dp-primary,#adc6ff)' }}>add_circle</span>
-                    <span style={{ fontSize: 11, letterSpacing: '0.01em' }}>Nueva release</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', color: 'var(--dp-primary)' }}>add_circle</span>
+                    <span style={{ fontSize: 'var(--fs-2xs)', letterSpacing: '0.01em' }}>Nueva release</span>
                   </div>
                 </div>
               </div>

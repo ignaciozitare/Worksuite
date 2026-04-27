@@ -13,7 +13,7 @@ const ENV_LABELS = { development:"DEV", staging:"STG", production:"PROD" };
 export function DeployTimeline({ deployments, onSelect }: { deployments: any[]; onSelect: (d: any) => void }) {
   if (!deployments.length) {
     return (
-      <div style={{textAlign:"center",padding:"40px 20px",color:"var(--tx3)",fontSize:14}}>
+      <div style={{textAlign:"center",padding:"40px 20px",color:"var(--tx3)",fontSize: 'var(--fs-sm)'}}>
         No hay despliegues planificados aún.
       </div>
     );
@@ -38,23 +38,23 @@ export function DeployTimeline({ deployments, onSelect }: { deployments: any[]; 
             }}
           >
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
-              <span style={{fontSize:12,color:st.color,fontWeight:700}}>{st.icon} {st.label}</span>
-              <span style={{fontSize:11,fontWeight:700,padding:"1px 7px",borderRadius:20,background:st.bg,color:st.color,border:`1px solid ${st.border}`}}>
+              <span style={{fontSize: 'var(--fs-xs)',color:st.color,fontWeight:700}}>{st.icon} {st.label}</span>
+              <span style={{fontSize: 'var(--fs-2xs)',fontWeight:700,padding:"1px 7px",borderRadius:20,background:st.bg,color:st.color,border:`1px solid ${st.border}`}}>
                 {d.version} · {env}
               </span>
-              <span style={{fontSize:11,color:"var(--tx3)",marginLeft:"auto"}}>
+              <span style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginLeft:"auto"}}>
                 {d.planned_at ? new Date(d.planned_at).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"}) : ""}
               </span>
             </div>
-            <p style={{fontSize:13,fontWeight:600,color:"var(--tx)",marginBottom:2}}>{d.name}</p>
-            {d.notes && <p style={{fontSize:11,color:"var(--tx3)",lineHeight:1.4,margin:0}}>{d.notes}</p>}
+            <p style={{fontSize: 'var(--fs-xs)',fontWeight:600,color:"var(--tx)",marginBottom:2}}>{d.name}</p>
+            {d.notes && <p style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",lineHeight:1.4,margin:0}}>{d.notes}</p>}
             {d.jira_issues?.length > 0 && (
-              <p style={{fontSize:11,color:"var(--tx3)",marginTop:4,margin:0}}>🔗 {d.jira_issues.join(", ")}</p>
+              <p style={{fontSize: 'var(--fs-2xs)',color:"var(--tx3)",marginTop:4,margin:0}}>🔗 {d.jira_issues.join(", ")}</p>
             )}
             {d.repos?.length > 0 && (
               <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:4}}>
                 {d.repos.map((r: string) => (
-                  <span key={r} style={{fontSize:10,padding:"1px 7px",borderRadius:4,
+                  <span key={r} style={{fontSize: 'var(--fs-2xs)',padding:"1px 7px",borderRadius:4,
                     background:"rgba(124,58,237,.12)",color:"#a78bfa",
                     border:"1px solid rgba(124,58,237,.25)"}}>📦 {r}</span>
                 ))}

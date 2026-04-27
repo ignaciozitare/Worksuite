@@ -116,8 +116,8 @@ export function EquiposView({ equipoRepo, users }: Props) {
       {/* ── Header ─── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{t('chronoAdmin.equiposTitle')}</div>
-          <div style={{ fontSize: 12, color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.equiposSubtitle')}</div>
+          <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700 }}>{t('chronoAdmin.equiposTitle')}</div>
+          <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.equiposSubtitle')}</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="ch-btn ch-btn-ghost" onClick={load}>
@@ -132,10 +132,10 @@ export function EquiposView({ equipoRepo, users }: Props) {
       {/* ── New team form ─── */}
       {showNewForm && (
         <div className="ch-card fade-in" style={{ marginBottom: 20, padding: '20px 24px' }}>
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>{t('chronoAdmin.crearEquipo')}</div>
+          <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: 14 }}>{t('chronoAdmin.crearEquipo')}</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 14, alignItems: 'end' }}>
             <div>
-              <label style={{ fontSize: 11, color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
+              <label style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
                 {t('chronoAdmin.nombreEquipo')}
               </label>
               <input
@@ -143,11 +143,11 @@ export function EquiposView({ equipoRepo, users }: Props) {
                 value={newTeam.nombre}
                 onChange={e => setNewTeam(p => ({ ...p, nombre: e.target.value }))}
                 placeholder={t('chronoAdmin.nombreEquipoPlaceholder')}
-                style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none' }}
+                style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 'var(--fs-xs)', width: '100%', outline: 'none' }}
               />
             </div>
             <div>
-              <label style={{ fontSize: 11, color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
+              <label style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
                 {t('chronoAdmin.descripcion')}
               </label>
               <input
@@ -155,17 +155,17 @@ export function EquiposView({ equipoRepo, users }: Props) {
                 value={newTeam.descripcion}
                 onChange={e => setNewTeam(p => ({ ...p, descripcion: e.target.value }))}
                 placeholder={t('chronoAdmin.descripcionPlaceholder')}
-                style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none' }}
+                style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 'var(--fs-xs)', width: '100%', outline: 'none' }}
               />
             </div>
             <div>
-              <label style={{ fontSize: 11, color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
+              <label style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.08em' }}>
                 {t('chronoAdmin.manager')}
               </label>
               <select
                 value={newTeam.managerId}
                 onChange={e => setNewTeam(p => ({ ...p, managerId: e.target.value }))}
-                style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none' }}
+                style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 'var(--fs-xs)', width: '100%', outline: 'none' }}
               >
                 <option value="">{t('chronoAdmin.seleccionarManager')}</option>
                 {users.map(u => (
@@ -177,7 +177,7 @@ export function EquiposView({ equipoRepo, users }: Props) {
               className="ch-btn ch-btn-amber"
               onClick={handleCreate}
               disabled={creating || !newTeam.nombre.trim()}
-              style={{ height: 36, fontSize: 12 }}
+              style={{ height: 36, fontSize: 'var(--fs-xs)' }}
             >
               {creating ? t('chronoAdmin.creando') : t('chronoAdmin.crear')}
             </button>
@@ -186,7 +186,7 @@ export function EquiposView({ equipoRepo, users }: Props) {
       )}
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 'var(--fs-xs)' }}>
           {t('chronoAdmin.cargando')}
         </div>
       ) : equipos.length === 0 ? (
@@ -211,36 +211,36 @@ export function EquiposView({ equipoRepo, users }: Props) {
                     width: 42, height: 42, borderRadius: 10,
                     background: C.amberGlow,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 700, color: C.amber, fontFamily: "'IBM Plex Mono',monospace", fontSize: 16,
+                    fontWeight: 700, color: C.amber, fontFamily: "'IBM Plex Mono',monospace", fontSize: 'var(--fs-body)',
                   }}>
                     {equipo.nombre.charAt(0).toUpperCase()}
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{equipo.nombre}</div>
+                    <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>{equipo.nombre}</div>
                     {equipo.descripcion && (
-                      <div style={{ fontSize: 12, color: C.txDim, marginTop: 2 }}>{equipo.descripcion}</div>
+                      <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginTop: 2 }}>{equipo.descripcion}</div>
                     )}
                   </div>
 
                   {/* Manager */}
                   <div style={{ textAlign: 'right', marginRight: 16 }}>
-                    <div style={{ fontSize: 10, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em' }}>{t('chronoAdmin.manager')}</div>
-                    <div style={{ fontSize: 12, color: C.tx, marginTop: 2 }}>{getUserName(equipo.managerId)}</div>
+                    <div style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em' }}>{t('chronoAdmin.manager')}</div>
+                    <div style={{ fontSize: 'var(--fs-xs)', color: C.tx, marginTop: 2 }}>{getUserName(equipo.managerId)}</div>
                   </div>
 
                   {/* Member count */}
                   <div style={{ textAlign: 'center' }}>
-                    <div className="mono" style={{ fontSize: 20, fontWeight: 700, color: C.amber }}>{equipo.miembros.length}</div>
-                    <div style={{ fontSize: 10, color: C.txMuted, textTransform: 'uppercase' }}>{t('chronoAdmin.miembros')}</div>
+                    <div className="mono" style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: C.amber }}>{equipo.miembros.length}</div>
+                    <div style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase' }}>{t('chronoAdmin.miembros')}</div>
                   </div>
 
                   {/* Edit + Delete */}
-                  <button className="ch-btn ch-btn-ghost" onClick={e => { e.stopPropagation(); setEditingTeam(editingTeam === equipo.id ? null : equipo.id); setEditTeamDraft({ nombre: equipo.nombre, descripcion: equipo.descripcion || '', managerId: equipo.managerId || '' }); }} style={{ fontSize: 11, padding: '4px 10px' }}>✏️</button>
-                  <button className="ch-btn ch-btn-ghost" onClick={async e => { e.stopPropagation(); if (await dialog.confirm(t('chronoAdmin.confirmarEliminar'), { danger: true })) handleDelete(equipo.id); }} style={{ fontSize: 11, padding: '4px 10px', color: C.red, borderColor: `${C.red}44` }}>🗑</button>
+                  <button className="ch-btn ch-btn-ghost" onClick={e => { e.stopPropagation(); setEditingTeam(editingTeam === equipo.id ? null : equipo.id); setEditTeamDraft({ nombre: equipo.nombre, descripcion: equipo.descripcion || '', managerId: equipo.managerId || '' }); }} style={{ fontSize: 'var(--fs-2xs)', padding: '4px 10px' }}>✏️</button>
+                  <button className="ch-btn ch-btn-ghost" onClick={async e => { e.stopPropagation(); if (await dialog.confirm(t('chronoAdmin.confirmarEliminar'), { danger: true })) handleDelete(equipo.id); }} style={{ fontSize: 'var(--fs-2xs)', padding: '4px 10px', color: C.red, borderColor: `${C.red}44` }}>🗑</button>
 
                   {/* Chevron */}
-                  <div style={{ fontSize: 14, color: C.txMuted, transition: 'transform .2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)' }}>▼</div>
+                  <div style={{ fontSize: 'var(--fs-sm)', color: C.txMuted, transition: 'transform .2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)' }}>▼</div>
                 </div>
 
                 {/* ── Edit team inline ─── */}
@@ -248,21 +248,21 @@ export function EquiposView({ equipoRepo, users }: Props) {
                   <div className="fade-in" style={{ borderTop: `1px solid ${C.bd}`, padding: '14px 20px', background: C.sfHover }}>
                     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
                       <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: 10, color: C.txMuted, display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '.08em' }}>{t('chronoAdmin.nombreEquipo')}</label>
-                        <input type="text" value={editTeamDraft.nombre} onChange={e => setEditTeamDraft(p => ({ ...p, nombre: e.target.value }))} style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none' }} />
+                        <label style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '.08em' }}>{t('chronoAdmin.nombreEquipo')}</label>
+                        <input type="text" value={editTeamDraft.nombre} onChange={e => setEditTeamDraft(p => ({ ...p, nombre: e.target.value }))} style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 'var(--fs-xs)', width: '100%', outline: 'none' }} />
                       </div>
                       <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: 10, color: C.txMuted, display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '.08em' }}>{t('chronoAdmin.descripcion')}</label>
-                        <input type="text" value={editTeamDraft.descripcion} onChange={e => setEditTeamDraft(p => ({ ...p, descripcion: e.target.value }))} style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none' }} />
+                        <label style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '.08em' }}>{t('chronoAdmin.descripcion')}</label>
+                        <input type="text" value={editTeamDraft.descripcion} onChange={e => setEditTeamDraft(p => ({ ...p, descripcion: e.target.value }))} style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 'var(--fs-xs)', width: '100%', outline: 'none' }} />
                       </div>
                       <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: 10, color: C.txMuted, display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '.08em' }}>{t('chronoAdmin.manager')}</label>
-                        <select value={editTeamDraft.managerId} onChange={e => setEditTeamDraft(p => ({ ...p, managerId: e.target.value }))} style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 13, width: '100%', outline: 'none' }}>
+                        <label style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '.08em' }}>{t('chronoAdmin.manager')}</label>
+                        <select value={editTeamDraft.managerId} onChange={e => setEditTeamDraft(p => ({ ...p, managerId: e.target.value }))} style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 'var(--fs-xs)', width: '100%', outline: 'none' }}>
                           <option value="">{t('chronoAdmin.seleccionarManager')}</option>
                           {users.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
                         </select>
                       </div>
-                      <button className="ch-btn ch-btn-amber" style={{ height: 34, fontSize: 12 }} onClick={async () => { await equipoRepo.update(equipo.id, { nombre: editTeamDraft.nombre, descripcion: editTeamDraft.descripcion || null, managerId: editTeamDraft.managerId || null }); setEditingTeam(null); load(); }}>{t('chronoAdmin.guardar')}</button>
+                      <button className="ch-btn ch-btn-amber" style={{ height: 34, fontSize: 'var(--fs-xs)' }} onClick={async () => { await equipoRepo.update(equipo.id, { nombre: editTeamDraft.nombre, descripcion: editTeamDraft.descripcion || null, managerId: editTeamDraft.managerId || null }); setEditingTeam(null); load(); }}>{t('chronoAdmin.guardar')}</button>
                     </div>
                   </div>
                 )}
@@ -272,7 +272,7 @@ export function EquiposView({ equipoRepo, users }: Props) {
                   <div className="fade-in" style={{ borderTop: `1px solid ${C.bd}`, padding: '16px 20px' }}>
                     {/* Members list */}
                     {equipo.miembros.length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '20px 0', color: C.txDim, fontSize: 12 }}>
+                      <div style={{ textAlign: 'center', padding: '20px 0', color: C.txDim, fontSize: 'var(--fs-xs)' }}>
                         {t('chronoAdmin.sinMiembros')}
                       </div>
                     ) : (
@@ -283,18 +283,18 @@ export function EquiposView({ equipoRepo, users }: Props) {
                               width: 28, height: 28, borderRadius: '50%',
                               background: `linear-gradient(135deg,${C.amberDim},#78350f)`,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontWeight: 700, color: C.amber, fontFamily: "'IBM Plex Mono',monospace", fontSize: 11,
+                              fontWeight: 700, color: C.amber, fontFamily: "'IBM Plex Mono',monospace", fontSize: 'var(--fs-2xs)',
                             }}>
                               {m.nombre.charAt(0).toUpperCase()}
                             </div>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 13, fontWeight: 500 }}>{m.nombre}</div>
-                              <div style={{ fontSize: 11, color: C.txDim }}>{m.email}</div>
+                              <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 500 }}>{m.nombre}</div>
+                              <div style={{ fontSize: 'var(--fs-2xs)', color: C.txDim }}>{m.email}</div>
                             </div>
                             <button
                               className="ch-btn ch-btn-ghost"
                               onClick={() => handleRemoveMember(equipo.id, m.userId)}
-                              style={{ fontSize: 11, color: C.red, padding: '4px 10px' }}
+                              style={{ fontSize: 'var(--fs-2xs)', color: C.red, padding: '4px 10px' }}
                             >
                               {t('chronoAdmin.quitar')}
                             </button>
@@ -305,7 +305,7 @@ export function EquiposView({ equipoRepo, users }: Props) {
 
                     {/* Add member */}
                     <div style={{ marginBottom: 16 }}>
-                      <div style={{ fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
+                      <div style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
                         {t('chronoAdmin.agregarMiembro')}
                       </div>
                       <input
@@ -313,7 +313,7 @@ export function EquiposView({ equipoRepo, users }: Props) {
                         value={addMemberSearch}
                         onChange={e => setAddMemberSearch(e.target.value)}
                         placeholder={t('chronoAdmin.buscarUsuario')}
-                        style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 13, width: 280, outline: 'none', marginBottom: 6 }}
+                        style={{ background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6, padding: '7px 10px', color: C.tx, fontSize: 'var(--fs-xs)', width: 280, outline: 'none', marginBottom: 6 }}
                       />
                       {addMemberSearch.trim() && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -328,14 +328,14 @@ export function EquiposView({ equipoRepo, users }: Props) {
                               onMouseEnter={e => (e.currentTarget.style.background = C.sfHover)}
                               onMouseLeave={e => (e.currentTarget.style.background = C.sf)}
                             >
-                              <span style={{ fontSize: 12, fontWeight: 500 }}>{u.name || u.full_name || u.email}</span>
-                              <span style={{ fontSize: 11, color: C.txDim }}>{u.email}</span>
+                              <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 500 }}>{u.name || u.full_name || u.email}</span>
+                              <span style={{ fontSize: 'var(--fs-2xs)', color: C.txDim }}>{u.email}</span>
                               <div style={{ flex: 1 }} />
-                              <span style={{ fontSize: 11, color: C.green }}>+ {t('chronoAdmin.agregar')}</span>
+                              <span style={{ fontSize: 'var(--fs-2xs)', color: C.green }}>+ {t('chronoAdmin.agregar')}</span>
                             </div>
                           ))}
                           {getAvailableUsers(equipo).length === 0 && (
-                            <div style={{ fontSize: 12, color: C.txDim, padding: '8px 0' }}>{t('chronoAdmin.sinResultados')}</div>
+                            <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, padding: '8px 0' }}>{t('chronoAdmin.sinResultados')}</div>
                           )}
                         </div>
                       )}
@@ -343,10 +343,10 @@ export function EquiposView({ equipoRepo, users }: Props) {
 
                     {/* Booking zone restrictions */}
                     <div style={{ borderTop: `1px solid ${C.bd}`, paddingTop: 14, marginBottom: 16 }}>
-                      <div style={{ fontSize: 11, color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6, fontWeight: 600 }}>
+                      <div style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6, fontWeight: 600 }}>
                         {t('chronoAdmin.bookingZonesTitle')}
                       </div>
-                      <div style={{ fontSize: 12, color: C.txDim, marginBottom: 10 }}>
+                      <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginBottom: 10 }}>
                         {t('chronoAdmin.bookingZonesHelp')}
                       </div>
                       <textarea
@@ -356,7 +356,7 @@ export function EquiposView({ equipoRepo, users }: Props) {
                         rows={3}
                         style={{
                           background: C.sf, border: `1px solid ${C.bd}`, borderRadius: 6,
-                          padding: '8px 10px', color: C.tx, fontSize: 12, width: '100%',
+                          padding: '8px 10px', color: C.tx, fontSize: 'var(--fs-xs)', width: '100%',
                           outline: 'none', resize: 'vertical', fontFamily: "'IBM Plex Mono',monospace",
                         }}
                       />
@@ -365,7 +365,7 @@ export function EquiposView({ equipoRepo, users }: Props) {
                           <button
                             className="ch-btn ch-btn-ghost"
                             onClick={() => setBookingZonesDraft(prev => { const next = { ...prev }; delete next[equipo.id]; return next; })}
-                            style={{ fontSize: 11, padding: '4px 12px' }}
+                            style={{ fontSize: 'var(--fs-2xs)', padding: '4px 12px' }}
                           >
                             {t('chronoAdmin.cancelar')}
                           </button>
@@ -386,7 +386,7 @@ export function EquiposView({ equipoRepo, users }: Props) {
                               setSavingZones(null);
                             }
                           }}
-                          style={{ fontSize: 11, padding: '4px 12px' }}
+                          style={{ fontSize: 'var(--fs-2xs)', padding: '4px 12px' }}
                         >
                           {savingZones === equipo.id ? t('chronoAdmin.guardando') : t('chronoAdmin.guardarZonas')}
                         </button>
@@ -397,16 +397,16 @@ export function EquiposView({ equipoRepo, users }: Props) {
                     <div style={{ borderTop: `1px solid ${C.bd}`, paddingTop: 14, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                       {confirmDeleteId === equipo.id ? (
                         <>
-                          <span style={{ fontSize: 12, color: C.red, alignSelf: 'center', marginRight: 8 }}>
+                          <span style={{ fontSize: 'var(--fs-xs)', color: C.red, alignSelf: 'center', marginRight: 8 }}>
                             {t('chronoAdmin.confirmarEliminar')}
                           </span>
-                          <button className="ch-btn ch-btn-ghost" onClick={() => setConfirmDeleteId(null)} style={{ fontSize: 11 }}>
+                          <button className="ch-btn ch-btn-ghost" onClick={() => setConfirmDeleteId(null)} style={{ fontSize: 'var(--fs-2xs)' }}>
                             {t('chronoAdmin.cancelar')}
                           </button>
                           <button
                             className="ch-btn ch-btn-ghost"
                             onClick={() => handleDelete(equipo.id)}
-                            style={{ fontSize: 11, color: C.red, borderColor: C.red }}
+                            style={{ fontSize: 'var(--fs-2xs)', color: C.red, borderColor: C.red }}
                           >
                             {t('chronoAdmin.eliminar')}
                           </button>
@@ -415,7 +415,7 @@ export function EquiposView({ equipoRepo, users }: Props) {
                         <button
                           className="ch-btn ch-btn-ghost"
                           onClick={() => setConfirmDeleteId(equipo.id)}
-                          style={{ fontSize: 11, color: C.red }}
+                          style={{ fontSize: 'var(--fs-2xs)', color: C.red }}
                         >
                           {t('chronoAdmin.eliminarEquipo')}
                         </button>

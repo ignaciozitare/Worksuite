@@ -88,8 +88,8 @@ export function FichajesEquipoView({ fichajeRepo }: Props) {
       {/* ── Header ─── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{t('chronoAdmin.fichajesEquipo')}</div>
-          <div style={{ fontSize: 12, color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.fichajesEquipoDesc')}</div>
+          <div style={{ fontSize: 'var(--fs-lg)', fontWeight: 700 }}>{t('chronoAdmin.fichajesEquipo')}</div>
+          <div style={{ fontSize: 'var(--fs-xs)', color: C.txDim, marginTop: 2 }}>{t('chronoAdmin.fichajesEquipoDesc')}</div>
         </div>
       </div>
 
@@ -98,7 +98,7 @@ export function FichajesEquipoView({ fichajeRepo }: Props) {
         <button className="ch-btn ch-btn-ghost" onClick={() => setMes(shiftMonth(mes, -1))}>
           ← {t('chronoAdmin.mesAnterior')}
         </button>
-        <div className="mono" style={{ fontSize: 15, fontWeight: 600, color: C.amber, letterSpacing: '.02em', textTransform: 'capitalize' }}>
+        <div className="mono" style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: C.amber, letterSpacing: '.02em', textTransform: 'capitalize' }}>
           {getMonthLabel(mes)}
         </div>
         <button className="ch-btn ch-btn-ghost" onClick={() => setMes(shiftMonth(mes, 1))}>
@@ -119,27 +119,27 @@ export function FichajesEquipoView({ fichajeRepo }: Props) {
       {/* ── Stat cards ─── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
         <div className="ch-stat" style={{ '--accent': C.amber }}>
-          <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+          <div className="mono" style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
             {t('chronoAdmin.totalRegistros')}
           </div>
-          <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: C.amber, marginTop: 6 }}>{totalRegistros}</div>
+          <div className="mono" style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: C.amber, marginTop: 6 }}>{totalRegistros}</div>
         </div>
         <div className="ch-stat" style={{ '--accent': C.green }}>
-          <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+          <div className="mono" style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
             {t('chronoAdmin.horasTotales')}
           </div>
-          <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: C.green, marginTop: 6 }}>{fmtHours(totalHoras)}</div>
+          <div className="mono" style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: C.green, marginTop: 6 }}>{fmtHours(totalHoras)}</div>
         </div>
         <div className="ch-stat" style={{ '--accent': C.blue }}>
-          <div className="mono" style={{ fontSize: 10, color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+          <div className="mono" style={{ fontSize: 'var(--fs-2xs)', color: C.txMuted, letterSpacing: '.1em', textTransform: 'uppercase' }}>
             {t('chronoAdmin.empleadosActivos')}
           </div>
-          <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: C.blue, marginTop: 6 }}>{employees.length}</div>
+          <div className="mono" style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: C.blue, marginTop: 6 }}>{employees.length}</div>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: '60px 0', color: C.txDim, fontSize: 'var(--fs-xs)' }}>
           {t('chronoAdmin.cargando')}
         </div>
       ) : fichajes.length === 0 ? (
@@ -172,7 +172,7 @@ export function FichajesEquipoView({ fichajeRepo }: Props) {
                           width: 28, height: 28, borderRadius: '50%',
                           background: `linear-gradient(135deg,${C.amberDim},#78350f)`,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontWeight: 700, color: C.amber, fontSize: 11, fontFamily: "'IBM Plex Mono',monospace",
+                          fontWeight: 700, color: C.amber, fontSize: 'var(--fs-2xs)', fontFamily: "'IBM Plex Mono',monospace",
                         }}>
                           {(f.userName || '?').charAt(0).toUpperCase()}
                         </div>

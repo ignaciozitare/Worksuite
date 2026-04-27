@@ -70,11 +70,11 @@ export function AIDetectionsView({ currentUser }: Props) {
   if (connected === false) {
     return (
       <div style={{ maxWidth: 560, margin: '48px auto', textAlign: 'center', color: 'var(--tx3)' }}>
-        <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: .25, display: 'block', marginBottom: 12 }}>mail</span>
-        <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 6, color: 'var(--tx)' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', opacity: .25, display: 'block', marginBottom: 12 }}>mail</span>
+        <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500, marginBottom: 6, color: 'var(--tx)' }}>
           {t('vectorLogic.noGmailConnected')}
         </div>
-        <div style={{ fontSize: 12, opacity: .7 }}>
+        <div style={{ fontSize: 'var(--fs-xs)', opacity: .7 }}>
           {t('vectorLogic.noGmailConnectedHint')}
         </div>
       </div>
@@ -85,10 +85,10 @@ export function AIDetectionsView({ currentUser }: Props) {
     <div style={{ maxWidth: 980 }}>
       <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ flex: 1 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
+          <h2 style={{ fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--tx)', margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
             {t('vectorLogic.aiDetections')}
           </h2>
-          <p style={{ fontSize: 12, color: 'var(--tx3)', marginTop: 4 }}>
+          <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)', marginTop: 4 }}>
             {t('vectorLogic.aiDetectionsDesc')}
           </p>
         </div>
@@ -111,9 +111,9 @@ export function AIDetectionsView({ currentUser }: Props) {
                 background: active ? 'var(--ac)' : 'transparent',
                 color: active ? '#fff' : 'var(--tx3)',
                 border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: active ? 600 : 400,
-                fontSize: 11, padding: '6px 12px', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 5,
+                fontSize: 'var(--fs-2xs)', padding: '6px 12px', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 5,
               }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{x.icon}</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>{x.icon}</span>
               {x.label}
             </button>
           );
@@ -124,9 +124,9 @@ export function AIDetectionsView({ currentUser }: Props) {
         <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--tx3)' }}>{t('common.loading')}</div>
       ) : detections.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--tx3)', background: 'var(--sf2)', borderRadius: 12 }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: .25, display: 'block', marginBottom: 12 }}>inbox</span>
-          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>{t('vectorLogic.noDetections')}</div>
-          <div style={{ fontSize: 11, opacity: .7 }}>{t('vectorLogic.noDetectionsHint')}</div>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', opacity: .25, display: 'block', marginBottom: 12 }}>inbox</span>
+          <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 500, marginBottom: 4 }}>{t('vectorLogic.noDetections')}</div>
+          <div style={{ fontSize: 'var(--fs-2xs)', opacity: .7 }}>{t('vectorLogic.noDetectionsHint')}</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -141,10 +141,10 @@ export function AIDetectionsView({ currentUser }: Props) {
               onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--bd)'}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {d.proposedTitle ?? d.subject ?? t('vectorLogic.noSubject')}
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--tx3)', marginTop: 4, display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', marginTop: 4, display: 'flex', gap: 8, alignItems: 'center' }}>
                     <span>{d.fromName || d.fromEmail}</span>
                     <span style={{ opacity: .5 }}>•</span>
                     <span>{new Date(d.gmailReceivedAt).toLocaleString()}</span>
@@ -232,28 +232,28 @@ function DetectionDetail({ detection, taskTypes, priorities, canAct, onApprove, 
         overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,.6)',
       }}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--bd)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 20, color: 'var(--ac)' }}>mail</span>
-          <h3 style={{ flex: 1, fontSize: 14, fontWeight: 700, color: 'var(--tx)', margin: 0 }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)', color: 'var(--ac)' }}>mail</span>
+          <h3 style={{ flex: 1, fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--tx)', margin: 0 }}>
             {detection.subject ?? t('vectorLogic.noSubject')}
           </h3>
           <a href={gmailThreadUrl(detection.gmailThreadId)} target="_blank" rel="noopener noreferrer"
-            style={{ fontSize: 11, color: 'var(--ac)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-            {t('vectorLogic.openInGmail')} <span className="material-symbols-outlined" style={{ fontSize: 14 }}>open_in_new</span>
+            style={{ fontSize: 'var(--fs-2xs)', color: 'var(--ac)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+            {t('vectorLogic.openInGmail')} <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>open_in_new</span>
           </a>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>close</span>
           </button>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ fontSize: 11, color: 'var(--tx3)', display: 'flex', gap: 12 }}>
+          <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', display: 'flex', gap: 12 }}>
             <span><b>{t('vectorLogic.from')}:</b> {detection.fromName ? `${detection.fromName} <${detection.fromEmail}>` : detection.fromEmail}</span>
             <span><b>{t('vectorLogic.received')}:</b> {new Date(detection.gmailReceivedAt).toLocaleString()}</span>
           </div>
 
           {detection.bodySnippet && (
             <div style={{
-              background: 'var(--sf2)', padding: 12, borderRadius: 8, fontSize: 12,
+              background: 'var(--sf2)', padding: 12, borderRadius: 8, fontSize: 'var(--fs-xs)',
               color: 'var(--tx2)', maxHeight: 160, overflowY: 'auto', whiteSpace: 'pre-wrap',
             }}>
               {detection.bodySnippet}
@@ -262,7 +262,7 @@ function DetectionDetail({ detection, taskTypes, priorities, canAct, onApprove, 
 
           <div style={{ height: 1, background: 'var(--bd)' }} />
 
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+          <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
             {t('vectorLogic.proposedTask')}
           </div>
 
@@ -299,7 +299,7 @@ function DetectionDetail({ detection, taskTypes, priorities, canAct, onApprove, 
           </div>
 
           {detection.status === 'failed' && detection.errorMessage && (
-            <div style={{ fontSize: 11, color: 'var(--red)', background: 'rgba(224,82,82,.08)', padding: 10, borderRadius: 6, fontFamily: 'monospace' }}>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--red)', background: 'rgba(224,82,82,.08)', padding: 10, borderRadius: 6, fontFamily: 'monospace' }}>
               {detection.errorMessage}
             </div>
           )}
@@ -308,19 +308,19 @@ function DetectionDetail({ detection, taskTypes, priorities, canAct, onApprove, 
         {canAct && (
           <div style={{ padding: '14px 20px', borderTop: '1px solid var(--bd)', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={doReject} disabled={busy} style={{
-              padding: '8px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              padding: '8px 16px', borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer',
               background: 'rgba(224,82,82,.08)', color: 'var(--red)', border: '1px solid rgba(224,82,82,.2)',
               fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6,
             }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>close</span>
               {t('vectorLogic.reject')}
             </button>
             <button onClick={doApprove} disabled={busy} style={{
-              padding: '8px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              padding: '8px 16px', borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 600, cursor: 'pointer',
               background: 'var(--green)', color: '#fff', border: 'none',
               fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6,
             }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>check</span>
               {busy ? t('common.loading') : t('vectorLogic.approveAndCreate')}
             </button>
           </div>
@@ -359,14 +359,14 @@ function PollNowButton({ onComplete }: { onComplete: () => void | Promise<void> 
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      {result && <span style={{ fontSize: 10, color: 'var(--tx3)', maxWidth: 260, textAlign: 'right' }}>{result}</span>}
+      {result && <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', maxWidth: 260, textAlign: 'right' }}>{result}</span>}
       <button onClick={run} disabled={busy}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-          borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: busy ? 'wait' : 'pointer', border: 'none',
+          borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-xs)', cursor: busy ? 'wait' : 'pointer', border: 'none',
           fontFamily: 'inherit', background: 'var(--ac)', color: '#fff',
         }}>
-        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{busy ? 'hourglass_empty' : 'refresh'}</span>
+        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>{busy ? 'hourglass_empty' : 'refresh'}</span>
         {busy ? t('common.loading') : t('vectorLogic.pollNow')}
       </button>
     </div>
@@ -374,12 +374,12 @@ function PollNowButton({ onComplete }: { onComplete: () => void | Promise<void> 
 }
 
 const inpStyle = {
-  width: '100%', padding: '7px 10px', fontSize: 12, fontFamily: 'inherit',
+  width: '100%', padding: '7px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
   background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6,
   color: 'var(--tx)', outline: 'none',
 } as const;
 
 const lblStyle = {
-  fontSize: 10, fontWeight: 700, color: 'var(--tx3)',
+  fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
   textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 5,
 } as const;

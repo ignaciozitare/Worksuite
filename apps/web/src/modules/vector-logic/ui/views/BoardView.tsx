@@ -376,11 +376,11 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
           position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
           padding: '10px 14px', borderRadius: 8,
           background: 'var(--amber-dim)', color: 'var(--amber)',
-          fontSize: 13, fontWeight: 500,
+          fontSize: 'var(--fs-xs)', fontWeight: 500,
           display: 'flex', alignItems: 'center', gap: 8,
           boxShadow: '0 8px 30px rgba(0,0,0,.4)', maxWidth: 360,
         }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>warning</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-md)' }}>warning</span>
           <span>{toast}</span>
         </div>
       )}
@@ -389,30 +389,30 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <h2 style={{
-              fontSize: 22, fontWeight: 600, color: 'var(--tx)', margin: 0,
+              fontSize: 'var(--fs-lg)', fontWeight: 600, color: 'var(--tx)', margin: 0,
               letterSpacing: '-0.01em', fontFamily: "'Space Grotesk',sans-serif",
             }}>
               {board.name}
             </h2>
             <span style={S.visibilityBadge(board.visibility)}>
-              <span className="material-symbols-outlined" style={{ fontSize: 11 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>
                 {board.visibility === 'shared' ? 'groups' : 'person'}
               </span>
               {board.visibility === 'shared' ? t('vectorLogic.boardShared') : t('vectorLogic.boardPersonal')}
             </span>
           </div>
-          <span style={{ fontSize: 12, color: 'var(--tx3)' }}>
+          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx3)' }}>
             {distinctTypeCount} {t('vectorLogic.taskTypesShort')} · {totalActive} {t('vectorLogic.tasks')}
           </span>
         </div>
         {canEditConfig && (
           <button type="button" onClick={() => onEditBoard(board.id)} style={S.editButton}>
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>edit</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>edit</span>
             {t('vectorLogic.editBoardTitle')}
           </button>
         )}
         <button type="button" onClick={handleNewTask} style={S.newTaskButton}>
-          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>add</span>
           {t('vectorLogic.newTask')}
         </button>
       </div>
@@ -436,7 +436,7 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
       {/* Columns */}
       {sortedColumns.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--tx3)' }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: .2, display: 'block', marginBottom: 12 }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', opacity: .2, display: 'block', marginBottom: 12 }}>
             view_kanban
           </span>
           {t('vectorLogic.boardNoColumns')}
@@ -489,7 +489,7 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
                 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: accent }} />
                   <span style={{
-                    fontSize: 12, fontWeight: 700, color: 'var(--tx)',
+                    fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--tx)',
                     textTransform: 'uppercase', letterSpacing: '.05em', flex: 1,
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   }}>
@@ -501,15 +501,15 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
                       padding: '2px 7px', borderRadius: 5,
                       background: wipReached ? 'var(--amber-dim)' : 'var(--sf3)',
                       color: wipReached ? 'var(--amber)' : 'var(--tx2)',
-                      fontSize: 10, fontWeight: 700,
+                      fontSize: 'var(--fs-2xs)', fontWeight: 700,
                     }}>
                       {wipReached && (
-                        <span className="material-symbols-outlined" style={{ fontSize: 11 }}>warning</span>
+                        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>warning</span>
                       )}
                       {colTasks.length} / {col.wipLimit}
                     </span>
                   ) : (
-                    <span style={{ fontSize: 10, color: 'var(--tx3)', fontWeight: 600 }}>
+                    <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', fontWeight: 600 }}>
                       {colTasks.length}
                     </span>
                   )}
@@ -540,9 +540,9 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
                     background: 'var(--amber-dim)', color: 'var(--amber)',
-                    fontSize: 11, fontWeight: 600,
+                    fontSize: 'var(--fs-2xs)', fontWeight: 600,
                   }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>warning</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>warning</span>
                     {t('vectorLogic.boardWipLimitReached')}
                   </div>
                 )}
@@ -655,18 +655,18 @@ const S = {
     padding: '3px 8px', borderRadius: 5,
     background: visibility === 'shared' ? 'var(--ac-dim)' : 'rgba(181,124,246,.15)',
     color: visibility === 'shared' ? 'var(--ac-strong)' : 'var(--purple)',
-    fontSize: 9, fontWeight: 700, letterSpacing: '0.05em',
+    fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '0.05em',
   }),
   editButton: {
     display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px',
     background: 'var(--sf2)', border: '1px solid var(--bd)', color: 'var(--tx)',
-    borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer',
+    borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 500, cursor: 'pointer',
     fontFamily: 'inherit',
   } as React.CSSProperties,
   newTaskButton: {
     display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px',
     background: 'linear-gradient(135deg, var(--ac), var(--ac-strong))', border: 'none',
-    color: 'var(--ac-on)', borderRadius: 8, fontSize: 13, fontWeight: 600,
+    color: 'var(--ac-on)', borderRadius: 8, fontSize: 'var(--fs-xs)', fontWeight: 600,
     cursor: 'pointer', fontFamily: 'inherit',
     boxShadow: '0 4px 12px var(--ac-dim)',
   } as React.CSSProperties,

@@ -259,16 +259,16 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 4 }}>
         <span style={{
-          fontSize: 9, fontWeight: 700, color: 'var(--tx3)',
+          fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
           letterSpacing: '.1em', textTransform: 'uppercase',
         }}>{title}</span>
-        <span style={{ fontSize: 9, color: 'var(--tx3)', opacity: .6 }}>
+        <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', opacity: .6 }}>
           · {colFields.length} {t('vectorLogic.fieldsWord')}
         </span>
       </div>
 
       {colFields.length === 0 && !dragOver && (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--tx3)', fontSize: 11 }}>
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--tx3)', fontSize: 'var(--fs-2xs)' }}>
           {t('vectorLogic.dropFieldHere')}
         </div>
       )}
@@ -329,9 +329,9 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                 display: 'flex', flexDirection: 'column', gap: 6,
               }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)', opacity: .6, flexShrink: 0 }}>drag_indicator</span>
-                <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--ac)', flexShrink: 0 }}>{def?.icon}</span>
-                <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)', opacity: .6, flexShrink: 0 }}>drag_indicator</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--ac)', flexShrink: 0 }}>{def?.icon}</span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {field.label}
                 </span>
                 <button
@@ -339,13 +339,13 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx3)', opacity: .5, padding: 0, display: 'flex', flexShrink: 0 }}
                   title={t('common.delete')}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>close</span>
                 </button>
               </div>
               {(field.required || field.showOnCreate || field.showOnDetail || field.showOnCard) && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, paddingLeft: 28 }}>
                   {field.required && (
-                    <span style={{ fontSize: 8, padding: '2px 6px', borderRadius: 3, background: 'var(--red-dim)', color: 'var(--red)', fontWeight: 700 }}>
+                    <span style={{ fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3, background: 'var(--red-dim)', color: 'var(--red)', fontWeight: 700 }}>
                       {t('vectorLogic.badgeRequired')}
                     </span>
                   )}
@@ -396,7 +396,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
             : 'transparent',
           transition: 'all .15s',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--tx3)', fontSize: 10,
+          color: 'var(--tx3)', fontSize: 'var(--fs-2xs)',
         }}
       >
         {dragOver?.column === column && dragOver.idx === colFields.length
@@ -418,7 +418,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
       }}>
         <div style={{ padding: '16px 14px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 style={{ fontSize: 10, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.1em' }}>
+          <h3 style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.1em' }}>
             {t('vectorLogic.taskTypes')}
           </h3>
           <button onClick={() => setShowNewType(true)}
@@ -428,7 +428,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
               width: 22, height: 22, cursor: 'pointer', display: 'flex',
               alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
             }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>add</span>
           </button>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 12px' }}>
@@ -449,19 +449,19 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                 onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}>
                 <span className="material-symbols-outlined"
                   style={{
-                    fontSize: 18,
+                    fontSize: 'var(--fs-md)',
                     color: tt.iconColor || (isSelected ? 'var(--ac)' : 'var(--tx3)'),
                   }}>
                   {tt.icon || 'task_alt'}
                 </span>
-                <span style={{ flex: 1, fontSize: 12, color: 'var(--tx)', fontWeight: isSelected ? 600 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ flex: 1, fontSize: 'var(--fs-xs)', color: 'var(--tx)', fontWeight: isSelected ? 600 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {tt.name}
                 </span>
               </div>
             );
           })}
           {taskTypes.length === 0 && (
-            <div style={{ fontSize: 11, color: 'var(--tx3)', textAlign: 'center', padding: '20px 12px', opacity: .5, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', textAlign: 'center', padding: '20px 12px', opacity: .5, lineHeight: 1.5 }}>
               {t('vectorLogic.noTaskTypesYet')}
             </div>
           )}
@@ -477,13 +477,13 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
           }}>
             <div style={{ padding: '16px 14px 8px' }}>
-              <h3 style={{ fontSize: 10, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 8 }}>
+              <h3 style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 8 }}>
                 {t('vectorLogic.fieldLibrary')}
               </h3>
               <input value={search} onChange={e => setSearch(e.target.value)}
                 placeholder={t('vectorLogic.searchFields')}
                 style={{
-                  width: '100%', padding: '5px 8px', fontSize: 11, fontFamily: 'inherit',
+                  width: '100%', padding: '5px 8px', fontSize: 'var(--fs-2xs)', fontFamily: 'inherit',
                   background: 'var(--sf2)', border: '1px solid var(--bd)', borderRadius: 6,
                   color: 'var(--tx)', outline: 'none',
                 }} />
@@ -494,7 +494,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                 if (!items.length) return null;
                 return (
                   <div key={cat}>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.1em', padding: '10px 4px 4px' }}>
+                    <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)', textTransform: 'uppercase', letterSpacing: '.1em', padding: '10px 4px 4px' }}>
                       {catLabel[cat] || cat}
                     </div>
                     {items.map(f => (
@@ -510,14 +510,14 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                         style={{
                           display: 'flex', alignItems: 'center', gap: 8, width: '100%',
                           padding: '6px 8px', borderRadius: 6, cursor: 'grab',
-                          background: 'transparent', color: 'var(--tx)', fontSize: 11,
+                          background: 'transparent', color: 'var(--tx)', fontSize: 'var(--fs-2xs)',
                           fontFamily: 'inherit', transition: 'all .12s', textAlign: 'left',
                           userSelect: 'none',
                         }}
                         onMouseEnter={e => { e.currentTarget.style.background = 'var(--sf2)'; e.currentTarget.style.transform = 'translateX(2px)'; }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateX(0)'; }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--tx3)', opacity: .5 }}>drag_indicator</span>
-                        <span className="material-symbols-outlined" style={{ fontSize: 15, color: 'var(--ac)' }}>{f.icon}</span>
+                        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)', color: 'var(--tx3)', opacity: .5 }}>drag_indicator</span>
+                        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)', color: 'var(--ac)' }}>{f.icon}</span>
                         <span>{t(f.labelKey)}</span>
                       </div>
                     ))}
@@ -545,7 +545,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                   onBlur={renameSelectedType}
                   onKeyDown={e => { if (e.key === 'Enter') renameSelectedType(); if (e.key === 'Escape') setRenamingType(false); }}
                   style={{
-                    fontSize: 18, fontWeight: 700, fontFamily: "'Space Grotesk',sans-serif",
+                    fontSize: 'var(--fs-md)', fontWeight: 700, fontFamily: "'Space Grotesk',sans-serif",
                     background: 'var(--sf2)', border: '1px solid var(--ac)', borderRadius: 6,
                     color: 'var(--tx)', padding: '4px 8px', outline: 'none',
                   }} />
@@ -553,7 +553,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                 <h2 onClick={() => { setRenameValue(selected.name); setRenamingType(true); }}
                   title={t('vectorLogic.clickToRename')}
                   style={{
-                    fontSize: 18, fontWeight: 700, color: 'var(--tx)', margin: 0,
+                    fontSize: 'var(--fs-md)', fontWeight: 700, color: 'var(--tx)', margin: 0,
                     fontFamily: "'Space Grotesk',sans-serif", cursor: 'pointer',
                     padding: '4px 8px', borderRadius: 6, transition: 'background .12s',
                   }}
@@ -563,7 +563,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                 </h2>
               )}
               <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-                {saved && <span style={{ fontSize: 11, color: 'var(--green)', fontWeight: 600 }}>✓ {t('admin.envSaved')}</span>}
+                {saved && <span style={{ fontSize: 'var(--fs-2xs)', color: 'var(--green)', fontWeight: 600 }}>✓ {t('admin.envSaved')}</span>}
                 <MultiSelectDropdown
                   triggerLabel={t('vectorLogic.cardLayout')}
                   triggerIcon="view_agenda"
@@ -592,7 +592,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                   noMatchesText={t('vectorLogic.cardLayoutNoMatches')}
                 />
                 <button onClick={deleteSelectedType} style={btnStyle('danger')}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>delete</span>
                 </button>
                 <button onClick={saveSchema} disabled={saving} style={btnStyle('primary')}>
                   {saving ? t('common.loading') : t('vectorLogic.saveSchema')}
@@ -628,7 +628,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                 cardFieldCount={cardFieldCount}
               />
             ) : (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx3)', fontSize: 12, padding: 20, textAlign: 'center' }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--tx3)', fontSize: 'var(--fs-xs)', padding: 20, textAlign: 'center' }}>
                 {t('vectorLogic.selectFieldToEdit')}
               </div>
             )}
@@ -636,10 +636,10 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
         </>
       ) : (
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'var(--tx3)' }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 56, opacity: .2, marginBottom: 12 }}>category</span>
-          <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>{t('vectorLogic.noTaskTypeSelected')}</div>
+          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-lg)', opacity: .2, marginBottom: 12 }}>category</span>
+          <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500, marginBottom: 4 }}>{t('vectorLogic.noTaskTypeSelected')}</div>
           <button onClick={() => setShowNewType(true)} style={{ ...btnStyle('primary'), marginTop: 16 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>add</span>
             {t('vectorLogic.newTaskType')}
           </button>
         </div>
@@ -655,7 +655,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
             background: 'var(--sf)', border: '1px solid var(--bd)', borderRadius: 16,
             width: '100%', maxWidth: 440, padding: 24, boxShadow: '0 24px 80px rgba(0,0,0,.6)',
           }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--tx)', margin: '0 0 18px' }}>
+            <h3 style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--tx)', margin: '0 0 18px' }}>
               {t('vectorLogic.newTaskType')}
             </h3>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
@@ -677,7 +677,7 @@ export function SchemaBuilderView({ currentUser, wsUsers = [] }: Props) {
                   style={inpStyle()} />
               </div>
             </div>
-            <p style={{ fontSize: 11, color: 'var(--tx3)', lineHeight: 1.5, marginBottom: 16 }}>
+            <p style={{ fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', lineHeight: 1.5, marginBottom: 16 }}>
               {t('vectorLogic.newTaskTypeHint')}
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
@@ -707,7 +707,7 @@ function FieldSettingsPanel({ field, onUpdate, cardFieldCount }: {
 
   return (
     <div style={{ padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', flex: 1 }}>
-      <h3 style={{ fontSize: 12, fontWeight: 700, color: 'var(--tx)', textTransform: 'uppercase', letterSpacing: '.08em' }}>
+      <h3 style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--tx)', textTransform: 'uppercase', letterSpacing: '.08em' }}>
         {t('vectorLogic.fieldSettings')}
       </h3>
 
@@ -729,7 +729,7 @@ function FieldSettingsPanel({ field, onUpdate, cardFieldCount }: {
                 flex: 1, padding: '5px 10px', borderRadius: 4, border: 'none',
                 background: currentColumn === 'main' ? 'var(--ac)' : 'transparent',
                 color: currentColumn === 'main' ? 'var(--ac-on)' : 'var(--tx2)',
-                fontSize: 10, fontWeight: 700, letterSpacing: '.04em',
+                fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '.04em',
                 fontFamily: 'inherit', cursor: 'pointer',
               }}
             >
@@ -741,7 +741,7 @@ function FieldSettingsPanel({ field, onUpdate, cardFieldCount }: {
                 flex: 1, padding: '5px 10px', borderRadius: 4, border: 'none',
                 background: currentColumn === 'sidebar' ? 'var(--ac)' : 'transparent',
                 color: currentColumn === 'sidebar' ? 'var(--ac-on)' : 'var(--tx2)',
-                fontSize: 10, fontWeight: 700, letterSpacing: '.04em',
+                fontSize: 'var(--fs-2xs)', fontWeight: 700, letterSpacing: '.04em',
                 fontFamily: 'inherit', cursor: 'pointer',
               }}
             >
@@ -787,15 +787,15 @@ function FieldSettingsPanel({ field, onUpdate, cardFieldCount }: {
                   newOpts[i] = e.target.value;
                   onUpdate({ options: newOpts });
                 }}
-                style={{ ...inpStyle(), fontSize: 11 }} />
+                style={{ ...inpStyle(), fontSize: 'var(--fs-2xs)' }} />
               <button onClick={() => onUpdate({ options: (field.options ?? []).filter((_, j) => j !== i) })}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', fontSize: 14 }}>×</button>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', fontSize: 'var(--fs-sm)' }}>×</button>
             </div>
           ))}
           <button onClick={() => onUpdate({ options: [...(field.options ?? []), `${t('vectorLogic.defaultOption')} ${(field.options?.length || 0) + 1}`] })}
             style={{
               background: 'none', border: '1px dashed var(--bd)', borderRadius: 6,
-              padding: '4px 10px', fontSize: 11, color: 'var(--tx3)', cursor: 'pointer',
+              padding: '4px 10px', fontSize: 'var(--fs-2xs)', color: 'var(--tx3)', cursor: 'pointer',
               fontFamily: 'inherit', width: '100%', marginTop: 4,
             }}>+ {t('vectorLogic.addOption')}</button>
         </div>
@@ -807,7 +807,7 @@ function FieldSettingsPanel({ field, onUpdate, cardFieldCount }: {
 function TogglePill({ color, dim, label }: { color: string; dim: string; label: string }) {
   return (
     <span style={{
-      fontSize: 8, padding: '2px 6px', borderRadius: 3,
+      fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3,
       background: dim, color: color,
       fontWeight: 700, letterSpacing: '.04em',
     }}>{label}</span>
@@ -822,7 +822,7 @@ function ToggleRow({ label, value, onChange, color, disabled }: {
       display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0',
       opacity: disabled ? 0.4 : 1,
     }}>
-      <span style={{ fontSize: 12, color: 'var(--tx)' }}>{label}</span>
+      <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--tx)' }}>{label}</span>
       <button onClick={() => { if (!disabled) onChange(!value); }}
         disabled={disabled}
         style={{
@@ -841,7 +841,7 @@ function ToggleRow({ label, value, onChange, color, disabled }: {
 
 const btnStyle = (variant = 'primary', extra = {}) => ({
   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-  borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer', border: 'none',
+  borderRadius: 8, fontWeight: 600, fontSize: 'var(--fs-xs)', cursor: 'pointer', border: 'none',
   fontFamily: 'inherit', transition: 'all .2s',
   ...(variant === 'primary' && {
     background: 'linear-gradient(135deg, var(--ac2), var(--ac))',
@@ -863,12 +863,12 @@ const btnStyle = (variant = 'primary', extra = {}) => ({
 });
 
 const inpStyle = (extra = {}) => ({
-  width: '100%', padding: '7px 10px', fontSize: 12, fontFamily: 'inherit',
+  width: '100%', padding: '7px 10px', fontSize: 'var(--fs-xs)', fontFamily: 'inherit',
   background: 'var(--sf2)', border: '1px solid var(--bd)',
   borderRadius: 6, color: 'var(--tx)', outline: 'none', ...extra,
 });
 
 const lblStyle = {
-  fontSize: 10, fontWeight: 700, color: 'var(--tx3)',
+  fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx3)',
   textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 5,
 };
