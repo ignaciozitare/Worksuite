@@ -1158,8 +1158,10 @@ function TaskCard({
   const overflowExtras = extraUsers.length - visibleExtras.length;
 
   // Due-date color (also used for a "due" chip in the default layout).
-  let dueColor = 'var(--tx3)';
-  let dueBg = 'transparent';
+  // Default `--tx` so the chip is legible on the dark chip background;
+  // overdue/today keep their semantic red/amber for urgency.
+  let dueColor = 'var(--tx)';
+  let dueBg: string = 'var(--sf2)';
   let dueLabel: string | null = null;
   if (task.dueDate) {
     const daysUntil = daysBetween(task.dueDate, now) * -1;
@@ -1262,7 +1264,7 @@ function TaskCard({
               <span key={field.id} style={{
                 fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3,
                 background: isDue ? dueBg : 'var(--sf2)',
-                color: isDue ? dueColor : 'var(--tx2)',
+                color: isDue ? dueColor : 'var(--tx)',
                 fontWeight: 700, letterSpacing: '.04em',
                 display: 'inline-flex', alignItems: 'center', gap: 3,
                 maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -1311,7 +1313,7 @@ function TaskCard({
         {daysInColumn > 0 && (
           <span style={{
             fontSize: 'var(--fs-2xs)', padding: '2px 6px', borderRadius: 3,
-            background: 'var(--sf2)', color: 'var(--tx3)',
+            background: 'var(--sf2)', color: 'var(--tx)',
             fontWeight: 700, letterSpacing: '.04em',
           }}>
             {daysInColumn}d
