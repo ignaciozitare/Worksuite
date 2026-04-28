@@ -23,6 +23,9 @@ export interface CardProgressBarsProps {
  * pick the right contrast automatically.
  */
 export function CardProgressBars({ task, schema, subtasks = [], stateCategoryById }: CardProgressBarsProps) {
+  // ToDo bars use green for the "checked" state — they're checklist progress.
+  // The subtasks bar uses purple to differentiate visually (subtasks are tasks,
+  // not checklist items, so a different hue is intentional).
   const todoBars = schema
     .filter(f => f.fieldType === 'todo')
     .sort((a, b) => a.order - b.order)
@@ -30,9 +33,9 @@ export function CardProgressBars({ task, schema, subtasks = [], stateCategoryByI
       const items = (task.data ?? {})[f.id];
       if (!Array.isArray(items) || items.length === 0) return null;
       const segments = (items as Array<{ checked?: boolean }>).map(it => !!it?.checked);
-      return { key: `todo-${f.id}`, segments };
+      return { key: `todo-${f.id}`, segments, color: 'var(--green)' as string };
     })
-    .filter((b): b is { key: string; segments: boolean[] } => b !== null);
+    .filter((b): b is { key: string; segments: boolean[]; color: string } => b !== null);
 
   const subtaskBar = subtasks.length > 0
     ? {
@@ -41,6 +44,7 @@ export function CardProgressBars({ task, schema, subtasks = [], stateCategoryByI
           const cat = c.stateId ? (stateCategoryById?.get(c.stateId) ?? null) : null;
           return cat === 'DONE';
         }),
+        color: 'var(--purple)' as string,
       }
     : null;
 
@@ -81,7 +85,7 @@ export function CardProgressBars({ task, schema, subtasks = [], stateCategoryByI
               key={i}
               style={{
                 flex: 1,
-                background: done ? 'var(--green)' : 'var(--sf2)',
+                background: done ? bar.color : 'var(--sf2)',
                 transition: 'background-color .15s',
               }}
             />

@@ -1006,6 +1006,15 @@ export function KanbanView({ currentUser, wsUsers = [] }: Props) {
           onDelete={() => removeTask(detailTask.id)}
           onClone={() => { setCloningTask(detailTask); setDetailTask(null); }}
           onConfigure={() => { handleConfigureType(detailTask.taskTypeId); setDetailTask(null); }}
+          onSubtaskChanged={(sub) => {
+            // Upsert into the kanban's tasks list so the parent card's
+            // bottom subtask bar refreshes immediately.
+            setTasks(prev => {
+              const idx = prev.findIndex(t => t.id === sub.id);
+              if (idx >= 0) { const next = [...prev]; next[idx] = sub; return next; }
+              return [...prev, sub];
+            });
+          }}
           onOpenTask={async (id) => {
             const found = await taskRepo.findById(id);
             if (found) setDetailTask(found);
@@ -1053,16 +1062,18 @@ function daysBetween(iso: string, now: Date): number {
 }
 
 /** Reads the display value for a card chip — routes native-shadowed types
- *  (assignee/due_date) to native columns. Returns null for anything empty. */
-function readCardFieldValue(task: Task, field: SchemaField): unknown {
+ *  (assignee/due_date) to native columns. Returns null for anything empty.
+ *  Exported so BoardTaskCard can reuse the same lookup. */
+export function readCardFieldValue(task: Task, field: SchemaField): unknown {
   if (field.fieldType === 'due_date') return task.dueDate;
   if (field.fieldType === 'assignee') return task.assigneeId;
   if (field.fieldType === 'title')    return task.title;
   return (task.data ?? {})[field.id];
 }
 
-/** Turns a value into a short string for a card chip. */
-function formatCardValue(field: SchemaField, v: unknown): string | null {
+/** Turns a value into a short string for a card chip. Exported so the
+ *  BoardTaskCard can render the same chip rail as the Kanban TaskCard. */
+export function formatCardValue(field: SchemaField, v: unknown): string | null {
   if (v === null || v === undefined || v === '') return null;
   if (field.fieldType === 'due_date' || field.fieldType === 'date' || field.fieldType === 'start_date') {
     const d = new Date(v as string);
@@ -1447,7 +1458,7 @@ function NewTaskModal({ taskTypes, priorities, defaultTypeId, onClose, onCreate 
 }
 
 /* ── Task Detail Modal ─────────────────────────────────────────────────── */
-export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorities, currentUser, onClose, onUpdate, onDelete, onOpenTask, onClone, onConfigure, isAdmin = false }: {
+export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, priorities, currentUser, onClose, onUpdate, onDelete, onOpenTask, onClone, onConfigure, onSubtaskChanged, isAdmin = false }: {
   task: Task; taskType: TaskType; taskTypes: TaskType[]; wfStates: WorkflowState[];
   wsUsers: WSUser[];
   priorities: Priority[];
@@ -1459,6 +1470,10 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
   onClone?: () => void;
   /** Navigate to Schema Builder with this task's type pre-selected. */
   onConfigure?: () => void;
+  /** Notify the parent when a subtask was created or updated from inside
+   *  the modal, so it can keep its `tasks` state in sync (the card-level
+   *  subtask progress bar reads from there). */
+  onSubtaskChanged?: (subtask: Task) => void;
   /** Whether the current user is admin — gates the "Configure" item. */
   isAdmin?: boolean;
 }) {
@@ -1545,7 +1560,10 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
       ?? (isDone ? wfs.find(ws => ws.isInitial) ?? wfs[0] : wfs[wfs.length - 1]);
     if (!target) return;
     await taskRepo.moveToState(sub.id, target.stateId);
-    setSubtasks(prev => prev.map(s => s.id === sub.id ? { ...s, stateId: target.stateId } : s));
+    const next: Task = { ...sub, stateId: target.stateId };
+    setSubtasks(prev => prev.map(s => s.id === sub.id ? next : s));
+    // Bubble up so the card's bottom subtask bar reflects the new state.
+    onSubtaskChanged?.(next);
   };
 
   const stateById = useMemo(() => {
@@ -1588,6 +1606,9 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
         parentTaskId: task.id,
       });
       setSubtasks(prev => [...prev, created]);
+      // Bubble up so the parent's tasks state grows to include the new
+      // child — the card's bottom subtask bar gets a fresh segment.
+      onSubtaskChanged?.(created);
       setSubtaskTitle('');
       setShowSubtaskForm(false);
     } finally {
