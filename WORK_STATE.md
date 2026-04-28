@@ -1,12 +1,16 @@
 # WORK_STATE
 
-_Ultima actualizacion: 2026-04-28_
+_Ultima actualizacion: 2026-04-28 (cont. — subtask row fixes)_
 
 ---
 
 ## Tarea en curso
 
-Sin tarea pendiente. Esperando próximo trabajo.
+**Pendiente merge a main** — fix de subtareas en TaskDetailModal:
+- Bug: click en subtarea desde el modal (en BoardView) no abría — `onOpenTask` recibía un id pero `openTaskDetail` esperaba un `Task` entero. Iguala BoardView al patrón de KanbanView (lookup por id antes).
+- Feature: chips inline en cada fila de subtarea (estado / prioridad / asignado / due date). Cada chip se renderiza solo si el dato existe.
+
+Spec: `specs/modules/vector-logic/SPEC.md` "Phase 5 — Subtask row fixes en TaskDetailModal (revisión 2026-04-28)". Sin migration, sin keys nuevas. Build local verde, Review ✅, QA ✅. User confirmó smoke test.
 
 ---
 

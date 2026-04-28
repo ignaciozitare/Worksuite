@@ -1549,10 +1549,18 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
   };
 
   const stateById = useMemo(() => {
-    const m: Record<string, { name?: string; category?: string }> = {};
-    wfStates.forEach(ws => { m[ws.stateId] = { name: ws.state?.name, category: ws.state?.category }; });
+    const m: Record<string, { name?: string; category?: string; color?: string | null }> = {};
+    wfStates.forEach(ws => { m[ws.stateId] = { name: ws.state?.name, category: ws.state?.category, color: ws.state?.color }; });
     return m;
   }, [wfStates]);
+
+  /** Lowercased priority name → Priority. Used by subtask rows to show
+   *  a color/icon chip even if the priority isn't in the open task's type. */
+  const priorityByName = useMemo(() => {
+    const m: Record<string, Priority> = {};
+    priorities.forEach(p => { m[p.name.toLowerCase()] = p; });
+    return m;
+  }, [priorities]);
 
   const subtaskStats = useMemo(() => {
     const done = subtasks.filter(s => stateById[s.stateId ?? '']?.category === 'DONE').length;
@@ -1806,9 +1814,30 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {subtasks.map(s => {
-                  const done = stateById[s.stateId ?? '']?.category === 'DONE';
+                  const stateInfo = stateById[s.stateId ?? ''];
+                  const done = stateInfo?.category === 'DONE';
                   const isDragging = dragSubId === s.id;
                   const isDragOver  = dragOverSubId === s.id && dragSubId && dragSubId !== s.id;
+
+                  // Resolve subtask metadata for the inline chips. Each chip is
+                  // independent — missing data simply omits its chip rather
+                  // than rendering a placeholder, so a sparsely-populated
+                  // subtask still renders a clean compact row.
+                  const subAssignee = s.assigneeId ? wsUsers.find(u => u.id === s.assigneeId) ?? null : null;
+                  const subPriority = s.priority ? priorityByName[s.priority.toLowerCase()] ?? null : null;
+                  let subDueLabel: string | null = null;
+                  let subDueColor = 'var(--tx3)';
+                  let subDueBg = 'var(--sf3)';
+                  if (s.dueDate) {
+                    const d = new Date(s.dueDate);
+                    if (!isNaN(d.getTime())) {
+                      subDueLabel = `${d.getMonth() + 1}/${d.getDate()}`;
+                      const daysUntil = daysBetween(s.dueDate, new Date()) * -1;
+                      if (daysUntil < 0)        { subDueColor = 'var(--red)';   subDueBg = 'var(--red-dim)'; }
+                      else if (daysUntil === 0) { subDueColor = 'var(--amber)'; subDueBg = 'var(--amber-dim)'; }
+                    }
+                  }
+
                   return (
                     <div
                       key={s.id}
@@ -1864,6 +1893,55 @@ export function TaskDetailModal({ task, taskType, taskTypes, wfStates, wsUsers, 
                       }}>
                         {s.title}
                       </span>
+                      {/* Meta chips — render only what exists. The state chip uses
+                          the state's own color (or accent when unset). */}
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                        {stateInfo?.name && (
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                            fontSize: 'var(--fs-2xs)', padding: '2px 8px', borderRadius: 10,
+                            background: 'var(--sf3)', color: 'var(--tx2)',
+                            fontWeight: 600, letterSpacing: '.02em',
+                            maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                          }}>
+                            <span style={{
+                              width: 6, height: 6, borderRadius: '50%',
+                              background: stateInfo.color || 'var(--ac)',
+                              flexShrink: 0,
+                            }} />
+                            {stateInfo.name}
+                          </span>
+                        )}
+                        {subPriority && (
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 3,
+                            fontSize: 'var(--fs-2xs)', padding: '2px 7px', borderRadius: 4,
+                            background: `${subPriority.color}1A`, color: subPriority.color,
+                            fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase',
+                          }}>
+                            {subPriority.icon && (
+                              <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>
+                                {subPriority.icon}
+                              </span>
+                            )}
+                            {subPriority.name}
+                          </span>
+                        )}
+                        {subDueLabel && (
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 3,
+                            fontSize: 'var(--fs-2xs)', padding: '2px 7px', borderRadius: 4,
+                            background: subDueBg, color: subDueColor,
+                            fontWeight: 700, letterSpacing: '.04em',
+                          }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>event</span>
+                            {subDueLabel}
+                          </span>
+                        )}
+                        {subAssignee && (
+                          <UserAvatar user={subAssignee} size={22} imageWidth={64} />
+                        )}
+                      </div>
                     </div>
                   );
                 })}

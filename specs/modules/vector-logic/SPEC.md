@@ -908,3 +908,45 @@ Se abre desde el item Clonar del menú. Layout:
 
 ### UI Reference
 Pencil — frame `VectorLogic/Kanban` actualizado con: card con kebab visible, menú abierto, barras de progreso al pie (ToDo + subtasks), mini-bar dentro del chip `4/4`, modal Clonar.
+
+---
+
+## Phase 5 — Subtask row fixes en TaskDetailModal (revisión 2026-04-28)
+
+### Propósito
+Dos arreglos pequeños sobre la lista de subtareas dentro del TaskDetailModal:
+- **Bug:** las subtareas no se abren al hacerles click cuando el modal está abierto desde un BoardView.
+- **Feature:** mostrar metadata de cada subtarea (estado, prioridad, asignado, due date) inline en su fila, sin tener que abrirla.
+
+### Cambios
+
+**1. Bug fix — subtask click roto desde BoardView.**
+`BoardView.tsx` invocaba `onOpenTask={(t) => openTaskDetail(t)}`. La firma del prop recibe un `taskId: string`, no un `Task`. La función `openTaskDetail(task: Task)` recibía entonces un string como si fuera objeto y `task.taskTypeId` quedaba `undefined`, abortando el flujo en silencio. KanbanView ya hacía el lookup correcto (`taskRepo.findById(id)`). Se iguala BoardView al mismo patrón.
+
+**2. Meta inline en cada fila de subtarea.**
+A la derecha del título de la subtarea, en una línea compacta justificada al final, render condicional de:
+- **Estado** — chip con dot del color del state + nombre. `--fs-2xs`, fondo `--sf3`. Si la subtarea no tiene `stateId`, no se renderiza.
+- **Prioridad** — chip con icono opcional + nombre, fondo color al 10%, texto color sólido. Mismo patrón visual que los priority chips de la TaskCard.
+- **Asignado** — `UserAvatar` 22px. Resuelve `wsUsers.find(u => u.id === s.assigneeId)`.
+- **Due date** — chip `M/D`, rojo si vencido / ámbar si hoy / gris si futuro (mismo cálculo que `dueLabel` en la TaskCard).
+
+Si la subtarea no tiene un dato (sin asignar, sin priority, sin due), su chip no se renderiza y la fila queda más limpia. La fila sigue siendo arrastrable/clickeable; los nuevos chips no tienen handlers propios — todo el row invoca `onOpenTask`.
+
+### Reglas
+- El checkbox de "marcar done" sigue con `e.stopPropagation()` para no propagar al row.
+- Drag-reorder no se ve afectado.
+- En light/dark se mantienen los mismos `var()` — sin hardcodes.
+
+### Out of scope
+- Edición inline de los chips (click sobre el state chip para cambiarlo, etc.).
+- Quick-actions sobre la subtarea (priority/assignee picker desde la lista).
+
+### Modelo de datos
+**Sin cambios.** Todo se resuelve en frontend a partir de `Task` + `State` + `Priority` + `WSUser` ya cargados.
+
+**DBA verdict (2026-04-28):** no migration — pure UI fix.
+
+### Files afectados
+- `apps/web/src/modules/vector-logic/ui/views/BoardView.tsx` — 1 línea (handler `onOpenTask`).
+- `apps/web/src/modules/vector-logic/ui/views/KanbanView.tsx` — TaskDetailModal subtask row: agrega `priorityByName` useMemo + chips inline.
+- (Sin keys i18n nuevas — todas existen.)
