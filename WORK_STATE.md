@@ -1,16 +1,29 @@
 # WORK_STATE
 
-_Ultima actualizacion: 2026-04-28 (cont. — subtask row fixes)_
+_Ultima actualizacion: 2026-04-28_
 
 ---
 
 ## Tarea en curso
 
-**Pendiente merge a main** — fix de subtareas en TaskDetailModal:
-- Bug: click en subtarea desde el modal (en BoardView) no abría — `onOpenTask` recibía un id pero `openTaskDetail` esperaba un `Task` entero. Iguala BoardView al patrón de KanbanView (lookup por id antes).
-- Feature: chips inline en cada fila de subtarea (estado / prioridad / asignado / due date). Cada chip se renderiza solo si el dato existe.
+Sin tarea pendiente. Esperando próximo trabajo.
 
-Spec: `specs/modules/vector-logic/SPEC.md` "Phase 5 — Subtask row fixes en TaskDetailModal (revisión 2026-04-28)". Sin migration, sin keys nuevas. Build local verde, Review ✅, QA ✅. User confirmó smoke test.
+---
+
+## Última entrega — Vector Logic Card chip rail + live subtask progress (2026-04-28 ✅ EN PROD)
+
+Mergeado a main y desplegado (commit merge `3da83af`, branch `fix/vl-board-card-chips`). User confirmó smoke test prod ok.
+
+### Lo que shipea
+- **Subtask progress bar morada** en el pie de la card (`var(--purple)`). Antes era verde y se confundía con las barras de ToDo (que se quedan verdes — son cosas distintas).
+- **Toggle de subtarea propaga al parent** vía `onSubtaskChanged` callback en TaskDetailModal. KanbanView/BoardView upsert al `tasks` state → la barra al pie se redibuja inmediatamente, sin reload.
+- **BoardTaskCard ahora renderiza los `cardFields` configurados** (showOnCard). Antes solo lo hacía la TaskCard del Smart Kanban; ahora ambos comparten el mismo chip rail (Due date con color por proximidad, mini-bar dentro de chip checklist/todo, user_picker como avatar al lado del assignee). `readCardFieldValue` y `formatCardValue` exportadas desde KanbanView para reuso.
+
+---
+
+## Entrega anterior — Subtask row fixes en TaskDetailModal (2026-04-28 ✅ EN PROD, commit `f278f1e`)
+- Bug fix: click en subtarea desde modal abierto en BoardView ahora abre la subtask (era stale handler).
+- Feature: chips inline (state, priority, due, assignee) en cada fila de subtarea del modal.
 
 ---
 
