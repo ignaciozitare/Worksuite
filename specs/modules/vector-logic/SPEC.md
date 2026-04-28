@@ -950,3 +950,79 @@ Si la subtarea no tiene un dato (sin asignar, sin priority, sin due), su chip no
 - `apps/web/src/modules/vector-logic/ui/views/BoardView.tsx` — 1 línea (handler `onOpenTask`).
 - `apps/web/src/modules/vector-logic/ui/views/KanbanView.tsx` — TaskDetailModal subtask row: agrega `priorityByName` useMemo + chips inline.
 - (Sin keys i18n nuevas — todas existen.)
+
+---
+
+## Phase 5 — Gantt view por board (revisión 2026-04-28)
+
+### Propósito
+Cada board del Vector Logic tiene una vista alternativa Gantt accesible desde el mismo sidebar. La vista muestra cada tarea como una row con su barra de fechas y permite expandir subtareas inline. La barra del Gantt incluye fills internos de progreso reusando los colores del card (ToDo verde + subtareas morado).
+
+### Cambios
+
+**1. Routing y sidebar.**
+- Nueva tab `'gantt'` y URL `/vector-logic/board/:boardId/gantt`. `parseRoute` detecta este sufijo.
+- En el sidebar, cada `vl-board-item` muestra ahora dos action icons (al lado de la badge `PERSONAL` cuando aplica): `view_timeline` (Gantt) + `edit` (modal). Click en el ícono de Gantt navega a la URL nueva. Click en el cuerpo del row sigue yendo a Board view.
+- Estado activo de la row se enciende cuando `view === 'board'` o `view === 'gantt'` para ese board. El ícono de Gantt se pinta `--ac` cuando esa es la view activa.
+
+**2. Vista Gantt.**
+Componente nuevo `GanttView` en `apps/web/src/modules/vector-logic/ui/views/GanttView.tsx`. NO reusa el `GanttTimeline` de `@worksuite/ui` porque ese componente (Deploy Planner / Environments) no soporta jerarquía padre-hijo ni fills internos. El nuevo componente toma el patrón de eje temporal pero es propio.
+
+**Layout:**
+- Header con título del board + zoom selector (`Days | Weeks | Months`) + view-switcher (Board ↔ Gantt).
+- Banner ámbar **"⚠ N tareas sin fecha de inicio"** con botón **"Ver / asignar fechas"**. Click → expande la lista debajo del banner con date-pickers inline para cada task. Setear fecha de inicio (y opcionalmente fecha de fin) → la task aparece en el timeline.
+- Timeline grid:
+  - Columna fija izquierda 280px: chevron expand/collapse + ícono task type + code + title (1 línea ellipsis).
+  - Área timeline: header con marcas de día/semana/mes según zoom + línea vertical "today" en ámbar dasheado + barras por row.
+
+**3. Bar render con dual progress fill.**
+Cada barra del Gantt es un rectángulo con:
+- Posición: `left = (startDate − rangeStart) × dayWidth`, `width = (dueDate − startDate + 1) × dayWidth`.
+- Background: `state.color` al ~12% opacity. Border izquierdo `state.color` 100%.
+- **Fill interno superior** (verde, `var(--green)`): % `done/total` items de **todos los ToDos** de la task. Crece desde la izquierda. Ocupa la mitad superior si hay subtareas, o la altura completa si no las hay. Si la task no tiene ToDos con items, no se renderiza.
+- **Fill interno inferior** (morado, `var(--purple)`): % subtareas DONE / total subtareas. Crece desde la izquierda. Ocupa la mitad inferior si hay ToDos, o la altura completa si no los hay.
+- Si la task **no tiene ni ToDos ni subtareas** → barra plana en `state.color` solo (sin fills).
+- Click en la barra → abre `TaskDetailModal` (mismo del Kanban / Board).
+- Drag de la barra completa → mueve start+due manteniendo duración. Persiste a DB en mouseup.
+- Drag handles izq/der → resize start o due.
+
+**4. Subtareas (jerarquía).**
+- Cada parent task se renderiza como row. Chevron `▾`/`▸` a la izquierda → expand/collapse.
+- Cuando está expandida, las subtareas directas se renderizan debajo, indentadas 20px.
+- Subtareas tienen su propia barra con sus propias fechas. Si no tienen fechas, el row aparece pero sin barra y con un botón inline "Set dates".
+- El padre **no agrega** rangos de hijos automáticamente — cada row es independiente.
+- Cap natural de 5 niveles por la regla Phase 5 hierarchy.
+
+**5. Time scale + zoom.**
+- `days`: 32px por día, header día+nombre mes.
+- `weeks`: 12px por día, header marca cada lunes.
+- `months`: 4px por día, header marca cada primer día de mes.
+- Range del eje: `min(all task startDates) − 7 días` hasta `max(all task dueDates) + 14 días`. Default si no hay tasks: hoy −7 a hoy +30.
+- Línea "today" siempre visible en ámbar dasheado.
+- Weekend shading sutil cuando zoom='days'.
+
+### Reglas
+- Si la task tiene **solo due_date** sin start_date → entra al banner "tareas sin fecha de inicio". El usuario tiene que setear start_date para verla en la grilla.
+- Si la task no tiene ni start ni due → mismo caso, banner.
+- Si tiene start sin due → banner pero el botón inline pregunta por due.
+- Drag-resize respeta `start ≤ due` (no permite invertir).
+- ToDo fill y subtask fill solo aplican a tasks DENTRO del Gantt — para una subtask sin ToDos/sub-subtasks se renderiza como barra plana.
+- Permission `use` en boards compartidos: drag y resize quedan deshabilitados (read-only). Click → modal sigue funcionando.
+
+### Out of scope
+- Dependencias entre tareas (líneas conectoras tipo MS Project).
+- Constraint solving (auto-shift de hijos cuando cambia el padre).
+- Critical path highlight.
+- Export a CSV / image.
+- Milestones (eventos puntuales sin duración).
+
+### Modelo de datos
+**Sin cambios.** `start_date`, `due_date`, `parent_task_id`, `state_id`, `data` (para ToDo items) ya existen en `vl_tasks`.
+
+**DBA verdict (2026-04-28):** no migration — pure UI feature.
+
+### Files afectados
+- `apps/web/src/modules/vector-logic/ui/views/GanttView.tsx` — nuevo componente.
+- `apps/web/src/modules/vector-logic/ui/components/GanttBar.tsx` — nuevo, encapsula la barra con dual fill.
+- `apps/web/src/modules/vector-logic/ui/VectorLogicPage.tsx` — agregar tab `gantt` + parseRoute + sidebar Gantt icon.
+- `packages/i18n/locales/es.json` + `en.json` — keys `vectorLogic.gantt.*`.
