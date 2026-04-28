@@ -1,75 +1,156 @@
-# Deploy Planner — SPEC
+# Deploy Planner — Module Spec
 
-## Feature: Right Sidebar — Jira Task Search + Ordered Task List
+> **Snapshot spec (2026-04-29).** Documenta el estado actual del módulo. La sección "Right Sidebar — Jira Task Search + Ordered Task List" más abajo es el spec de la entrega que introdujo el sidebar derecho.
 
-### Context
+## Overview
 
-The Planning and Timeline views currently show releases with their assigned tickets, but there's no way to browse/search all Jira tickets from a sidebar. Users have to go to Jira externally to find tickets. The admin also can't configure which task types and statuses appear in the deploy planner.
+Deploy Planner es la herramienta para planificar releases del producto. Cada release agrupa tickets de Jira que van a desplegarse juntos, tiene fechas planeadas, un estado en el workflow del release (planificado / en QA / aprobado / desplegado / etc.), y agrupa repos por dependencias. Los desarrolladores arrastran tickets de Jira al release que corresponde; los managers ven el timeline de releases activos / próximos y miden el throughput con métricas.
 
-### Requirements
+### Quién lo usa
+Cualquier developer puede ver releases, sidebar de tickets Jira, history y métricas. Los managers / admins además crean / editan releases, configuran prefijos de versionado, definen los estados de release, agrupan repos y configuran qué issue types y qué statuses Jira aparecen en el sidebar.
 
-#### 1. Right Sidebar (Planning & Timeline views)
+## Sub-views
 
-**Goal:** A collapsible right panel with two sections — search and ordered task list.
+URL: `/deploy`. El módulo tiene 4 tabs:
 
-| Component | Detail |
-|-----------|--------|
-| **Position** | Right side of Planning and Timeline views, 300px wide, collapsible. |
-| **Toggle** | Chevron button to collapse/expand. State persisted in localStorage. |
-| **Section 1: Search** | Input field that searches Jira tickets by key or summary (debounced 300ms). Uses existing `HttpJiraSearchAdapter`. Results show as compact cards (key, summary, type icon, status badge). |
-| **Section 2: Task List** | All tickets from configured Jira projects, ordered newest first (by creation date). User can drag to reorder manually. Reorder persisted per-session or in DB if needed. |
-| **Drag to Release** | User can drag a ticket from the sidebar into a release card in the main area (existing DnD flow). |
-| **Filtering** | Filter by task type and status using the admin-configured values (see below). |
+| Tab | Componente | Para qué |
+|---|---|---|
+| `planning` | `Planning.tsx` (en `internal/`) | Vista principal — lista de releases activos. Cada release card muestra release_number, descripción, fechas planeadas, status, lista de tickets asignados. Drag de un ticket desde el right sidebar a una card lo asigna al release. |
+| `timeline` | `Timeline.tsx` + `DeployTimeline.tsx` | Gantt horizontal de releases (usa `<GanttTimeline>` de `@worksuite/ui`). Cada release es una barra con su rango planeado, agrupada visualmente por status_category. |
+| `history` | `History.tsx` | Tabla de releases pasados (status final). Filtros por rango de fecha, status, búsqueda. |
+| `metrics` | `Metrics.tsx` | Métricas: lead time, cycle time, releases por mes, distribución por status, etc. Gráficos. |
 
-#### 2. Admin Configuration — Task Types & Statuses
+**Right Sidebar** persistente en `planning` y `timeline` (300px, colapsable):
+- Sección 1: search input que dispara `HttpJiraSearchAdapter`.
+- Sección 2: lista ordenada de tickets de los proyectos Jira configurados, drag-to-release.
+- Filtros por issue type / status configurados desde Admin.
 
-**Goal:** Admin defines which Jira issue types and statuses are visible in the deploy planner sidebar.
+Vista **`AdminDeployConfig`** (en `/admin → mod=deploy`): CRUD de release statuses, version config (prefix / segments / next_number), repo groups, subtask config, filtros Jira.
 
-| Config | Detail |
-|--------|--------|
-| **Task Types** | Admin selects which Jira issue types appear in the sidebar (e.g., Story, Bug, Task). Stored in `dp_release_config.issue_types[]`. Already exists — reuse. |
-| **Statuses** | Admin selects which Jira statuses are included (e.g., "In Development", "Ready for QA"). Stored in `dp_release_config.jira_status_filter`. Already exists — reuse. |
-| **UI Location** | Admin panel → Deploy Planner → Jira tab (existing). Add a section for "Sidebar Filters" if needed, or reuse current config. |
+## Actions del usuario
 
-#### 3. Task List Behavior
+- **Crear release.** Define release_number (auto-generado por `dp_version_config`), descripción, fechas planeadas, status inicial.
+- **Asignar tickets.** Drag desde sidebar a release card, o seleccionar manualmente desde un picker.
+- **Cambiar status del release.** Mueve por el workflow configurado (planificado → en qa → aprobado → desplegado).
+- **Editar release.** Fechas, descripción, tickets, status.
+- **Borrar release** (admin).
+- **Buscar tickets Jira** desde el sidebar (debounced 300ms).
+- **Reordenar manualmente** los tickets del sidebar (drag handle, persistido en sesión).
+- **Refresh sidebar** para re-fetch de Jira.
+- **Click ticket → abrir Jira** en nueva pestaña (`jiraBaseUrl + /browse/ + key`).
+- **Filtrar tickets** del sidebar por issue type y status (admin-configured).
 
-| Rule | Detail |
-|------|--------|
-| **Default order** | Newest first (by Jira `created` field). |
-| **Manual reorder** | Drag handle on each item. New order stored in component state (session-only). |
-| **Already assigned** | Tickets already in a release show a subtle "assigned" badge and are de-emphasized. |
-| **Click action** | Click opens Jira ticket in new tab (using `jiraBaseUrl + /browse/ + key`). |
-| **Refresh** | "Refresh" button at top to re-fetch from Jira. |
+Acciones admin:
+- Configurar qué issue types y statuses Jira se incluyen.
+- Configurar prefijo + segmentos + separador del version string (ej. `v.YYYY.MM.NN`).
+- Lock del autoincremento (`dp_version_config.locked=true`) para fijar la versión.
+- CRUD release statuses con nombre, color, bg_color, ord, status_category, is_final.
+- Configurar repo groups (qué repos pertenecen a qué grupo lógico).
+- Configurar subtask config (qué issue types tienen subtareas auto, qué statuses cuentan como cerrados).
 
-### UI Design (Carbon Logic)
+## Reglas y límites
 
-- Background: `var(--sf)` with `border-left: 1px solid var(--bd)`
-- Header: Section label in uppercase 9px bold, search input below
-- Cards: `var(--sf2)` background, 8px radius, ghost border, hover glow
-- Type icons: Jira type icon or Material Symbol fallback
-- Status badges: Semantic chips (green/blue/amber per category)
-- Collapse animation: 300ms ease, chevron rotates
+- **Release number único.** Generado por `dp_version_config.next_number` salvo que esté `locked=true`.
+- **Versionado.** El string final lo arma `prefix + segments + separator + next_number` según config. `segments` es un jsonb que define formato (ej. `{year:4, month:2}` para `v.2026.04.05`).
+- **Status workflow no es libre.** El admin define los statuses pero no las transiciones — todos pueden ir a todos. La columna `status_category` (`backlog | in_progress | approved | done`) agrupa visualmente.
+- **Tickets** se persisten como `text[]` en `dp_releases.ticket_ids`. Sin tabla separada — Jira es el source of truth, este módulo solo guarda referencias.
+- **`ticket_statuses` jsonb** cachea el último status conocido de cada ticket de Jira para no tener que pegarle a Jira en cada render.
+- **Repo extraction:** los repos de un release se derivan automáticamente del campo Jira configurado (`dp_version_config.repo_jira_field`, default `components`). El usuario puede agruparlos via `dp_repo_groups` para que tickets de varios repos se cuenten como un mismo grupo.
 
-### Data Flow
+## Conexiones
 
-1. On mount, sidebar calls existing `fetchJiraTickets()` from DeployPlanner state
-2. Search triggers `jiraSearchAdapter.search(query)` with debounce
-3. Sidebar reads `releaseStatuses` and `issueTypes` from config (already loaded)
-4. Drag-drop uses same `onTicketDrop(ticketKey, releaseId)` as existing Planning DnD
+- **Supabase** — tablas `dp_*`. RLS abierta a todos los users autenticados (lectura) y restringida a admin para escritura en config tables.
+- **Jira (vía backend)** — TODAS las llamadas Jira pasan por `apps/api/infrastructure/http/`. El frontend nunca habla directamente con Jira.
+  - `GET /jira/projects`, `GET /jira/issues?project=...`, `GET /jira/search?jql=...`.
+- **`@worksuite/jira-service`** — `HttpJiraSearchAdapter` para búsquedas tipo-ahead.
+- **`@worksuite/ui`** — `GanttTimeline` para la pestaña Timeline; `DateRangePicker`, `DualPanelPicker`, `Modal` para configs.
+- **Environments** — comparte `dp_version_config` para algunos cálculos cruzados.
 
-### Files to Create
-- `apps/web/src/modules/deploy-planner/ui/internal/TaskSidebar.tsx`
+## Modelo de datos
 
-### Files to Modify
-- `apps/web/src/modules/deploy-planner/ui/DeployPlanner.tsx` — layout + sidebar state
-- `apps/web/src/modules/deploy-planner/ui/internal/Planning.tsx` — accept drops from sidebar
-- `apps/web/src/modules/deploy-planner/ui/internal/Timeline.tsx` — same sidebar integration
+### `dp_releases`
+Una row por release. Campos: `id` (uuid), `release_number` (text único, generado), `description`, `status` (text, FK lookup a `dp_release_statuses.name`), `start_date`, `end_date` (date), `ticket_ids` (text[] de claves Jira), `ticket_statuses` (jsonb, cache del status de cada ticket), `created_by` (uuid → users), `created_at`, `updated_at`.
 
-### Out of Scope (v1)
-- Persisting manual reorder to DB (session-only for now)
-- Inline ticket editing from sidebar
-- Bulk assign multiple tickets to a release
+### `dp_release_statuses`
+Lista configurable de statuses de release. Campos: `id`, `name`, `color`, `bg_color`, `border`, `ord`, `is_final` (bool legacy), `status_category` (`backlog | in_progress | approved | done`), `created_at`.
+
+### `dp_version_config`
+Singleton (id=1). Campos: `prefix` (text, ej. `v`), `segments` (jsonb con formato del version string), `separator` (text, ej. `.`), `next_number` (int — auto-incrementado al crear release), `locked` (bool — pausa el auto-increment), `repo_jira_field` (text — qué campo Jira tiene los repos, default `components`), `issue_types` (text[] — qué issue types se incluyen en sidebar), `env_history_note` (text), `created_at`, `updated_at`.
+
+### `dp_repo_groups`
+Agrupación de repos. Campos: `id`, `name`, `repos` (text[]), `created_at`, `updated_at`.
+
+### `dp_subtask_config`
+Configuración de subtareas auto-generadas en Jira a partir de un release. Campos: `id`, `jira_issue_type` (qué tipo se crea, ej. "Sub-task"), `category` (`bug | test | other`), `test_type` (uno de varios), `closed_statuses` (text[] — qué statuses cuentan como cerrados al medir progreso), `created_at`.
+
+### Relaciones en lenguaje plano
+Una release tiene un status (referencia a `dp_release_statuses.name`). Una release tiene N tickets de Jira (text[]). Los repos no se persisten directamente — se derivan de los tickets via el campo Jira. La config de versionado y subtareas son singletons.
+
+## Estructura del módulo
+
+```
+apps/web/src/modules/deploy-planner/
+├── container.ts
+├── domain/
+│   └── entities/
+│       ├── Release.ts
+│       └── Deployment.ts
+├── infra/
+│   ├── SupabaseDeploymentRepository.ts
+│   └── SupabaseReleaseRepo.ts
+└── ui/
+    ├── DeployPlanner.tsx       # shell con tabs + sidebar
+    ├── DeployTimeline.tsx      # tab Timeline
+    └── internal/
+        ├── Planning.tsx        # tab Planning
+        ├── Timeline.tsx
+        ├── History.tsx
+        ├── Metrics.tsx
+        ├── ReleaseCard.tsx
+        ├── ReleaseDetail.tsx
+        ├── TaskSidebar.tsx     # right sidebar (search + ordered list)
+        ├── VersionPicker.tsx
+        ├── atoms.tsx           # primitives compartidos
+        ├── constants.ts
+        ├── helpers.ts
+        └── types.ts
+```
 
 ---
 
-## Status: DRAFT — awaiting user confirmation
+## Right Sidebar — Jira Task Search + Ordered Task List (revisión histórica)
+
+### Context
+La feature original fue añadir un right sidebar a Planning y Timeline para buscar/listar tickets sin abandonar la app.
+
+### Requirements
+
+**Right Sidebar**
+- Position: 300px wide, colapsable. State persistido en localStorage.
+- Section 1: Search input (debounced 300ms) → `HttpJiraSearchAdapter`. Cards compactas con key, summary, type icon, status badge.
+- Section 2: Task list de tickets de proyectos Jira configurados. Default order: newest first. Drag handle para reorder manual (session-only).
+- Drag a release: usa el flow existente `onTicketDrop(ticketKey, releaseId)`.
+- Filtering: por issue type + status (admin-configured).
+- Click → abrir ticket en Jira.
+- Refresh button.
+
+**Admin Configuration**
+- `dp_release_config.issue_types[]` — qué issue types aparecen.
+- `dp_release_config.jira_status_filter` — qué statuses se incluyen.
+- UI: Admin panel → Deploy Planner → Jira tab.
+
+### Out of scope (v1)
+- Persistir reorder manual a DB.
+- Inline ticket editing.
+- Bulk assign múltiples tickets a una release.
+
+---
+
+## Out of scope (módulo entero, en este snapshot)
+
+- Auto-deploy real (push de código a un servidor) — el módulo solo planifica, no ejecuta.
+- Aprobación multi-step de releases (ej. "manager + tech lead + product owner").
+- Notificaciones cuando un release pasa de status (Slack / email).
+- Integración con CI/CD pipelines (GitHub Actions, GitLab) para enlazar runs.
+- Análisis de impacto cruzado (qué tickets bloquean qué releases).
+- Auto-cálculo de fechas planeadas a partir de la velocity histórica.

@@ -1,8 +1,75 @@
 # Profile — Module Spec
 
+> **Snapshot spec (2026-04-29).** Documenta el estado actual del módulo. Las secciones marcadas con fecha son entregas históricas que llegaron a producción.
+
 ## Overview
 
-The user profile lets each WorkSuite user edit information about themselves (display name, language, avatar). It is reachable at `/profile` from the user menu in the topbar.
+Profile es la página de identidad del usuario actual. Cada empleado ve y edita los datos públicos / personales propios desde `/profile`: nombre, idioma de la app, avatar, token Jira personal opcional, y módulos visibles (jsonb `users.modules`).
+
+### Quién lo usa
+Cualquier usuario logueado, **solo sobre su propio perfil**. Para editar otros perfiles se va a Admin → Users.
+
+## Sub-views
+
+URL: `/profile`. Una sola vista, sin tabs.
+
+| Bloque | Componente | Para qué |
+|---|---|---|
+| Avatar | `AvatarPicker` | Bloque grande arriba con avatar circular. Click abre modal con upload, presets, remove. |
+| Identidad | dentro de `ProfilePage` | Display name, email (read-only — viene de auth), idioma preferido (es/en), rol (read-only). |
+| Token Jira personal | dentro de `ProfilePage` | Input para guardar el PAT de Jira de cada user. Lo usa Jira Tracker para que los worklogs aparezcan bajo el nombre real del user en Jira. |
+| Módulos visibles | dentro de `ProfilePage` | Toggles para mostrar / ocultar módulos en la app switcher. Persiste en `users.modules` (jsonb). |
+
+## Actions del usuario
+
+- **Cambiar nombre** (texto libre, persiste a `users.name`).
+- **Cambiar idioma** (es / en) — persiste en localStorage del browser via `@worksuite/i18n` + opcionalmente columna user.
+- **Cambiar / subir / quitar avatar** (ver subsección Avatar más abajo).
+- **Setear / actualizar token Jira personal** (PAT) — persiste a `users.jira_api_token`. Lectura sólo por el propio user (RLS).
+- **Toggle módulos visibles** — persiste a `users.modules` (jsonb default `["jt","hd","retro","deploy"]`).
+
+No hay otras pantallas — el module es deliberadamente fino. Toda la admin de un user (cambiar rol, desactivar, ver datos sensibles) vive en `/admin → Users`.
+
+## Reglas y límites
+
+- Un usuario solo edita su propio perfil. RLS: `auth.uid() = users.id` para UPDATE.
+- El email no es editable desde aquí — viene de `auth.users` (Supabase Auth).
+- El rol no es editable desde aquí — solo desde Admin.
+- Token Jira es opcional. Si no está, los worklogs se sincronizan bajo el user genérico de la integración.
+
+## Conexiones
+
+- **Supabase** — tabla `users` (RLS por user para SELECT/UPDATE de filas propias). Bucket `user-avatars`.
+- **`@worksuite/i18n`** — el idioma del user lo controla este provider.
+- **`@worksuite/ui`** — `Modal`, `UserAvatar`, `Btn`.
+- **Auth** — lee `useAuth()` para conocer el user actual.
+- **Admin Panel** — la misma `<AvatarPicker />` se reusa en `AdminUsers` para que el admin pueda cambiar avatar de cualquier user.
+
+## Modelo de datos
+
+### `users` (compartida con Auth, no propia del módulo)
+Profile lee/escribe sobre `users`:
+- `name` (text), `email` (text — read-only desde aquí), `role` (text — read-only desde aquí), `desk_type` (text), `avatar` (text legacy), `avatar_url` (text — Storage URL o `preset:NAME`), `active` (bool), `jira_api_token` (text), `role_id` (uuid → `roles.id`), `modules` (jsonb default `["jt","hd","retro","deploy"]`), `export_presets` (jsonb), `allowed_booking_zones` (jsonb), `created_at`.
+
+### Storage bucket `user-avatars`
+- Path: `{user_id}/avatar.{ext}` (folder-per-user).
+- Public read para users autenticados.
+- Write/delete restringido a owner o admin (RLS sobre `storage.foldername(name)[1]`).
+- Image transformation a request time: `?width=64&quality=80` (chips), `?width=256&quality=85` (profile page).
+
+## Estructura del módulo
+
+```
+apps/web/src/modules/profile/
+├── container.ts
+├── domain/
+│   └── ports/                 # UserProfilePort
+├── infra/
+│   └── supabase/              # SupabaseUserProfileRepo
+└── ui/
+    ├── ProfilePage.tsx
+    └── AvatarPicker.tsx       # modal de avatar (también usada por AdminUsers)
+```
 
 ---
 
