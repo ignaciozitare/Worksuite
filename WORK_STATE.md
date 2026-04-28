@@ -1,21 +1,30 @@
 # WORK_STATE
 
-_Ultima actualizacion: 2026-04-28 (cont. — Gantt view)_
+_Ultima actualizacion: 2026-04-28_
 
 ---
 
 ## Tarea en curso
 
-**Pendiente merge a main** — Vector Logic Gantt view por board:
-- Nueva vista `/vector-logic/board/:id/gantt` con timeline horizontal por board.
-- Sidebar agrega ícono `view_timeline` en cada board row → switch a Gantt.
-- `GanttBar` dual-fill: verde (% ToDo done/total) arriba + morado (% subtareas DONE) abajo, dentro de la barra.
-- Banner ámbar con date pickers inline para tasks sin start_date / due_date.
-- Subtareas expandibles (chevron) indentadas dentro de su parent.
-- Drag bar → mueve fechas. Drag handles → resize. `use` permission = read-only.
-- 3 zoom levels: days/weeks/months.
+Sin tarea pendiente. Esperando próximo trabajo.
 
-Spec: `specs/modules/vector-logic/SPEC.md` "Phase 5 — Gantt view por board (revisión 2026-04-28)". Sin migration, sin DB. Build local verde, Review ✅, QA ✅. User confirmó smoke test.
+---
+
+## Última entrega — Vector Logic Gantt view (2026-04-28 ✅ EN PROD)
+
+Mergeado y desplegado (commit merge `dd9ac7e`, branch `feat/vl-gantt-view`).
+
+### Lo que shipea
+- Nueva vista `/vector-logic/board/:id/gantt`. Cada board del sidebar agrega un ícono `view_timeline` que la abre.
+- `GanttBar` componente nuevo con dual-fill: verde (% ToDo) arriba, morado (% subtareas DONE) abajo. Si solo hay una fuente ocupa toda la barra; si no hay ninguna la barra es plana en color del state.
+- `GanttView` con timeline grid (zoom days/weeks/months), today line ámbar dasheada, weekend shading.
+- Banner ámbar con date pickers inline para tasks sin start/due — al setear las fechas la task aparece en el timeline.
+- Subtareas expandibles con chevron, indentadas 20px.
+- Drag de la barra mueve fechas (start+due preservando duración); drag de los handles izq/der resize. Persiste con un único DB write en mouseup.
+- Permission `use` bloquea drag/resize (read-only); click→modal sigue funcionando.
+
+### Out of scope (intencional)
+- Dependencias entre tareas, constraint solving, critical path, milestones, export — todo deferido.
 
 ---
 
