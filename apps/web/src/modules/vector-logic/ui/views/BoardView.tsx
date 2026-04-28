@@ -671,7 +671,12 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
           onDelete={() => handleTaskDelete(detailTask.id)}
           onClone={() => { setCloningTask(detailTask); setDetailTask(null); }}
           onConfigure={() => { handleConfigureType(detailTask.taskTypeId); setDetailTask(null); }}
-          onOpenTask={(t) => openTaskDetail(t)}
+          onOpenTask={async (id) => {
+            // Subtasks list passes the child's id; we need the full Task
+            // before openTaskDetail can resolve its workflow states.
+            const found = await taskRepo.findById(id);
+            if (found) await openTaskDetail(found);
+          }}
         />
       )}
 
