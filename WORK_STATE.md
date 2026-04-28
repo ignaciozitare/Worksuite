@@ -6,7 +6,14 @@ _Ultima actualizacion: 2026-04-28_
 
 ## Tarea en curso
 
-Sin tarea pendiente. Esperando próximo trabajo.
+**Pendiente merge a main** — refactor del Gantt + BoardViewToggle:
+- `packages/ui/GanttTimeline` extendido con 4 props opt-in (`renderLabel`, `renderBarContent`, `showHeader`, `showHelpText`). Backward compatible — Deploy Planner / Environments intactos.
+- VL `GanttView` reescrito: compone `<GanttTimeline>` con los slots, sin duplicar timeline/zoom/drag/resize. `GanttBar.tsx` eliminado.
+- Nuevo componente `BoardViewToggle` (segmented control "Tablero | Gantt"): usado en headers de BoardView y GanttView. Reemplaza el ícono `view_timeline` del sidebar.
+- `VectorLogicPage` sidebar limpio: solo ícono `edit` por board row. Estado activo cubre board y gantt views.
+- Memoria nueva: `feedback_extend_dont_duplicate.md` (extender shared components, no forkear).
+
+Build local verde, Review ✅, QA ✅. User confirmó smoke test.
 
 ---
 
