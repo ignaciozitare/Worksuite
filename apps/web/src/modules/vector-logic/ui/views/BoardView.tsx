@@ -21,8 +21,9 @@ import type { State, StateCategory, WorkflowState } from '../../domain/entities/
 import type { Task } from '../../domain/entities/Task';
 import type { TaskType } from '../../domain/entities/TaskType';
 import type { Priority } from '../../domain/entities/Priority';
-import { TaskDetailModal } from './KanbanView';
+import { TaskDetailModal, readCardFieldValue, formatCardValue } from './KanbanView';
 import { KanbanFilters, type KanbanSortBy } from '../components/KanbanFilters';
+import { MiniProgressBar } from '../components/CardProgressBars';
 
 const CAT_COLORS: Record<StateCategory, string> = {
   BACKLOG:     'var(--tx3)',
@@ -625,6 +626,7 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
                       taskType={taskTypeById.get(task.taskTypeId) ?? null}
                       assignee={wsUsers.find(u => u.id === task.assigneeId) ?? null}
                       priority={task.priority ? priorityByName.get(task.priority.toLowerCase()) ?? null : null}
+                      wsUsers={wsUsers}
                       subtasks={subtasksByParent.get(task.id) ?? []}
                       stateCategoryById={stateCategoryById}
                       isAdmin={isAdmin}
@@ -671,6 +673,17 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
           onDelete={() => handleTaskDelete(detailTask.id)}
           onClone={() => { setCloningTask(detailTask); setDetailTask(null); }}
           onConfigure={() => { handleConfigureType(detailTask.taskTypeId); setDetailTask(null); }}
+          onSubtaskChanged={(sub) => {
+            // Upsert into the board's tasks list so the parent card's
+            // bottom subtask bar refreshes immediately. Filter against the
+            // board's column states so a child whose state isn't on this
+            // board doesn't accidentally appear elsewhere.
+            setTasks(prev => {
+              const idx = prev.findIndex(t => t.id === sub.id);
+              if (idx >= 0) { const next = [...prev]; next[idx] = sub; return next; }
+              return [...prev, sub];
+            });
+          }}
           onOpenTask={async (id) => {
             // Subtasks list passes the child's id; we need the full Task
             // before openTaskDetail can resolve its workflow states.
@@ -696,6 +709,7 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
 /* ── Task card ─────────────────────────────────────────────────────────── */
 function BoardTaskCard({
   task, taskType, assignee, priority,
+  wsUsers = [],
   subtasks = [], stateCategoryById,
   isAdmin = false,
   onClick, onClone, onDelete, onConfigure,
@@ -705,6 +719,9 @@ function BoardTaskCard({
   taskType: TaskType | null;
   assignee: WSUser | null;
   priority: Priority | null;
+  /** Workspace users — needed to resolve user_picker fields shown on the
+   *  card to display avatars in the footer instead of raw UUID strings. */
+  wsUsers?: WSUser[];
   subtasks?: Task[];
   stateCategoryById?: Map<string, string>;
   isAdmin?: boolean;
@@ -725,9 +742,55 @@ function BoardTaskCard({
     return Math.round((nMid - aMid) / 86_400_000);
   })();
 
+  // Configured card fields — same filter rule the Kanban TaskCard uses.
+  // Excludes assignee/title (already in the layout) and user_picker (rendered
+  // as an avatar in the footer instead of as a text chip).
+  const schema = ((taskType?.schema as SchemaField[]) || []);
+  const cardFields = schema
+    .filter(f => f.showOnCard && f.fieldType !== 'assignee' && f.fieldType !== 'title' && f.fieldType !== 'user_picker')
+    .sort((a, b) => a.order - b.order)
+    .slice(0, 4);
+
+  // Extra users contributed by user_picker fields with showOnCard. Each chip
+  // resolves the stored user id to a workspace user, deduped against the native
+  // assignee, capped at 3 visible (rest collapse into +N). Mirrors KanbanView.
+  const extraUsers: WSUser[] = (() => {
+    const seen = new Set<string>(assignee ? [assignee.id] : []);
+    const out: WSUser[] = [];
+    schema
+      .filter(f => f.showOnCard && f.fieldType === 'user_picker')
+      .sort((a, b) => a.order - b.order)
+      .forEach(f => {
+        const uid = (task.data ?? {})[f.id];
+        if (typeof uid !== 'string' || !uid || seen.has(uid)) return;
+        const u = wsUsers.find(x => x.id === uid);
+        if (!u) return;
+        seen.add(uid);
+        out.push(u);
+      });
+    return out;
+  })();
+  const visibleExtras = extraUsers.slice(0, 3);
+  const overflowExtras = extraUsers.length - visibleExtras.length;
+
+  // Due-date color (used when the configured chip rail includes due_date).
+  let dueColor = 'var(--tx3)';
+  let dueBg: string = 'var(--sf2)';
+  if (task.dueDate) {
+    const d = new Date(task.dueDate);
+    if (!isNaN(d.getTime())) {
+      const now = new Date();
+      const aMid = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      const nMid = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const daysUntil = Math.round((aMid - nMid) / 86_400_000);
+      if (daysUntil < 0)        { dueColor = 'var(--red)';   dueBg = 'var(--red-dim)'; }
+      else if (daysUntil === 0) { dueColor = 'var(--amber)'; dueBg = 'var(--amber-dim)'; }
+    }
+  }
+
   // Has any progress bar at the bottom — used to grow the bottom padding
   // so chips never sit on top of the bar stack.
-  const todoFieldsWithItems = ((taskType?.schema as SchemaField[]) || [])
+  const todoFieldsWithItems = schema
     .filter(f => f.fieldType === 'todo' && Array.isArray((task.data ?? {})[f.id]) && ((task.data ?? {})[f.id] as unknown[]).length > 0).length;
   const barCount = todoFieldsWithItems + (subtasks.length > 0 ? 1 : 0);
   const bottomBarsPad = barCount > 0 ? barCount * 4 + 4 : 0;
@@ -801,7 +864,7 @@ function BoardTaskCard({
       }}>
         {task.title}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
         {priority && (
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -816,18 +879,66 @@ function BoardTaskCard({
             {priority.name}
           </span>
         )}
+        {/* Configured card fields — same chip rail as the Kanban TaskCard. */}
+        {cardFields.map(field => {
+          const raw = readCardFieldValue(task, field);
+          const value = formatCardValue(field, raw);
+          if (!value) return null;
+          const isDue = field.fieldType === 'due_date';
+          const isProgress = (field.fieldType === 'checklist' || field.fieldType === 'todo') && Array.isArray(raw);
+          return (
+            <span key={field.id} style={{
+              fontSize: 'var(--fs-2xs)', padding: '4px 10px', borderRadius: 6,
+              background: isDue ? dueBg : 'var(--sf2)',
+              color: isDue ? dueColor : 'var(--tx2)',
+              fontWeight: 700, letterSpacing: '.04em',
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {isDue && (
+                <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>event</span>
+              )}
+              {value}
+              {isProgress && (
+                <MiniProgressBar
+                  segments={(raw as Array<{ checked?: boolean }>).map(it => !!it?.checked)}
+                />
+              )}
+            </span>
+          );
+        })}
         <div style={{ flex: 1 }} />
-        {assignee && (
-          <UserAvatar
-            user={{
-              id: assignee.id,
-              name: assignee.name,
-              email: assignee.email,
-              avatarUrl: assignee.avatarUrl ?? null,
-            }}
-            size={36}
-          />
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {visibleExtras.map(u => (
+            <UserAvatar
+              key={u.id}
+              user={u.avatarUrl ? u : { ...u, avatarUrl: 'preset:purple' }}
+              size={28}
+            />
+          ))}
+          {overflowExtras > 0 && (
+            <span style={{
+              height: 28, padding: '0 8px', borderRadius: 14,
+              background: 'var(--sf2)', color: 'var(--tx2)',
+              display: 'inline-flex', alignItems: 'center',
+              fontSize: 'var(--fs-2xs)', fontWeight: 700,
+              border: '1px solid var(--bd)',
+            }}>
+              +{overflowExtras}
+            </span>
+          )}
+          {assignee && (
+            <UserAvatar
+              user={{
+                id: assignee.id,
+                name: assignee.name,
+                email: assignee.email,
+                avatarUrl: assignee.avatarUrl ?? null,
+              }}
+              size={36}
+            />
+          )}
+        </div>
       </div>
       <CardProgressBars
         task={task}
