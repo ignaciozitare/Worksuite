@@ -47,6 +47,7 @@ worksuite/
 | **Chrono** | Control horario del usuario (autoservicio): dashboard, registros, fichajes incompletos, vacaciones, alarmas, informes. Sincroniza tab con `?view=` query param para deep links. |
 | **Chrono Admin (RRHH)** | Administración del chrono: empleados, equipos, aprobaciones, comparativa Jira vs fichaje, ficha del empleado con datos sensibles encriptados, informes con CSV export y gráficos |
 | **Profile** | Página `/profile` de identidad del usuario actual (lee de `useAuth`, sin repo propio) |
+| **Vector Logic** | Plataforma de orquestación de tareas: workflows visuales (Canvas Designer), Schema Builder dinámico, Smart Kanban + Multi-Board Kanban, Backlog/History, AI Detections (Gmail), priorities con icon+color. Cards: kebab menu (Clone/Delete/Configure-admin), barras de progreso al pie por ToDo + subtasks, days-in-column chip, mini-bar dentro del chip `N/M`. Use cases en `application/`: `CloneTask`, `DeleteTaskCascade`. Last shipped: TaskCard ToDo + Card Menu (2026-04-28). |
 
 ---
 

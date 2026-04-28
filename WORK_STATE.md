@@ -1,33 +1,33 @@
 # WORK_STATE
 
-_Ultima actualizacion: 2026-04-27 (cont. — TaskCard ToDo + Card Menu)_
+_Ultima actualizacion: 2026-04-28_
 
 ---
 
 ## Tarea en curso
 
-**Pendiente merge a main + preview deploy** del feature **Vector Logic — TaskCard ToDo + Card Menu** (sección nueva en `specs/modules/vector-logic/SPEC.md` "Phase 5 — TaskCard ToDo + Card Menu (revisión 2026-04-27)").
+Sin tarea pendiente. Esperando próximo trabajo.
 
-### Lo que se construyó
-- Nuevo `fieldType: 'todo'` (mismo render que `checklist`, sin migración).
-- Componentes nuevos en `apps/web/src/modules/vector-logic/ui/components/`: `CardMenu` (modos `corner` + `inline`), `CardProgressBars` (barras apiladas al pie), `CloneTaskModal` (título + 6 checkboxes).
-- Use cases en `application/CloneTask.ts`: `CloneTask` (clona en estado OPEN, opt-in subtareas recursivo) y `DeleteTaskCascade` (BFS leaves-first).
-- KanbanView TaskCard + BoardView BoardTaskCard: kebab `⋮`, barras apiladas al pie, mini-bar dentro del chip `4/4`, chip de días-en-columna restaurado (siempre visible, antes oculto detrás de `!hasCardFields`).
-- TaskDetailModal: kebab inline en titleAccessory + footer Delete eliminado por redundancia.
-- AdminShell + AdminVectorLogic: sincronizados con URL via `useSearchParams` (`?mod=vectorlogic&tab=schema&typeId=...`). SchemaBuilderView acepta `targetTypeId`.
-- 11 keys i18n nuevas en es+en (cardMenuClone/Delete/Configure/Aria, cloneModal*, todoDone/AddItem, deleteTaskCascadeConfirm).
+---
 
-### Estado al cerrar la sesión
-- Build vite local: ✅
-- Review Agent: ✅ (con fix de aria-label i18n)
-- QA Agent: ✅ con 2 warns (permission-gating de Delete pendiente como follow-up; modal kebab agregado mid-session, ya reflejado en el spec).
-- Smoke test del user: ✅ confirmado en `localhost:5173`.
-- Branch: trabajado directo en `main` — para mergear hay que crear feature branch + Vercel preview (regla CLAUDE.md).
+## Última entrega — Vector Logic TaskCard ToDo + Card Menu (2026-04-28 ✅ EN PROD)
 
-### Follow-ups conocidos (out of scope esta entrega)
-- Item Borrar deshabilitado con tooltip cuando un user tiene `permission='use'` en un board compartido.
-- Subtareas cross-type: la barra de progreso solo cuenta los hijos cargados en `tasks` (filtros activos los pueden esconder).
-- Alarmas y comentarios en el modal de Clonar son toggles inertes (la opción está en la UI pero el use case los ignora — reservados para v2).
+Mergeado a main y desplegado a producción (commit merge `05c4183`, branch `feat/vl-todo-card-menu`). User confirmó smoke test prod ok.
+
+### Lo que shipea
+- `fieldType: 'todo'` nuevo en Schema Builder (sin migración, JSONB extensible).
+- `CardProgressBars` apilado al pie de las cards (una barra por ToDo con items + una de subtareas).
+- Mini-bar dentro del chip `N/M` (junto al texto, no lo reemplaza).
+- Chip de días-en-columna restaurado — antes lo escondía `!hasCardFields`.
+- `CardMenu` (kebab `⋮`) en cards y dentro del header del TaskDetailModal — items: Clonar / Borrar / Configurar (admin-only).
+- `CloneTaskModal` con título prefill `clon - {title}` + 6 toggles. Clone arranca siempre en OPEN del workflow.
+- `DeleteTaskCascade` use case (BFS leaves-first). FK `vl_tasks.parent_task_id` se mantiene `ON DELETE SET NULL` por defensa.
+- AdminShell + AdminVectorLogic URL-synced (`?mod=vectorlogic&tab=schema&typeId=…`). SchemaBuilderView acepta `targetTypeId`.
+
+### Follow-ups conocidos
+- En boards compartidos con permission `use`, Borrar **no se deshabilita con tooltip** (hoy abierto a todos los miembros). RLS de DB es la red de seguridad real. Agregar gating UI cuando sea prioridad.
+- Subtareas cross-type: la barra de progreso solo cuenta hijos cargados en el `tasks` actual del Kanban. Filtros activos pueden esconderlos. Switchear a "All types" para ver progreso completo.
+- Alarmas / comentarios en el modal de Clonar son toggles inertes (UI lista, use case los ignora — reservados para v2).
 
 ---
 
