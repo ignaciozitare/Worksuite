@@ -5,6 +5,7 @@ import { useTranslation } from '@worksuite/i18n';
 import { useDialog } from '@worksuite/ui';
 import { KanbanView } from './views/KanbanView';
 import { BoardView } from './views/BoardView';
+import { GanttView } from './views/GanttView';
 import { ChatView } from './views/ChatView';
 import { AIDetectionsView } from './views/AIDetectionsView';
 import { BacklogHistoryView } from './views/BacklogHistoryView';
@@ -44,7 +45,7 @@ const CSS = `
 .vl .vl-add-board:hover{background:var(--ac-dim);}
 `;
 
-type Tab = 'kanban' | 'board' | 'chat' | 'detections' | 'backlogHistory';
+type Tab = 'kanban' | 'board' | 'gantt' | 'chat' | 'detections' | 'backlogHistory';
 
 interface Props {
   currentUser: { id: string; name?: string; email: string; role?: string; [k: string]: unknown };
@@ -146,6 +147,14 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
     setEditingBoardId(boardId);
   };
 
+  /** Navigate to the Gantt view of a specific board without re-opening the
+   *  board first. The clicked element is just the icon — the row's main
+   *  click still goes to the regular Board view. */
+  const handleOpenGantt = (e: React.MouseEvent, boardId: string) => {
+    e.stopPropagation();
+    navigate(`/vector-logic/board/${boardId}/gantt`);
+  };
+
   const handleSelectBoard = (boardId: string) => {
     setSelectedBoardId(boardId);
     setView('board');
@@ -225,7 +234,10 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
             <div style={{display:'flex',flexDirection:'column',gap:2,paddingTop:2}}>
               {/* Smart Kanban (default board) — auto-created, editable, not deletable. */}
               {defaultBoard && (() => {
-                const active = view === 'board' && selectedBoardId === defaultBoard.id;
+                const isThisBoard = selectedBoardId === defaultBoard.id;
+                const activeBoard = view === 'board' && isThisBoard;
+                const activeGantt = view === 'gantt' && isThisBoard;
+                const active = activeBoard || activeGantt;
                 return (
                   <button
                     type="button"
@@ -235,6 +247,16 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
                     <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-xs)'}}>{defaultBoard.icon || 'bolt'}</span>
                     <span style={{flex:1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
                       {defaultBoard.name}
+                    </span>
+                    <span
+                      className="vl-board-edit material-symbols-outlined"
+                      style={{fontSize: 'var(--fs-sm)', color: activeGantt ? 'var(--ac)' : undefined, opacity: activeGantt ? 1 : undefined}}
+                      onClick={(e) => handleOpenGantt(e, defaultBoard.id)}
+                      role="button"
+                      aria-label={t('vectorLogic.ganttSwitchToGantt')}
+                      title={t('vectorLogic.ganttSwitchToGantt')}
+                    >
+                      view_timeline
                     </span>
                     <span
                       className="vl-board-edit material-symbols-outlined"
@@ -250,7 +272,10 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
               })()}
 
               {boards.filter(b => !b.isDefault).map(b => {
-                const active = view === 'board' && selectedBoardId === b.id;
+                const isThisBoard = selectedBoardId === b.id;
+                const activeBoard = view === 'board' && isThisBoard;
+                const activeGantt = view === 'gantt' && isThisBoard;
+                const active = activeBoard || activeGantt;
                 return (
                   <button
                     key={b.id}
@@ -267,6 +292,16 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
                     {b.visibility === 'personal' && (
                       <span className="vl-board-badge">{t('vectorLogic.badgePersonal')}</span>
                     )}
+                    <span
+                      className="vl-board-edit material-symbols-outlined"
+                      style={{fontSize: 'var(--fs-sm)', color: activeGantt ? 'var(--ac)' : undefined, opacity: activeGantt ? 1 : undefined}}
+                      onClick={(e) => handleOpenGantt(e, b.id)}
+                      role="button"
+                      aria-label={t('vectorLogic.ganttSwitchToGantt')}
+                      title={t('vectorLogic.ganttSwitchToGantt')}
+                    >
+                      view_timeline
+                    </span>
                     {canEditBoard(b) && (
                       <span
                         className="vl-board-edit material-symbols-outlined"
@@ -321,7 +356,7 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
       <div style={{
         flex: 1, minWidth: 0,
         display: 'flex', flexDirection: 'column',
-        overflow: view === 'kanban' || view === 'chat' ? 'hidden' : 'auto',
+        overflow: view === 'kanban' || view === 'chat' || view === 'gantt' ? 'hidden' : 'auto',
         padding: view === 'chat' ? 0 : '28px 32px',
       }}>
         {view === 'kanban'         && <KanbanView         currentUser={currentUser} wsUsers={wsUsers} />}
@@ -333,6 +368,15 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
             wsUsers={wsUsers}
             myPermission={myPermissions.get(selectedBoardId) ?? null}
             onEditBoard={(id) => setEditingBoardId(id)}
+          />
+        )}
+        {view === 'gantt' && selectedBoardId && (
+          <GanttView
+            key={selectedBoardId}
+            boardId={selectedBoardId}
+            currentUser={currentUser}
+            wsUsers={wsUsers}
+            myPermission={myPermissions.get(selectedBoardId) ?? null}
           />
         )}
         {view === 'backlogHistory' && <BacklogHistoryView currentUser={currentUser} />}
@@ -399,7 +443,10 @@ async function ensureDefaultBoard(ownerId: string): Promise<KanbanBoard | null> 
 
 /** Map a URL path under /vector-logic to the active view + board id. */
 function parseRoute(pathname: string): { view: Tab; selectedBoardId: string | null } {
-  // /vector-logic/board/:id
+  // /vector-logic/board/:id/gantt → Gantt view of that board
+  const ganttMatch = pathname.match(/^\/vector-logic\/board\/([^/]+)\/gantt/);
+  if (ganttMatch) return { view: 'gantt', selectedBoardId: ganttMatch[1] };
+  // /vector-logic/board/:id → Board (kanban) view
   const boardMatch = pathname.match(/^\/vector-logic\/board\/([^/]+)/);
   if (boardMatch) return { view: 'board', selectedBoardId: boardMatch[1] };
   if (pathname.startsWith('/vector-logic/backlog'))    return { view: 'backlogHistory', selectedBoardId: null };

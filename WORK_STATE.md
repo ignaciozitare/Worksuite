@@ -1,12 +1,21 @@
 # WORK_STATE
 
-_Ultima actualizacion: 2026-04-28_
+_Ultima actualizacion: 2026-04-28 (cont. — Gantt view)_
 
 ---
 
 ## Tarea en curso
 
-Sin tarea pendiente. Esperando próximo trabajo.
+**Pendiente merge a main** — Vector Logic Gantt view por board:
+- Nueva vista `/vector-logic/board/:id/gantt` con timeline horizontal por board.
+- Sidebar agrega ícono `view_timeline` en cada board row → switch a Gantt.
+- `GanttBar` dual-fill: verde (% ToDo done/total) arriba + morado (% subtareas DONE) abajo, dentro de la barra.
+- Banner ámbar con date pickers inline para tasks sin start_date / due_date.
+- Subtareas expandibles (chevron) indentadas dentro de su parent.
+- Drag bar → mueve fechas. Drag handles → resize. `use` permission = read-only.
+- 3 zoom levels: days/weeks/months.
+
+Spec: `specs/modules/vector-logic/SPEC.md` "Phase 5 — Gantt view por board (revisión 2026-04-28)". Sin migration, sin DB. Build local verde, Review ✅, QA ✅. User confirmó smoke test.
 
 ---
 
