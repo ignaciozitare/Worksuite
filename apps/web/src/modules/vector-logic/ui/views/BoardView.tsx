@@ -774,7 +774,10 @@ function BoardTaskCard({
   const overflowExtras = extraUsers.length - visibleExtras.length;
 
   // Due-date color (used when the configured chip rail includes due_date).
-  let dueColor = 'var(--tx3)';
+  // Default `--tx` for legibility on `--sf2` chip backgrounds — `--tx3` is too
+  // dim there and reads as nearly invisible. Overdue/today keep their
+  // semantic red/amber so the urgency still pops.
+  let dueColor = 'var(--tx)';
   let dueBg: string = 'var(--sf2)';
   if (task.dueDate) {
     const d = new Date(task.dueDate);
@@ -852,7 +855,7 @@ function BoardTaskCard({
           <span style={{
             marginLeft: 'auto',
             fontSize: 'var(--fs-2xs)', padding: '2px 7px', borderRadius: 4,
-            background: 'var(--sf2)', color: 'var(--tx3)',
+            background: 'var(--sf2)', color: 'var(--tx)',
             fontWeight: 700, letterSpacing: '.04em',
           }}>
             {daysInColumn}d
@@ -890,7 +893,7 @@ function BoardTaskCard({
             <span key={field.id} style={{
               fontSize: 'var(--fs-2xs)', padding: '4px 10px', borderRadius: 6,
               background: isDue ? dueBg : 'var(--sf2)',
-              color: isDue ? dueColor : 'var(--tx2)',
+              color: isDue ? dueColor : 'var(--tx)',
               fontWeight: 700, letterSpacing: '.04em',
               display: 'inline-flex', alignItems: 'center', gap: 4,
               maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
