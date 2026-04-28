@@ -24,6 +24,7 @@ import type { Priority } from '../../domain/entities/Priority';
 import { TaskDetailModal, readCardFieldValue, formatCardValue } from './KanbanView';
 import { KanbanFilters, type KanbanSortBy } from '../components/KanbanFilters';
 import { MiniProgressBar } from '../components/CardProgressBars';
+import { BoardViewToggle } from '../components/BoardViewToggle';
 
 const CAT_COLORS: Record<StateCategory, string> = {
   BACKLOG:     'var(--tx3)',
@@ -504,6 +505,7 @@ export function BoardView({ boardId, currentUser, wsUsers = [], myPermission, on
             {distinctTypeCount} {t('vectorLogic.taskTypesShort')} · {totalActive} {t('vectorLogic.tasks')}
           </span>
         </div>
+        <BoardViewToggle boardId={board.id} active="board" />
         {canEditConfig && (
           <button type="button" onClick={() => onEditBoard(board.id)} style={S.editButton}>
             <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>edit</span>

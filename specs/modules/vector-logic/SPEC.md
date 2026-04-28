@@ -966,7 +966,12 @@ Cada board del Vector Logic tiene una vista alternativa Gantt accesible desde el
 - Estado activo de la row se enciende cuando `view === 'board'` o `view === 'gantt'` para ese board. El ícono de Gantt se pinta `--ac` cuando esa es la view activa.
 
 **2. Vista Gantt.**
-Componente nuevo `GanttView` en `apps/web/src/modules/vector-logic/ui/views/GanttView.tsx`. NO reusa el `GanttTimeline` de `@worksuite/ui` porque ese componente (Deploy Planner / Environments) no soporta jerarquía padre-hijo ni fills internos. El nuevo componente toma el patrón de eje temporal pero es propio.
+Componente nuevo `GanttView` en `apps/web/src/modules/vector-logic/ui/views/GanttView.tsx`. **Composé el `GanttTimeline` compartido de `@worksuite/ui`** (el que ya usan Deploy Planner y Environments) en lugar de duplicarlo. Para cubrir las necesidades de Vector Logic se agregaron 2 extension points opt-in al shared component, **backward compatible** con los consumidores existentes:
+- `renderLabel?: (bar) => ReactNode` — slot para el contenido de la columna izquierda. VL lo usa para chevron de expand/collapse + indent + ícono de task type + code + título.
+- `renderBarContent?: (bar, barWidth) => ReactNode` — slot para el contenido DENTRO de la barra (entre los handles de resize). VL lo usa para los dual-fills verde/morado.
+- También se sumaron `showHeader` y `showHelpText` para que el consumidor desactive el header/zoom/help built-in cuando ya tiene los suyos.
+
+Ningún cambio en Deploy Planner / Environments — todos los nuevos props default a `true` o `undefined` preservando comportamiento.
 
 **Layout:**
 - Header con título del board + zoom selector (`Days | Weeks | Months`) + view-switcher (Board ↔ Gantt).
@@ -1022,7 +1027,10 @@ Cada barra del Gantt es un rectángulo con:
 **DBA verdict (2026-04-28):** no migration — pure UI feature.
 
 ### Files afectados
-- `apps/web/src/modules/vector-logic/ui/views/GanttView.tsx` — nuevo componente.
-- `apps/web/src/modules/vector-logic/ui/components/GanttBar.tsx` — nuevo, encapsula la barra con dual fill.
-- `apps/web/src/modules/vector-logic/ui/VectorLogicPage.tsx` — agregar tab `gantt` + parseRoute + sidebar Gantt icon.
+- `packages/ui/src/components/GanttTimeline.tsx` — extension points (`renderLabel`, `renderBarContent`, `showHeader`, `showHelpText`). Backward compatible.
+- `apps/web/src/modules/vector-logic/ui/views/GanttView.tsx` — nuevo componente que compone `<GanttTimeline>` con los slots VL-específicos.
+- `apps/web/src/modules/vector-logic/ui/VectorLogicPage.tsx` — tab `gantt` + parseRoute + sidebar Gantt icon.
 - `packages/i18n/locales/es.json` + `en.json` — keys `vectorLogic.gantt.*`.
+
+### Refactor history
+La primera versión de esta entrega creaba un `GanttBar.tsx` propio en VL y reimplementaba el eje temporal en `GanttView.tsx`, duplicando la lógica de `GanttTimeline`. Tras feedback del usuario ("esto crecerá y será inmanejable"), se refactorizó a la composición descrita arriba: el shared component se extiende con slots, VL solo aporta su data + slots. `GanttBar.tsx` fue eliminado. Memoria: `feedback_extend_dont_duplicate.md`.

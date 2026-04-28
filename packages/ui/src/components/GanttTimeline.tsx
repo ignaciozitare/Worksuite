@@ -46,6 +46,32 @@ export interface GanttTimelineProps {
   labelWidth?: number;
   style?: CSSProperties;
   zoomLabels?: [string, string, string]; // [days, weeks, months]
+  /**
+   * Hide the built-in zoom selector + "Timeline" header. Consumers that
+   * own their own header (e.g. Vector Logic Gantt with the board name +
+   * view switcher) pass `false` to prevent visual duplication.
+   */
+  showHeader?: boolean;
+  /**
+   * Custom renderer for the left-column label cell. Replaces the default
+   * title + status + meta layout. Use for chevrons, indentation, icons,
+   * codes — anything the consuming module needs. The container's width,
+   * padding and onClick wiring stay the same; only the inner DOM changes.
+   */
+  renderLabel?: (bar: GanttBar) => ReactNode;
+  /**
+   * Custom renderer for the content INSIDE each bar (between the resize
+   * handles). Replaces the default `start → end` text. Use to layer
+   * progress fills, icons, or any per-bar visual on top of the bar's
+   * background — without forking the timeline's drag/resize/zoom logic.
+   * Receives the bar and the bar's pixel width so consumers can decide
+   * what to show / hide based on horizontal room.
+   */
+  renderBarContent?: (bar: GanttBar, barWidth: number) => ReactNode;
+  /** Hide the built-in "drag to move · ends to resize · click to open"
+   *  helper line under the chart. Consumers that show their own help
+   *  text (or don't want any) pass `false`. */
+  showHelpText?: boolean;
 }
 
 // ─── Mark generator ───────────────────────────────────────────────────────────
@@ -98,6 +124,10 @@ export function GanttTimeline({
   labelWidth = 260,
   style = {},
   zoomLabels = ['Días', 'Semanas', 'Meses'],
+  showHeader = true,
+  renderLabel,
+  renderBarContent,
+  showHelpText = true,
 }: GanttTimelineProps) {
   const [internalZoom, setInternalZoom] = useState<GanttZoom>('weeks');
   const zoom = zoomProp ?? internalZoom;
@@ -184,18 +214,20 @@ export function GanttTimeline({
 
   return (
     <div style={style}>
-      {/* Zoom selector */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
-        <h2 style={{ fontSize: 'var(--fs-sm)', color: 'var(--dp-tx, var(--tx))', fontWeight: 700 }}>Timeline</h2>
-        <div style={{ display: 'flex', background: 'var(--dp-sf, var(--sf))', border: '1px solid var(--dp-bd, var(--bd))', borderRadius: 6, overflow: 'hidden', marginLeft: 8 }}>
-          {(['days', 'weeks', 'months'] as GanttZoom[]).map((z, i) => (
-            <button key={z} onClick={() => setZoom(z)}
-              style={{ background: zoom === z ? '#1d4ed8' : 'transparent', color: zoom === z ? '#fff' : 'var(--dp-tx3, var(--tx3))', border: 'none', padding: '5px 12px', fontSize: 'var(--fs-2xs)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: zoom === z ? 700 : 400, transition: 'all .15s' }}>
-              {zoomLabels[i]}
-            </button>
-          ))}
+      {/* Zoom selector — hidden when the consumer provides its own header. */}
+      {showHeader && (
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
+          <h2 style={{ fontSize: 'var(--fs-sm)', color: 'var(--dp-tx, var(--tx))', fontWeight: 700 }}>Timeline</h2>
+          <div style={{ display: 'flex', background: 'var(--dp-sf, var(--sf))', border: '1px solid var(--dp-bd, var(--bd))', borderRadius: 6, overflow: 'hidden', marginLeft: 8 }}>
+            {(['days', 'weeks', 'months'] as GanttZoom[]).map((z, i) => (
+              <button key={z} onClick={() => setZoom(z)}
+                style={{ background: zoom === z ? '#1d4ed8' : 'transparent', color: zoom === z ? '#fff' : 'var(--dp-tx3, var(--tx3))', border: 'none', padding: '5px 12px', fontSize: 'var(--fs-2xs)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: zoom === z ? 700 : 400, transition: 'all .15s' }}>
+                {zoomLabels[i]}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Gantt chart */}
       <div style={{ overflowX: 'auto', border: '1px solid var(--dp-bd, var(--bd))', borderRadius: 8 }}>
@@ -247,14 +279,19 @@ export function GanttTimeline({
 
             return (
               <div key={bar.id} style={{ display: 'flex', height: ROW_H, borderBottom: '1px solid var(--dp-bd, var(--bd))', alignItems: 'center', position: 'relative', zIndex: 2 }}>
-                {/* Label */}
+                {/* Label — consumers can replace the inner DOM via renderLabel
+                    while keeping the row's width / borders / click wiring. */}
                 <div style={{ width: LABEL_W, flexShrink: 0, borderRight: '1px solid var(--dp-bd, var(--bd))', padding: '0 14px', cursor: onBarClick ? 'pointer' : 'default' }}
                   onClick={() => onBarClick?.(bar.id)}>
-                  <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--dp-tx, var(--tx))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bar.label}</div>
-                  <div style={{ fontSize: 'var(--fs-2xs)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    <span style={{ color: bar.color, fontWeight: 600, whiteSpace: 'nowrap' }}>{bar.status || ''}</span>
-                    {bar.meta && <span style={{ color: 'var(--dp-tx3, var(--tx3))', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bar.meta}</span>}
-                  </div>
+                  {renderLabel ? renderLabel(bar) : (
+                    <>
+                      <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--dp-tx, var(--tx))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bar.label}</div>
+                      <div style={{ fontSize: 'var(--fs-2xs)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <span style={{ color: bar.color, fontWeight: 600, whiteSpace: 'nowrap' }}>{bar.status || ''}</span>
+                        {bar.meta && <span style={{ color: 'var(--dp-tx3, var(--tx3))', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bar.meta}</span>}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Chart area */}
@@ -271,14 +308,20 @@ export function GanttTimeline({
                       onMouseDown={e => handleMD(e, bar.id, 'move')}
                       onClick={() => onBarClick?.(bar.id)}>
                       {/* Left resize handle */}
-                      <div style={{ width: 5, height: '100%', cursor: 'col-resize', flexShrink: 0, background: `${bar.color}40` }}
+                      <div style={{ width: 5, height: '100%', cursor: 'col-resize', flexShrink: 0, background: `${bar.color}40`, zIndex: 2 }}
                         onMouseDown={e => { e.stopPropagation(); handleMD(e, bar.id, 'left'); }} />
-                      {/* Label */}
-                      <div style={{ flex: 1, padding: '0 5px', fontSize: 'var(--fs-2xs)', color: bar.color, fontWeight: 600, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                        {bar.startDate} → {bar.endDate}
+                      {/* Bar content — consumers can replace the default
+                          "start → end" text with anything (progress fills,
+                          icons, etc.) via renderBarContent. */}
+                      <div style={{ flex: 1, position: 'relative', minWidth: 0, height: '100%', display: 'flex', alignItems: 'center' }}>
+                        {renderBarContent ? renderBarContent(bar, barW) : (
+                          <div style={{ flex: 1, padding: '0 5px', fontSize: 'var(--fs-2xs)', color: bar.color, fontWeight: 600, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                            {bar.startDate} → {bar.endDate}
+                          </div>
+                        )}
                       </div>
                       {/* Right resize handle */}
-                      <div style={{ width: 5, height: '100%', cursor: 'col-resize', flexShrink: 0, background: `${bar.color}40` }}
+                      <div style={{ width: 5, height: '100%', cursor: 'col-resize', flexShrink: 0, background: `${bar.color}40`, zIndex: 2 }}
                         onMouseDown={e => { e.stopPropagation(); handleMD(e, bar.id, 'right'); }} />
                     </div>
                   )}
@@ -289,9 +332,11 @@ export function GanttTimeline({
         </div>
       </div>
 
-      <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3, var(--tx3))', marginTop: 8, display: 'flex', gap: 12 }}>
-        <span>⟺ Arrastra para mover</span><span>·</span><span>Extremos para redimensionar</span><span>·</span><span>Clic para abrir detalle</span>
-      </div>
+      {showHelpText && (
+        <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3, var(--tx3))', marginTop: 8, display: 'flex', gap: 12 }}>
+          <span>⟺ Arrastra para mover</span><span>·</span><span>Extremos para redimensionar</span><span>·</span><span>Clic para abrir detalle</span>
+        </div>
+      )}
     </div>
   );
 }

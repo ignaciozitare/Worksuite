@@ -147,14 +147,6 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
     setEditingBoardId(boardId);
   };
 
-  /** Navigate to the Gantt view of a specific board without re-opening the
-   *  board first. The clicked element is just the icon — the row's main
-   *  click still goes to the regular Board view. */
-  const handleOpenGantt = (e: React.MouseEvent, boardId: string) => {
-    e.stopPropagation();
-    navigate(`/vector-logic/board/${boardId}/gantt`);
-  };
-
   const handleSelectBoard = (boardId: string) => {
     setSelectedBoardId(boardId);
     setView('board');
@@ -235,9 +227,10 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
               {/* Smart Kanban (default board) — auto-created, editable, not deletable. */}
               {defaultBoard && (() => {
                 const isThisBoard = selectedBoardId === defaultBoard.id;
-                const activeBoard = view === 'board' && isThisBoard;
-                const activeGantt = view === 'gantt' && isThisBoard;
-                const active = activeBoard || activeGantt;
+                // Sidebar row stays "active" whether the user is on the
+                // Board or the Gantt view of this board — the in-view
+                // toggle is what differentiates them.
+                const active = isThisBoard && (view === 'board' || view === 'gantt');
                 return (
                   <button
                     type="button"
@@ -247,16 +240,6 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
                     <span className="material-symbols-outlined" style={{fontSize: 'var(--icon-xs)'}}>{defaultBoard.icon || 'bolt'}</span>
                     <span style={{flex:1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
                       {defaultBoard.name}
-                    </span>
-                    <span
-                      className="vl-board-edit material-symbols-outlined"
-                      style={{fontSize: 'var(--fs-sm)', color: activeGantt ? 'var(--ac)' : undefined, opacity: activeGantt ? 1 : undefined}}
-                      onClick={(e) => handleOpenGantt(e, defaultBoard.id)}
-                      role="button"
-                      aria-label={t('vectorLogic.ganttSwitchToGantt')}
-                      title={t('vectorLogic.ganttSwitchToGantt')}
-                    >
-                      view_timeline
                     </span>
                     <span
                       className="vl-board-edit material-symbols-outlined"
@@ -273,9 +256,7 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
 
               {boards.filter(b => !b.isDefault).map(b => {
                 const isThisBoard = selectedBoardId === b.id;
-                const activeBoard = view === 'board' && isThisBoard;
-                const activeGantt = view === 'gantt' && isThisBoard;
-                const active = activeBoard || activeGantt;
+                const active = isThisBoard && (view === 'board' || view === 'gantt');
                 return (
                   <button
                     key={b.id}
@@ -292,16 +273,6 @@ export function VectorLogicPage({ currentUser, wsUsers = [] }: Props) {
                     {b.visibility === 'personal' && (
                       <span className="vl-board-badge">{t('vectorLogic.badgePersonal')}</span>
                     )}
-                    <span
-                      className="vl-board-edit material-symbols-outlined"
-                      style={{fontSize: 'var(--fs-sm)', color: activeGantt ? 'var(--ac)' : undefined, opacity: activeGantt ? 1 : undefined}}
-                      onClick={(e) => handleOpenGantt(e, b.id)}
-                      role="button"
-                      aria-label={t('vectorLogic.ganttSwitchToGantt')}
-                      title={t('vectorLogic.ganttSwitchToGantt')}
-                    >
-                      view_timeline
-                    </span>
                     {canEditBoard(b) && (
                       <span
                         className="vl-board-edit material-symbols-outlined"

@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@worksuite/i18n';
+import { GanttTimeline, type GanttBar } from '@worksuite/ui';
 import {
   boardRepo, boardColumnRepo, boardFilterRepo,
   stateRepo, taskRepo, taskTypeRepo, priorityRepo,
@@ -16,7 +17,7 @@ import type { TaskType } from '../../domain/entities/TaskType';
 import type { Priority } from '../../domain/entities/Priority';
 import type { SchemaField } from '../../domain/entities/FieldType';
 import { TaskDetailModal } from './KanbanView';
-import { GanttBar } from '../components/GanttBar';
+import { BoardViewToggle } from '../components/BoardViewToggle';
 
 interface WSUser {
   id: string;
@@ -35,21 +36,24 @@ interface Props {
 
 type Zoom = 'days' | 'weeks' | 'months';
 
-const DAY_WIDTH: Record<Zoom, number> = { days: 32, weeks: 12, months: 4 };
-const HEADER_H: Record<Zoom, number> = { days: 44, weeks: 36, months: 36 };
-
-const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-/* Vector Logic — Gantt view per board.
+/**
+ * Vector Logic — Gantt view per board.
  *
- * Layout: a fixed left column with task names + chevron expand/collapse,
- * and a right area that scrolls horizontally with date marks and bars.
- * The bars come from `<GanttBar>`, which renders the dual progress fill
- * (green for ToDo % and purple for subtask %) inside each bar.
+ * Composes the shared `<GanttTimeline>` from `@worksuite/ui` and supplies
+ * the two extension slots so the Gantt acquires Vector-Logic-specific
+ * touches WITHOUT duplicating the timeline / drag / resize / zoom logic
+ * that Deploy Planner and Environments already use:
  *
- * Tasks with start_date AND due_date render as bars; the rest go to a
- * dismissable banner at the top with inline date pickers.
+ *   - `renderLabel`   — chevron + indent for hierarchy + task code + title.
+ *   - `renderBarContent` — dual progress fill (green ToDo + purple subtask).
+ *
+ * Module-specific behaviour stays here:
+ *
+ *   - Pulling tasks for the board through the existing repos.
+ *   - Showing a banner with inline date pickers for tasks missing dates.
+ *   - Expand/collapse subtask rows by flattening parent + children in
+ *     order and emitting different `bar.label` / indentation per row.
+ *   - Routing the click to the existing TaskDetailModal.
  */
 export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: Props) {
   const { t } = useTranslation();
@@ -61,7 +65,6 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
   const [columns, setColumns] = useState<BoardColumn[]>([]);
   const [filters, setFilters] = useState<BoardFilter[]>([]);
   const [allStates, setAllStates] = useState<State[]>([]);
-  const [allWorkflowStates, setAllWorkflowStates] = useState<WorkflowState[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
   const [priorities, setPriorities] = useState<Priority[]>([]);
@@ -78,7 +81,6 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
 
   const isOwner = board?.ownerId === currentUser.id;
   // `use` permission is read-only for the timeline (no drag / resize).
-  // Only owner or `edit` member can persist date changes via drag.
   const canEdit = isOwner || myPermission === 'edit';
 
   useEffect(() => {
@@ -87,12 +89,11 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
     setError(null);
     (async () => {
       try {
-        const [b, cols, flts, states, allWfs, allTasks, types, prs] = await Promise.all([
+        const [b, cols, flts, states, allTasks, types, prs] = await Promise.all([
           boardRepo.findById(boardId),
           boardColumnRepo.findByBoard(boardId),
           boardFilterRepo.findByBoard(boardId),
           stateRepo.findAll(),
-          stateRepo.findAllWorkflowStates(),
           taskRepo.findAll(),
           taskTypeRepo.findAll(),
           priorityRepo.ensureDefaults(currentUser.id),
@@ -103,7 +104,6 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
         setColumns(cols);
         setFilters(flts);
         setAllStates(states);
-        setAllWorkflowStates(allWfs);
         setTaskTypes(types);
         setPriorities(prs);
         const colStateIds = new Set<string>();
@@ -125,19 +125,12 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
     return m;
   }, [allStates]);
 
-  const stateCategoryById = useMemo(() => {
-    const m = new Map<string, string>();
-    allStates.forEach(s => m.set(s.id, s.category));
-    return m;
-  }, [allStates]);
-
   const taskTypeById = useMemo(() => {
     const m = new Map<string, TaskType>();
     taskTypes.forEach(tt => m.set(tt.id, tt));
     return m;
   }, [taskTypes]);
 
-  /** All children grouped by parent id, scoped to the loaded tasks. */
   const childrenByParent = useMemo(() => {
     const m = new Map<string, Task[]>();
     tasks.forEach(t => {
@@ -149,9 +142,7 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
     return m;
   }, [tasks]);
 
-  /** Tasks visible per board filters (config-time scope). For brevity we
-   *  ignore due_from/due_to filters here since the Gantt itself is a date
-   *  visualization — the user can scroll to see anything. */
+  /** Tasks visible per board filters (config-time scope). */
   const visibleTasks = useMemo(() => {
     const byDim = new Map<string, BoardFilter[]>();
     for (const f of filters) {
@@ -173,46 +164,72 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
     });
   }, [tasks, filters]);
 
-  /** Top-level tasks (no parent) shown in the main row list. Sub-rows for
-   *  expanded parents are interleaved at render time. */
   const rootTasks = useMemo(
     () => visibleTasks.filter(t => !t.parentTaskId).sort((a, b) => a.sortOrder - b.sortOrder),
     [visibleTasks],
   );
 
-  /** Tasks with both start AND due dates — they get a bar in the timeline. */
+  /** Tasks with both start AND due — they get a bar. The rest go to the banner. */
   const datedTasks = useMemo(
     () => visibleTasks.filter(t => t.startDate && t.dueDate),
     [visibleTasks],
   );
-
-  /** Tasks missing at least one of the two dates — they go in the banner. */
   const pendingDateTasks = useMemo(
     () => visibleTasks.filter(t => !t.startDate || !t.dueDate),
     [visibleTasks],
   );
 
-  // Compute the time range of the chart from the dated tasks.
-  const { rangeStart, totalDays } = useMemo(() => {
-    if (datedTasks.length === 0) {
-      const today = new Date();
-      const start = addDaysISO(toISO(today), -7);
-      return { rangeStart: start, totalDays: 30 };
+  /**
+   * Build the flat ordered list of tasks to render in the Gantt:
+   * each parent task first, followed by its children when expanded.
+   * The level (0/1) is preserved as part of the row id so the renderLabel
+   * slot can inject the right indentation.
+   */
+  type Row = { task: Task; level: number };
+  const rows = useMemo(() => {
+    const out: Row[] = [];
+    for (const root of rootTasks) {
+      out.push({ task: root, level: 0 });
+      if (expanded.has(root.id)) {
+        const children = childrenByParent.get(root.id) ?? [];
+        children
+          .slice()
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+          .forEach(c => out.push({ task: c, level: 1 }));
+      }
     }
-    const allStarts = datedTasks.map(t => t.startDate!).sort();
-    const allDues = datedTasks.map(t => t.dueDate!).sort();
-    const earliest = allStarts[0];
-    const latest = allDues[allDues.length - 1];
-    const start = addDaysISO(earliest, -7);
-    const end = addDaysISO(latest, 14);
-    return { rangeStart: start, totalDays: Math.max(diffDaysISO(start, end), 30) };
-  }, [datedTasks]);
+    return out;
+  }, [rootTasks, expanded, childrenByParent]);
 
-  const dayW = DAY_WIDTH[zoom];
-  const headerH = HEADER_H[zoom];
-  const ROW_H = 44;
-  const LABEL_W = 280;
-  const todayISO = toISO(new Date());
+  /** Map row.task.id → Row for fast lookup inside the slots. */
+  const rowsById = useMemo(() => {
+    const m = new Map<string, Row>();
+    rows.forEach(r => m.set(r.task.id, r));
+    return m;
+  }, [rows]);
+
+  /**
+   * Adapt rows that have both dates to the GanttBar shape `<GanttTimeline>`
+   * understands. Rows without dates are NOT added — they live in the
+   * banner above the chart instead, where the user can fill their dates
+   * inline. Once both dates are set the row appears in the timeline.
+   */
+  const bars: GanttBar[] = useMemo(() => {
+    return rows
+      .filter(r => r.task.startDate && r.task.dueDate)
+      .map(({ task }) => {
+        const stateColor = task.stateId ? stateById.get(task.stateId)?.color ?? null : null;
+        const tint = stateColor || 'var(--ac)';
+        return {
+          id: task.id,
+          label: task.title,
+          startDate: task.startDate!,
+          endDate: task.dueDate!,
+          color: tint,
+          bgColor: `${tint}22`,
+        } as GanttBar;
+      });
+  }, [rows, stateById]);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -230,8 +247,9 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
     setDetailTask(prev => prev && prev.id === taskId ? { ...prev, ...patch } : prev);
   };
 
-  const handleBarDates = (taskId: string) => async (next: { startDate: string; dueDate: string }) => {
-    await updateTask(taskId, next);
+  const handleBarMove = async (id: string, startDate: string, endDate: string) => {
+    if (!canEdit) return;
+    await updateTask(id, { startDate, dueDate: endDate });
   };
 
   const openDetail = async (task: Task) => {
@@ -247,7 +265,144 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
     setDetailTask(task);
   };
 
-  // ── Rendering ────────────────────────────────────────────────────────────
+  const onBarClick = (id: string) => {
+    const task = tasks.find(t => t.id === id);
+    if (task) void openDetail(task);
+  };
+
+  // ── Slots passed to GanttTimeline ────────────────────────────────────────
+
+  /** Custom label slot — adds chevron + indent + type icon + code + title. */
+  const renderLabel = (bar: GanttBar) => {
+    const row = rowsById.get(bar.id);
+    if (!row) return null;
+    const { task, level } = row;
+    const tt = taskTypeById.get(task.taskTypeId) ?? null;
+    const hasChildren = (childrenByParent.get(task.id)?.length ?? 0) > 0;
+    const isExpanded = expanded.has(task.id);
+
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        paddingLeft: level * 18,
+      }}>
+        {level === 0 && hasChildren ? (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); toggleExpand(task.id); }}
+            aria-label="Toggle subtasks"
+            style={{
+              width: 20, height: 20, padding: 0, border: 'none',
+              background: 'transparent', cursor: 'pointer',
+              color: 'var(--tx2)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>
+              {isExpanded ? 'expand_more' : 'chevron_right'}
+            </span>
+          </button>
+        ) : (
+          <span style={{ width: 20, height: 20, flexShrink: 0 }} />
+        )}
+        {tt?.icon && (
+          <span className="material-symbols-outlined" style={{
+            fontSize: 'var(--icon-xs)',
+            color: tt.iconColor || 'var(--tx3)',
+          }}>
+            {tt.icon}
+          </span>
+        )}
+        {task.code && (
+          <span style={{
+            fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)',
+            fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '.04em',
+          }}>
+            {task.code}
+          </span>
+        )}
+        <span style={{
+          fontSize: 'var(--fs-xs)', color: 'var(--tx)',
+          flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {task.title}
+        </span>
+      </div>
+    );
+  };
+
+  /** Custom bar content slot — dual progress fill (green ToDo + purple subtask).
+   *  Stack vertically inside the bar: ToDo on top, subtasks on bottom. Each
+   *  uses half the bar height when both apply, full height when only one. */
+  const renderBarContent = (bar: GanttBar, _barWidth: number) => {
+    const row = rowsById.get(bar.id);
+    if (!row) return null;
+    const { task } = row;
+    const tt = taskTypeById.get(task.taskTypeId);
+    const schema = ((tt?.schema as SchemaField[]) || []);
+
+    // ToDo % done across all ToDo fields combined.
+    const todoItems = schema
+      .filter(f => f.fieldType === 'todo')
+      .map(f => (task.data ?? {})[f.id])
+      .filter((v): v is Array<{ checked?: boolean }> => Array.isArray(v) && v.length > 0)
+      .flat();
+    const todoTotal = todoItems.length;
+    const todoDone = todoItems.filter(it => !!it?.checked).length;
+    const todoPct = todoTotal > 0 ? todoDone / todoTotal : null;
+
+    // Subtask % done — uses state.category to detect DONE.
+    const subtasks = childrenByParent.get(task.id) ?? [];
+    const subtaskTotal = subtasks.length;
+    const subtaskDone = subtasks.filter(s => {
+      const cat = s.stateId ? stateById.get(s.stateId)?.category ?? null : null;
+      return cat === 'DONE';
+    }).length;
+    const subtaskPct = subtaskTotal > 0 ? subtaskDone / subtaskTotal : null;
+
+    const hasTodo = todoPct !== null;
+    const hasSubtask = subtaskPct !== null;
+
+    return (
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
+        {hasTodo && (
+          <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+            <div style={{
+              position: 'absolute', top: 0, bottom: 0, left: 0,
+              width: `${(todoPct as number) * 100}%`,
+              background: 'var(--green)', opacity: 0.7,
+              transition: 'width .15s',
+            }} />
+          </div>
+        )}
+        {hasSubtask && (
+          <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+            <div style={{
+              position: 'absolute', top: 0, bottom: 0, left: 0,
+              width: `${(subtaskPct as number) * 100}%`,
+              background: 'var(--purple)', opacity: 0.7,
+              transition: 'width .15s',
+            }} />
+          </div>
+        )}
+        {/* Code label centered on top of the fills, only if there's room. */}
+        {task.code && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', alignItems: 'center',
+            padding: '0 8px',
+            fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--tx)',
+            letterSpacing: '.04em', pointerEvents: 'none',
+            overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+          }}>
+            {task.code}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ── Render ───────────────────────────────────────────────────────────────
 
   if (loading) {
     return <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--tx3)' }}>{t('common.loading')}</div>;
@@ -256,28 +411,9 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
     return <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--red)' }}>{error ?? t('vectorLogic.boardNotFound')}</div>;
   }
 
-  // Build the flat row list — top-level tasks plus their subtasks when
-  // expanded. Each row knows its indentation level (0 = parent, 1 = child).
-  type Row = { task: Task; level: number };
-  const rows: Row[] = [];
-  for (const root of rootTasks) {
-    rows.push({ task: root, level: 0 });
-    if (expanded.has(root.id)) {
-      const children = childrenByParent.get(root.id) ?? [];
-      children
-        .slice()
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .forEach(c => rows.push({ task: c, level: 1 }));
-    }
-  }
-
-  const marks = generateMarks(rangeStart, totalDays, zoom);
-  const totalChartW = totalDays * dayW;
-  const todayX = diffDaysISO(rangeStart, todayISO) * dayW;
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
-      {/* Header */}
+      {/* Custom header — own zoom + view-switcher */}
       <div style={{
         display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12,
         padding: '4px 0 18px',
@@ -299,7 +435,6 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
           {board.visibility === 'shared' ? t('vectorLogic.boardShared') : t('vectorLogic.boardPersonal')}
         </span>
         <div style={{ flex: 1 }} />
-        {/* Zoom selector */}
         <div style={{
           display: 'inline-flex', background: 'var(--sf2)', border: '1px solid var(--bd)',
           borderRadius: 8, overflow: 'hidden',
@@ -324,25 +459,9 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
             </button>
           ))}
         </div>
-        {/* View switcher: Gantt → Board */}
-        <button
-          type="button"
-          onClick={() => navigate(`/vector-logic/board/${boardId}`)}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '6px 14px', borderRadius: 8,
-            background: 'var(--sf2)', color: 'var(--tx)',
-            border: '1px solid var(--bd)',
-            fontSize: 'var(--fs-2xs)', fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-xs)' }}>view_kanban</span>
-          {t('vectorLogic.ganttSwitchToBoard')}
-        </button>
+        <BoardViewToggle boardId={boardId} active="gantt" />
       </div>
 
-      {/* Pending dates banner */}
       {pendingDateTasks.length > 0 && (
         <div style={{
           padding: '10px 16px',
@@ -385,210 +504,33 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
         </div>
       )}
 
-      {rows.length === 0 ? (
+      {bars.length === 0 ? (
         <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--tx3)' }}>
           {t('vectorLogic.ganttNoTasks')}
         </div>
       ) : (
-        <div style={{
-          flex: 1, minHeight: 0, overflowX: 'auto', overflowY: 'auto',
-          background: 'var(--sf)',
-          border: '1px solid var(--bd)', borderRadius: 8,
-        }}>
-          <div style={{
-            display: 'flex', flexDirection: 'column',
-            width: LABEL_W + totalChartW, minWidth: '100%',
-            position: 'relative',
-          }}>
-            {/* Date header — sticky on top */}
-            <div style={{
-              display: 'flex',
-              height: headerH,
-              borderBottom: '1px solid var(--bd)',
-              position: 'sticky', top: 0, zIndex: 5,
-              background: 'var(--sf)',
-            }}>
-              <div style={{
-                width: LABEL_W, flexShrink: 0,
-                borderRight: '1px solid var(--bd)',
-                display: 'flex', alignItems: 'center',
-                paddingLeft: 14,
-                fontSize: 'var(--fs-2xs)', fontWeight: 700,
-                color: 'var(--tx3)', letterSpacing: '.06em',
-                textTransform: 'uppercase',
-              }}>
-                {t('vectorLogic.taskTitle')}
-              </div>
-              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                {marks.map(m => {
-                  const x = diffDaysISO(rangeStart, m.date) * dayW;
-                  const isToday = zoom === 'days'
-                    ? m.date === todayISO
-                    : zoom === 'weeks'
-                      ? m.date <= todayISO && addDaysISO(m.date, 7) > todayISO
-                      : m.date.slice(0, 7) === todayISO.slice(0, 7);
-                  return (
-                    <div key={m.date} style={{
-                      position: 'absolute', left: x, top: 0, height: '100%',
-                      borderLeft: `1px solid ${isToday ? 'var(--amber)' : 'var(--bd)'}`,
-                      display: 'flex', flexDirection: 'column',
-                      paddingLeft: 4, justifyContent: 'center',
-                    }}>
-                      <span style={{
-                        fontSize: zoom === 'days' ? 'var(--fs-2xs)' : 11,
-                        color: isToday ? 'var(--amber)' : 'var(--tx2)',
-                        fontWeight: isToday ? 700 : 500,
-                        whiteSpace: 'nowrap', lineHeight: 1.2,
-                      }}>
-                        {m.label}
-                      </span>
-                      {zoom === 'days' && (
-                        <span style={{
-                          fontSize: 'var(--fs-2xs)', fontWeight: 700,
-                          color: isToday ? 'var(--amber)' : m.isWeekend ? 'var(--tx3)' : 'var(--tx)',
-                          lineHeight: 1,
-                        }}>
-                          {m.sub}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-                {/* Today line */}
-                <div style={{
-                  position: 'absolute', left: todayX, top: 0, height: '100%',
-                  borderLeft: '1px dashed var(--amber)',
-                  pointerEvents: 'none',
-                }} />
-              </div>
-            </div>
-
-            {/* Rows */}
-            {rows.map(({ task, level }, idx) => {
-              const tt = taskTypeById.get(task.taskTypeId) ?? null;
-              const taskState = task.stateId ? stateById.get(task.stateId) ?? null : null;
-              const stateColor = taskState?.color ?? null;
-              const isParent = level === 0 && (childrenByParent.get(task.id)?.length ?? 0) > 0;
-              const isExpanded = expanded.has(task.id);
-              const inDateTimeline = !!(task.startDate && task.dueDate);
-              const x1 = inDateTimeline ? diffDaysISO(rangeStart, task.startDate!) * dayW : 0;
-              const x2 = inDateTimeline ? diffDaysISO(rangeStart, task.dueDate!) * dayW + dayW : 0;
-              const barWidth = Math.max(x2 - x1, dayW);
-              const subtasks = childrenByParent.get(task.id) ?? [];
-              const schema = ((tt?.schema as SchemaField[]) || []);
-
-              return (
-                <div key={task.id} style={{
-                  display: 'flex', height: ROW_H,
-                  borderBottom: '1px solid var(--bd)',
-                  position: 'relative',
-                  background: idx % 2 === 0 ? 'transparent' : 'var(--sf2)',
-                }}>
-                  {/* Label column */}
-                  <div style={{
-                    width: LABEL_W, flexShrink: 0,
-                    borderRight: '1px solid var(--bd)',
-                    paddingLeft: 14 + level * 20,
-                    paddingRight: 12,
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    cursor: 'pointer',
-                  }}
-                    onClick={() => openDetail(task)}
-                  >
-                    {isParent ? (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); toggleExpand(task.id); }}
-                        aria-label="Toggle subtasks"
-                        style={{
-                          width: 20, height: 20, padding: 0, border: 'none',
-                          background: 'transparent', cursor: 'pointer',
-                          color: 'var(--tx2)',
-                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        }}
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>
-                          {isExpanded ? 'expand_more' : 'chevron_right'}
-                        </span>
-                      </button>
-                    ) : (
-                      <span style={{ width: 20, height: 20, flexShrink: 0 }} />
-                    )}
-                    {tt?.icon && (
-                      <span className="material-symbols-outlined" style={{
-                        fontSize: 'var(--icon-xs)',
-                        color: tt.iconColor || 'var(--tx3)',
-                      }}>
-                        {tt.icon}
-                      </span>
-                    )}
-                    {task.code && (
-                      <span style={{
-                        fontSize: 'var(--fs-2xs)', fontWeight: 700, color: 'var(--ac)',
-                        fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '.04em',
-                      }}>
-                        {task.code}
-                      </span>
-                    )}
-                    <span style={{
-                      fontSize: 'var(--fs-xs)', color: 'var(--tx)',
-                      flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {task.title}
-                    </span>
-                  </div>
-
-                  {/* Chart area */}
-                  <div style={{ flex: 1, position: 'relative', height: '100%' }}>
-                    {/* Weekend shading for days zoom */}
-                    {zoom === 'days' && marks.filter(m => m.isWeekend).map(m => (
-                      <div key={m.date} style={{
-                        position: 'absolute',
-                        left: diffDaysISO(rangeStart, m.date) * dayW,
-                        top: 0, width: dayW, height: '100%',
-                        background: 'rgba(0,0,0,.18)', pointerEvents: 'none',
-                      }} />
-                    ))}
-                    {/* Today line */}
-                    <div style={{
-                      position: 'absolute', left: todayX, top: 0, height: '100%',
-                      borderLeft: '1px dashed rgba(245,158,11,.35)',
-                      pointerEvents: 'none',
-                    }} />
-                    {inDateTimeline ? (
-                      <GanttBar
-                        task={task}
-                        schema={schema}
-                        subtasks={subtasks}
-                        stateCategoryById={stateCategoryById}
-                        stateColor={stateColor}
-                        left={x1}
-                        width={barWidth}
-                        readOnly={!canEdit}
-                        dayWidth={dayW}
-                        onClick={() => openDetail(task)}
-                        onDatesChange={handleBarDates(task.id)}
-                      />
-                    ) : (
-                      <div style={{
-                        position: 'absolute', left: 8, top: '50%',
-                        transform: 'translateY(-50%)',
-                        fontSize: 'var(--fs-2xs)', color: 'var(--tx3)',
-                        fontStyle: 'italic',
-                      }}>
-                        — {t('vectorLogic.ganttPendingDatesShow')} —
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+          <GanttTimeline
+            bars={bars}
+            zoom={zoom}
+            onZoomChange={setZoom}
+            onBarMove={canEdit ? handleBarMove : undefined}
+            onBarClick={onBarClick}
+            labelWidth={280}
+            showHeader={false}
+            showHelpText={false}
+            renderLabel={renderLabel}
+            renderBarContent={renderBarContent}
+            zoomLabels={[
+              t('vectorLogic.ganttZoomDays'),
+              t('vectorLogic.ganttZoomWeeks'),
+              t('vectorLogic.ganttZoomMonths'),
+            ]}
+          />
         </div>
       )}
 
-      {/* Help text under the chart */}
-      {datedTasks.length > 0 && (
+      {bars.length > 0 && canEdit && (
         <div style={{
           fontSize: 'var(--fs-2xs)', color: 'var(--tx3)',
           marginTop: 8, padding: '0 4px',
@@ -631,8 +573,7 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
   );
 }
 
-/** Inline row used inside the "pending dates" banner. Shows the task code +
- *  title and two date inputs (start / due). Saves on blur. */
+/** Inline row inside the "pending dates" banner — same as before. */
 function PendingDateRow({
   task, taskType, onSave,
 }: {
@@ -716,60 +657,4 @@ function PendingDateRow({
       </label>
     </div>
   );
-}
-
-// ── Date helpers (local) ─────────────────────────────────────────────────────
-
-function toISO(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
-function addDaysISO(iso: string, n: number): string {
-  const d = new Date(iso + 'T00:00:00');
-  d.setDate(d.getDate() + n);
-  return toISO(d);
-}
-
-function diffDaysISO(a: string, b: string): number {
-  return Math.round(
-    (new Date(b + 'T00:00:00').getTime() - new Date(a + 'T00:00:00').getTime()) / 86_400_000,
-  );
-}
-
-interface Mark { date: string; label: string; sub?: string; isWeekend?: boolean }
-
-function generateMarks(startISO: string, totalDays: number, zoom: Zoom): Mark[] {
-  const out: Mark[] = [];
-  if (zoom === 'days') {
-    const d = new Date(startISO + 'T00:00:00');
-    for (let i = 0; i < totalDays; i++) {
-      const iso = toISO(d);
-      const dow = d.getDay();
-      out.push({
-        date: iso,
-        label: DAYS_SHORT[dow]!,
-        sub: String(d.getDate()),
-        isWeekend: dow === 0 || dow === 6,
-      });
-      d.setDate(d.getDate() + 1);
-    }
-  } else if (zoom === 'weeks') {
-    const d = new Date(startISO + 'T00:00:00');
-    while (d.getDay() !== 1) d.setDate(d.getDate() + 1);
-    const end = addDaysISO(startISO, totalDays);
-    while (toISO(d) < end) {
-      out.push({ date: toISO(d), label: `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}` });
-      d.setDate(d.getDate() + 7);
-    }
-  } else {
-    const d = new Date(startISO + 'T00:00:00');
-    d.setDate(1);
-    if (toISO(d) < startISO) d.setMonth(d.getMonth() + 1);
-    const end = addDaysISO(startISO, totalDays);
-    while (toISO(d) < end) {
-      out.push({ date: toISO(d), label: `${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}` });
-      d.setMonth(d.getMonth() + 1);
-    }
-  }
-  return out;
 }
