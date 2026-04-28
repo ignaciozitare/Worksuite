@@ -10,9 +10,14 @@ This index is updated automatically by the Spec Agent when a new spec is created
 
 | Module | Spec | Status |
 |---|---|---|
-| Vector Logic | [specs/modules/vector-logic/SPEC.md](modules/vector-logic/SPEC.md) | Phases 1–4 shipped · Phase 5 (Smart Kanban v2) shipped · Multi-type Kanban drag shipped 2026-04-26 · Multi-Board Kanban + Priority visuals — shipped 2026-04-26 · TaskCard ToDo + Card Menu — spec confirmed 2026-04-27, pending DBA |
+| Vector Logic | [specs/modules/vector-logic/SPEC.md](modules/vector-logic/SPEC.md) | Phases 1–5 shipped · Multi-Board Kanban + Card chip rail · TaskCard ToDo + Card Menu · Subtask row chips · Gantt view per board (compone shared GanttTimeline) — todo en prod 2026-04-28 |
+| Jira Tracker | [specs/modules/jira-tracker/SPEC.md](modules/jira-tracker/SPEC.md) | Imputación + calendar + day view + tasks + export shipped |
 | HotDesk | [specs/modules/hotdesk/SPEC.md](modules/hotdesk/SPEC.md) | Booking confirmation + delegation shipped |
 | Deploy Planner | [specs/modules/deploy-planner/SPEC.md](modules/deploy-planner/SPEC.md) | Task sidebar DRAFT |
+| Chrono | [specs/modules/chrono/SPEC.md](modules/chrono/SPEC.md) | Snapshot 2026-04-28 — control horario del usuario (autoservicio) |
+| Chrono Admin | [specs/modules/chrono-admin/SPEC.md](modules/chrono-admin/SPEC.md) | Snapshot 2026-04-28 — administración RRHH del control horario |
+| Environments | [specs/modules/environments/SPEC.md](modules/environments/SPEC.md) | Snapshot 2026-04-28 — entornos de despliegue + reservas |
+| Retro | [specs/modules/retro/SPEC.md](modules/retro/SPEC.md) | Snapshot 2026-04-28 — retros con fases temporizadas + kanban de accionables |
 | Profile | [specs/modules/profile/SPEC.md](modules/profile/SPEC.md) | Avatar / photo picker — spec confirmed 2026-04-25, pending DBA |
 
 ---
@@ -24,6 +29,7 @@ This index is updated automatically by the Spec Agent when a new spec is created
 | Concurrency Control | [specs/core/concurrency/SPEC.md](core/concurrency/SPEC.md) | Confirmed — implemented for HotDesk, Deploy Planner, Environments |
 | Component Migration | [specs/core/component-migration/SPEC.md](core/component-migration/SPEC.md) | Confirmed — migrating modules to @worksuite/ui |
 | Login Screen Redesign | [specs/core/login/SPEC.md](core/login/SPEC.md) | Spec confirmed 2026-04-26 · DBA n/a (UI-only) · pending Scaffold |
+| UIKit | [specs/core/uikit/SPEC.md](core/uikit/SPEC.md) | UIKit brandbook + tokens shipped |
 
 ---
 
