@@ -6,18 +6,26 @@ _Ultima actualizacion: 2026-04-28_
 
 ## Tarea en curso
 
-**Pendiente merge a main** — refactor del Gantt + BoardViewToggle:
-- `packages/ui/GanttTimeline` extendido con 4 props opt-in (`renderLabel`, `renderBarContent`, `showHeader`, `showHelpText`). Backward compatible — Deploy Planner / Environments intactos.
-- VL `GanttView` reescrito: compone `<GanttTimeline>` con los slots, sin duplicar timeline/zoom/drag/resize. `GanttBar.tsx` eliminado.
-- Nuevo componente `BoardViewToggle` (segmented control "Tablero | Gantt"): usado en headers de BoardView y GanttView. Reemplaza el ícono `view_timeline` del sidebar.
-- `VectorLogicPage` sidebar limpio: solo ícono `edit` por board row. Estado activo cubre board y gantt views.
-- Memoria nueva: `feedback_extend_dont_duplicate.md` (extender shared components, no forkear).
-
-Build local verde, Review ✅, QA ✅. User confirmó smoke test.
+Sin tarea pendiente. Esperando próximo trabajo.
 
 ---
 
-## Última entrega — Vector Logic Gantt view (2026-04-28 ✅ EN PROD)
+## Última entrega — VL Gantt refactor + BoardViewToggle (2026-04-28 ✅ EN PROD)
+
+Mergeado y desplegado (commit merge `3823d19`, branch `refactor/vl-gantt-shared-component`). Net: +402 / −688 — 286 líneas menos en el repo.
+
+### Lo que shipea
+- `packages/ui/GanttTimeline` ahora expone 4 props opt-in para extensión: `renderLabel`, `renderBarContent`, `showHeader`, `showHelpText`. Backward compatible — Deploy Planner / Environments intactos (defaults preservan comportamiento).
+- VL `GanttView` reescrito para componer `<GanttTimeline>` con esos slots, sin duplicar grid/zoom/drag/resize/today-line/weekend-shading. `GanttBar.tsx` eliminado (su lógica de fills se movió al slot `renderBarContent`).
+- Nuevo `BoardViewToggle` — segmented control "Tablero | Gantt" usado en headers de BoardView y GanttView. Reemplaza el ícono `view_timeline` del sidebar (ahora cada board row tiene solo el ícono edit).
+- `VectorLogicPage`: sidebar simplificado, estado activo de cada board row cubre board y gantt views.
+
+### Memoria nueva
+- `feedback_extend_dont_duplicate.md` — regla: cuando un shared `@worksuite/ui` cubre ~80% del use case, extenderlo via slots/props (no forkear). Aplicada a `CardMenu` (`mode: 'corner' | 'inline'`) y ahora a `GanttTimeline`.
+
+---
+
+## Entrega anterior — Vector Logic Gantt view (2026-04-28 ✅ EN PROD)
 
 Mergeado y desplegado (commit merge `dd9ac7e`, branch `feat/vl-gantt-view`).
 
