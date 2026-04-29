@@ -1,7 +1,9 @@
 # WorkSuite — SPEC_CONTEXT
 
-> Snapshot del **estado real** del proyecto al 2026-04-10. No describe el estado ideal sino lo que existe hoy en el código.
-> Fuente: lectura directa de `apps/`, `packages/`, `ARCHITECTURE.md`, `README.md`.
+> Snapshot del **estado real** del proyecto al 2026-04-29. No describe el estado ideal sino lo que existe hoy en el código.
+> Fuente: lectura directa de `apps/`, `packages/`, `ARCHITECTURE.md`, `README.md`, todas las migraciones SQL aplicadas hasta hoy.
+>
+> **Para detalle por módulo / capa, ver `specs/SPEC.md` global y los SPEC.md por módulo.** Este documento es el "mapa rápido" del repo; los specs son la documentación profunda.
 
 ---
 
@@ -37,17 +39,17 @@ worksuite/
 
 ## 2. Módulos
 
-| Módulo | Descripción |
-|--------|------------|
-| **Jira Tracker** | Imputación de horas, calendario, vista día, tareas (solo con horas en rango), sidebar recientes, export CSV configurable con presets. Filtro por usuario Jira, hide done tasks. |
-| **HotDesk** | Mapa de oficina SVG, reservas de puesto, vista mensual, blueprints editables |
-| **RetroBoard** | Retrospectivas estructuradas (lobby, fases, kanban de accionables, historial, equipos) |
-| **Deploy Planner** | Releases con versiones auto-generadas, timeline Gantt, repo groups con dependencias, subtareas (bugs/tests/other), métricas |
-| **Environments** | Gestión de entornos de despliegue con barra lateral, reservas con estados configurables, timeline, historial |
-| **Chrono** | Control horario del usuario (autoservicio): dashboard, registros, fichajes incompletos, vacaciones, alarmas, informes. Sincroniza tab con `?view=` query param para deep links. |
-| **Chrono Admin (RRHH)** | Administración del chrono: empleados, equipos, aprobaciones, comparativa Jira vs fichaje, ficha del empleado con datos sensibles encriptados, informes con CSV export y gráficos |
-| **Profile** | Página `/profile` de identidad del usuario actual (lee de `useAuth`, sin repo propio) |
-| **Vector Logic** | Plataforma de orquestación de tareas: workflows visuales (Canvas Designer), Schema Builder dinámico, Smart Kanban + Multi-Board Kanban, Backlog/History, AI Detections (Gmail), priorities con icon+color. Cards: kebab menu (Clone/Delete/Configure-admin), barras de progreso al pie por ToDo + subtasks, days-in-column chip, mini-bar dentro del chip `N/M`. Use cases en `application/`: `CloneTask`, `DeleteTaskCascade`. Last shipped: TaskCard ToDo + Card Menu (2026-04-28). |
+| Módulo | URL | Spec | Resumen |
+|---|---|---|---|
+| **Jira Tracker** | `/jira-tracker/:view` | [specs/modules/jira-tracker/SPEC.md](specs/modules/jira-tracker/SPEC.md) | Imputación de horas, calendar / day / tasks views, export CSV con presets. Filtro por user Jira, hide done. |
+| **HotDesk** | `/hotdesk/:view` | [specs/modules/hotdesk/SPEC.md](specs/modules/hotdesk/SPEC.md) | Reservas de asientos en plano SVG. Multi-edificio, multi-planta. Booking confirmation + check-in + delegación de asientos fijos. |
+| **RetroBoard** | `/retro` | [specs/modules/retro/SPEC.md](specs/modules/retro/SPEC.md) | Retrospectivas con 6 fases temporizadas + kanban global de accionables. Roles owner/temporal/member. |
+| **Deploy Planner** | `/deploy` | [specs/modules/deploy-planner/SPEC.md](specs/modules/deploy-planner/SPEC.md) | Releases con versionado auto, timeline Gantt, history, métricas. Right sidebar con búsqueda Jira draggable. |
+| **Environments** | `/envtracker` | [specs/modules/environments/SPEC.md](specs/modules/environments/SPEC.md) | Reservas de entornos de despliegue. Tabs reservas / gantt / historial. Política configurable. Tablas `syn_*` (legacy naming). |
+| **Chrono** | `/chrono` | [specs/modules/chrono/SPEC.md](specs/modules/chrono/SPEC.md) | Control horario autoservicio: fichajes con geo, vacaciones, alarmas, bolsa de horas. Tabs `?view=`. |
+| **Chrono Admin (RRHH)** | `/chrono-admin` | [specs/modules/chrono-admin/SPEC.md](specs/modules/chrono-admin/SPEC.md) | Admin RRHH: empleados, equipos, aprobaciones, ficha empleado, comparativa Jira-vs-fichaje, informes empresa. |
+| **Profile** | `/profile` | [specs/modules/profile/SPEC.md](specs/modules/profile/SPEC.md) | Identidad del user actual: nombre, idioma, avatar (upload/preset), token Jira personal, módulos visibles. |
+| **Vector Logic** | `/vector-logic/*` | [specs/modules/vector-logic/SPEC.md](specs/modules/vector-logic/SPEC.md) | Plataforma de orquestación de tareas: workflows visuales (Canvas Designer), Schema Builder dinámico, Smart Kanban + Multi-Board Kanban, Backlog/History, AI Detections (Gmail), Gantt per board (slots `renderLabel`/`renderBarContent` sobre `<GanttTimeline>` shared). Cards: kebab menu (Clone/Delete/Configure-admin), barras de progreso al pie (verde ToDo + morado subtasks), days-in-column chip, mini-bar dentro del chip `N/M`. Use cases en `application/`: `CloneTask`, `DeleteTaskCascade`. |
 
 ---
 
