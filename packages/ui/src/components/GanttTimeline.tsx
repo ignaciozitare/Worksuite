@@ -68,7 +68,7 @@ export interface GanttTimelineProps {
    * what to show / hide based on horizontal room.
    */
   renderBarContent?: (bar: GanttBar, barWidth: number) => ReactNode;
-  /** Hide the built-in "drag to move · ends to resize · click to open"
+  /** Hide the built-in "drag to move · ends to resize · click title to open"
    *  helper line under the chart. Consumers that show their own help
    *  text (or don't want any) pass `false`. */
   showHelpText?: boolean;
@@ -305,8 +305,7 @@ export function GanttTimeline({
 
                   {hasDates && (
                     <div style={{ position: 'absolute', left: x1 - LABEL_W, top: '50%', transform: 'translateY(-50%)', width: barW, height: 28, background: bar.bgColor, border: `1px solid ${bar.color}`, borderRadius: 4, cursor: drag?.barId === bar.id && drag.type === 'move' ? 'grabbing' : 'grab', display: 'flex', alignItems: 'center', userSelect: 'none', overflow: 'hidden' }}
-                      onMouseDown={e => handleMD(e, bar.id, 'move')}
-                      onClick={() => onBarClick?.(bar.id)}>
+                      onMouseDown={e => handleMD(e, bar.id, 'move')}>
                       {/* Left resize handle */}
                       <div style={{ width: 5, height: '100%', cursor: 'col-resize', flexShrink: 0, background: `${bar.color}40`, zIndex: 2 }}
                         onMouseDown={e => { e.stopPropagation(); handleMD(e, bar.id, 'left'); }} />
@@ -334,7 +333,7 @@ export function GanttTimeline({
 
       {showHelpText && (
         <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--dp-tx3, var(--tx3))', marginTop: 8, display: 'flex', gap: 12 }}>
-          <span>⟺ Arrastra para mover</span><span>·</span><span>Extremos para redimensionar</span><span>·</span><span>Clic para abrir detalle</span>
+          <span>⟺ Arrastra para mover</span><span>·</span><span>Extremos para redimensionar</span><span>·</span><span>Clic en el título para abrir detalle</span>
         </div>
       )}
     </div>
