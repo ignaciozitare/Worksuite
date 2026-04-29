@@ -1,7 +1,7 @@
 # SPEC — Login Screen Redesign (Carbon Logic)
 
 **Tipo:** Core change (UI/UX)
-**Diseño fuente:** Pencil → `pencil-new.pen` → `screen/login` (nodeId `okQCH`)
+**Diseño fuente:** Pencil → `worksuite.pen` → `screen/login` (nodeId `okQCH`)
 **Última actualización:** 2026-04-26
 
 ---

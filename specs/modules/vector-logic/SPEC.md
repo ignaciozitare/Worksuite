@@ -460,7 +460,7 @@ Migration file: `supabase/migrations/20260416_vl_email_intelligence_initial.sql`
 
 ### UI Reference
 
-- Pencil designs: `pencil-new.pen` frames `VectorLogic/Kanban`, `VectorLogic/Chat`, `VectorLogic/AI Detections`.
+- Pencil designs: `worksuite.pen` frames `VectorLogic/Kanban`, `VectorLogic/Chat`, `VectorLogic/AI Detections`.
 
 ## Modelo de datos (Phase 5)
 
@@ -723,7 +723,7 @@ Sólo el owner puede eliminar el board, transferir ownership, o cambiar la visib
 
 **Sidebar.** "Smart Kanban" es un grupo expandible. Hijos: el board **default** del usuario (auto-creado en su primera visita, llamado "Smart Kanban", siempre primero, editable pero no eliminable), seguido de cada board accesible (propios + compartidos donde tengo permisos), terminado por `+ Add board`. Boards personales muestran badge `PERSONAL` violeta. Boards compartidos sin badge. Cada board tiene icono `edit` en hover (visible si tengo permiso `edit` o soy owner; oculto si sólo tengo `use`).
 
-**Modal "Edit board".** Campos según diseño Pencil (`pencil-new.pen` mocks dark + light):
+**Modal "Edit board".** Campos según diseño Pencil (`worksuite.pen` mocks dark + light):
 - Nombre.
 - Visibilidad: toggle `Personal` / `Shared`.
 - Cuando `Shared` → bloque adicional `Permissions` con lista de usuarios + dropdown `Use` / `Edit` por cada uno + botón "Add user".
