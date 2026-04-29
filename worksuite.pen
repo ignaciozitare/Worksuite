@@ -47871,7 +47871,7 @@
                   "type": "text",
                   "id": "Q16ft",
                   "fill": "$jt-green",
-                  "content": "UPDATED · CHIP RAIL + LIVE SUBTASK PROGRESS",
+                  "content": "PROD STATE 2026-04-29 · KANBAN CARD",
                   "fontFamily": "Inter",
                   "fontSize": 10,
                   "fontWeight": "700",
@@ -48170,15 +48170,49 @@
                       "clip": true,
                       "width": "fill_container",
                       "height": 3,
-                      "fill": "$jt-sf2",
+                      "fill": "$jt-bd2",
                       "cornerRadius": 1,
+                      "gap": 1,
                       "children": [
                         {
                           "type": "rectangle",
-                          "id": "bqxrN",
+                          "id": "lWqP3",
+                          "name": "g1",
                           "fill": "$jt-green",
-                          "width": 240,
-                          "height": 3
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "AOv3v",
+                          "name": "g2",
+                          "fill": "$jt-green",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "wW4l6",
+                          "name": "g3",
+                          "fill": "$jt-green",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "z6vAN",
+                          "name": "g4",
+                          "fill": "$jt-sf2",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "vbOax",
+                          "name": "g5",
+                          "fill": "$jt-sf2",
+                          "width": "fill_container",
+                          "height": "fill_container"
                         }
                       ]
                     },
@@ -48189,15 +48223,41 @@
                       "clip": true,
                       "width": "fill_container",
                       "height": 3,
-                      "fill": "$jt-sf2",
+                      "fill": "$jt-bd2",
                       "cornerRadius": 1,
+                      "gap": 1,
                       "children": [
                         {
                           "type": "rectangle",
-                          "id": "n4O7P",
+                          "id": "oIEIo",
+                          "name": "p1",
                           "fill": "$jt-purple",
-                          "width": 160,
-                          "height": 3
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "k41kO",
+                          "name": "p2",
+                          "fill": "$jt-purple",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "URBni",
+                          "name": "p3",
+                          "fill": "$jt-sf2",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "Tihla",
+                          "name": "p4",
+                          "fill": "$jt-sf2",
+                          "width": "fill_container",
+                          "height": "fill_container"
                         }
                       ]
                     }
@@ -48389,15 +48449,41 @@
                   "clip": true,
                   "width": "fill_container",
                   "height": 3,
-                  "fill": "$jt-sf2",
+                  "fill": "$jt-bd2",
                   "cornerRadius": 1,
+                  "gap": 1,
                   "children": [
                     {
                       "type": "rectangle",
-                      "id": "LGoEx",
-                      "fill": "$jt-purple",
-                      "width": 300,
-                      "height": 3
+                      "id": "H01dka",
+                      "name": "b1",
+                      "fill": "$jt-green",
+                      "width": "fill_container",
+                      "height": "fill_container"
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "S9zRNX",
+                      "name": "b2",
+                      "fill": "$jt-green",
+                      "width": "fill_container",
+                      "height": "fill_container"
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "x0YXU",
+                      "name": "b3",
+                      "fill": "$jt-green",
+                      "width": "fill_container",
+                      "height": "fill_container"
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "l12Jw",
+                      "name": "b4",
+                      "fill": "$jt-green",
+                      "width": "fill_container",
+                      "height": "fill_container"
                     }
                   ]
                 }
@@ -49789,7 +49875,7 @@
                   "type": "text",
                   "id": "l1xjdN",
                   "fill": "$jt-green",
-                  "content": "UPDATED · CHIP RAIL + LIVE SUBTASK PROGRESS",
+                  "content": "PROD STATE 2026-04-29 · KANBAN CARD",
                   "fontFamily": "Inter",
                   "fontSize": 10,
                   "fontWeight": "700",
@@ -50094,13 +50180,47 @@
                       "height": 3,
                       "fill": "#d8dce6",
                       "cornerRadius": 1,
+                      "gap": 1,
                       "children": [
                         {
                           "type": "rectangle",
-                          "id": "HTMeb",
+                          "id": "hJyCN",
+                          "name": "lg1",
                           "fill": "$jt-green",
-                          "width": 240,
-                          "height": 3
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "Nmjk5",
+                          "name": "lg2",
+                          "fill": "$jt-green",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "IcuOr",
+                          "name": "lg3",
+                          "fill": "$jt-green",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "QMYBr",
+                          "name": "lg4",
+                          "fill": "#eef0f5",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "nW7UD",
+                          "name": "lg5",
+                          "fill": "#eef0f5",
+                          "width": "fill_container",
+                          "height": "fill_container"
                         }
                       ]
                     },
@@ -50113,13 +50233,39 @@
                       "height": 3,
                       "fill": "#d8dce6",
                       "cornerRadius": 1,
+                      "gap": 1,
                       "children": [
                         {
                           "type": "rectangle",
-                          "id": "p9Ouar",
+                          "id": "U3sxLK",
+                          "name": "lp1",
                           "fill": "$jt-purple",
-                          "width": 160,
-                          "height": 3
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "cc4mb",
+                          "name": "lp2",
+                          "fill": "$jt-purple",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "F6mM3",
+                          "name": "lp3",
+                          "fill": "#eef0f5",
+                          "width": "fill_container",
+                          "height": "fill_container"
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "anYfA",
+                          "name": "lp4",
+                          "fill": "#eef0f5",
+                          "width": "fill_container",
+                          "height": "fill_container"
                         }
                       ]
                     }
@@ -50317,13 +50463,39 @@
                   "height": 3,
                   "fill": "#d8dce6",
                   "cornerRadius": 1,
+                  "gap": 1,
                   "children": [
                     {
                       "type": "rectangle",
-                      "id": "d2MVz",
-                      "fill": "$jt-purple",
-                      "width": 300,
-                      "height": 3
+                      "id": "lzm2G",
+                      "name": "lb1",
+                      "fill": "$jt-green",
+                      "width": "fill_container",
+                      "height": "fill_container"
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "p8Umj",
+                      "name": "lb2",
+                      "fill": "$jt-green",
+                      "width": "fill_container",
+                      "height": "fill_container"
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "BuRts",
+                      "name": "lb3",
+                      "fill": "$jt-green",
+                      "width": "fill_container",
+                      "height": "fill_container"
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "U6UyeB",
+                      "name": "lb4",
+                      "fill": "$jt-green",
+                      "width": "fill_container",
+                      "height": "fill_container"
                     }
                   ]
                 }
