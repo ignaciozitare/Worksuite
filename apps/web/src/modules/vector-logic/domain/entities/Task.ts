@@ -14,6 +14,7 @@ export interface Task {
   data: Record<string, unknown>;
   assigneeId: string | null;
   priority: TaskPriority | null;
+  startDate: string | null;
   dueDate: string | null;
   stateEnteredAt: string;
   parentTaskId: string | null;
@@ -41,11 +42,13 @@ export type TaskDraft = Omit<
   | 'archivedAt'
   | 'archivedBy'
   | 'code'
+  | 'startDate'
   | 'dueDate'
   | 'parentTaskId'
   | 'sortOrder'
 > & {
   code?: string | null;
+  startDate?: string | null;
   dueDate?: string | null;
   parentTaskId?: string | null;
   sortOrder?: number;
