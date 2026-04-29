@@ -30,9 +30,19 @@ This index is updated automatically by the Spec Agent when a new spec is created
 | Auth | [specs/core/auth/SPEC.md](core/auth/SPEC.md) | Snapshot 2026-04-29 — login flow, sesión, RLS pattern |
 | Admin Panel | [specs/core/admin/SPEC.md](core/admin/SPEC.md) | Snapshot 2026-04-29 — AdminShell + secciones por módulo |
 | UIKit | [specs/core/uikit/SPEC.md](core/uikit/SPEC.md) | Snapshot 2026-04-29 — `@worksuite/ui` componentes + tokens |
+| Deployment | [specs/core/deployment/SPEC.md](core/deployment/SPEC.md) | Snapshot 2026-04-29 — Vercel + Supabase + env vars + dominios + crons |
+| Migrations | [specs/core/migrations/SPEC.md](core/migrations/SPEC.md) | Snapshot 2026-04-29 — orden cronológico de las migraciones SQL |
 | Concurrency Control | [specs/core/concurrency/SPEC.md](core/concurrency/SPEC.md) | Confirmed — implementado en HotDesk, Deploy Planner, Environments |
 | Component Migration | [specs/core/component-migration/SPEC.md](core/component-migration/SPEC.md) | Confirmed — migrando módulos a `@worksuite/ui` |
 | Login Screen Redesign | [specs/core/login/SPEC.md](core/login/SPEC.md) | Spec confirmed 2026-04-26 · UI-only · pending Scaffold |
+
+---
+
+## Backend / API
+
+| Pieza | Spec | Status |
+|---|---|---|
+| `apps/api` (Fastify) | [specs/api/SPEC.md](api/SPEC.md) | Snapshot 2026-04-29 — auth proxy, Jira proxy, AI/LLM, MCP server, Email Intelligence, cron jobs |
 
 ---
 
