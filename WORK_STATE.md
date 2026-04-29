@@ -1,16 +1,44 @@
 # WORK_STATE
 
-_Ultima actualizacion: 2026-04-28_
+_Ultima actualizacion: 2026-04-29_
 
 ---
 
 ## Tarea en curso
 
-Sin tarea pendiente. Esperando próximo trabajo.
+Pendiente smoke test del usuario en local — VL Gantt ahora persiste `start_date` y todas las 32 tasks tienen rango + ToDos seedeados.
 
 ---
 
-## Última entrega — VL Gantt refactor + BoardViewToggle (2026-04-28 ✅ EN PROD)
+## Última entrega — VL Gantt start_date persistido + seeder demo (2026-04-29 ⏳ pendiente smoke + merge)
+
+Cerré una fuga silenciosa del Gantt: `task.startDate` se leía/escribía en código pero **nunca se persistía** (no había columna en DB, ni mapping en el repo, ni campo en la entity). El archivo tenía `// @ts-nocheck` que ocultaba el problema. Resultado: `bars.length === 0` siempre → "no hay tasks".
+
+### Cambios
+
+- **DB**: nueva columna `vl_tasks.start_date date` (migración `20260429_vl_tasks_start_date.sql`).
+- **Domain**: `Task.startDate: string | null` agregado en `apps/web/src/modules/vector-logic/domain/entities/Task.ts`. `TaskDraft` también lo expone como opcional.
+- **Infra**: `SupabaseTaskRepo` mapea `start_date ↔ startDate` en `toDomain`, `create`, `update`.
+- **Application**: `CloneTask.cloneOne` propaga `source.startDate` al clon.
+- **UI**: saqué el `// @ts-nocheck` de `GanttView.tsx`. Quedaron 2 issues que arreglé:
+  - `t('vectorLogic.ganttPendingDates', { count: number })` → `String(count)` (la API de `t()` espera `Record<string,string>`).
+  - `onBarMove={canEdit ? handleBarMove : undefined}` → spread condicional `{...(canEdit ? { onBarMove: handleBarMove } : {})}` para no violar `exactOptionalPropertyTypes`.
+- **Seeder demo** (`20260429_vl_tasks_seed_gantt_demo.sql`): CTE recursiva que asigna `start_date`/`due_date` a las 32 tasks. Roots staggered cada 5 días arrancando 2026-04-15, durations 35-55 días. Subtasks divididas en slots secuenciales dentro del rango del padre, hasta depth 3 (BUG-0006/7/8/10 bajo BUG-0003 quedan en ~3 días cada una). Today line cae en el medio del timeline. Además mete 5 ítems de ToDo en cada task tipo Bug (campo `f9wuopam`) con checked pattern derivado del MD5 del id → cada barra muestra una mezcla distinta de progreso verde.
+
+### Estado DB
+32/32 tasks con start+due. 17 tasks Bug con ToDos. Migraciones aplicadas a prod.
+
+### Decisiones
+- Seeder es idempotente: re-correr reescribe las mismas fechas y solo agrega ToDos donde aún no hay.
+- No toqué los hex literales / hacks pre-existentes en otros archivos (review encontró solo issues no relacionados).
+- Build local pasa (`apps/web`). Pendiente preview deploy + smoke test del usuario antes de merge.
+
+### Memoria nueva
+- Ninguna — el patrón "agregar columna + mapping + entity" ya está implícito en CLAUDE.md.
+
+---
+
+## Entrega anterior — VL Gantt refactor + BoardViewToggle (2026-04-28 ✅ EN PROD)
 
 Mergeado y desplegado (commit merge `3823d19`, branch `refactor/vl-gantt-shared-component`). Net: +402 / −688 — 286 líneas menos en el repo.
 

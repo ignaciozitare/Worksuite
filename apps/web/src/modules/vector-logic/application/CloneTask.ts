@@ -71,6 +71,7 @@ export class CloneTask {
       data: opts.includeData ? { ...source.data } : {},
       assigneeId: opts.includeAssignee ? source.assigneeId : null,
       priority: opts.includePriority ? source.priority : null,
+      startDate: source.startDate,
       dueDate: source.dueDate,
       parentTaskId,
       sortOrder: 0,

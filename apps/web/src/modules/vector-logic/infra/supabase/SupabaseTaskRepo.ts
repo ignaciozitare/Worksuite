@@ -105,6 +105,7 @@ export class SupabaseTaskRepo implements ITaskRepo {
         sort_order: draft.sortOrder ?? 0,
         created_by: draft.createdBy,
         code,
+        start_date: draft.startDate ?? null,
         due_date: draft.dueDate ?? null,
         parent_task_id: draft.parentTaskId ?? null,
       })
@@ -133,6 +134,7 @@ export class SupabaseTaskRepo implements ITaskRepo {
     if (patch.priority !== undefined) row.priority = patch.priority;
     if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
     if (patch.code !== undefined) row.code = patch.code;
+    if (patch.startDate !== undefined) row.start_date = patch.startDate;
     if (patch.dueDate !== undefined) row.due_date = patch.dueDate;
     if (patch.parentTaskId !== undefined) row.parent_task_id = patch.parentTaskId;
     const { error } = await this.sb.from('vl_tasks').update(row).eq('id', id);
@@ -196,6 +198,7 @@ export class SupabaseTaskRepo implements ITaskRepo {
       data: row.data ?? {},
       assigneeId: row.assignee_id,
       priority: row.priority,
+      startDate: row.start_date ?? null,
       dueDate: row.due_date ?? null,
       stateEnteredAt: row.state_entered_at ?? row.created_at,
       parentTaskId: row.parent_task_id ?? null,

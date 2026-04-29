@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@worksuite/i18n';
@@ -473,7 +472,7 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span className="material-symbols-outlined" style={{ fontSize: 'var(--icon-sm)' }}>warning</span>
             <span style={{ flex: 1 }}>
-              {t('vectorLogic.ganttPendingDates', { count: pendingDateTasks.length })}
+              {t('vectorLogic.ganttPendingDates', { count: String(pendingDateTasks.length) })}
             </span>
             <button
               type="button"
@@ -514,7 +513,7 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
             bars={bars}
             zoom={zoom}
             onZoomChange={setZoom}
-            onBarMove={canEdit ? handleBarMove : undefined}
+            {...(canEdit ? { onBarMove: handleBarMove } : {})}
             onBarClick={onBarClick}
             labelWidth={280}
             showHeader={false}
