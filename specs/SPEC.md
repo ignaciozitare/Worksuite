@@ -46,6 +46,17 @@ This index is updated automatically by the Spec Agent when a new spec is created
 
 ---
 
+## Historical references
+
+These artifacts pre-date the current spec layout but are still relevant for reconstruction / archeology. **No son specs activos** — son contexto histórico:
+
+| Artifact | Path | Para qué |
+|---|---|---|
+| ADR-001 — Hexagonal Architecture | [docs/adr/001-hexagonal-architecture.md](../docs/adr/001-hexagonal-architecture.md) | Decisión original (2026-03-11) de adoptar hexagonal. Su contenido vive ahora en `ARCHITECTURE.md` + cada SPEC de módulo. |
+| ADR-002 — Vercel + Supabase | [docs/adr/002-vercel-supabase.md](../docs/adr/002-vercel-supabase.md) | Decisión original de stack de despliegue. Reemplazado funcionalmente por [specs/core/deployment/SPEC.md](core/deployment/SPEC.md). |
+| Esquema base SQL pre-2026-04-12 | [docs/supabase-schema.sql](../docs/supabase-schema.sql) | Dump del esquema base que `specs/core/migrations/SPEC.md` referencia como punto de partida pre-migraciones del repo. |
+| Jira migrations legacy | [docs/migration_jira_connections.sql](../docs/migration_jira_connections.sql), [docs/migration_add_jira_worklog_id.sql](../docs/migration_add_jira_worklog_id.sql) | Migraciones de Jira Tracker aplicadas antes del directorio `supabase/migrations/`. |
+
 ## How specs are created
 
 Specs are generated automatically by the Spec Agent through a conversation

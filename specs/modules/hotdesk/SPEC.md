@@ -41,6 +41,7 @@ Acciones admin (en `/admin`):
 ## Reglas y límites
 
 - **Una reserva por usuario por día.** Si el usuario tiene fixed_assignment, esa cuenta como reserva implícita salvo que la haya delegado.
+- **No se permiten reservas en fines de semana** (sábado / domingo) — enforced en `apps/api/src/domain/hotdesk/HotDesk.ts` (`isWeekend`) y replicado en el frontend para feedback visual.
 - **Asientos bloqueados** (`is_blocked=true` en `seats`) no admiten reservas, no se auto-releasean. Aparecen como "Unavailable".
 - **Auto-release** del status `pending`: un cron / Edge Function corre cada 5 min y marca `released` cualquier reserva sin confirmar pasada la deadline (`business_day_start + confirmation_deadline_minutes`).
 - **Zonas permitidas:** `users.allowed_booking_zones` (jsonb) y/o `ch_equipos.allowed_booking_zones` (text CSV) limitan en qué zonas reservar. Si vacío, sin restricción.

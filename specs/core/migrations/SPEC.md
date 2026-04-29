@@ -6,7 +6,7 @@
 
 WorkSuite usa migraciones SQL en `supabase/migrations/` con naming `YYYYMMDD[_NN]_descripcion.sql`. **No hay CI** que las aplique — un operador (humano o agente) las ejecuta a mano contra el proyecto Supabase prod (`enclhswdbwbgxbjykdtj.supabase.co`).
 
-Las migraciones del repo cubren los cambios desde el 2026-04-12 en adelante. **El esquema base anterior** (tablas creadas antes de esa fecha — `users`, `worklogs`, `seats`, `seat_reservations`, `fixed_assignments`, `buildings`, `blueprints`, `dp_releases`, `dp_release_statuses`, `syn_*`, `retro_*`, etc.) se aplicó manualmente al provisionar el proyecto y **no hay un dump SQL de eso en el repo**. Para reconstrucción ver "Esquema base" más abajo.
+Las migraciones del repo cubren los cambios desde el 2026-04-12 en adelante. **El esquema base anterior** (tablas creadas antes de esa fecha — `users`, `worklogs`, `seats`, `seat_reservations`, `fixed_assignments`, `buildings`, `blueprints`, `dp_releases`, `dp_release_statuses`, `syn_*`, `retro_*`, etc.) se aplicó manualmente al provisionar el proyecto. Hay un dump parcial en [`docs/supabase-schema.sql`](../../../docs/supabase-schema.sql) y dos migraciones legacy de Jira Tracker en [`docs/migration_jira_connections.sql`](../../../docs/migration_jira_connections.sql) + [`docs/migration_add_jira_worklog_id.sql`](../../../docs/migration_add_jira_worklog_id.sql). Para reconstrucción ver "Esquema base" más abajo.
 
 ## Cronología de migraciones (orden de aplicación)
 
@@ -40,7 +40,7 @@ Las siguientes tablas existen en prod pero **sin migración SQL en el repo**. Fu
 - **Chrono base:** `ch_fichajes`, `ch_incidencias`, `ch_vacaciones`, `ch_saldo_vacaciones`, `ch_bolsa_horas`, `ch_alarmas`, `ch_config_empresa`, `ch_equipos`, `ch_equipo_miembros`, `ch_empleado_config`.
 - **Vector Logic base:** `vl_workflows`, `vl_states`, `vl_workflow_states`, `vl_transitions`, `vl_task_types`, `vl_tasks`, `vl_priorities`, `vl_ai_settings`.
 
-Cada uno está documentado en su respectivo `specs/modules/<module>/SPEC.md` con columnas, tipos y relaciones. Los specs son la **fuente de verdad para reconstrucción** dado que las migraciones base no existen en repo.
+Cada uno está documentado en su respectivo `specs/modules/<module>/SPEC.md` con columnas, tipos y relaciones. Los specs + el dump parcial en `docs/supabase-schema.sql` son la **fuente de verdad para reconstrucción**.
 
 ## Cómo aplicar migraciones a un nuevo proyecto
 

@@ -134,6 +134,7 @@ All Jira calls go through `apps/api` backend routes — never direct from fronte
 - Minimum worklog: 60 seconds (enforced in LogTime use case)
 - Recent tasks sidebar: max 20 unique issues
 - Jira search in sidebar: max 30 results
+- **Jira sync fallback:** si la sync a Jira falla, el worklog se persiste localmente con `syncedToJira=false` (LogTime use case crea siempre la row, la sync es best-effort).
 
 ## Out of Scope
 - DayView v2 redesign (user confirmed to keep original)
