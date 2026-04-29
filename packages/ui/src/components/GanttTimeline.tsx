@@ -43,7 +43,12 @@ export interface GanttTimelineProps {
   onZoomChange?: (z: GanttZoom) => void;
   onBarMove?: (id: string, startDate: string, endDate: string) => void;
   onBarClick?: (id: string) => void;
+  /** Initial width of the left label column. The user can drag the
+   *  divider to resize it; the new value is reported via
+   *  `onLabelWidthChange` so consumers can persist it (e.g. localStorage). */
   labelWidth?: number;
+  /** Fires after the user finishes resizing the label column (on mouseup). */
+  onLabelWidthChange?: (width: number) => void;
   style?: CSSProperties;
   zoomLabels?: [string, string, string]; // [days, weeks, months]
   /**
@@ -122,6 +127,7 @@ export function GanttTimeline({
   onBarMove,
   onBarClick,
   labelWidth = 260,
+  onLabelWidthChange,
   style = {},
   zoomLabels = ['Días', 'Semanas', 'Meses'],
   showHeader = true,
@@ -137,8 +143,18 @@ export function GanttTimeline({
     barId: string; type: 'move' | 'left' | 'right'; startX: number; origStart: string; origEnd: string;
   } | null>(null);
 
+  // Resizable label column. Initialized from the prop, mutated locally on
+  // drag, and reported back via onLabelWidthChange when the user lets go.
+  const LABEL_MIN = 120;
+  const LABEL_MAX = 600;
+  const [labelW, setLabelW] = useState<number>(() => Math.min(Math.max(labelWidth, LABEL_MIN), LABEL_MAX));
+  // Keep in sync if the consumer changes labelWidth from the outside
+  // (e.g. after restoring from localStorage on a different mount).
+  useEffect(() => { setLabelW(Math.min(Math.max(labelWidth, LABEL_MIN), LABEL_MAX)); }, [labelWidth]);
+  const [labelDrag, setLabelDrag] = useState<{ startX: number; origW: number } | null>(null);
+
   const DAY_W = { days: 44, weeks: 16, months: 4 }[zoom];
-  const LABEL_W = labelWidth;
+  const LABEL_W = labelW;
 
   // Compute date range
   const allDates = bars.flatMap(b => [b.startDate, b.endDate]).filter(Boolean).sort();
@@ -182,6 +198,24 @@ export function GanttTimeline({
     window.addEventListener('mouseup', onUp);
     return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
   }, [drag, DAY_W, onBarMove]);
+
+  // Label column resize drag. Updates local state on mousemove for immediate
+  // feedback, fires onLabelWidthChange on mouseup so the consumer can persist.
+  useEffect(() => {
+    if (!labelDrag) return;
+    const onMove = (e: MouseEvent) => {
+      const dx = e.clientX - labelDrag.startX;
+      const next = Math.min(Math.max(labelDrag.origW + dx, LABEL_MIN), LABEL_MAX);
+      setLabelW(next);
+    };
+    const onUp = () => {
+      setLabelDrag(null);
+      onLabelWidthChange?.(labelW);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+  }, [labelDrag, labelW, onLabelWidthChange]);
 
   // Order bars: group members together
   const orderedBars = (() => {
@@ -328,6 +362,22 @@ export function GanttTimeline({
               </div>
             );
           })}
+
+          {/* Label column resize divider — full-height drag handle on the
+              right edge of the label column. Sits above the sticky date
+              header (zIndex 5) so the user can grab it from anywhere. */}
+          <div
+            onMouseDown={(e) => { e.preventDefault(); setLabelDrag({ startX: e.clientX, origW: labelW }); }}
+            title="Drag to resize"
+            style={{
+              position: 'absolute', left: LABEL_W - 2, top: 0, bottom: 0, width: 5,
+              cursor: 'col-resize', zIndex: 6,
+              background: labelDrag ? 'var(--dp-ac, var(--ac))' : 'transparent',
+              transition: labelDrag ? 'none' : 'background .15s',
+            }}
+            onMouseEnter={(e) => { if (!labelDrag) (e.currentTarget as HTMLElement).style.background = 'var(--dp-bd, var(--bd))'; }}
+            onMouseLeave={(e) => { if (!labelDrag) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+          />
         </div>
       </div>
 

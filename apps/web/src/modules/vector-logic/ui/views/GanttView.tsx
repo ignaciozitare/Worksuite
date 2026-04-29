@@ -77,6 +77,15 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
   const [zoom, setZoom] = useState<Zoom>('days');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [showPending, setShowPending] = useState(false);
+  const [labelWidth, setLabelWidth] = useState<number>(() => {
+    const stored = typeof window !== 'undefined' ? window.localStorage.getItem('vl-gantt-label-width') : null;
+    const n = stored ? Number(stored) : NaN;
+    return Number.isFinite(n) && n >= 120 && n <= 600 ? n : 280;
+  });
+  const persistLabelWidth = (w: number) => {
+    setLabelWidth(w);
+    try { window.localStorage.setItem('vl-gantt-label-width', String(w)); } catch { /* quota */ }
+  };
 
   const isOwner = board?.ownerId === currentUser.id;
   // `use` permission is read-only for the timeline (no drag / resize).
@@ -515,7 +524,8 @@ export function GanttView({ boardId, currentUser, wsUsers = [], myPermission }: 
             onZoomChange={setZoom}
             {...(canEdit ? { onBarMove: handleBarMove } : {})}
             onBarClick={onBarClick}
-            labelWidth={280}
+            labelWidth={labelWidth}
+            onLabelWidthChange={persistLabelWidth}
             showHeader={false}
             showHelpText={false}
             renderLabel={renderLabel}
